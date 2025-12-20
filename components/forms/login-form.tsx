@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import {
     Box,
     Button,
@@ -31,7 +32,7 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-    const [state, formAction] = useFormState(login, null);
+    const [state, formAction] = useActionState(login, null);
 
     return (
         <Box component="form" action={formAction} sx={{ mt: 1 }}>
