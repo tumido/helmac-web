@@ -24,6 +24,26 @@ export const medievalColors = {
     },
 };
 
+// Medieval Light Theme - Parchment/Cream Aesthetic
+export const medievalLightColors = {
+    background: {
+        default: "#F5F2EB", // Parchment/cream
+        paper: "#EAE6DD", // Slightly darker for cards
+        dark: "#DED9CE", // Input fields background
+    },
+    gold: medievalColors.gold, // Keep same gold colors
+    text: {
+        primary: "#2D2A26", // Dark brown
+        secondary: "#5C5650", // Medium brown
+        muted: "#8A847A", // Muted brown
+    },
+    accent: {
+        green: "#4A7C59",
+        red: "#8B3A3A",
+    },
+    divider: "rgba(45, 42, 38, 0.15)",
+};
+
 // Admin Color Palette (keeping existing blue theme)
 export const adminColors = {
     primary: {

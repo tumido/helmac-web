@@ -15,6 +15,7 @@ import {
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { Navigation } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
+import { ThemeToggle } from "@/components/public/ui";
 
 const navItems = [
     { label: "Program", href: "/program" },
@@ -72,7 +73,8 @@ export function Header() {
 
                         <Navigation items={navItems} />
 
-                        <Box sx={{ display: { xs: "flex", md: "none" } }}>
+                        <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1 }}>
+                            <ThemeToggle size="small" />
                             <IconButton
                                 color="inherit"
                                 aria-label="otevrit menu"
@@ -83,7 +85,8 @@ export function Header() {
                             </IconButton>
                         </Box>
 
-                        <Box sx={{ display: { xs: "none", md: "flex" } }}>
+                        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
+                            <ThemeToggle />
                             <Button
                                 component={Link}
                                 href="/registrace"

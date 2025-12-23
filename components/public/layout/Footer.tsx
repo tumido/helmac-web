@@ -90,7 +90,7 @@ export function Footer() {
                     </Stack>
                 </Box>
 
-                <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 3 }} />
+                <Divider sx={{ mb: 3 }} />
 
                 <Box
                     sx={{

@@ -9,6 +9,7 @@ import {
     CardMedia,
     Link as MuiLink,
     Collapse,
+    useTheme,
 } from "@mui/material";
 import {
     Place,
@@ -65,6 +66,8 @@ const LINE_CLAMP = 3;
 export function EventCard({ event, onOpenDetails }: EventCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [needsExpansion, setNeedsExpansion] = useState(false);
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
     const hasStoryContent =
         event.storyContent !== null && event.storyContent !== undefined;
 
@@ -98,13 +101,13 @@ export function EventCard({ event, onOpenDetails }: EventCardProps) {
                     flexDirection: "row",
                     overflow: "hidden",
                     border: "1px solid",
-                    borderColor: "rgba(255, 255, 255, 0.15)",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(45, 42, 38, 0.15)",
                     borderRadius: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.03)",
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(45, 42, 38, 0.03)",
                     transition: "all 0.2s ease-in-out",
                     "&:hover": {
                         borderColor: "rgba(201, 162, 39, 0.3)",
-                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(45, 42, 38, 0.05)",
                     },
                 }}
             >
@@ -225,7 +228,7 @@ export function EventCard({ event, onOpenDetails }: EventCardProps) {
                             sx={{
                                 alignSelf: "flex-start",
                                 borderRadius: "20px",
-                                borderColor: "rgba(255, 255, 255, 0.25)",
+                                borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
                                 color: "text.secondary",
                                 fontSize: "0.75rem",
                                 fontWeight: 500,

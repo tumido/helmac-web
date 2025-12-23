@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Chip } from "@mui/material";
+import { Box, Chip, useTheme } from "@mui/material";
 import {
     FilterList,
     EmojiEvents,
@@ -91,6 +91,8 @@ function getTagIcon(tag: string): ReactElement | undefined {
 }
 
 export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
     const isSelected = (tag: string | null) => selectedTag === tag;
 
     const chipStyles = (selected: boolean) => ({
@@ -100,7 +102,7 @@ export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
         fontSize: "0.95rem",
         fontWeight: selected ? 700 : 500,
         border: "2px solid",
-        borderColor: selected ? "primary.main" : "rgba(255, 255, 255, 0.25)",
+        borderColor: selected ? "primary.main" : isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
         backgroundColor: selected ? "primary.main" : "transparent",
         color: selected ? "primary.contrastText" : "text.primary",
         transition: "all 0.2s ease-in-out",
@@ -134,7 +136,7 @@ export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
                     height: 4,
                 },
                 "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: "rgba(201, 162, 39, 0.3)",
+                    backgroundColor: isDark ? "rgba(201, 162, 39, 0.3)" : "rgba(154, 123, 26, 0.4)",
                     borderRadius: 2,
                 },
             }}

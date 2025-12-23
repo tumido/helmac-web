@@ -8,6 +8,7 @@ import {
     Typography,
     Box,
     Chip,
+    useTheme,
 } from "@mui/material";
 import {
     Close,
@@ -155,6 +156,9 @@ export function EventDetailModal({
     open,
     onClose,
 }: EventDetailModalProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+
     if (!event) return null;
 
     return (
@@ -246,7 +250,7 @@ export function EventDetailModal({
                                         fontSize: "0.8rem",
                                         fontWeight: 500,
                                         border: "1.5px solid",
-                                        borderColor: "rgba(255, 255, 255, 0.25)",
+                                        borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
                                         backgroundColor: "transparent",
                                         color: "text.primary",
                                         "& .MuiChip-icon": {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Container, Typography, Button } from "@mui/material";
+import { Box, Container, Typography, Button, useTheme } from "@mui/material";
 import Link from "next/link";
 import { ReactNode } from "react";
 
@@ -27,6 +27,9 @@ export function HeroSection({
     children,
     minHeight = "70vh",
 }: HeroSectionProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+
     return (
         <Box
             sx={{
@@ -35,7 +38,7 @@ export function HeroSection({
                 display: "flex",
                 alignItems: "center",
                 backgroundColor: "background.default",
-                color: "common.white",
+                color: isDark ? "common.white" : "text.primary",
                 overflow: "hidden",
                 "&::before": backgroundImage
                     ? {
@@ -60,8 +63,9 @@ export function HeroSection({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background:
-                        "linear-gradient(to bottom, rgba(13, 13, 13, 0.7) 0%, rgba(13, 13, 13, 0.95) 100%)",
+                    background: isDark
+                        ? "linear-gradient(to bottom, rgba(13, 13, 13, 0.7) 0%, rgba(13, 13, 13, 0.95) 100%)"
+                        : "linear-gradient(to bottom, rgba(245, 242, 235, 0.7) 0%, rgba(245, 242, 235, 0.95) 100%)",
                 }}
             />
 
@@ -78,10 +82,10 @@ export function HeroSection({
                     variant="h1"
                     component="h1"
                     sx={{
-                        color: "common.white",
+                        color: isDark ? "common.white" : "primary.dark",
                         fontSize: { xs: "2.5rem", md: "4rem" },
                         mb: 3,
-                        textShadow: "0 2px 10px rgba(0,0,0,0.3)",
+                        textShadow: isDark ? "0 2px 10px rgba(0,0,0,0.3)" : "0 2px 10px rgba(255,255,255,0.3)",
                     }}
                 >
                     {title}
@@ -142,8 +146,8 @@ export function HeroSection({
                                     px: 4,
                                     py: 1.5,
                                     fontSize: "1.1rem",
-                                    color: "common.white",
-                                    borderColor: "common.white",
+                                    color: isDark ? "common.white" : "text.primary",
+                                    borderColor: isDark ? "common.white" : "text.secondary",
                                     "&:hover": {
                                         borderColor: "secondary.main",
                                         color: "secondary.main",

@@ -1,4 +1,6 @@
-import { Box, Container, Typography } from "@mui/material";
+"use client";
+
+import { Box, Container, Typography, useTheme } from "@mui/material";
 
 interface PageHeaderProps {
     title: string;
@@ -6,6 +8,9 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle }: PageHeaderProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+
     return (
         <Box
             sx={{
@@ -27,7 +32,7 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: "rgba(26, 26, 26, 0.75)",
+                    backgroundColor: isDark ? "rgba(26, 26, 26, 0.75)" : "rgba(245, 242, 235, 0.65)",
                     zIndex: 0,
                 }}
             />
@@ -39,8 +44,9 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
                     right: 0,
                     bottom: 0,
                     height: "50%",
-                    background:
-                        "linear-gradient(to bottom, transparent 0%, #1A1A1A 100%)",
+                    background: isDark
+                        ? "linear-gradient(to bottom, transparent 0%, #1A1A1A 100%)"
+                        : "linear-gradient(to bottom, transparent 0%, #F5F2EB 100%)",
                     zIndex: 0,
                 }}
             />
@@ -49,7 +55,7 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
                     variant="h1"
                     component="h1"
                     sx={{
-                        color: "common.white",
+                        color: isDark ? "common.white" : "primary.dark",
                         fontSize: { xs: "2rem", md: "3rem" },
                         textAlign: "center",
                     }}
@@ -65,6 +71,7 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
                             opacity: 0.9,
                             maxWidth: 600,
                             mx: "auto",
+                            color: isDark ? "common.white" : "text.primary",
                         }}
                     >
                         {subtitle}
