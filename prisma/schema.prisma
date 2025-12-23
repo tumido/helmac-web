@@ -64,11 +64,57 @@ model Year {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  pages       Page[]
-  news        News[]
-  albums      Album[]
+  pages         Page[]
+  news          News[]
+  albums        Album[]
+  registrations Registration[]
+  programDays   ProgramDay[]
 
   @@map("years")
+}
+
+// ============================================
+// PROGRAM - Schedule for events
+// ============================================
+
+model ProgramDay {
+  id        String   @id @default(cuid())
+  yearId    String
+  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  date      DateTime
+  label     String   // "Den 1", "Patek", etc.
+  sortOrder Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events    ProgramEvent[]
+
+  @@unique([yearId, date])
+  @@map("program_days")
+}
+
+model ProgramEvent {
+  id           String     @id @default(cuid())
+  dayId        String
+  day          ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  startTime    String     // "13:00" format
+  title        String
+  description  String     @db.Text
+  location     String
+  imageUrl     String?
+  tags         String[]   // Array of tag strings
+  storyContent Json?      // Rich content for detail modal
+
+  isPublished  Boolean    @default(false)
+  sortOrder    Int        @default(0)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("program_events")
 }
 
 // ============================================
@@ -191,4 +237,65 @@ model AuditLog {
   createdAt   DateTime    @default(now())
 
   @@map("audit_logs")
+}
+
+// ============================================
+// REGISTRATION - Event registration
+// ============================================
+
+model Registration {
+  id          String      @id @default(cuid())
+  yearId      String
+  year        Year        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  // Personal info
+  firstName   String
+  lastName    String
+  nickname    String?
+  email       String
+  phone       String?
+  birthDate   DateTime?
+
+  // LARP-specific
+  experience  ExperienceLevel   @default(BEGINNER)
+  faction     String?
+  character   String?           @db.Text
+
+  // Logistics
+  foodPreference  FoodPreference    @default(NORMAL)
+  allergies       String?
+  notes           String?           @db.Text
+
+  // Status
+  status      RegistrationStatus  @default(PENDING)
+  isPaid      Boolean             @default(false)
+  paidAt      DateTime?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([yearId, email])
+  @@map("registrations")
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  SOME
+  EXPERIENCED
+  VETERAN
+}
+
+enum FoodPreference {
+  NORMAL
+  VEGETARIAN
+  VEGAN
+  OTHER
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+  REJECTED
 }

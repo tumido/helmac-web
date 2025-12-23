@@ -1,0 +1,337 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
+import {
+    createProgramEventSchema,
+    updateProgramEventSchema,
+} from "@/lib/validators/program";
+import { Prisma } from "@prisma/client";
+
+export type ProgramEventActionState = {
+    error?: {
+        startTime?: string[];
+        title?: string[];
+        description?: string[];
+        location?: string[];
+        imageUrl?: string[];
+        tags?: string[];
+        storyContent?: string[];
+        _form?: string[];
+    };
+    success?: boolean;
+} | null;
+
+export async function createProgramEvent(
+    dayId: string,
+    prevState: ProgramEventActionState,
+    formData: FormData
+): Promise<ProgramEventActionState> {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: { _form: ["Nemate opravneni"] } };
+    }
+
+    // Parse tags from comma-separated string or JSON array
+    let tags: string[] = [];
+    const tagsRaw = formData.get("tags");
+    if (tagsRaw) {
+        try {
+            tags = JSON.parse(tagsRaw as string);
+        } catch {
+            tags = (tagsRaw as string)
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+        }
+    }
+
+    const rawData = {
+        startTime: formData.get("startTime"),
+        title: formData.get("title"),
+        description: formData.get("description"),
+        location: formData.get("location"),
+        imageUrl: formData.get("imageUrl") || undefined,
+        tags,
+        isPublished: formData.get("isPublished") === "true",
+        sortOrder: formData.get("sortOrder") || undefined,
+    };
+
+    const validated = createProgramEventSchema.safeParse(rawData);
+
+    if (!validated.success) {
+        return { error: validated.error.flatten().fieldErrors };
+    }
+
+    try {
+        const day = await db.programDay.findUnique({
+            where: { id: dayId },
+            select: { yearId: true },
+        });
+
+        if (!day) {
+            return { error: { _form: ["Den programu nenalezen"] } };
+        }
+
+        const maxOrder = await db.programEvent.aggregate({
+            where: { dayId },
+            _max: { sortOrder: true },
+        });
+
+        await db.programEvent.create({
+            data: {
+                dayId,
+                startTime: validated.data.startTime,
+                title: validated.data.title,
+                description: validated.data.description,
+                location: validated.data.location,
+                imageUrl: validated.data.imageUrl || null,
+                tags: validated.data.tags,
+                isPublished: validated.data.isPublished ?? false,
+                sortOrder:
+                    validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
+            },
+        });
+
+        revalidatePath(`/admin/rocniky/${day.yearId}/program/${dayId}`);
+        revalidatePath("/program");
+    } catch (error) {
+        console.error("Failed to create program event:", error);
+        return { error: { _form: ["Nepodarilo se vytvorit udalost"] } };
+    }
+
+    const yearId = formData.get("yearId");
+    redirect(`/admin/rocniky/${yearId}/program/${dayId}`);
+}
+
+export async function updateProgramEvent(
+    eventId: string,
+    prevState: ProgramEventActionState,
+    formData: FormData
+): Promise<ProgramEventActionState> {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: { _form: ["Nemate opravneni"] } };
+    }
+
+    // Parse tags
+    let tags: string[] = [];
+    const tagsRaw = formData.get("tags");
+    if (tagsRaw) {
+        try {
+            tags = JSON.parse(tagsRaw as string);
+        } catch {
+            tags = (tagsRaw as string)
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+        }
+    }
+
+    const rawData = {
+        startTime: formData.get("startTime"),
+        title: formData.get("title"),
+        description: formData.get("description"),
+        location: formData.get("location"),
+        imageUrl: formData.get("imageUrl") || undefined,
+        tags,
+        isPublished: formData.get("isPublished") === "true",
+        sortOrder: formData.get("sortOrder"),
+    };
+
+    const validated = updateProgramEventSchema.safeParse(rawData);
+
+    if (!validated.success) {
+        return { error: validated.error.flatten().fieldErrors };
+    }
+
+    try {
+        const event = await db.programEvent.findUnique({
+            where: { id: eventId },
+            include: { day: { select: { yearId: true } } },
+        });
+
+        if (!event) {
+            return { error: { _form: ["Udalost nenalezena"] } };
+        }
+
+        await db.programEvent.update({
+            where: { id: eventId },
+            data: {
+                startTime: validated.data.startTime,
+                title: validated.data.title,
+                description: validated.data.description,
+                location: validated.data.location,
+                imageUrl: validated.data.imageUrl || null,
+                tags: validated.data.tags,
+                isPublished: validated.data.isPublished,
+                sortOrder: validated.data.sortOrder,
+            },
+        });
+
+        revalidatePath(
+            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}`
+        );
+        revalidatePath(
+            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}/${eventId}`
+        );
+        revalidatePath("/program");
+    } catch (error) {
+        console.error("Failed to update program event:", error);
+        return { error: { _form: ["Nepodarilo se upravit udalost"] } };
+    }
+
+    return { success: true };
+}
+
+export async function updateProgramEventStory(
+    eventId: string,
+    storyContent: Prisma.InputJsonValue
+): Promise<{ success?: boolean; error?: string }> {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        const event = await db.programEvent.findUnique({
+            where: { id: eventId },
+            include: { day: { select: { yearId: true } } },
+        });
+
+        if (!event) {
+            return { error: "Udalost nenalezena" };
+        }
+
+        await db.programEvent.update({
+            where: { id: eventId },
+            data: { storyContent },
+        });
+
+        revalidatePath(
+            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}/${eventId}`
+        );
+        revalidatePath("/program");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update event story:", error);
+        return { error: "Nepodarilo se ulozit pribeh udalosti" };
+    }
+}
+
+export async function publishProgramEvent(eventId: string) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        const event = await db.programEvent.update({
+            where: { id: eventId },
+            data: { isPublished: true },
+            include: { day: { select: { yearId: true } } },
+        });
+
+        revalidatePath(
+            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}`
+        );
+        revalidatePath("/program");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to publish event:", error);
+        return { error: "Nepodarilo se publikovat udalost" };
+    }
+}
+
+export async function unpublishProgramEvent(eventId: string) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        const event = await db.programEvent.update({
+            where: { id: eventId },
+            data: { isPublished: false },
+            include: { day: { select: { yearId: true } } },
+        });
+
+        revalidatePath(
+            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}`
+        );
+        revalidatePath("/program");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to unpublish event:", error);
+        return { error: "Nepodarilo se skryt udalost" };
+    }
+}
+
+export async function deleteProgramEvent(eventId: string) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        const event = await db.programEvent.delete({
+            where: { id: eventId },
+            include: { day: { select: { yearId: true } } },
+        });
+
+        revalidatePath(
+            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}`
+        );
+        revalidatePath("/program");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete event:", error);
+        return { error: "Nepodarilo se smazat udalost" };
+    }
+}
+
+export async function reorderProgramEvents(
+    dayId: string,
+    eventIds: string[]
+): Promise<{ success?: boolean; error?: string }> {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        const day = await db.programDay.findUnique({
+            where: { id: dayId },
+            select: { yearId: true },
+        });
+
+        if (!day) {
+            return { error: "Den programu nenalezen" };
+        }
+
+        await db.$transaction(
+            eventIds.map((id, index) =>
+                db.programEvent.update({
+                    where: { id },
+                    data: { sortOrder: index },
+                })
+            )
+        );
+
+        revalidatePath(`/admin/rocniky/${day.yearId}/program/${dayId}`);
+        revalidatePath("/program");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to reorder events:", error);
+        return { error: "Nepodarilo se zmenit poradi udalosti" };
+    }
+}

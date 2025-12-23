@@ -17,6 +17,7 @@ import {
     Visibility,
     VisibilityOff,
     DragIndicator,
+    CalendarMonth,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -58,9 +59,27 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                 >
                     Zpet na rocniky
                 </Button>
-                <Typography variant="h4">
-                    Rocnik {year.year} - {year.title}
-                </Typography>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 2,
+                    }}
+                >
+                    <Typography variant="h4">
+                        Rocnik {year.year} - {year.title}
+                    </Typography>
+                    <Button
+                        component={Link}
+                        href={`/admin/rocniky/${year.id}/program`}
+                        variant="contained"
+                        startIcon={<CalendarMonth />}
+                    >
+                        Spravovat program
+                    </Button>
+                </Box>
             </Box>
 
             <Box
