@@ -3,7 +3,7 @@ import { authConfig } from "@/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth;
+export { auth as proxy };
 
 export const config = {
     matcher: ["/admin/:path*"],
