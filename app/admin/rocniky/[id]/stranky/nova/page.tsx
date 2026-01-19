@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/forms/page-form";
@@ -27,14 +27,13 @@ export default async function NewPagePage({ params }: NewPageProps) {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${year.id}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na rocnik {year.year}
-                </Button>
+                </LinkButton>
                 <Typography variant="h4">Nova stranka</Typography>
                 <Typography color="text.secondary">
                     Rocnik {year.year} - {year.title}

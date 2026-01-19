@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ImageForm } from "@/components/forms/image-form";
@@ -31,14 +31,13 @@ export default async function EditImagePage({ params }: EditImagePageProps) {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/galerie/${image.album.id}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na album
-                </Button>
+                </LinkButton>
                 <Typography variant="h4">Upravit obrazek</Typography>
                 <Typography color="text.secondary">
                     {image.album.title}

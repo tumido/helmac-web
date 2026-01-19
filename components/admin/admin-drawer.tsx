@@ -1,18 +1,17 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import {
     Drawer,
     List,
     ListItem,
-    ListItemButton,
     ListItemIcon,
     ListItemText,
     Divider,
     Box,
     Typography,
 } from "@mui/material";
+import { ListItemLinkButton } from "@/components/ui/link-button";
 import {
     Dashboard,
     CalendarMonth,
@@ -93,8 +92,7 @@ export function AdminDrawer({
 
                     return (
                         <ListItem key={item.href} disablePadding>
-                            <ListItemButton
-                                component={Link}
+                            <ListItemLinkButton
                                 href={item.href}
                                 selected={isActive}
                                 onClick={onClose}
@@ -115,7 +113,7 @@ export function AdminDrawer({
                                     <Icon />
                                 </ListItemIcon>
                                 <ListItemText primary={item.text} />
-                            </ListItemButton>
+                            </ListItemLinkButton>
                         </ListItem>
                     );
                 })}

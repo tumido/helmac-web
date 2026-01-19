@@ -17,7 +17,7 @@ import {
     Chip,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import {
     createProgramEvent,
     updateProgramEvent,
@@ -246,12 +246,9 @@ export function ProgramEventForm({
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <Button
-                        component={Link}
-                        href={`/admin/rocniky/${yearId}/program/${dayId}`}
-                    >
+                    <LinkButton href={`/admin/rocniky/${yearId}/program/${dayId}`}>
                         Zrusit
-                    </Button>
+                    </LinkButton>
                 </CardActions>
             </Box>
         </Card>

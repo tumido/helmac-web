@@ -1,16 +1,14 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import {
     Container,
     Grid,
     Typography,
     Box,
-    Button,
     List,
     ListItem,
-    ListItemButton,
     ListItemText,
 } from "@mui/material";
+import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
 import { ArrowBack, Article, PhotoLibrary, Newspaper } from "@mui/icons-material";
 import { PageHeader, Section, SectionTitle, Card } from "@/components/public/ui";
 import { getYearByNumber } from "@/lib/services";
@@ -55,14 +53,13 @@ export default async function ArchiveYearPage({
             <PageHeader title={year.title} subtitle={year.subtitle || undefined} />
 
             <Container maxWidth="lg" sx={{ pb: 8 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/archiv"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
                     Zpet na archiv
-                </Button>
+                </LinkButton>
 
                 <Grid container spacing={4}>
                     {year.pages.length > 0 && (
@@ -84,14 +81,13 @@ export default async function ArchiveYearPage({
                                 <List disablePadding>
                                     {year.pages.map((page) => (
                                         <ListItem key={page.id} disablePadding>
-                                            <ListItemButton
-                                                component={Link}
+                                            <ListItemLinkButton
                                                 href={`/archiv/${year.year}/${page.slug}`}
                                             >
                                                 <ListItemText
                                                     primary={page.title}
                                                 />
-                                            </ListItemButton>
+                                            </ListItemLinkButton>
                                         </ListItem>
                                     ))}
                                 </List>
@@ -118,15 +114,14 @@ export default async function ArchiveYearPage({
                                 <List disablePadding>
                                     {year.albums.map((album) => (
                                         <ListItem key={album.id} disablePadding>
-                                            <ListItemButton
-                                                component={Link}
+                                            <ListItemLinkButton
                                                 href={`/galerie/${album.slug}`}
                                             >
                                                 <ListItemText
                                                     primary={album.title}
                                                     secondary={`${album._count.images} fotografii`}
                                                 />
-                                            </ListItemButton>
+                                            </ListItemLinkButton>
                                         </ListItem>
                                     ))}
                                 </List>
@@ -153,8 +148,7 @@ export default async function ArchiveYearPage({
                                 <List disablePadding>
                                     {year.news.map((item) => (
                                         <ListItem key={item.id} disablePadding>
-                                            <ListItemButton
-                                                component={Link}
+                                            <ListItemLinkButton
                                                 href={`/novinky/${item.slug}`}
                                             >
                                                 <ListItemText
@@ -169,7 +163,7 @@ export default async function ArchiveYearPage({
                                                             : undefined
                                                     }
                                                 />
-                                            </ListItemButton>
+                                            </ListItemLinkButton>
                                         </ListItem>
                                     ))}
                                 </List>

@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button, Chip } from "@mui/material";
+import { Container, Typography, Box, Chip } from "@mui/material";
 import { ArrowBack, Shield, Person, SupervisorAccount } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth, requireSuperAdmin } from "@/lib/auth";
@@ -54,14 +54,13 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/uzivatele"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na uzivatele
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

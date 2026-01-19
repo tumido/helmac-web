@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { ArrowBack, CalendarMonth } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { ProgramDayForm } from "@/components/forms/program-day-form";
@@ -20,14 +20,13 @@ export default async function NewDayPage({ params }: NewDayPageProps) {
     return (
         <Container maxWidth="sm">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${year.id}/program`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na program
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

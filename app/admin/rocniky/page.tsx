@@ -5,11 +5,10 @@ import {
     CardContent,
     CardActions,
     Box,
-    Button,
     Chip,
 } from "@mui/material";
 import { Add, Edit, Archive, Star } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { YearActions } from "@/components/admin/year-actions";
 
@@ -42,14 +41,13 @@ export default async function YearsPage() {
                 }}
             >
                 <Typography variant="h4">Rocniky</Typography>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/rocniky/novy"
                     variant="contained"
                     startIcon={<Add />}
                 >
                     Novy rocnik
-                </Button>
+                </LinkButton>
             </Box>
 
             {years.length === 0 ? (
@@ -188,14 +186,13 @@ export default async function YearsPage() {
                                     pb: 2,
                                 }}
                             >
-                                <Button
-                                    component={Link}
+                                <LinkButton
                                     href={`/admin/rocniky/${year.id}`}
                                     size="small"
                                     startIcon={<Edit />}
                                 >
                                     Upravit
-                                </Button>
+                                </LinkButton>
                                 <YearActions
                                     yearId={year.id}
                                     isActive={year.isActive}

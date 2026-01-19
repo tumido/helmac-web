@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button, Chip } from "@mui/material";
+import { Container, Typography, Box, Chip } from "@mui/material";
 import { ArrowBack, Visibility, VisibilityOff } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
@@ -39,14 +39,13 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/novinky"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na novinky
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

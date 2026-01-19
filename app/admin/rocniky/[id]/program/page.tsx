@@ -2,11 +2,9 @@ import {
     Container,
     Typography,
     Box,
-    Button,
     Card,
     CardContent,
     Chip,
-    IconButton,
     Tooltip,
     Divider,
 } from "@mui/material";
@@ -17,7 +15,7 @@ import {
     CalendarMonth,
     Event,
 } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getProgramDaysForYear } from "@/lib/services/program";
@@ -49,14 +47,13 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${year.id}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na rocnik {year.year}
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
@@ -82,15 +79,14 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
                 }}
             >
                 <Typography variant="h6">Dny programu</Typography>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${year.id}/program/novy-den`}
                     variant="outlined"
                     size="small"
                     startIcon={<Add />}
                 >
                     Pridat den
-                </Button>
+                </LinkButton>
             </Box>
 
             {days.length === 0 ? (
@@ -159,13 +155,12 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
                                     }}
                                 >
                                     <Tooltip title="Spravovat den">
-                                        <IconButton
-                                            component={Link}
+                                        <IconLinkButton
                                             href={`/admin/rocniky/${year.id}/program/${day.id}`}
                                             size="small"
                                         >
                                             <Edit />
-                                        </IconButton>
+                                        </IconLinkButton>
                                     </Tooltip>
                                     <ProgramDayActions
                                         dayId={day.id}

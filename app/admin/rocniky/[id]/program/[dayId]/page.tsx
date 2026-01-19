@@ -2,11 +2,9 @@ import {
     Container,
     Typography,
     Box,
-    Button,
     Card,
     CardContent,
     Chip,
-    IconButton,
     Tooltip,
     Divider,
 } from "@mui/material";
@@ -20,7 +18,7 @@ import {
     Visibility,
     VisibilityOff,
 } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getProgramDayWithEvents } from "@/lib/services/program";
 import { ProgramDayForm } from "@/components/forms/program-day-form";
@@ -50,14 +48,13 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
     return (
         <Container maxWidth="lg">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${day.year.id}/program`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na program
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
@@ -109,15 +106,14 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
                         }}
                     >
                         <Typography variant="h6">Udalosti</Typography>
-                        <Button
-                            component={Link}
+                        <LinkButton
                             href={`/admin/rocniky/${day.year.id}/program/${day.id}/nova-udalost`}
                             variant="outlined"
                             size="small"
                             startIcon={<Add />}
                         >
                             Nova udalost
-                        </Button>
+                        </LinkButton>
                     </Box>
 
                     {day.events.length === 0 ? (
@@ -230,13 +226,12 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
                                             }}
                                         >
                                             <Tooltip title="Upravit udalost">
-                                                <IconButton
-                                                    component={Link}
+                                                <IconLinkButton
                                                     href={`/admin/rocniky/${day.year.id}/program/${day.id}/${event.id}`}
                                                     size="small"
                                                 >
                                                     <Edit />
-                                                </IconButton>
+                                                </IconLinkButton>
                                             </Tooltip>
                                             <ProgramEventActions
                                                 eventId={event.id}

@@ -15,7 +15,7 @@ import {
     Typography,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { createUser, updateUser, UserActionState } from "@/lib/actions/users";
 
 interface UserFormProps {
@@ -191,9 +191,9 @@ export function UserForm({ mode, userId, defaultValues }: UserFormProps) {
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <Button component={Link} href="/admin/uzivatele">
+                    <LinkButton href="/admin/uzivatele">
                         Zrusit
-                    </Button>
+                    </LinkButton>
                 </CardActions>
             </Box>
         </Card>

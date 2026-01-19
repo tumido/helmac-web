@@ -5,13 +5,10 @@ import {
     CardContent,
     CardActions,
     Box,
-    Button,
     Chip,
-    IconButton,
-    Tooltip,
 } from "@mui/material";
 import { Add, Edit, Visibility, VisibilityOff } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { NewsActions } from "@/components/admin/news-actions";
 
@@ -52,14 +49,13 @@ export default async function NewsListPage() {
             >
                 <Typography variant="h4">Novinky</Typography>
                 {years.length > 0 && (
-                    <Button
-                        component={Link}
+                    <LinkButton
                         href="/admin/novinky/nova"
                         variant="contained"
                         startIcon={<Add />}
                     >
                         Nova novinka
-                    </Button>
+                    </LinkButton>
                 )}
             </Box>
 
@@ -70,13 +66,12 @@ export default async function NewsListPage() {
                             Nejprve vytvorte rocnik pro pridavani novinek.
                         </Typography>
                         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                            <Button
-                                component={Link}
+                            <LinkButton
                                 href="/admin/rocniky/novy"
                                 variant="outlined"
                             >
                                 Vytvorit rocnik
-                            </Button>
+                            </LinkButton>
                         </Box>
                     </CardContent>
                 </Card>
@@ -185,14 +180,13 @@ export default async function NewsListPage() {
                                     pb: 2,
                                 }}
                             >
-                                <Button
-                                    component={Link}
+                                <LinkButton
                                     href={`/admin/novinky/${item.id}`}
                                     size="small"
                                     startIcon={<Edit />}
                                 >
                                     Upravit
-                                </Button>
+                                </LinkButton>
                                 <NewsActions
                                     newsId={item.id}
                                     isPublished={item.isPublished}

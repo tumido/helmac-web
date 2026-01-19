@@ -1,18 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Drawer,
     Box,
     List,
     ListItem,
-    ListItemButton,
     ListItemText,
     Typography,
-    Button,
     Divider,
 } from "@mui/material";
+import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
 
 interface NavItem {
     label: string;
@@ -62,8 +60,7 @@ export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
 
                         return (
                             <ListItem key={item.href} disablePadding>
-                                <ListItemButton
-                                    component={Link}
+                                <ListItemLinkButton
                                     href={item.href}
                                     onClick={onClose}
                                     sx={{
@@ -84,7 +81,7 @@ export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
                                             fontWeight: isActive ? 700 : 400,
                                         }}
                                     />
-                                </ListItemButton>
+                                </ListItemLinkButton>
                             </ListItem>
                         );
                     })}
@@ -92,8 +89,7 @@ export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
 
                 <Divider sx={{ my: 2 }} />
 
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/registrace"
                     variant="contained"
                     color="secondary"
@@ -102,7 +98,7 @@ export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
                     sx={{ fontWeight: 700 }}
                 >
                     Registrace
-                </Button>
+                </LinkButton>
             </Box>
         </Drawer>
     );

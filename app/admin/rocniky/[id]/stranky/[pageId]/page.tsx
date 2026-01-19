@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button, Chip } from "@mui/material";
+import { Container, Typography, Box, Chip } from "@mui/material";
 import { ArrowBack, Visibility, VisibilityOff } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/forms/page-form";
@@ -31,14 +31,13 @@ export default async function EditPagePage({ params }: EditPageProps) {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${page.year.id}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na rocnik {page.year.year}
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

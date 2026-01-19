@@ -2,7 +2,6 @@ import {
     Container,
     Typography,
     Box,
-    Button,
     Chip,
     Card,
     CardContent,
@@ -14,7 +13,7 @@ import {
     VisibilityOff,
     Add,
 } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { AlbumForm } from "@/components/forms/album-form";
@@ -57,14 +56,13 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
     return (
         <Container maxWidth="lg">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/galerie"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na galerii
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
@@ -128,15 +126,14 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
                         <Typography variant="h6">
                             Obrazky ({album.images.length})
                         </Typography>
-                        <Button
-                            component={Link}
+                        <LinkButton
                             href={`/admin/galerie/${album.id}/pridat`}
                             variant="outlined"
                             size="small"
                             startIcon={<Add />}
                         >
                             Pridat obrazek
-                        </Button>
+                        </LinkButton>
                     </Box>
 
                     {album.images.length === 0 ? (

@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Box, Typography, Button, Paper } from "@mui/material";
+import { Box, Typography, Paper } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
 import { CheckCircle } from "@mui/icons-material";
 
 interface RegistrationSuccessProps {
@@ -37,12 +37,12 @@ export function RegistrationSuccess({ message }: RegistrationSuccessProps) {
                 informace o platbe a dalsich pokynech.
             </Typography>
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
-                <Button component={Link} href="/" variant="contained">
+                <LinkButton href="/" variant="contained">
                     Zpet na hlavni stranku
-                </Button>
-                <Button component={Link} href="/novinky" variant="outlined">
+                </LinkButton>
+                <LinkButton href="/novinky" variant="outlined">
                     Sledovat novinky
-                </Button>
+                </LinkButton>
             </Box>
         </Paper>
     );

@@ -5,7 +5,6 @@ import {
     CardContent,
     CardActions,
     Box,
-    Button,
     Chip,
 } from "@mui/material";
 import {
@@ -15,7 +14,7 @@ import {
     VisibilityOff,
     PhotoLibrary,
 } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { AlbumActions } from "@/components/admin/album-actions";
 
@@ -56,14 +55,13 @@ export default async function GalleryPage() {
             >
                 <Typography variant="h4">Galerie</Typography>
                 {years.length > 0 && (
-                    <Button
-                        component={Link}
+                    <LinkButton
                         href="/admin/galerie/nove"
                         variant="contained"
                         startIcon={<Add />}
                     >
                         Nove album
-                    </Button>
+                    </LinkButton>
                 )}
             </Box>
 
@@ -74,13 +72,12 @@ export default async function GalleryPage() {
                             Nejprve vytvorte rocnik pro pridavani alb.
                         </Typography>
                         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                            <Button
-                                component={Link}
+                            <LinkButton
                                 href="/admin/rocniky/novy"
                                 variant="outlined"
                             >
                                 Vytvorit rocnik
-                            </Button>
+                            </LinkButton>
                         </Box>
                     </CardContent>
                 </Card>
@@ -187,14 +184,13 @@ export default async function GalleryPage() {
                                     pb: 2,
                                 }}
                             >
-                                <Button
-                                    component={Link}
+                                <LinkButton
                                     href={`/admin/galerie/${album.id}`}
                                     size="small"
                                     startIcon={<Edit />}
                                 >
                                     Upravit
-                                </Button>
+                                </LinkButton>
                                 <AlbumActions
                                     albumId={album.id}
                                     isPublished={album.isPublished}

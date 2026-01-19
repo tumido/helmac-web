@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Container, Typography, Button, useTheme } from "@mui/material";
-import Link from "next/link";
+import { Box, Container, Typography, useTheme } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
 import { ReactNode } from "react";
 
 interface HeroSectionProps {
@@ -121,8 +121,7 @@ export function HeroSection({
                         }}
                     >
                         {ctaText && ctaHref && (
-                            <Button
-                                component={Link}
+                            <LinkButton
                                 href={ctaHref}
                                 variant="contained"
                                 color="secondary"
@@ -134,11 +133,10 @@ export function HeroSection({
                                 }}
                             >
                                 {ctaText}
-                            </Button>
+                            </LinkButton>
                         )}
                         {secondaryCtaText && secondaryCtaHref && (
-                            <Button
-                                component={Link}
+                            <LinkButton
                                 href={secondaryCtaHref}
                                 variant="outlined"
                                 size="large"
@@ -155,7 +153,7 @@ export function HeroSection({
                                 }}
                             >
                                 {secondaryCtaText}
-                            </Button>
+                            </LinkButton>
                         )}
                     </Box>
                 )}

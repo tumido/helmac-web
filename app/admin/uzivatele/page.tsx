@@ -2,7 +2,6 @@ import {
     Container,
     Typography,
     Box,
-    Button,
     Card,
     Table,
     TableBody,
@@ -11,11 +10,10 @@ import {
     TableHead,
     TableRow,
     Chip,
-    IconButton,
     Tooltip,
 } from "@mui/material";
 import { Add, Edit, Shield, Person, SupervisorAccount } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { auth, requireSuperAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -77,14 +75,13 @@ export default async function UsersPage() {
                 }}
             >
                 <Typography variant="h4">Uzivatele</Typography>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/uzivatele/novy"
                     variant="contained"
                     startIcon={<Add />}
                 >
                     Novy uzivatel
-                </Button>
+                </LinkButton>
             </Box>
 
             <Card>
@@ -156,13 +153,12 @@ export default async function UsersPage() {
                                                 }}
                                             >
                                                 <Tooltip title="Upravit">
-                                                    <IconButton
-                                                        component={Link}
+                                                    <IconLinkButton
                                                         href={`/admin/uzivatele/${user.id}`}
                                                         size="small"
                                                     >
                                                         <Edit />
-                                                    </IconButton>
+                                                    </IconLinkButton>
                                                 </Tooltip>
                                                 <UserActions
                                                     userId={user.id}

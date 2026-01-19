@@ -6,12 +6,13 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Button,
     IconButton,
     Box,
     Container,
     useScrollTrigger,
 } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
+// Note: Typography component={Link} is kept for the logo since it's a client component
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { Navigation } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
@@ -87,8 +88,7 @@ export function Header() {
 
                         <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
                             <ThemeToggle />
-                            <Button
-                                component={Link}
+                            <LinkButton
                                 href="/registrace"
                                 variant="contained"
                                 color="secondary"
@@ -98,7 +98,7 @@ export function Header() {
                                 }}
                             >
                                 Registrace
-                            </Button>
+                            </LinkButton>
                         </Box>
                     </Toolbar>
                 </Container>

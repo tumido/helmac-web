@@ -16,7 +16,7 @@ import {
     MenuItem,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { createAlbum, updateAlbum, AlbumActionState } from "@/lib/actions/albums";
 
 interface AlbumFormProps {
@@ -182,9 +182,9 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <Button component={Link} href="/admin/galerie">
+                    <LinkButton href="/admin/galerie">
                         Zrusit
-                    </Button>
+                    </LinkButton>
                 </CardActions>
             </Box>
         </Card>

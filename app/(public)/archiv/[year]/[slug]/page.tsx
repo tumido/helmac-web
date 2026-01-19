@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Container, Button } from "@mui/material";
+import { Container } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { PageContent } from "@/components/public/features/pages";
@@ -61,14 +61,13 @@ export default async function ArchivePageDetail({
             />
 
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/archiv/${year.year}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
                     Zpet na rocnik {year.year}
-                </Button>
+                </LinkButton>
 
                 <PageContent content={page.content} />
             </Container>

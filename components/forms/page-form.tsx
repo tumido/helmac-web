@@ -17,7 +17,7 @@ import {
     Typography,
 } from "@mui/material";
 import { Save, ExpandMore } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { createPage, updatePage, PageActionState } from "@/lib/actions/pages";
 
 interface PageFormProps {
@@ -174,12 +174,9 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <Button
-                        component={Link}
-                        href={`/admin/rocniky/${yearId}`}
-                    >
+                    <LinkButton href={`/admin/rocniky/${yearId}`}>
                         Zrusit
-                    </Button>
+                    </LinkButton>
                 </CardActions>
             </Box>
         </Card>

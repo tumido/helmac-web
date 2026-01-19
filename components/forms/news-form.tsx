@@ -16,7 +16,7 @@ import {
     MenuItem,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { createNews, updateNews, NewsActionState } from "@/lib/actions/news";
 
 interface NewsFormProps {
@@ -194,9 +194,9 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <Button component={Link} href="/admin/novinky">
+                    <LinkButton href="/admin/novinky">
                         Zrusit
-                    </Button>
+                    </LinkButton>
                 </CardActions>
             </Box>
         </Card>

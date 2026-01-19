@@ -1,11 +1,11 @@
-import { Container, Typography, Box, Button, Chip } from "@mui/material";
+import { Container, Typography, Box, Chip } from "@mui/material";
 import {
     ArrowBack,
     Event,
     Visibility,
     VisibilityOff,
 } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getProgramEvent, getAllTagsForYear } from "@/lib/services/program";
 import { ProgramEventForm } from "@/components/forms/program-event-form";
@@ -28,14 +28,13 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
     return (
         <Container maxWidth="sm">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${event.day.year.id}/program/${event.day.id}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na {event.day.label}
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

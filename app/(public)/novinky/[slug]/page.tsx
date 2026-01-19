@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Container, Typography, Box, Button, Chip } from "@mui/material";
+import { Container, Typography, Box, Chip } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack, Person, CalendarToday } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { getNewsBySlugForActiveYear } from "@/lib/services";
@@ -44,14 +44,13 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
             <PageHeader title={news.title} />
 
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/novinky"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
                     Zpet na novinky
-                </Button>
+                </LinkButton>
 
                 {news.coverImage && (
                     <Box

@@ -13,7 +13,7 @@ import {
     CardActions,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { addImage, updateImage, ImageActionState } from "@/lib/actions/albums";
 
 interface ImageFormProps {
@@ -147,9 +147,9 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <Button component={Link} href={`/admin/galerie/${albumId}`}>
+                    <LinkButton href={`/admin/galerie/${albumId}`}>
                         Zpet na album
-                    </Button>
+                    </LinkButton>
                 </CardActions>
             </Box>
         </Card>

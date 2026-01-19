@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
 
 interface NavItem {
     label: string;
@@ -28,9 +28,8 @@ export function Navigation({ items }: NavigationProps) {
                 const isActive = pathname === item.href;
 
                 return (
-                    <Button
+                    <LinkButton
                         key={item.href}
-                        component={Link}
                         href={item.href}
                         sx={{
                             color: isActive ? "primary.main" : "text.secondary",
@@ -56,7 +55,7 @@ export function Navigation({ items }: NavigationProps) {
                         }}
                     >
                         {item.label}
-                    </Button>
+                    </LinkButton>
                 );
             })}
         </Box>

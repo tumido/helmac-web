@@ -18,7 +18,7 @@ import {
 import { Delete, Edit, BrokenImage } from "@mui/icons-material";
 import { deleteImage } from "@/lib/actions/albums";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { IconLinkButton } from "@/components/ui/link-button";
 
 interface Image {
     id: string;
@@ -112,13 +112,12 @@ function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
                     ) : (
                         <>
                             <Tooltip title="Upravit">
-                                <IconButton
-                                    component={Link}
+                                <IconLinkButton
                                     href={`/admin/galerie/${albumId}/obrazky/${image.id}`}
                                     sx={{ color: "white" }}
                                 >
                                     <Edit />
-                                </IconButton>
+                                </IconLinkButton>
                             </Tooltip>
                             <Tooltip title="Smazat">
                                 <IconButton

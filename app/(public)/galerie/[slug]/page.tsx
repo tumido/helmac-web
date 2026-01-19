@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Container, Button, Typography, Box } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
+import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { ImageLightbox } from "@/components/public/features/gallery/ImageLightbox";
@@ -39,14 +39,13 @@ export default async function AlbumDetailPage({
             <PageHeader title={album.title} subtitle={album.description || undefined} />
 
             <Container maxWidth="lg" sx={{ pb: 8 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/galerie"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
                     Zpet na galerii
-                </Button>
+                </LinkButton>
 
                 {album.images.length === 0 ? (
                     <Box sx={{ textAlign: "center", py: 8 }}>

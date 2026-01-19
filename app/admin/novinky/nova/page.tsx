@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
@@ -23,14 +23,13 @@ export default async function NewNewsPage() {
     return (
         <Container maxWidth="md">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/novinky"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na novinky
-                </Button>
+                </LinkButton>
                 <Typography variant="h4">Nova novinka</Typography>
             </Box>
 

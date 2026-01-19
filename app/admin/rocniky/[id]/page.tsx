@@ -2,11 +2,9 @@ import {
     Container,
     Typography,
     Box,
-    Button,
     Card,
     CardContent,
     Chip,
-    IconButton,
     Tooltip,
     Divider,
 } from "@mui/material";
@@ -19,7 +17,7 @@ import {
     DragIndicator,
     CalendarMonth,
 } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { YearForm } from "@/components/forms/year-form";
@@ -51,14 +49,13 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
     return (
         <Container maxWidth="lg">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href="/admin/rocniky"
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na rocniky
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
@@ -71,14 +68,13 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                     <Typography variant="h4">
                         Rocnik {year.year} - {year.title}
                     </Typography>
-                    <Button
-                        component={Link}
+                    <LinkButton
                         href={`/admin/rocniky/${year.id}/program`}
                         variant="contained"
                         startIcon={<CalendarMonth />}
                     >
                         Spravovat program
-                    </Button>
+                    </LinkButton>
                 </Box>
             </Box>
 
@@ -118,15 +114,14 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                         }}
                     >
                         <Typography variant="h6">Stranky</Typography>
-                        <Button
-                            component={Link}
+                        <LinkButton
                             href={`/admin/rocniky/${year.id}/stranky/nova`}
                             variant="outlined"
                             size="small"
                             startIcon={<Add />}
                         >
                             Nova stranka
-                        </Button>
+                        </LinkButton>
                     </Box>
 
                     {year.pages.length === 0 ? (
@@ -203,13 +198,12 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                                             }}
                                         >
                                             <Tooltip title="Upravit stranku">
-                                                <IconButton
-                                                    component={Link}
+                                                <IconLinkButton
                                                     href={`/admin/rocniky/${year.id}/stranky/${page.id}`}
                                                     size="small"
                                                 >
                                                     <Edit />
-                                                </IconButton>
+                                                </IconLinkButton>
                                             </Tooltip>
                                             <PageActions
                                                 pageId={page.id}

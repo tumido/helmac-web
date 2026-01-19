@@ -1,6 +1,6 @@
-import { Container, Typography, Box, Button } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { ArrowBack, Event } from "@mui/icons-material";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getProgramDayWithEvents, getAllTagsForYear } from "@/lib/services/program";
 import { ProgramEventForm } from "@/components/forms/program-event-form";
@@ -31,14 +31,13 @@ export default async function NewEventPage({ params }: NewEventPageProps) {
     return (
         <Container maxWidth="sm">
             <Box sx={{ mb: 4 }}>
-                <Button
-                    component={Link}
+                <LinkButton
                     href={`/admin/rocniky/${day.year.id}/program/${day.id}`}
                     startIcon={<ArrowBack />}
                     sx={{ mb: 2 }}
                 >
                     Zpet na {day.label}
-                </Button>
+                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
