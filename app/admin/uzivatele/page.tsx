@@ -18,6 +18,7 @@ import { db } from "@/lib/db";
 import { auth, requireSuperAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UserActions } from "@/components/admin/user-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 const roleLabels: Record<string, { label: string; color: "error" | "warning" | "info"; icon: React.ReactNode }> = {
     SUPER_ADMIN: {
@@ -66,6 +67,7 @@ export default async function UsersPage() {
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs items={[{ label: "Uzivatele" }]} />
             <Box
                 sx={{
                     display: "flex",

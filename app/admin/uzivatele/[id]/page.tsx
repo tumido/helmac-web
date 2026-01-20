@@ -1,10 +1,10 @@
 import { Container, Typography, Box, Chip } from "@mui/material";
-import { ArrowBack, Shield, Person, SupervisorAccount } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
+import { Shield, Person, SupervisorAccount } from "@mui/icons-material";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth, requireSuperAdmin } from "@/lib/auth";
 import { UserForm } from "@/components/forms/user-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface EditUserPageProps {
     params: Promise<{ id: string }>;
@@ -53,14 +53,13 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Uzivatele", href: "/admin/uzivatele" },
+                    { label: user.name },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/uzivatele"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na uzivatele
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

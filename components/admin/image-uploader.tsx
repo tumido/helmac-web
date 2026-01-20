@@ -1,0 +1,232 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useDropzone, FileRejection } from "react-dropzone";
+import {
+    Box,
+    Typography,
+    CircularProgress,
+    IconButton,
+    Alert,
+} from "@mui/material";
+import { CloudUpload, Delete, Image as ImageIcon } from "@mui/icons-material";
+
+interface ImageUploaderProps {
+    value?: string;
+    onChange: (url: string) => void;
+    onError?: (error: string) => void;
+    maxSizeMB?: number;
+    acceptedTypes?: string[];
+}
+
+const DEFAULT_MAX_SIZE_MB = 5;
+const DEFAULT_ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+export function ImageUploader({
+    value,
+    onChange,
+    onError,
+    maxSizeMB = DEFAULT_MAX_SIZE_MB,
+    acceptedTypes = DEFAULT_ACCEPTED_TYPES,
+}: ImageUploaderProps) {
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    const handleError = useCallback(
+        (message: string) => {
+            setError(message);
+            onError?.(message);
+        },
+        [onError]
+    );
+
+    const onDrop = useCallback(
+        async (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+            setError(null);
+
+            // Handle rejected files
+            if (rejectedFiles.length > 0) {
+                const rejection = rejectedFiles[0];
+                const errorMessage = rejection.errors[0]?.message || "Soubor nelze nahrat";
+                handleError(errorMessage);
+                return;
+            }
+
+            if (acceptedFiles.length === 0) return;
+
+            const file = acceptedFiles[0];
+
+            // Validate file size
+            const maxSizeBytes = maxSizeMB * 1024 * 1024;
+            if (file.size > maxSizeBytes) {
+                handleError(`Soubor je prilis velky. Maximum je ${maxSizeMB} MB.`);
+                return;
+            }
+
+            // Create preview
+            const objectUrl = URL.createObjectURL(file);
+            setPreview(objectUrl);
+
+            // Upload file
+            setUploading(true);
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const response = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.error || "Nahravani selhalo");
+                }
+
+                const data = await response.json();
+
+                if (data.url) {
+                    onChange(data.url);
+                    setError(null);
+                } else {
+                    throw new Error("Server nevratil URL obrazku");
+                }
+            } catch (err) {
+                const message = err instanceof Error ? err.message : "Nahravani selhalo";
+                handleError(message);
+                setPreview(null);
+            } finally {
+                setUploading(false);
+            }
+        },
+        [maxSizeMB, onChange, handleError]
+    );
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: acceptedTypes.reduce(
+            (acc, type) => ({ ...acc, [type]: [] }),
+            {} as Record<string, string[]>
+        ),
+        maxFiles: 1,
+        disabled: uploading,
+    });
+
+    const handleRemove = () => {
+        onChange("");
+        setPreview(null);
+        setError(null);
+    };
+
+    const displayUrl = value || preview;
+
+    return (
+        <Box>
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                    {error}
+                </Alert>
+            )}
+
+            <Box
+                {...getRootProps()}
+                sx={{
+                    border: "2px dashed",
+                    borderColor: isDragActive
+                        ? "primary.main"
+                        : error
+                          ? "error.main"
+                          : "grey.300",
+                    borderRadius: 2,
+                    p: 3,
+                    textAlign: "center",
+                    cursor: uploading ? "default" : "pointer",
+                    bgcolor: isDragActive ? "action.hover" : "transparent",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                        borderColor: uploading ? "grey.300" : "primary.main",
+                        bgcolor: uploading ? "transparent" : "action.hover",
+                    },
+                    position: "relative",
+                    minHeight: 200,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <input {...getInputProps()} />
+
+                {uploading ? (
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <CircularProgress size={40} />
+                        <Typography color="text.secondary">Nahravam...</Typography>
+                    </Box>
+                ) : displayUrl ? (
+                    <Box sx={{ position: "relative", width: "100%" }}>
+                        <Box
+                            component="img"
+                            src={displayUrl}
+                            alt="Nahled"
+                            sx={{
+                                maxHeight: 250,
+                                maxWidth: "100%",
+                                objectFit: "contain",
+                                borderRadius: 1,
+                            }}
+                        />
+                        <IconButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemove();
+                            }}
+                            sx={{
+                                position: "absolute",
+                                top: -12,
+                                right: -12,
+                                bgcolor: "error.main",
+                                color: "white",
+                                "&:hover": {
+                                    bgcolor: "error.dark",
+                                },
+                            }}
+                            size="small"
+                        >
+                            <Delete fontSize="small" />
+                        </IconButton>
+                    </Box>
+                ) : (
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                        {isDragActive ? (
+                            <>
+                                <CloudUpload sx={{ fontSize: 48, color: "primary.main" }} />
+                                <Typography color="primary">Pustit pro nahrani</Typography>
+                            </>
+                        ) : (
+                            <>
+                                <ImageIcon sx={{ fontSize: 48, color: "grey.400" }} />
+                                <Typography color="text.secondary">
+                                    Pretahnete obrazek nebo kliknete pro vyber
+                                </Typography>
+                                <Typography variant="caption" color="text.disabled">
+                                    Podporovane formaty: JPG, PNG, WebP, GIF (max {maxSizeMB} MB)
+                                </Typography>
+                            </>
+                        )}
+                    </Box>
+                )}
+            </Box>
+
+            {value && (
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: "block", wordBreak: "break-all" }}
+                >
+                    {value}
+                </Typography>
+            )}
+        </Box>
+    );
+}

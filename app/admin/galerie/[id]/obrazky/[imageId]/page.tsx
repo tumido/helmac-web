@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ImageForm } from "@/components/forms/image-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface EditImagePageProps {
     params: Promise<{ id: string; imageId: string }>;
@@ -30,14 +29,14 @@ export default async function EditImagePage({ params }: EditImagePageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Galerie", href: "/admin/galerie" },
+                    { label: image.album.title, href: `/admin/galerie/${image.album.id}` },
+                    { label: image.title || "Obrazek" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/galerie/${image.album.id}`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na album
-                </LinkButton>
                 <Typography variant="h4">Upravit obrazek</Typography>
                 <Typography color="text.secondary">
                     {image.album.title}

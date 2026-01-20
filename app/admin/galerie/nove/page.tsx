@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { AlbumForm } from "@/components/forms/album-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 async function getYears() {
     return db.year.findMany({
@@ -22,14 +21,13 @@ export default async function NewAlbumPage() {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Galerie", href: "/admin/galerie" },
+                    { label: "Nove album" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/galerie"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na galerii
-                </LinkButton>
                 <Typography variant="h4">Nove album</Typography>
             </Box>
 

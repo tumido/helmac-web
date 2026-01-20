@@ -1,9 +1,9 @@
-import { Container, Typography, Box, Chip } from "@mui/material";
-import { ArrowBack, Visibility, VisibilityOff } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
+import { Container, Typography, Box, Chip, Button } from "@mui/material";
+import { Visibility, VisibilityOff, OpenInNew } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/forms/page-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface EditPageProps {
     params: Promise<{ id: string; pageId: string }>;
@@ -30,31 +30,43 @@ export default async function EditPagePage({ params }: EditPageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${page.year.year}`, href: `/admin/rocniky/${page.year.id}` },
+                    { label: page.title },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${page.year.id}`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na rocnik {page.year.year}
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
                         alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
                         gap: 2,
                         mb: 1,
                     }}
                 >
-                    <Typography variant="h4">Upravit stranku</Typography>
-                    <Chip
-                        label={page.isPublished ? "Publikovano" : "Skryto"}
-                        size="small"
-                        color={page.isPublished ? "success" : "default"}
-                        icon={
-                            page.isPublished ? <Visibility /> : <VisibilityOff />
-                        }
-                    />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography variant="h4">Upravit stranku</Typography>
+                        <Chip
+                            label={page.isPublished ? "Publikovano" : "Skryto"}
+                            size="small"
+                            color={page.isPublished ? "success" : "default"}
+                            icon={
+                                page.isPublished ? <Visibility /> : <VisibilityOff />
+                            }
+                        />
+                    </Box>
+                    <Button
+                        href={`/${page.year.year}/${page.slug}`}
+                        target="_blank"
+                        variant="outlined"
+                        startIcon={<OpenInNew />}
+                    >
+                        Nahled
+                    </Button>
                 </Box>
                 <Typography color="text.secondary">
                     {page.year.year} - {page.title}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
     Box,
@@ -14,10 +14,13 @@ import {
     FormControlLabel,
     Switch,
     MenuItem,
+    Typography,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createNews, updateNews, NewsActionState } from "@/lib/actions/news";
+import { ImageUploader } from "@/components/admin/image-uploader";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 interface NewsFormProps {
     mode: "create" | "edit";
@@ -57,6 +60,8 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 
 export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
+    const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
+    const [content, setContent] = useState(defaultValues?.content || "");
 
     const action =
         mode === "create"
@@ -155,29 +160,38 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                         inputProps={{ maxLength: 500 }}
                     />
 
-                    <TextField
-                        required
-                        fullWidth
-                        id="content"
-                        name="content"
-                        label="Obsah"
-                        defaultValue={defaultValues?.content || ""}
-                        error={!!state?.error?.content}
-                        helperText={state?.error?.content?.[0]}
-                        multiline
-                        rows={10}
-                    />
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Obsah *
+                        </Typography>
+                        <RichTextEditor
+                            value={content}
+                            onChange={setContent}
+                            minHeight={300}
+                        />
+                        <input type="hidden" name="content" value={content} />
+                        {state?.error?.content && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {state.error.content[0]}
+                            </Typography>
+                        )}
+                    </Box>
 
-                    <TextField
-                        fullWidth
-                        id="coverImage"
-                        name="coverImage"
-                        label="URL titulniho obrazku"
-                        defaultValue={defaultValues?.coverImage || ""}
-                        error={!!state?.error?.coverImage}
-                        helperText={state?.error?.coverImage?.[0]}
-                        placeholder="https://example.com/image.jpg"
-                    />
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Titulni obrazek (volitelne)
+                        </Typography>
+                        <ImageUploader
+                            value={coverImage}
+                            onChange={setCoverImage}
+                        />
+                        <input type="hidden" name="coverImage" value={coverImage} />
+                        {state?.error?.coverImage && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {state.error.coverImage[0]}
+                            </Typography>
+                        )}
+                    </Box>
 
                     <FormControlLabel
                         control={

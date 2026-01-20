@@ -16,6 +16,7 @@ import {
 import { Delete } from "@mui/icons-material";
 import { deleteProgramDay } from "@/lib/actions/program-days";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface ProgramDayActionsProps {
     dayId: string;
@@ -27,6 +28,7 @@ export function ProgramDayActions({
     eventsCount,
 }: ProgramDayActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,9 @@ export function ProgramDayActions({
         setDeleteDialogOpen(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Den programu byl smazan");
             router.refresh();
         }
     };

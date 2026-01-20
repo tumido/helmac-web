@@ -19,6 +19,7 @@ import { Delete, Edit, BrokenImage } from "@mui/icons-material";
 import { deleteImage } from "@/lib/actions/albums";
 import { useRouter } from "next/navigation";
 import { IconLinkButton } from "@/components/ui/link-button";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface Image {
     id: string;
@@ -35,6 +36,7 @@ interface ImageGridProps {
 
 function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -44,7 +46,10 @@ function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
         const result = await deleteImage(image.id);
         setLoading(false);
         setDeleteDialogOpen(false);
-        if (!result.error) {
+        if (result.error) {
+            toast.error(result.error);
+        } else {
+            toast.success("Obrazek byl smazan");
             router.refresh();
         }
     };

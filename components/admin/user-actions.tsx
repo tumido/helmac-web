@@ -16,6 +16,7 @@ import {
 import { Delete } from "@mui/icons-material";
 import { deleteUser } from "@/lib/actions/users";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface UserActionsProps {
     userId: string;
@@ -25,6 +26,7 @@ interface UserActionsProps {
 
 export function UserActions({ userId, userName, isCurrentUser }: UserActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,10 @@ export function UserActions({ userId, userName, isCurrentUser }: UserActionsProp
         setLoading(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
             setDeleteDialogOpen(false);
+            toast.success("Uzivatel byl smazan");
             router.refresh();
         }
     };

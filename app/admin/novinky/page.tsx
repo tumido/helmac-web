@@ -3,17 +3,43 @@ import {
     Typography,
     Card,
     CardContent,
-    CardActions,
     Box,
-    Chip,
 } from "@mui/material";
-import { Add, Edit, Visibility, VisibilityOff } from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
-import { NewsActions } from "@/components/admin/news-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { ListFilters } from "@/components/admin/list-filters";
+import { SelectableNewsList } from "@/components/admin/selectable-news-list";
+import { Prisma } from "@prisma/client";
 
-async function getNews() {
+interface NewsListPageProps {
+    searchParams: Promise<{ q?: string; yearId?: string; status?: string }>;
+}
+
+async function getNews(filters: { q?: string; yearId?: string; status?: string }) {
+    const where: Prisma.NewsWhereInput = {};
+
+    if (filters.q) {
+        where.OR = [
+            { title: { contains: filters.q, mode: "insensitive" } },
+            { content: { contains: filters.q, mode: "insensitive" } },
+            { excerpt: { contains: filters.q, mode: "insensitive" } },
+        ];
+    }
+
+    if (filters.yearId) {
+        where.yearId = filters.yearId;
+    }
+
+    if (filters.status === "published") {
+        where.isPublished = true;
+    } else if (filters.status === "draft") {
+        where.isPublished = false;
+    }
+
     return db.news.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         include: {
             year: {
@@ -34,11 +60,13 @@ async function getYears() {
     });
 }
 
-export default async function NewsListPage() {
-    const [news, years] = await Promise.all([getNews(), getYears()]);
+export default async function NewsListPage({ searchParams }: NewsListPageProps) {
+    const params = await searchParams;
+    const [news, years] = await Promise.all([getNews(params), getYears()]);
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs items={[{ label: "Novinky" }]} />
             <Box
                 sx={{
                     display: "flex",
@@ -58,6 +86,15 @@ export default async function NewsListPage() {
                     </LinkButton>
                 )}
             </Box>
+
+            {years.length > 0 && (
+                <ListFilters
+                    showYearFilter
+                    showStatusFilter
+                    years={years}
+                    searchPlaceholder="Hledat novinky..."
+                />
+            )}
 
             {years.length === 0 ? (
                 <Card>
@@ -79,122 +116,14 @@ export default async function NewsListPage() {
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            Zatim nebyly vytvoreny zadne novinky.
+                            {params.q || params.yearId || params.status
+                                ? "Zadne novinky neodpovidaji filtru."
+                                : "Zatim nebyly vytvoreny zadne novinky."}
                         </Typography>
                     </CardContent>
                 </Card>
             ) : (
-                <Box
-                    sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                            xs: "1fr",
-                            md: "repeat(2, 1fr)",
-                            lg: "repeat(3, 1fr)",
-                        },
-                        gap: 3,
-                    }}
-                >
-                    {news.map((item) => (
-                        <Card key={item.id}>
-                            {item.coverImage && (
-                                <Box
-                                    sx={{
-                                        height: 140,
-                                        backgroundImage: `url(${item.coverImage})`,
-                                        backgroundSize: "cover",
-                                        backgroundPosition: "center",
-                                    }}
-                                />
-                            )}
-                            <CardContent>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "flex-start",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <Typography
-                                        variant="h6"
-                                        sx={{
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            display: "-webkit-box",
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: "vertical",
-                                        }}
-                                    >
-                                        {item.title}
-                                    </Typography>
-                                </Box>
-
-                                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                                    <Chip
-                                        label={item.year.year}
-                                        size="small"
-                                        variant="outlined"
-                                    />
-                                    <Chip
-                                        label={item.isPublished ? "Publikovano" : "Skryto"}
-                                        size="small"
-                                        color={item.isPublished ? "success" : "default"}
-                                        icon={
-                                            item.isPublished ? (
-                                                <Visibility />
-                                            ) : (
-                                                <VisibilityOff />
-                                            )
-                                        }
-                                    />
-                                </Box>
-
-                                {item.excerpt && (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            display: "-webkit-box",
-                                            WebkitLineClamp: 3,
-                                            WebkitBoxOrient: "vertical",
-                                            mb: 2,
-                                        }}
-                                    >
-                                        {item.excerpt}
-                                    </Typography>
-                                )}
-
-                                <Typography variant="caption" color="text.secondary">
-                                    {item.author.name} •{" "}
-                                    {new Date(item.createdAt).toLocaleDateString("cs-CZ")}
-                                </Typography>
-                            </CardContent>
-
-                            <CardActions
-                                sx={{
-                                    justifyContent: "space-between",
-                                    px: 2,
-                                    pb: 2,
-                                }}
-                            >
-                                <LinkButton
-                                    href={`/admin/novinky/${item.id}`}
-                                    size="small"
-                                    startIcon={<Edit />}
-                                >
-                                    Upravit
-                                </LinkButton>
-                                <NewsActions
-                                    newsId={item.id}
-                                    isPublished={item.isPublished}
-                                />
-                            </CardActions>
-                        </Card>
-                    ))}
-                </Box>
+                <SelectableNewsList news={news} />
             )}
         </Container>
     );

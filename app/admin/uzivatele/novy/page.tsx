@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { redirect } from "next/navigation";
 import { requireSuperAdmin } from "@/lib/auth";
 import { UserForm } from "@/components/forms/user-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 export default async function NewUserPage() {
     // Check permissions
@@ -15,14 +14,13 @@ export default async function NewUserPage() {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Uzivatele", href: "/admin/uzivatele" },
+                    { label: "Novy uzivatel" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/uzivatele"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na uzivatele
-                </LinkButton>
                 <Typography variant="h4">Novy uzivatel</Typography>
             </Box>
 

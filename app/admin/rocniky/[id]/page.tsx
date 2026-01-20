@@ -4,24 +4,17 @@ import {
     Box,
     Card,
     CardContent,
-    Chip,
-    Tooltip,
-    Divider,
 } from "@mui/material";
 import {
-    ArrowBack,
-    Edit,
     Add,
-    Visibility,
-    VisibilityOff,
-    DragIndicator,
     CalendarMonth,
 } from "@mui/icons-material";
-import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { YearForm } from "@/components/forms/year-form";
-import { PageActions } from "@/components/admin/page-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { SortablePages } from "@/components/admin/sortable-pages";
 
 interface EditYearPageProps {
     params: Promise<{ id: string }>;
@@ -48,14 +41,13 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${year.year} - ${year.title}` },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/rocniky"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na rocniky
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
@@ -136,84 +128,7 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
-                            {year.pages.map((page, index) => (
-                                <Box key={page.id}>
-                                    {index > 0 && <Divider />}
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 2,
-                                            p: 2,
-                                        }}
-                                    >
-                                        <DragIndicator
-                                            sx={{ color: "text.disabled" }}
-                                        />
-                                        <Box sx={{ flex: 1 }}>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <Typography fontWeight="medium">
-                                                    {page.title}
-                                                </Typography>
-                                                <Chip
-                                                    label={
-                                                        page.isPublished
-                                                            ? "Publikovano"
-                                                            : "Skryto"
-                                                    }
-                                                    size="small"
-                                                    color={
-                                                        page.isPublished
-                                                            ? "success"
-                                                            : "default"
-                                                    }
-                                                    icon={
-                                                        page.isPublished ? (
-                                                            <Visibility />
-                                                        ) : (
-                                                            <VisibilityOff />
-                                                        )
-                                                    }
-                                                />
-                                            </Box>
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                            >
-                                                /{page.slug}
-                                            </Typography>
-                                        </Box>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.5,
-                                            }}
-                                        >
-                                            <Tooltip title="Upravit stranku">
-                                                <IconLinkButton
-                                                    href={`/admin/rocniky/${year.id}/stranky/${page.id}`}
-                                                    size="small"
-                                                >
-                                                    <Edit />
-                                                </IconLinkButton>
-                                            </Tooltip>
-                                            <PageActions
-                                                pageId={page.id}
-                                                isPublished={page.isPublished}
-                                            />
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            ))}
-                        </Card>
+                        <SortablePages yearId={year.id} pages={year.pages} />
                     )}
                 </Box>
             </Box>

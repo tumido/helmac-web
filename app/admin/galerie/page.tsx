@@ -3,23 +3,42 @@ import {
     Typography,
     Card,
     CardContent,
-    CardActions,
     Box,
-    Chip,
 } from "@mui/material";
-import {
-    Add,
-    Edit,
-    Visibility,
-    VisibilityOff,
-    PhotoLibrary,
-} from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
-import { AlbumActions } from "@/components/admin/album-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { ListFilters } from "@/components/admin/list-filters";
+import { SelectableAlbumList } from "@/components/admin/selectable-album-list";
+import { Prisma } from "@prisma/client";
 
-async function getAlbums() {
+interface GalleryPageProps {
+    searchParams: Promise<{ q?: string; yearId?: string; status?: string }>;
+}
+
+async function getAlbums(filters: { q?: string; yearId?: string; status?: string }) {
+    const where: Prisma.AlbumWhereInput = {};
+
+    if (filters.q) {
+        where.OR = [
+            { title: { contains: filters.q, mode: "insensitive" } },
+            { description: { contains: filters.q, mode: "insensitive" } },
+        ];
+    }
+
+    if (filters.yearId) {
+        where.yearId = filters.yearId;
+    }
+
+    if (filters.status === "published") {
+        where.isPublished = true;
+    } else if (filters.status === "draft") {
+        where.isPublished = false;
+    }
+
     return db.album.findMany({
+        where,
         orderBy: [{ year: { year: "desc" } }, { sortOrder: "asc" }],
         include: {
             year: {
@@ -40,11 +59,13 @@ async function getYears() {
     });
 }
 
-export default async function GalleryPage() {
-    const [albums, years] = await Promise.all([getAlbums(), getYears()]);
+export default async function GalleryPage({ searchParams }: GalleryPageProps) {
+    const params = await searchParams;
+    const [albums, years] = await Promise.all([getAlbums(params), getYears()]);
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs items={[{ label: "Galerie" }]} />
             <Box
                 sx={{
                     display: "flex",
@@ -64,6 +85,15 @@ export default async function GalleryPage() {
                     </LinkButton>
                 )}
             </Box>
+
+            {years.length > 0 && (
+                <ListFilters
+                    showYearFilter
+                    showStatusFilter
+                    years={years}
+                    searchPlaceholder="Hledat alba..."
+                />
+            )}
 
             {years.length === 0 ? (
                 <Card>
@@ -85,120 +115,14 @@ export default async function GalleryPage() {
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            Zatim nebyla vytvorena zadna alba.
+                            {params.q || params.yearId || params.status
+                                ? "Zadna alba neodpovidaji filtru."
+                                : "Zatim nebyla vytvorena zadna alba."}
                         </Typography>
                     </CardContent>
                 </Card>
             ) : (
-                <Box
-                    sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                            xs: "1fr",
-                            sm: "repeat(2, 1fr)",
-                            lg: "repeat(3, 1fr)",
-                        },
-                        gap: 3,
-                    }}
-                >
-                    {albums.map((album) => (
-                        <Card key={album.id}>
-                            <Box
-                                sx={{
-                                    height: 160,
-                                    backgroundColor: "grey.200",
-                                    backgroundImage: album.coverImage
-                                        ? `url(${album.coverImage})`
-                                        : "none",
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                {!album.coverImage && (
-                                    <PhotoLibrary
-                                        sx={{ fontSize: 48, color: "grey.400" }}
-                                    />
-                                )}
-                            </Box>
-                            <CardContent>
-                                <Typography variant="h6" noWrap>
-                                    {album.title}
-                                </Typography>
-
-                                <Box sx={{ display: "flex", gap: 1, my: 1 }}>
-                                    <Chip
-                                        label={album.year.year}
-                                        size="small"
-                                        variant="outlined"
-                                    />
-                                    <Chip
-                                        label={`${album._count.images} obrazku`}
-                                        size="small"
-                                        variant="outlined"
-                                        icon={<PhotoLibrary />}
-                                    />
-                                    <Chip
-                                        label={
-                                            album.isPublished
-                                                ? "Publikovano"
-                                                : "Skryto"
-                                        }
-                                        size="small"
-                                        color={
-                                            album.isPublished ? "success" : "default"
-                                        }
-                                        icon={
-                                            album.isPublished ? (
-                                                <Visibility />
-                                            ) : (
-                                                <VisibilityOff />
-                                            )
-                                        }
-                                    />
-                                </Box>
-
-                                {album.description && (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            display: "-webkit-box",
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: "vertical",
-                                        }}
-                                    >
-                                        {album.description}
-                                    </Typography>
-                                )}
-                            </CardContent>
-
-                            <CardActions
-                                sx={{
-                                    justifyContent: "space-between",
-                                    px: 2,
-                                    pb: 2,
-                                }}
-                            >
-                                <LinkButton
-                                    href={`/admin/galerie/${album.id}`}
-                                    size="small"
-                                    startIcon={<Edit />}
-                                >
-                                    Upravit
-                                </LinkButton>
-                                <AlbumActions
-                                    albumId={album.id}
-                                    isPublished={album.isPublished}
-                                />
-                            </CardActions>
-                        </Card>
-                    ))}
-                </Box>
+                <SelectableAlbumList albums={albums} />
             )}
         </Container>
     );

@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ImageForm } from "@/components/forms/image-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface AddImagePageProps {
     params: Promise<{ id: string }>;
@@ -26,14 +25,14 @@ export default async function AddImagePage({ params }: AddImagePageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Galerie", href: "/admin/galerie" },
+                    { label: album.title, href: `/admin/galerie/${album.id}` },
+                    { label: "Pridat obrazek" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/galerie/${album.id}`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na album
-                </LinkButton>
                 <Typography variant="h4">Pridat obrazek</Typography>
                 <Typography color="text.secondary">{album.title}</Typography>
             </Box>

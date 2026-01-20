@@ -20,6 +20,7 @@ import {
     deleteProgramEvent,
 } from "@/lib/actions/program-events";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface ProgramEventActionsProps {
     eventId: string;
@@ -31,6 +32,7 @@ export function ProgramEventActions({
     isPublished,
 }: ProgramEventActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -43,8 +45,9 @@ export function ProgramEventActions({
             : await publishProgramEvent(eventId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success(isPublished ? "Udalost byla skryta" : "Udalost byla publikovana");
             router.refresh();
         }
     };
@@ -57,7 +60,9 @@ export function ProgramEventActions({
         setDeleteDialogOpen(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Udalost byla smazana");
             router.refresh();
         }
     };

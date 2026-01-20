@@ -16,6 +16,7 @@ import {
 import { Delete, Visibility, VisibilityOff } from "@mui/icons-material";
 import { publishNews, unpublishNews, deleteNews } from "@/lib/actions/news";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface NewsActionsProps {
     newsId: string;
@@ -24,6 +25,7 @@ interface NewsActionsProps {
 
 export function NewsActions({ newsId, isPublished }: NewsActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,9 @@ export function NewsActions({ newsId, isPublished }: NewsActionsProps) {
             : await publishNews(newsId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success(isPublished ? "Novinka byla skryta" : "Novinka byla publikovana");
             router.refresh();
         }
     };
@@ -50,7 +53,9 @@ export function NewsActions({ newsId, isPublished }: NewsActionsProps) {
         setDeleteDialogOpen(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Novinka byla smazana");
             router.refresh();
         }
     };

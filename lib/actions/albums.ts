@@ -231,6 +231,69 @@ export async function deleteAlbum(albumId: string) {
     }
 }
 
+// Bulk actions
+export async function bulkPublishAlbums(albumIds: string[]) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.album.updateMany({
+            where: { id: { in: albumIds } },
+            data: { isPublished: true },
+        });
+
+        revalidatePath("/admin/galerie");
+        return { success: true, count: albumIds.length };
+    } catch (error) {
+        console.error("Failed to bulk publish albums:", error);
+        return { error: "Nepodarilo se publikovat alba" };
+    }
+}
+
+export async function bulkUnpublishAlbums(albumIds: string[]) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.album.updateMany({
+            where: { id: { in: albumIds } },
+            data: { isPublished: false },
+        });
+
+        revalidatePath("/admin/galerie");
+        return { success: true, count: albumIds.length };
+    } catch (error) {
+        console.error("Failed to bulk unpublish albums:", error);
+        return { error: "Nepodarilo se skryt alba" };
+    }
+}
+
+export async function bulkDeleteAlbums(albumIds: string[]) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.album.deleteMany({
+            where: { id: { in: albumIds } },
+        });
+
+        revalidatePath("/admin/galerie");
+        return { success: true, count: albumIds.length };
+    } catch (error) {
+        console.error("Failed to bulk delete albums:", error);
+        return { error: "Nepodarilo se smazat alba" };
+    }
+}
+
 // Image CRUD
 
 export async function addImage(

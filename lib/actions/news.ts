@@ -235,3 +235,71 @@ export async function deleteNews(newsId: string) {
         return { error: "Nepodarilo se smazat novinku" };
     }
 }
+
+// Bulk actions
+export async function bulkPublishNews(newsIds: string[]) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.news.updateMany({
+            where: { id: { in: newsIds } },
+            data: {
+                isPublished: true,
+                publishedAt: new Date(),
+            },
+        });
+
+        revalidatePath("/admin/novinky");
+        return { success: true, count: newsIds.length };
+    } catch (error) {
+        console.error("Failed to bulk publish news:", error);
+        return { error: "Nepodarilo se publikovat novinky" };
+    }
+}
+
+export async function bulkUnpublishNews(newsIds: string[]) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.news.updateMany({
+            where: { id: { in: newsIds } },
+            data: {
+                isPublished: false,
+            },
+        });
+
+        revalidatePath("/admin/novinky");
+        return { success: true, count: newsIds.length };
+    } catch (error) {
+        console.error("Failed to bulk unpublish news:", error);
+        return { error: "Nepodarilo se skryt novinky" };
+    }
+}
+
+export async function bulkDeleteNews(newsIds: string[]) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.news.deleteMany({
+            where: { id: { in: newsIds } },
+        });
+
+        revalidatePath("/admin/novinky");
+        return { success: true, count: newsIds.length };
+    } catch (error) {
+        console.error("Failed to bulk delete news:", error);
+        return { error: "Nepodarilo se smazat novinky" };
+    }
+}

@@ -1,19 +1,17 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { YearForm } from "@/components/forms/year-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 export default function NewYearPage() {
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: "Novy rocnik" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/rocniky"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na rocniky
-                </LinkButton>
                 <Typography variant="h4">Novy rocnik</Typography>
             </Box>
 

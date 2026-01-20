@@ -21,6 +21,7 @@ import {
     deleteYear,
 } from "@/lib/actions/years";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface YearActionsProps {
     yearId: string;
@@ -30,6 +31,7 @@ interface YearActionsProps {
 
 export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,8 +42,9 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         const result = await setActiveYear(yearId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Rocnik byl nastaven jako aktivni");
             router.refresh();
         }
     };
@@ -52,8 +55,9 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         const result = await archiveYear(yearId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Rocnik byl archivovan");
             router.refresh();
         }
     };
@@ -64,8 +68,9 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         const result = await unarchiveYear(yearId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Rocnik byl obnoven z archivu");
             router.refresh();
         }
     };
@@ -78,7 +83,9 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         setDeleteDialogOpen(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Rocnik byl smazan");
             router.refresh();
         }
     };

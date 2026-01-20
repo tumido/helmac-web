@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/forms/page-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface NewPageProps {
     params: Promise<{ id: string }>;
@@ -26,14 +25,14 @@ export default async function NewPagePage({ params }: NewPageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
+                    { label: "Nova stranka" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${year.id}`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na rocnik {year.year}
-                </LinkButton>
                 <Typography variant="h4">Nova stranka</Typography>
                 <Typography color="text.secondary">
                     Rocnik {year.year} - {year.title}

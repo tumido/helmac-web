@@ -5,19 +5,20 @@ import {
     Chip,
     Card,
     CardContent,
-    Divider,
+    Button,
 } from "@mui/material";
 import {
-    ArrowBack,
     Visibility,
     VisibilityOff,
     Add,
+    OpenInNew,
 } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { AlbumForm } from "@/components/forms/album-form";
 import { ImageGrid } from "@/components/admin/image-grid";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface EditAlbumPageProps {
     params: Promise<{ id: string }>;
@@ -55,31 +56,42 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Galerie", href: "/admin/galerie" },
+                    { label: album.title },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/galerie"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na galerii
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
                         alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
                         gap: 2,
                         mb: 1,
                     }}
                 >
-                    <Typography variant="h4">Upravit album</Typography>
-                    <Chip
-                        label={album.isPublished ? "Publikovano" : "Skryto"}
-                        size="small"
-                        color={album.isPublished ? "success" : "default"}
-                        icon={
-                            album.isPublished ? <Visibility /> : <VisibilityOff />
-                        }
-                    />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography variant="h4">Upravit album</Typography>
+                        <Chip
+                            label={album.isPublished ? "Publikovano" : "Skryto"}
+                            size="small"
+                            color={album.isPublished ? "success" : "default"}
+                            icon={
+                                album.isPublished ? <Visibility /> : <VisibilityOff />
+                            }
+                        />
+                    </Box>
+                    <Button
+                        href={`/${album.year.year}/galerie/${album.slug}`}
+                        target="_blank"
+                        variant="outlined"
+                        startIcon={<OpenInNew />}
+                    >
+                        Nahled
+                    </Button>
                 </Box>
                 <Typography color="text.secondary">
                     {album.year.year} - {album.title}

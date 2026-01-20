@@ -11,9 +11,28 @@ import { Add, Edit, Archive, Star } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { YearActions } from "@/components/admin/year-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { ListFilters } from "@/components/admin/list-filters";
+import { Prisma } from "@prisma/client";
 
-async function getYears() {
+interface YearsPageProps {
+    searchParams: Promise<{ q?: string }>;
+}
+
+async function getYears(filters: { q?: string }) {
+    const where: Prisma.YearWhereInput = {};
+
+    if (filters.q) {
+        const numericQuery = parseInt(filters.q, 10);
+        where.OR = [
+            { title: { contains: filters.q, mode: "insensitive" } },
+            { subtitle: { contains: filters.q, mode: "insensitive" } },
+            ...(isNaN(numericQuery) ? [] : [{ year: numericQuery }]),
+        ];
+    }
+
     return db.year.findMany({
+        where,
         orderBy: { year: "desc" },
         include: {
             _count: {
@@ -27,11 +46,13 @@ async function getYears() {
     });
 }
 
-export default async function YearsPage() {
-    const years = await getYears();
+export default async function YearsPage({ searchParams }: YearsPageProps) {
+    const params = await searchParams;
+    const years = await getYears(params);
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs items={[{ label: "Rocniky" }]} />
             <Box
                 sx={{
                     display: "flex",
@@ -50,11 +71,15 @@ export default async function YearsPage() {
                 </LinkButton>
             </Box>
 
+            <ListFilters searchPlaceholder="Hledat rocniky..." />
+
             {years.length === 0 ? (
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            Zatim nebyly vytvoreny zadne rocniky.
+                            {params.q
+                                ? "Zadne rocniky neodpovidaji hledani."
+                                : "Zatim nebyly vytvoreny zadne rocniky."}
                         </Typography>
                     </CardContent>
                 </Card>

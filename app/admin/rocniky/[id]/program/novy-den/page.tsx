@@ -1,9 +1,9 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack, CalendarMonth } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
+import { CalendarMonth } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { ProgramDayForm } from "@/components/forms/program-day-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface NewDayPageProps {
     params: Promise<{ id: string }>;
@@ -19,14 +19,15 @@ export default async function NewDayPage({ params }: NewDayPageProps) {
 
     return (
         <Container maxWidth="sm">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
+                    { label: "Program", href: `/admin/rocniky/${year.id}/program` },
+                    { label: "Novy den" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${year.id}/program`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na program
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
     Box,
@@ -11,10 +11,12 @@ import {
     Card,
     CardContent,
     CardActions,
+    Typography,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { addImage, updateImage, ImageActionState } from "@/lib/actions/albums";
+import { ImageUploader } from "@/components/admin/image-uploader";
 
 interface ImageFormProps {
     mode: "create" | "edit";
@@ -51,6 +53,8 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 }
 
 export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormProps) {
+    const [imageUrl, setImageUrl] = useState(defaultValues?.url || "");
+
     const action =
         mode === "create"
             ? addImage.bind(null, albumId)
@@ -83,17 +87,21 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                         </Alert>
                     )}
 
-                    <TextField
-                        required
-                        fullWidth
-                        id="url"
-                        name="url"
-                        label="URL obrazku"
-                        defaultValue={defaultValues?.url || ""}
-                        error={!!state?.error?.url}
-                        helperText={state?.error?.url?.[0]}
-                        placeholder="https://example.com/image.jpg"
-                    />
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Obrazek *
+                        </Typography>
+                        <ImageUploader
+                            value={imageUrl}
+                            onChange={setImageUrl}
+                        />
+                        <input type="hidden" name="url" value={imageUrl} />
+                        {state?.error?.url && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {state.error.url[0]}
+                            </Typography>
+                        )}
+                    </Box>
 
                     <TextField
                         fullWidth
@@ -104,7 +112,7 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                         error={!!state?.error?.thumbnailUrl}
                         helperText={
                             state?.error?.thumbnailUrl?.[0] ||
-                            "Mensi verze obrazku pro rychlejsi nacitani"
+                            "Automaticky generovano, nebo vlastni URL"
                         }
                         placeholder="https://example.com/thumbnail.jpg"
                     />

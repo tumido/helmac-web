@@ -16,6 +16,7 @@ import {
 import { Delete, Visibility, VisibilityOff } from "@mui/icons-material";
 import { publishAlbum, unpublishAlbum, deleteAlbum } from "@/lib/actions/albums";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface AlbumActionsProps {
     albumId: string;
@@ -24,6 +25,7 @@ interface AlbumActionsProps {
 
 export function AlbumActions({ albumId, isPublished }: AlbumActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,9 @@ export function AlbumActions({ albumId, isPublished }: AlbumActionsProps) {
             : await publishAlbum(albumId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success(isPublished ? "Album bylo skryto" : "Album bylo publikovano");
             router.refresh();
         }
     };
@@ -50,7 +53,9 @@ export function AlbumActions({ albumId, isPublished }: AlbumActionsProps) {
         setDeleteDialogOpen(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Album bylo smazano");
             router.refresh();
         }
     };

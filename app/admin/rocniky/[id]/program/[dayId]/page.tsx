@@ -4,25 +4,17 @@ import {
     Box,
     Card,
     CardContent,
-    Chip,
-    Tooltip,
-    Divider,
 } from "@mui/material";
 import {
-    ArrowBack,
-    Edit,
     Add,
     CalendarMonth,
-    AccessTime,
-    Place,
-    Visibility,
-    VisibilityOff,
 } from "@mui/icons-material";
-import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getProgramDayWithEvents } from "@/lib/services/program";
 import { ProgramDayForm } from "@/components/forms/program-day-form";
-import { ProgramEventActions } from "@/components/admin/program-event-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { SortableEvents } from "@/components/admin/sortable-events";
 
 interface EditDayPageProps {
     params: Promise<{ id: string; dayId: string }>;
@@ -47,14 +39,15 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
 
     return (
         <Container maxWidth="lg">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${day.year.year}`, href: `/admin/rocniky/${day.year.id}` },
+                    { label: "Program", href: `/admin/rocniky/${day.year.id}/program` },
+                    { label: day.label },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${day.year.id}/program`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na program
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
@@ -125,123 +118,11 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
-                            {day.events.map((event, index) => (
-                                <Box key={event.id}>
-                                    {index > 0 && <Divider />}
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            gap: 2,
-                                            p: 2,
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.5,
-                                                minWidth: 60,
-                                                color: "text.secondary",
-                                            }}
-                                        >
-                                            <AccessTime fontSize="small" />
-                                            <Typography variant="body2" fontWeight="medium">
-                                                {event.startTime}
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ flex: 1 }}>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                    flexWrap: "wrap",
-                                                }}
-                                            >
-                                                <Typography fontWeight="medium">
-                                                    {event.title}
-                                                </Typography>
-                                                <Chip
-                                                    label={
-                                                        event.isPublished
-                                                            ? "Publikovano"
-                                                            : "Skryto"
-                                                    }
-                                                    size="small"
-                                                    color={
-                                                        event.isPublished
-                                                            ? "success"
-                                                            : "default"
-                                                    }
-                                                    icon={
-                                                        event.isPublished ? (
-                                                            <Visibility />
-                                                        ) : (
-                                                            <VisibilityOff />
-                                                        )
-                                                    }
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 0.5,
-                                                    color: "text.secondary",
-                                                    mt: 0.5,
-                                                }}
-                                            >
-                                                <Place fontSize="small" />
-                                                <Typography variant="body2">
-                                                    {event.location}
-                                                </Typography>
-                                            </Box>
-                                            {event.tags.length > 0 && (
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        gap: 0.5,
-                                                        flexWrap: "wrap",
-                                                        mt: 1,
-                                                    }}
-                                                >
-                                                    {event.tags.map((tag) => (
-                                                        <Chip
-                                                            key={tag}
-                                                            label={tag}
-                                                            size="small"
-                                                            variant="outlined"
-                                                        />
-                                                    ))}
-                                                </Box>
-                                            )}
-                                        </Box>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.5,
-                                            }}
-                                        >
-                                            <Tooltip title="Upravit udalost">
-                                                <IconLinkButton
-                                                    href={`/admin/rocniky/${day.year.id}/program/${day.id}/${event.id}`}
-                                                    size="small"
-                                                >
-                                                    <Edit />
-                                                </IconLinkButton>
-                                            </Tooltip>
-                                            <ProgramEventActions
-                                                eventId={event.id}
-                                                isPublished={event.isPublished}
-                                            />
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            ))}
-                        </Card>
+                        <SortableEvents
+                            yearId={day.year.id}
+                            dayId={day.id}
+                            events={day.events}
+                        />
                     )}
                 </Box>
             </Box>

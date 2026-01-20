@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
     Box,
@@ -14,10 +14,12 @@ import {
     FormControlLabel,
     Switch,
     MenuItem,
+    Typography,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createAlbum, updateAlbum, AlbumActionState } from "@/lib/actions/albums";
+import { ImageUploader } from "@/components/admin/image-uploader";
 
 interface AlbumFormProps {
     mode: "create" | "edit";
@@ -56,6 +58,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 
 export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
+    const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
 
     const action =
         mode === "create"
@@ -156,16 +159,21 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                         inputProps={{ maxLength: 1000 }}
                     />
 
-                    <TextField
-                        fullWidth
-                        id="coverImage"
-                        name="coverImage"
-                        label="URL titulniho obrazku"
-                        defaultValue={defaultValues?.coverImage || ""}
-                        error={!!state?.error?.coverImage}
-                        helperText={state?.error?.coverImage?.[0]}
-                        placeholder="https://example.com/image.jpg"
-                    />
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Titulni obrazek (volitelne)
+                        </Typography>
+                        <ImageUploader
+                            value={coverImage}
+                            onChange={setCoverImage}
+                        />
+                        <input type="hidden" name="coverImage" value={coverImage} />
+                        {state?.error?.coverImage && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {state.error.coverImage[0]}
+                            </Typography>
+                        )}
+                    </Box>
 
                     <FormControlLabel
                         control={

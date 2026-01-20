@@ -16,6 +16,7 @@ import {
 import { Delete, Visibility, VisibilityOff } from "@mui/icons-material";
 import { publishPage, unpublishPage, deletePage } from "@/lib/actions/pages";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface PageActionsProps {
     pageId: string;
@@ -24,6 +25,7 @@ interface PageActionsProps {
 
 export function PageActions({ pageId, isPublished }: PageActionsProps) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,9 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
             : await publishPage(pageId);
         setLoading(false);
         if (result.error) {
-            setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success(isPublished ? "Stranka byla skryta" : "Stranka byla publikovana");
             router.refresh();
         }
     };
@@ -50,7 +53,9 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
         setDeleteDialogOpen(false);
         if (result.error) {
             setError(result.error);
+            toast.error(result.error);
         } else {
+            toast.success("Stranka byla smazana");
             router.refresh();
         }
     };

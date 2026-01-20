@@ -1,9 +1,9 @@
-import { Container, Typography, Box, Chip } from "@mui/material";
-import { ArrowBack, Visibility, VisibilityOff } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
+import { Container, Typography, Box, Chip, Button } from "@mui/material";
+import { Visibility, VisibilityOff, OpenInNew } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface EditNewsPageProps {
     params: Promise<{ id: string }>;
@@ -38,31 +38,42 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Novinky", href: "/admin/novinky" },
+                    { label: news.title },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/novinky"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na novinky
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",
                         alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
                         gap: 2,
                         mb: 1,
                     }}
                 >
-                    <Typography variant="h4">Upravit novinku</Typography>
-                    <Chip
-                        label={news.isPublished ? "Publikovano" : "Skryto"}
-                        size="small"
-                        color={news.isPublished ? "success" : "default"}
-                        icon={
-                            news.isPublished ? <Visibility /> : <VisibilityOff />
-                        }
-                    />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography variant="h4">Upravit novinku</Typography>
+                        <Chip
+                            label={news.isPublished ? "Publikovano" : "Skryto"}
+                            size="small"
+                            color={news.isPublished ? "success" : "default"}
+                            icon={
+                                news.isPublished ? <Visibility /> : <VisibilityOff />
+                            }
+                        />
+                    </Box>
+                    <Button
+                        href={`/${news.year.year}/novinky/${news.slug}`}
+                        target="_blank"
+                        variant="outlined"
+                        startIcon={<OpenInNew />}
+                    >
+                        Nahled
+                    </Button>
                 </Box>
                 <Typography color="text.secondary">
                     {news.year.year} - {news.title}

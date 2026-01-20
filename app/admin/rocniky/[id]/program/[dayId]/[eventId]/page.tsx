@@ -1,14 +1,13 @@
 import { Container, Typography, Box, Chip } from "@mui/material";
 import {
-    ArrowBack,
     Event,
     Visibility,
     VisibilityOff,
 } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getProgramEvent, getAllTagsForYear } from "@/lib/services/program";
 import { ProgramEventForm } from "@/components/forms/program-event-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface EditEventPageProps {
     params: Promise<{ id: string; dayId: string; eventId: string }>;
@@ -27,14 +26,16 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
 
     return (
         <Container maxWidth="sm">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${event.day.year.year}`, href: `/admin/rocniky/${event.day.year.id}` },
+                    { label: "Program", href: `/admin/rocniky/${event.day.year.id}/program` },
+                    { label: event.day.label, href: `/admin/rocniky/${event.day.year.id}/program/${event.day.id}` },
+                    { label: event.title },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${event.day.year.id}/program/${event.day.id}`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na {event.day.label}
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

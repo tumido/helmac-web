@@ -9,7 +9,6 @@ import {
     Divider,
 } from "@mui/material";
 import {
-    ArrowBack,
     Edit,
     Add,
     CalendarMonth,
@@ -20,6 +19,7 @@ import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getProgramDaysForYear } from "@/lib/services/program";
 import { ProgramDayActions } from "@/components/admin/program-day-actions";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface ProgramPageProps {
     params: Promise<{ id: string }>;
@@ -46,14 +46,14 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
+                    { label: "Program" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${year.id}`}
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na rocnik {year.year}
-                </LinkButton>
                 <Box
                     sx={{
                         display: "flex",

@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
+import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 async function getYears() {
     return db.year.findMany({
@@ -22,14 +21,13 @@ export default async function NewNewsPage() {
 
     return (
         <Container maxWidth="md">
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Novinky", href: "/admin/novinky" },
+                    { label: "Nova novinka" },
+                ]}
+            />
             <Box sx={{ mb: 4 }}>
-                <LinkButton
-                    href="/admin/novinky"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 2 }}
-                >
-                    Zpet na novinky
-                </LinkButton>
                 <Typography variant="h4">Nova novinka</Typography>
             </Box>
 
