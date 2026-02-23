@@ -1,29 +1,21 @@
-import { notFound } from "next/navigation";
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
-import { PageContent } from "@/components/public/features/pages";
-import { getPageBySlugForActiveYear } from "@/lib/services";
+import { RulesContent } from "@/components/public/features/rules";
+import { getRulesForActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Pravidla | Helmac",
-    description: "Pravidla akce Helmac - hernl pravidla a pokyny pro ucastniky",
+    description: "Pravidla akce Helmac - herni pravidla a pokyny pro ucastniky",
 };
 
 export default async function PravidlaPage() {
-    const page = await getPageBySlugForActiveYear("pravidla");
-
-    if (!page) {
-        notFound();
-    }
+    const rules = await getRulesForActiveYear();
 
     return (
         <>
-            <PageHeader
-                title={page.title}
-                subtitle={page.seoDesc || undefined}
-            />
+            <PageHeader title="Pravidla" />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <PageContent content={page.content} />
+                <RulesContent rules={rules} />
             </Container>
         </>
     );

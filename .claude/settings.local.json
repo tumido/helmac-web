@@ -5,7 +5,8 @@
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
       "Bash(npx next:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(find C:\\\\Users\\\\vrbka\\\\Desktop\\\\Projects\\\\helmac-web\\\\app\\\\\\(public\\)\\\\program:*)"
     ]
   }
 }

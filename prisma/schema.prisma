@@ -69,6 +69,7 @@ model Year {
   albums        Album[]
   registrations Registration[]
   programDays   ProgramDay[]
+  rules         Rule[]
 
   @@map("years")
 }
@@ -115,6 +116,25 @@ model ProgramEvent {
   updatedAt    DateTime   @updatedAt
 
   @@map("program_events")
+}
+
+// ============================================
+// RULES - Pravidla sections per year
+// ============================================
+
+model Rule {
+    id        String   @id @default(cuid())
+    yearId    String
+    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+    title     String
+    content   String   @db.Text
+    sortOrder Int      @default(0)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("rules")
 }
 
 // ============================================

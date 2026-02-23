@@ -1,0 +1,15 @@
+import { z } from "zod";
+
+export const createRuleSchema = z.object({
+    title: z
+        .string()
+        .min(1, "Nazev je povinny")
+        .max(200, "Nazev je prilis dlouhy"),
+    content: z.string().min(1, "Obsah je povinny"),
+    sortOrder: z.coerce.number().int().min(0).optional(),
+});
+
+export const updateRuleSchema = createRuleSchema.partial();
+
+export type CreateRuleInput = z.infer<typeof createRuleSchema>;
+export type UpdateRuleInput = z.infer<typeof updateRuleSchema>;

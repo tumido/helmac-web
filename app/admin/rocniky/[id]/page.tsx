@@ -8,6 +8,7 @@ import {
 import {
     Add,
     CalendarMonth,
+    Gavel,
 } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
@@ -60,13 +61,22 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                     <Typography variant="h4">
                         Rocnik {year.year} - {year.title}
                     </Typography>
-                    <LinkButton
-                        href={`/admin/rocniky/${year.id}/program`}
-                        variant="contained"
-                        startIcon={<CalendarMonth />}
-                    >
-                        Spravovat program
-                    </LinkButton>
+                    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/program`}
+                            variant="contained"
+                            startIcon={<CalendarMonth />}
+                        >
+                            Spravovat program
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/pravidla`}
+                            variant="contained"
+                            startIcon={<Gavel />}
+                        >
+                            Spravovat pravidla
+                        </LinkButton>
+                    </Box>
                 </Box>
             </Box>
 
