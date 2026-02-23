@@ -10,7 +10,6 @@ export type RuleActionState = {
     error?: {
         title?: string[];
         content?: string[];
-        sortOrder?: string[];
         _form?: string[];
     };
     success?: boolean;
@@ -30,7 +29,6 @@ export async function createRule(
     const rawData = {
         title: formData.get("title"),
         content: formData.get("content"),
-        sortOrder: formData.get("sortOrder") || undefined,
     };
 
     const validated = createRuleSchema.safeParse(rawData);
@@ -51,7 +49,7 @@ export async function createRule(
                 yearId,
                 title: validated.data.title,
                 content: validated.data.content,
-                sortOrder: validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,
+                sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
             },
         });
 
@@ -79,7 +77,6 @@ export async function updateRule(
     const rawData = {
         title: formData.get("title"),
         content: formData.get("content"),
-        sortOrder: formData.get("sortOrder") || undefined,
     };
 
     const validated = updateRuleSchema.safeParse(rawData);
@@ -107,7 +104,6 @@ export async function updateRule(
             data: {
                 title: validated.data.title,
                 content: validated.data.content,
-                sortOrder: validated.data.sortOrder,
             },
         });
 
@@ -138,5 +134,34 @@ export async function deleteRule(ruleId: string) {
     } catch (error) {
         console.error("Failed to delete rule:", error);
         return { error: "Nepodarilo se smazat pravidlo" };
+    }
+}
+
+export async function reorderRules(
+    yearId: string,
+    ruleIds: string[]
+): Promise<{ success?: boolean; error?: string }> {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.$transaction(
+            ruleIds.map((id, index) =>
+                db.rule.update({
+                    where: { id },
+                    data: { sortOrder: index },
+                })
+            )
+        );
+
+        revalidatePath(`/admin/rocniky/${yearId}/pravidla`);
+        revalidatePath("/pravidla");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to reorder rules:", error);
+        return { error: "Nepodarilo se zmenit poradi pravidel" };
     }
 }

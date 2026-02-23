@@ -4,20 +4,16 @@ import {
     Box,
     Card,
     CardContent,
-    Chip,
-    Tooltip,
-    Divider,
 } from "@mui/material";
 import {
-    Edit,
     Add,
     Gavel,
 } from "@mui/icons-material";
-import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getRulesForYear } from "@/lib/services/rules";
-import { RuleActions } from "@/components/admin/rule-actions";
+import { SortableRules } from "@/components/admin/sortable-rules";
 import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface PravidlaPageProps {
@@ -89,61 +85,7 @@ export default async function PravidlaPage({ params }: PravidlaPageProps) {
                     </CardContent>
                 </Card>
             ) : (
-                <Card>
-                    {rules.map((rule, index) => (
-                        <Box key={rule.id}>
-                            {index > 0 && <Divider />}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 2,
-                                    p: 2,
-                                }}
-                            >
-                                <Gavel sx={{ color: "text.disabled" }} />
-                                <Box sx={{ flex: 1 }}>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <Typography fontWeight="medium">
-                                            {rule.title}
-                                        </Typography>
-                                        <Chip
-                                            label={`Poradi: ${rule.sortOrder}`}
-                                            size="small"
-                                            variant="outlined"
-                                        />
-                                    </Box>
-                                </Box>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0.5,
-                                    }}
-                                >
-                                    <Tooltip title="Upravit pravidlo">
-                                        <IconLinkButton
-                                            href={`/admin/rocniky/${year.id}/pravidla/${rule.id}`}
-                                            size="small"
-                                        >
-                                            <Edit />
-                                        </IconLinkButton>
-                                    </Tooltip>
-                                    <RuleActions
-                                        ruleId={rule.id}
-                                        ruleTitle={rule.title}
-                                    />
-                                </Box>
-                            </Box>
-                        </Box>
-                    ))}
-                </Card>
+                <SortableRules yearId={year.id} rules={rules} />
             )}
         </Container>
     );

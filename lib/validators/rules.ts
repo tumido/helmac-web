@@ -6,7 +6,6 @@ export const createRuleSchema = z.object({
         .min(1, "Nazev je povinny")
         .max(200, "Nazev je prilis dlouhy"),
     content: z.string().min(1, "Obsah je povinny"),
-    sortOrder: z.coerce.number().int().min(0).optional(),
 });
 
 export const updateRuleSchema = createRuleSchema.partial();

@@ -55,7 +55,6 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
                 defaultValues={{
                     title: rule.title,
                     content: rule.content,
-                    sortOrder: rule.sortOrder,
                 }}
             />
         </Container>
