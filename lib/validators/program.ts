@@ -44,9 +44,11 @@ export const createProgramEventSchema = z.object({
         .max(200, "Misto je prilis dlouhe"),
     imageUrl: z
         .string()
-        .url("Neplatna URL adresa")
-        .optional()
-        .or(z.literal("")),
+        .refine(
+            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
+            "Neplatna URL obrazku"
+        )
+        .optional(),
     tags: z.array(z.string()).default([]),
     storyContent: z.any().optional(),
     isPublished: z.coerce.boolean().optional(),

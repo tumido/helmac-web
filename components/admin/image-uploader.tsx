@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone, FileRejection } from "react-dropzone";
 import {
     Box,
@@ -87,6 +87,11 @@ export function ImageUploader({
                 const data = await response.json();
 
                 if (data.url) {
+                    // Clear preview and revoke blob URL before setting new value
+                    if (preview) {
+                        URL.revokeObjectURL(preview);
+                    }
+                    setPreview(null);
                     onChange(data.url);
                     setError(null);
                 } else {
@@ -100,7 +105,7 @@ export function ImageUploader({
                 setUploading(false);
             }
         },
-        [maxSizeMB, onChange, handleError]
+        [maxSizeMB, onChange, handleError, preview]
     );
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -112,6 +117,15 @@ export function ImageUploader({
         maxFiles: 1,
         disabled: uploading,
     });
+
+    // Cleanup blob URL on unmount or when preview changes
+    useEffect(() => {
+        return () => {
+            if (preview) {
+                URL.revokeObjectURL(preview);
+            }
+        };
+    }, [preview]);
 
     const handleRemove = () => {
         onChange("");
@@ -166,9 +180,18 @@ export function ImageUploader({
                 ) : displayUrl ? (
                     <Box sx={{ position: "relative", width: "100%" }}>
                         <Box
+                            key={displayUrl}
                             component="img"
                             src={displayUrl}
                             alt="Nahled"
+                            onError={() => {
+                                // If image fails to load, clear it
+                                if (preview) {
+                                    URL.revokeObjectURL(preview);
+                                    setPreview(null);
+                                }
+                                handleError("Obrazek se nepodarilo nacist");
+                            }}
                             sx={{
                                 maxHeight: 250,
                                 maxWidth: "100%",

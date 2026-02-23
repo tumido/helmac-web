@@ -14,7 +14,13 @@ export const createAlbumSchema = z.object({
         .min(1, "Nazev je povinny")
         .max(200, "Nazev je prilis dlouhy"),
     description: z.string().max(1000, "Popis je prilis dlouhy").optional(),
-    coverImage: z.string().url("Neplatna URL obrazku").optional().or(z.literal("")),
+    coverImage: z
+        .string()
+        .refine(
+            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
+            "Neplatna URL obrazku"
+        )
+        .optional(),
     isPublished: z.coerce.boolean().optional(),
     sortOrder: z.coerce.number().int().min(0).optional(),
 });
@@ -22,8 +28,20 @@ export const createAlbumSchema = z.object({
 export const updateAlbumSchema = createAlbumSchema.partial();
 
 export const createImageSchema = z.object({
-    url: z.string().url("Neplatna URL obrazku"),
-    thumbnailUrl: z.string().url("Neplatna URL nahledu").optional().or(z.literal("")),
+    url: z
+        .string()
+        .min(1, "URL obrazku je povinna")
+        .refine(
+            (val) => val.startsWith("/") || val.startsWith("http"),
+            "Neplatna URL obrazku"
+        ),
+    thumbnailUrl: z
+        .string()
+        .refine(
+            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
+            "Neplatna URL nahledu"
+        )
+        .optional(),
     title: z.string().max(200, "Nazev je prilis dlouhy").optional(),
     description: z.string().max(1000, "Popis je prilis dlouhy").optional(),
     altText: z.string().max(200, "Alt text je prilis dlouhy").optional(),

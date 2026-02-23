@@ -15,7 +15,13 @@ export const createNewsSchema = z.object({
         .max(200, "Nazev je prilis dlouhy"),
     excerpt: z.string().max(500, "Perex je prilis dlouhy").optional(),
     content: z.string().min(1, "Obsah je povinny"),
-    coverImage: z.string().url("Neplatna URL obrazku").optional().or(z.literal("")),
+    coverImage: z
+        .string()
+        .refine(
+            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
+            "Neplatna URL obrazku"
+        )
+        .optional(),
     isPublished: z.coerce.boolean().optional(),
     publishedAt: z.coerce.date().optional().nullable(),
 });
