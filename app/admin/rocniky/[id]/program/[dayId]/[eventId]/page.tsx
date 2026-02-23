@@ -74,7 +74,6 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
                     imageUrl: event.imageUrl,
                     tags: event.tags,
                     isPublished: event.isPublished,
-                    sortOrder: event.sortOrder,
                 }}
             />
         </Container>

@@ -10,7 +10,6 @@ export const createProgramDaySchema = z.object({
         .string()
         .min(1, "Popisek je povinny")
         .max(50, "Popisek je prilis dlouhy"),
-    sortOrder: z.coerce.number().int().min(0).optional(),
 });
 
 export const updateProgramDaySchema = createProgramDaySchema.partial();
@@ -52,7 +51,6 @@ export const createProgramEventSchema = z.object({
     tags: z.array(z.string()).default([]),
     storyContent: z.any().optional(),
     isPublished: z.coerce.boolean().optional(),
-    sortOrder: z.coerce.number().int().min(0).optional(),
 });
 
 export const updateProgramEventSchema = createProgramEventSchema.partial();

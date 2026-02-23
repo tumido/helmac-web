@@ -83,7 +83,6 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
                         defaultValues={{
                             date: day.date,
                             label: day.label,
-                            sortOrder: day.sortOrder,
                         }}
                     />
                 </Box>

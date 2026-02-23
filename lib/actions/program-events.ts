@@ -57,7 +57,6 @@ export async function createProgramEvent(
         imageUrl: formData.get("imageUrl") || undefined,
         tags,
         isPublished: formData.get("isPublished") === "true",
-        sortOrder: formData.get("sortOrder") || undefined,
     };
 
     const validated = createProgramEventSchema.safeParse(rawData);
@@ -91,8 +90,7 @@ export async function createProgramEvent(
                 imageUrl: validated.data.imageUrl || null,
                 tags: validated.data.tags,
                 isPublished: validated.data.isPublished ?? false,
-                sortOrder:
-                    validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
+                sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
             },
         });
 
@@ -140,7 +138,6 @@ export async function updateProgramEvent(
         imageUrl: formData.get("imageUrl") || undefined,
         tags,
         isPublished: formData.get("isPublished") === "true",
-        sortOrder: formData.get("sortOrder"),
     };
 
     const validated = updateProgramEventSchema.safeParse(rawData);
@@ -169,7 +166,6 @@ export async function updateProgramEvent(
                 imageUrl: validated.data.imageUrl || null,
                 tags: validated.data.tags,
                 isPublished: validated.data.isPublished,
-                sortOrder: validated.data.sortOrder,
             },
         });
 

@@ -38,7 +38,6 @@ interface ProgramEventFormProps {
         imageUrl?: string | null;
         tags?: string[];
         isPublished?: boolean;
-        sortOrder?: number;
     };
 }
 
@@ -230,18 +229,6 @@ export function ProgramEventForm({
                         label="Publikovat udalost"
                     />
 
-                    {mode === "edit" && (
-                        <TextField
-                            fullWidth
-                            type="number"
-                            id="sortOrder"
-                            name="sortOrder"
-                            label="Poradi"
-                            defaultValue={defaultValues?.sortOrder ?? 0}
-                            helperText="Urcuje poradi v ramci casove skupiny"
-                            inputProps={{ min: 0 }}
-                        />
-                    )}
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

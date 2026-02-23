@@ -13,7 +13,6 @@ export type ProgramDayActionState = {
     error?: {
         date?: string[];
         label?: string[];
-        sortOrder?: string[];
         _form?: string[];
     };
     success?: boolean;
@@ -33,7 +32,6 @@ export async function createProgramDay(
     const rawData = {
         date: formData.get("date"),
         label: formData.get("label"),
-        sortOrder: formData.get("sortOrder") || undefined,
     };
 
     const validated = createProgramDaySchema.safeParse(rawData);
@@ -68,8 +66,7 @@ export async function createProgramDay(
                 yearId,
                 date: validated.data.date,
                 label: validated.data.label,
-                sortOrder:
-                    validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
+                sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
             },
         });
 
@@ -96,7 +93,6 @@ export async function updateProgramDay(
     const rawData = {
         date: formData.get("date"),
         label: formData.get("label"),
-        sortOrder: formData.get("sortOrder"),
     };
 
     const validated = updateProgramDaySchema.safeParse(rawData);
@@ -136,7 +132,6 @@ export async function updateProgramDay(
             data: {
                 date: validated.data.date,
                 label: validated.data.label,
-                sortOrder: validated.data.sortOrder,
             },
         });
 

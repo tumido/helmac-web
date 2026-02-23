@@ -27,7 +27,6 @@ interface ProgramDayFormProps {
     defaultValues?: {
         date?: Date;
         label?: string;
-        sortOrder?: number;
     };
 }
 
@@ -128,22 +127,6 @@ export function ProgramDayForm({
                         />
                     </Box>
 
-                    {mode === "edit" && (
-                        <TextField
-                            fullWidth
-                            type="number"
-                            id="sortOrder"
-                            name="sortOrder"
-                            label="Poradi"
-                            defaultValue={defaultValues?.sortOrder ?? 0}
-                            error={!!state?.error?.sortOrder}
-                            helperText={
-                                state?.error?.sortOrder?.[0] ||
-                                "Urcuje poradi zobrazeni dnu"
-                            }
-                            inputProps={{ min: 0 }}
-                        />
-                    )}
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

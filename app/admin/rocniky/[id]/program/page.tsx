@@ -4,33 +4,20 @@ import {
     Box,
     Card,
     CardContent,
-    Chip,
-    Tooltip,
-    Divider,
 } from "@mui/material";
 import {
-    Edit,
     Add,
     CalendarMonth,
-    Event,
 } from "@mui/icons-material";
-import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
+import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getProgramDaysForYear } from "@/lib/services/program";
-import { ProgramDayActions } from "@/components/admin/program-day-actions";
+import { SortableDays } from "@/components/admin/sortable-days";
 import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 
 interface ProgramPageProps {
     params: Promise<{ id: string }>;
-}
-
-function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat("cs-CZ", {
-        weekday: "short",
-        day: "numeric",
-        month: "numeric",
-    }).format(new Date(date));
 }
 
 export default async function ProgramPage({ params }: ProgramPageProps) {
@@ -98,79 +85,7 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
                     </CardContent>
                 </Card>
             ) : (
-                <Card>
-                    {days.map((day, index) => (
-                        <Box key={day.id}>
-                            {index > 0 && <Divider />}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 2,
-                                    p: 2,
-                                }}
-                            >
-                                <CalendarMonth sx={{ color: "text.disabled" }} />
-                                <Box sx={{ flex: 1 }}>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <Typography fontWeight="medium">
-                                            {day.label}
-                                        </Typography>
-                                        <Chip
-                                            label={formatDate(day.date)}
-                                            size="small"
-                                            variant="outlined"
-                                        />
-                                    </Box>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 0.5,
-                                            color: "text.secondary",
-                                        }}
-                                    >
-                                        <Event fontSize="small" />
-                                        <Typography variant="body2">
-                                            {day._count.events}{" "}
-                                            {day._count.events === 1
-                                                ? "udalost"
-                                                : day._count.events < 5
-                                                  ? "udalosti"
-                                                  : "udalosti"}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0.5,
-                                    }}
-                                >
-                                    <Tooltip title="Spravovat den">
-                                        <IconLinkButton
-                                            href={`/admin/rocniky/${year.id}/program/${day.id}`}
-                                            size="small"
-                                        >
-                                            <Edit />
-                                        </IconLinkButton>
-                                    </Tooltip>
-                                    <ProgramDayActions
-                                        dayId={day.id}
-                                        eventsCount={day._count.events}
-                                    />
-                                </Box>
-                            </Box>
-                        </Box>
-                    ))}
-                </Card>
+                <SortableDays yearId={year.id} days={days} />
             )}
         </Container>
     );
