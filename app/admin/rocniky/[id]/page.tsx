@@ -101,6 +101,8 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                             subtitle: year.subtitle,
                             startDate: year.startDate,
                             endDate: year.endDate,
+                            headerPhoto: year.headerPhoto,
+                            heroPhoto: year.heroPhoto,
                         }}
                     />
                 </Box>

@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { NewsList } from "@/components/public/features/news/NewsList";
-import { getLatestNewsForActiveYear } from "@/lib/services";
+import { getLatestNewsForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Novinky | Helmac",
@@ -9,13 +9,17 @@ export const metadata = {
 };
 
 export default async function NovinkyPage() {
-    const news = await getLatestNewsForActiveYear(20);
+    const [news, activeYear] = await Promise.all([
+        getLatestNewsForActiveYear(20),
+        getActiveYear(),
+    ]);
 
     return (
         <>
             <PageHeader
                 title="Novinky"
                 subtitle="Sledujte nejnovejsi zpravy a aktualizace"
+                backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <NewsList news={news} />

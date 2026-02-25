@@ -4,7 +4,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { ImageLightbox } from "@/components/public/features/gallery/ImageLightbox";
-import { getAlbumByYearAndSlug } from "@/lib/services";
+import { getAlbumByYearAndSlug, getActiveYear } from "@/lib/services";
 
 interface AlbumDetailPageProps {
     params: Promise<{ year: string; slug: string }>;
@@ -40,7 +40,10 @@ export default async function AlbumDetailPage({
         notFound();
     }
 
-    const album = await getAlbumByYearAndSlug(yearNumber, slug);
+    const [album, activeYear] = await Promise.all([
+        getAlbumByYearAndSlug(yearNumber, slug),
+        getActiveYear(),
+    ]);
 
     if (!album) {
         notFound();
@@ -48,7 +51,7 @@ export default async function AlbumDetailPage({
 
     return (
         <>
-            <PageHeader title={album.title} subtitle={album.description || undefined} />
+            <PageHeader title={album.title} subtitle={album.description || undefined} backgroundImage={activeYear?.headerPhoto || undefined} />
 
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <LinkButton

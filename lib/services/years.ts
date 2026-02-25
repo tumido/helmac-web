@@ -44,6 +44,7 @@ export const getArchivedYears = cache(async () => {
             subtitle: true,
             startDate: true,
             endDate: true,
+            headerPhoto: true,
         },
     });
 });
@@ -58,6 +59,8 @@ export const getYearById = cache(async (id: string) => {
             subtitle: true,
             startDate: true,
             endDate: true,
+            headerPhoto: true,
+            heroPhoto: true,
         },
     });
 });

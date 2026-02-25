@@ -12,6 +12,8 @@ export const createYearSchema = z.object({
     subtitle: z.string().max(500, "Podtitulek je prilis dlouhy").optional(),
     startDate: z.coerce.date().optional().nullable(),
     endDate: z.coerce.date().optional().nullable(),
+    headerPhoto: z.string().max(500).optional().nullable(),
+    heroPhoto: z.string().max(500).optional().nullable(),
 });
 
 export const updateYearSchema = createYearSchema.partial();

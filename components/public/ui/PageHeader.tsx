@@ -5,9 +5,10 @@ import { Box, Container, Typography, useTheme } from "@mui/material";
 interface PageHeaderProps {
     title: string;
     subtitle?: string;
+    backgroundImage?: string;
 }
 
-export function PageHeader({ title, subtitle }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backgroundImage }: PageHeaderProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
 
@@ -17,7 +18,7 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
                 position: "relative",
                 color: "common.white",
                 py: { xs: 6, md: 8 },
-                backgroundImage: "url(/images/battle-bg.png)",
+                backgroundImage: `url(${backgroundImage || "/images/battle-bg.png"})`,
                 backgroundSize: "100% auto",
                 backgroundPosition: "center 55%",
                 backgroundRepeat: "no-repeat",

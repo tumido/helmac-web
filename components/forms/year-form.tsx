@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -11,9 +12,11 @@ import {
     Card,
     CardContent,
     CardActions,
+    Typography,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import { createYear, updateYear, YearActionState } from "@/lib/actions/years";
 
 interface YearFormProps {
@@ -25,6 +28,8 @@ interface YearFormProps {
         subtitle?: string | null;
         startDate?: Date | null;
         endDate?: Date | null;
+        headerPhoto?: string | null;
+        heroPhoto?: string | null;
     };
 }
 
@@ -65,6 +70,9 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
         action,
         null
     );
+
+    const [headerPhoto, setHeaderPhoto] = useState(defaultValues?.headerPhoto || "");
+    const [heroPhoto, setHeroPhoto] = useState(defaultValues?.heroPhoto || "");
 
     return (
         <Card>
@@ -164,6 +172,44 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
                             helperText={state?.error?.endDate?.[0]}
                             InputLabelProps={{ shrink: true }}
                         />
+                    </Box>
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Foto zahlavi podstranek
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                            Obrazek na pozadi zahlavi verejnych podstranek (Program, Pravidla, Galerie, apod.)
+                        </Typography>
+                        <ImageUploader
+                            value={headerPhoto}
+                            onChange={setHeaderPhoto}
+                        />
+                        <input type="hidden" name="headerPhoto" value={headerPhoto} />
+                        {state?.error?.headerPhoto && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {state.error.headerPhoto[0]}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Foto hlavni sekce
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                            Obrazek na pozadi uvodni sekce domovske stranky
+                        </Typography>
+                        <ImageUploader
+                            value={heroPhoto}
+                            onChange={setHeroPhoto}
+                        />
+                        <input type="hidden" name="heroPhoto" value={heroPhoto} />
+                        {state?.error?.heroPhoto && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {state.error.heroPhoto[0]}
+                            </Typography>
+                        )}
                     </Box>
                 </CardContent>
 

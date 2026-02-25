@@ -12,6 +12,7 @@ export default async function HomePage() {
         <>
             <HeroSection
                 title={activeYear?.title || "HELMAC"}
+                backgroundImage={activeYear?.heroPhoto || undefined}
                 subtitle={
                     activeYear?.subtitle ||
                     "Stredoveka fantasy LARP udalost, kde se pribehy stredoveku misi s magi a dobrodruzstvim"

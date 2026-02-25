@@ -1,7 +1,7 @@
 import { Container, Typography, Box } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { RegistrationForm } from "@/components/public/features/registration";
-import { getRegistrationStatus } from "@/lib/services";
+import { getRegistrationStatus, getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Registrace | Helmac",
@@ -9,7 +9,10 @@ export const metadata = {
 };
 
 export default async function RegistracePage() {
-    const status = await getRegistrationStatus();
+    const [status, activeYear] = await Promise.all([
+        getRegistrationStatus(),
+        getActiveYear(),
+    ]);
 
     if (!status.isOpen) {
         return (
@@ -17,6 +20,7 @@ export default async function RegistracePage() {
                 <PageHeader
                     title="Registrace"
                     subtitle="Registrace neni momentalne otevrena"
+                    backgroundImage={activeYear?.headerPhoto || undefined}
                 />
                 <Container maxWidth="md" sx={{ pb: 8 }}>
                     <Box
@@ -45,6 +49,7 @@ export default async function RegistracePage() {
             <PageHeader
                 title="Registrace"
                 subtitle={`Zaregistrujte se na ${status.year?.title}`}
+                backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
                 <RegistrationForm />

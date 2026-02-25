@@ -5,6 +5,7 @@ import {
     getProgramScheduleForActiveYear,
     getAllPublishedTags,
 } from "@/lib/services/program";
+import { getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Program | Helmac",
@@ -12,9 +13,10 @@ export const metadata = {
 };
 
 export default async function ProgramPage() {
-    const [scheduleData, allTags] = await Promise.all([
+    const [scheduleData, allTags, activeYear] = await Promise.all([
         getProgramScheduleForActiveYear(),
         getAllPublishedTags(),
+        getActiveYear(),
     ]);
 
     return (
@@ -22,6 +24,7 @@ export default async function ProgramPage() {
             <PageHeader
                 title="Program"
                 subtitle="Kompletni harmonogram akce"
+                backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
                 {scheduleData && scheduleData.days.length > 0 ? (

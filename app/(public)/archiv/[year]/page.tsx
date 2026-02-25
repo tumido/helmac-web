@@ -50,7 +50,7 @@ export default async function ArchiveYearPage({
 
     return (
         <>
-            <PageHeader title={year.title} subtitle={year.subtitle || undefined} />
+            <PageHeader title={year.title} subtitle={year.subtitle || undefined} backgroundImage={year.headerPhoto || undefined} />
 
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <LinkButton

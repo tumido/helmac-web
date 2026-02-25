@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Container, Grid, Typography, Box } from "@mui/material";
 import { CalendarMonth } from "@mui/icons-material";
 import { PageHeader, Card } from "@/components/public/ui";
-import { getArchivedYears } from "@/lib/services";
+import { getArchivedYears, getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Archiv | Helmac",
@@ -10,13 +10,17 @@ export const metadata = {
 };
 
 export default async function ArchivPage() {
-    const years = await getArchivedYears();
+    const [years, activeYear] = await Promise.all([
+        getArchivedYears(),
+        getActiveYear(),
+    ]);
 
     return (
         <>
             <PageHeader
                 title="Archiv"
                 subtitle="Nahlednete do minulych rocniku"
+                backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 {years.length === 0 ? (

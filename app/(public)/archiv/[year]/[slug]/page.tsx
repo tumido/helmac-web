@@ -58,6 +58,7 @@ export default async function ArchivePageDetail({
             <PageHeader
                 title={page.title}
                 subtitle={`${year.title} (${year.year})`}
+                backgroundImage={year.headerPhoto || undefined}
             />
 
             <Container maxWidth="md" sx={{ pb: 8 }}>

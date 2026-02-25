@@ -3,7 +3,7 @@ import { Container, Typography, Box, Chip } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack, Person, CalendarToday } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
-import { getNewsBySlugForActiveYear } from "@/lib/services";
+import { getNewsBySlugForActiveYear, getActiveYear } from "@/lib/services";
 
 interface NewsDetailPageProps {
     params: Promise<{ slug: string }>;
@@ -25,7 +25,10 @@ export async function generateMetadata({ params }: NewsDetailPageProps) {
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     const { slug } = await params;
-    const news = await getNewsBySlugForActiveYear(slug);
+    const [news, activeYear] = await Promise.all([
+        getNewsBySlugForActiveYear(slug),
+        getActiveYear(),
+    ]);
 
     if (!news) {
         notFound();
@@ -41,7 +44,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
     return (
         <>
-            <PageHeader title={news.title} />
+            <PageHeader title={news.title} backgroundImage={activeYear?.headerPhoto || undefined} />
 
             <Container maxWidth="md" sx={{ pb: 8 }}>
                 <LinkButton

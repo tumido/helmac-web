@@ -13,6 +13,8 @@ export type YearActionState = {
         subtitle?: string[];
         startDate?: string[];
         endDate?: string[];
+        headerPhoto?: string[];
+        heroPhoto?: string[];
         _form?: string[];
     };
     success?: boolean;
@@ -34,6 +36,8 @@ export async function createYear(
         subtitle: formData.get("subtitle") || undefined,
         startDate: formData.get("startDate") || undefined,
         endDate: formData.get("endDate") || undefined,
+        headerPhoto: formData.get("headerPhoto") || undefined,
+        heroPhoto: formData.get("heroPhoto") || undefined,
     };
 
     const validated = createYearSchema.safeParse(rawData);
@@ -59,6 +63,8 @@ export async function createYear(
                 subtitle: validated.data.subtitle,
                 startDate: validated.data.startDate,
                 endDate: validated.data.endDate,
+                headerPhoto: validated.data.headerPhoto,
+                heroPhoto: validated.data.heroPhoto,
             },
         });
 
@@ -91,6 +97,8 @@ export async function updateYear(
         subtitle: formData.get("subtitle") || undefined,
         startDate: formData.get("startDate") || undefined,
         endDate: formData.get("endDate") || undefined,
+        headerPhoto: formData.get("headerPhoto") || undefined,
+        heroPhoto: formData.get("heroPhoto") || undefined,
     };
 
     const validated = updateYearSchema.safeParse(rawData);
@@ -122,11 +130,14 @@ export async function updateYear(
                 subtitle: validated.data.subtitle,
                 startDate: validated.data.startDate,
                 endDate: validated.data.endDate,
+                headerPhoto: validated.data.headerPhoto,
+                heroPhoto: validated.data.heroPhoto,
             },
         });
 
         revalidatePath("/admin/rocniky");
         revalidatePath(`/admin/rocniky/${yearId}`);
+        revalidatePath("/");
     } catch (error) {
         console.error("Failed to update year:", error);
         return { error: { _form: ["Nepodarilo se upravit rocnik"] } };
