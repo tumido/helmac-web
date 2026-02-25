@@ -15,11 +15,13 @@ import {
     Switch,
     MenuItem,
     Typography,
+    IconButton,
 } from "@mui/material";
-import { Save } from "@mui/icons-material";
+import { Save, Refresh } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createAlbum, updateAlbum, AlbumActionState } from "@/lib/actions/albums";
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { generateSlug } from "@/lib/utils/slugify";
 
 interface AlbumFormProps {
     mode: "create" | "edit";
@@ -59,6 +61,9 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
     const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
+    const [title, setTitle] = useState(defaultValues?.title || "");
+    const [slug, setSlug] = useState(defaultValues?.slug || "");
+    const [slugManuallyEdited, setSlugManuallyEdited] = useState(mode === "edit");
 
     const action =
         mode === "create"
@@ -125,7 +130,14 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                             id="title"
                             name="title"
                             label="Nazev alba"
-                            defaultValue={defaultValues?.title || ""}
+                            value={title}
+                            onChange={(e) => {
+                                const newTitle = e.target.value;
+                                setTitle(newTitle);
+                                if (!slugManuallyEdited) {
+                                    setSlug(generateSlug(newTitle));
+                                }
+                            }}
                             error={!!state?.error?.title}
                             helperText={state?.error?.title?.[0]}
                         />
@@ -136,13 +148,31 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                             id="slug"
                             name="slug"
                             label="URL slug"
-                            defaultValue={defaultValues?.slug || ""}
+                            value={slug}
+                            onChange={(e) => {
+                                setSlug(e.target.value);
+                                setSlugManuallyEdited(true);
+                            }}
                             error={!!state?.error?.slug}
                             helperText={
                                 state?.error?.slug?.[0] ||
                                 "Pouze mala pismena, cisla a pomlcky"
                             }
                             placeholder="napr. fotky-z-akce"
+                            InputProps={{
+                                endAdornment: slugManuallyEdited && mode === "create" ? (
+                                    <IconButton
+                                        size="small"
+                                        title="Generovat z nazvu"
+                                        onClick={() => {
+                                            setSlug(generateSlug(title));
+                                            setSlugManuallyEdited(false);
+                                        }}
+                                    >
+                                        <Refresh fontSize="small" />
+                                    </IconButton>
+                                ) : undefined,
+                            }}
                         />
                     </Box>
 

@@ -93,6 +93,7 @@ export async function createAlbum(
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
     } catch (error) {
         console.error("Failed to create album:", error);
         return { error: { _form: ["Nepodarilo se vytvorit album"] } };
@@ -161,6 +162,7 @@ export async function updateAlbum(
 
         revalidatePath("/admin/galerie");
         revalidatePath(`/admin/galerie/${albumId}`);
+        revalidatePath("/galerie");
     } catch (error) {
         console.error("Failed to update album:", error);
         return { error: { _form: ["Nepodarilo se upravit album"] } };
@@ -183,6 +185,7 @@ export async function publishAlbum(albumId: string) {
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
         return { success: true };
     } catch (error) {
         console.error("Failed to publish album:", error);
@@ -204,6 +207,7 @@ export async function unpublishAlbum(albumId: string) {
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
         return { success: true };
     } catch (error) {
         console.error("Failed to unpublish album:", error);
@@ -224,6 +228,7 @@ export async function deleteAlbum(albumId: string) {
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
         return { success: true };
     } catch (error) {
         console.error("Failed to delete album:", error);
@@ -246,6 +251,7 @@ export async function bulkPublishAlbums(albumIds: string[]) {
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
         return { success: true, count: albumIds.length };
     } catch (error) {
         console.error("Failed to bulk publish albums:", error);
@@ -267,6 +273,7 @@ export async function bulkUnpublishAlbums(albumIds: string[]) {
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
         return { success: true, count: albumIds.length };
     } catch (error) {
         console.error("Failed to bulk unpublish albums:", error);
@@ -287,6 +294,7 @@ export async function bulkDeleteAlbums(albumIds: string[]) {
         });
 
         revalidatePath("/admin/galerie");
+        revalidatePath("/galerie");
         return { success: true, count: albumIds.length };
     } catch (error) {
         console.error("Failed to bulk delete albums:", error);

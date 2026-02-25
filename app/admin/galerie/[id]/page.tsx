@@ -85,7 +85,7 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
                         />
                     </Box>
                     <Button
-                        href={`/${album.year.year}/galerie/${album.slug}`}
+                        href={`/galerie/${album.year.year}/${album.slug}`}
                         target="_blank"
                         variant="outlined"
                         startIcon={<OpenInNew />}

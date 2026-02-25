@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { AlbumGrid } from "@/components/public/features/gallery/AlbumGrid";
-import { getAlbumsForActiveYear } from "@/lib/services";
+import { getAllPublishedAlbums } from "@/lib/services";
 
 export const metadata = {
     title: "Galerie | Helmac",
@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function GaleriePage() {
-    const albums = await getAlbumsForActiveYear();
+    const albums = await getAllPublishedAlbums();
 
     return (
         <>

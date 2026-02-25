@@ -11,7 +11,7 @@ interface AlbumCardProps {
 export function AlbumCard({ album }: AlbumCardProps) {
     return (
         <Link
-            href={`/galerie/${album.slug}`}
+            href={`/galerie/${album.year.year}/${album.slug}`}
             style={{ textDecoration: "none", color: "inherit" }}
         >
             <Card
@@ -30,6 +30,13 @@ export function AlbumCard({ album }: AlbumCardProps) {
                     }}
                 >
                     {album.title}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mb: 0.5 }}
+                >
+                    {album.year.year}
                 </Typography>
                 {album.description && (
                     <Typography

@@ -4,6 +4,9 @@ export interface AlbumPreview {
     title: string;
     description: string | null;
     coverImage: string | null;
+    year: {
+        year: number;
+    };
     _count: {
         images: number;
     };
@@ -26,5 +29,8 @@ export interface AlbumDetail {
     title: string;
     description: string | null;
     coverImage: string | null;
+    year: {
+        year: number;
+    };
     images: AlbumImage[];
 }

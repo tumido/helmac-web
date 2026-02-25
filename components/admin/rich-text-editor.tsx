@@ -4,6 +4,8 @@ import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import Color from "@tiptap/extension-color";
+import TextStyle from "@tiptap/extension-text-style";
 import {
     Box,
     IconButton,
@@ -11,6 +13,7 @@ import {
     Tooltip,
     ToggleButton,
     ToggleButtonGroup,
+    Popover,
 } from "@mui/material";
 import {
     FormatBold,
@@ -26,8 +29,22 @@ import {
     Undo,
     Redo,
     Title,
+    FormatColorText,
+    FormatColorReset,
 } from "@mui/icons-material";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+const COLOR_PALETTE = [
+    { label: "Cervena", value: "#E53935" },
+    { label: "Ruzova", value: "#D81B60" },
+    { label: "Fialova", value: "#8E24AA" },
+    { label: "Modra", value: "#1E88E5" },
+    { label: "Tyrkysova", value: "#00ACC1" },
+    { label: "Zelena", value: "#43A047" },
+    { label: "Oranzova", value: "#FB8C00" },
+    { label: "Hneda", value: "#6D4C41" },
+    { label: "Cerna", value: "#212121" },
+];
 
 interface RichTextEditorProps {
     value: string;
@@ -37,6 +54,8 @@ interface RichTextEditorProps {
 }
 
 function MenuBar({ editor }: { editor: Editor | null }) {
+    const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+
     const setLink = useCallback(() => {
         if (!editor) return;
 
@@ -112,6 +131,65 @@ function MenuBar({ editor }: { editor: Editor | null }) {
                     <StrikethroughS fontSize="small" />
                 </IconButton>
             </Tooltip>
+
+            {/* Text color */}
+            <Tooltip title="Barva textu">
+                <IconButton
+                    size="small"
+                    onClick={(e) => setColorAnchor(e.currentTarget)}
+                >
+                    <FormatColorText
+                        fontSize="small"
+                        sx={{
+                            color: editor.getAttributes("textStyle").color || "inherit",
+                        }}
+                    />
+                </IconButton>
+            </Tooltip>
+            <Popover
+                open={Boolean(colorAnchor)}
+                anchorEl={colorAnchor}
+                onClose={() => setColorAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            >
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, p: 1, maxWidth: 176 }}>
+                    {COLOR_PALETTE.map((color) => (
+                        <Tooltip key={color.value} title={color.label}>
+                            <Box
+                                component="button"
+                                onClick={() => {
+                                    editor.chain().focus().setColor(color.value).run();
+                                    setColorAnchor(null);
+                                }}
+                                sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: "4px",
+                                    backgroundColor: color.value,
+                                    border: "2px solid",
+                                    borderColor: editor.getAttributes("textStyle").color === color.value
+                                        ? "primary.main"
+                                        : "transparent",
+                                    cursor: "pointer",
+                                    p: 0,
+                                    "&:hover": { opacity: 0.8 },
+                                }}
+                            />
+                        </Tooltip>
+                    ))}
+                    <Tooltip title="Odstranit barvu">
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                editor.chain().focus().unsetColor().run();
+                                setColorAnchor(null);
+                            }}
+                        >
+                            <FormatColorReset fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            </Popover>
 
             <Tooltip title="Kod">
                 <IconButton
@@ -264,6 +342,8 @@ export function RichTextEditor({
                     levels: [2, 3],
                 },
             }),
+            TextStyle,
+            Color,
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {

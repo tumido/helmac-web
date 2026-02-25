@@ -115,7 +115,7 @@ export default async function ArchiveYearPage({
                                     {year.albums.map((album) => (
                                         <ListItem key={album.id} disablePadding>
                                             <ListItemLinkButton
-                                                href={`/galerie/${album.slug}`}
+                                                href={`/galerie/${year.year}/${album.slug}`}
                                             >
                                                 <ListItemText
                                                     primary={album.title}
