@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Tab, Tabs } from "@mui/material";
+import { Box, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
 import { InfoItem } from "./info.types";
 
 interface InfoTabsProps {
@@ -10,6 +10,9 @@ interface InfoTabsProps {
 }
 
 export function InfoTabs({ infoSections, selectedInfoId, onInfoChange }: InfoTabsProps) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
     const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
         onInfoChange(newValue);
     };
@@ -25,8 +28,9 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange }: InfoTab
             <Tabs
                 value={selectedInfoId}
                 onChange={handleChange}
+                variant={isMobile ? "scrollable" : "standard"}
                 scrollButtons="auto"
-                centered={true}
+                centered={!isMobile}
                 allowScrollButtonsMobile
                 sx={{
                     "& .MuiTab-root": {

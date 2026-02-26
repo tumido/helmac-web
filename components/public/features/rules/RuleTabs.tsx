@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Tab, Tabs } from "@mui/material";
+import { Box, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
 import { RuleItem } from "./rules.types";
 
 interface RuleTabsProps {
@@ -10,6 +10,9 @@ interface RuleTabsProps {
 }
 
 export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
     const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
         onRuleChange(newValue);
     };
@@ -25,8 +28,9 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
             <Tabs
                 value={selectedRuleId}
                 onChange={handleChange}
+                variant={isMobile ? "scrollable" : "standard"}
                 scrollButtons="auto"
-                centered={true}
+                centered={!isMobile}
                 allowScrollButtonsMobile
                 sx={{
                     "& .MuiTab-root": {
