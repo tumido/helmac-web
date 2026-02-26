@@ -32,8 +32,8 @@ export function DayTabs({ days, selectedDayId, onDayChange }: DayTabsProps) {
             <Tabs
                 value={selectedDayId}
                 onChange={handleChange}
+                variant="scrollable"
                 scrollButtons="auto"
-                centered={true}
                 allowScrollButtonsMobile
                 sx={{
                     "& .MuiTab-root": {

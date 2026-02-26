@@ -75,7 +75,7 @@ export function Header() {
 
                         <Navigation items={navItems} />
 
-                        <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1 }}>
+                        <Box sx={{ display: { xs: "flex", lg: "none" }, alignItems: "center", gap: 1 }}>
                             <ThemeToggle size="small" />
                             <IconButton
                                 color="inherit"
@@ -87,7 +87,7 @@ export function Header() {
                             </IconButton>
                         </Box>
 
-                        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 2 }}>
+                        <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 2 }}>
                             <ThemeToggle />
                             <LinkButton
                                 href="/registrace"

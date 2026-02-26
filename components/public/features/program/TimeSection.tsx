@@ -31,7 +31,7 @@ export function TimeSection({ timeOfDay }: TimeSectionProps) {
                 },
             }}
         >
-            <div className="mt-4 flex flex-row">
+            <Box sx={{ display: "flex", alignItems: "center" }}>
                 {getTimeIcon(timeOfDay)}
                 <Typography
                     variant="h6"
@@ -39,12 +39,12 @@ export function TimeSection({ timeOfDay }: TimeSectionProps) {
                         fontFamily: '"Cinzel", serif',
                         fontWeight: 600,
                         color: "primary.main",
-                        paddingLeft: "15px",
+                        pl: 1.5,
                     }}
                 >
                     {getTimeOfDayLabel(timeOfDay)}
                 </Typography>
-            </div>
+            </Box>
             <Box
                 sx={{
                     flex: 1,

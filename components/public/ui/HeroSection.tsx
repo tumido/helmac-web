@@ -102,6 +102,7 @@ export function HeroSection({
                             mx: "auto",
                             fontFamily: '"Merriweather", serif',
                             fontWeight: 300,
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
                         }}
                     >
                         {subtitle}

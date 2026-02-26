@@ -9,6 +9,8 @@ import {
     Typography,
     ImageList,
     ImageListItem,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import {
     Close,
@@ -23,6 +25,11 @@ interface ImageLightboxProps {
 }
 
 export function ImageLightbox({ images }: ImageLightboxProps) {
+    const theme = useTheme();
+    const isXs = useMediaQuery(theme.breakpoints.down("sm"));
+    const isSm = useMediaQuery(theme.breakpoints.between("sm", "md"));
+    const cols = isXs ? 1 : isSm ? 2 : 3;
+
     const [open, setOpen] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -56,7 +63,7 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
 
     return (
         <>
-            <ImageList variant="masonry" cols={3} gap={16}>
+            <ImageList variant="masonry" cols={cols} gap={16}>
                 {images.map((image, index) => (
                     <ImageListItem
                         key={image.id}
@@ -130,8 +137,8 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
                         alignItems: "center",
                         justifyContent: "center",
                         position: "relative",
-                        minHeight: "80vh",
-                        minWidth: "80vw",
+                        minHeight: { xs: "60vh", sm: "80vh" },
+                        minWidth: { xs: "95vw", sm: "80vw" },
                     }}
                 >
                     <IconButton
@@ -149,9 +156,10 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
 
                     <IconButton
                         onClick={handlePrev}
+                        size={isXs ? "small" : "medium"}
                         sx={{
                             position: "absolute",
-                            left: 16,
+                            left: { xs: 4, sm: 16 },
                             color: "white",
                             backgroundColor: "rgba(255,255,255,0.1)",
                             "&:hover": {
@@ -159,7 +167,7 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
                             },
                         }}
                     >
-                        <ChevronLeft fontSize="large" />
+                        <ChevronLeft fontSize={isXs ? "medium" : "large"} />
                     </IconButton>
 
                     <Box
@@ -175,9 +183,10 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
 
                     <IconButton
                         onClick={handleNext}
+                        size={isXs ? "small" : "medium"}
                         sx={{
                             position: "absolute",
-                            right: 16,
+                            right: { xs: 4, sm: 16 },
                             color: "white",
                             backgroundColor: "rgba(255,255,255,0.1)",
                             "&:hover": {
@@ -185,7 +194,7 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
                             },
                         }}
                     >
-                        <ChevronRight fontSize="large" />
+                        <ChevronRight fontSize={isXs ? "medium" : "large"} />
                     </IconButton>
 
                     {(currentImage?.title || currentImage?.description) && (

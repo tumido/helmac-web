@@ -19,10 +19,10 @@ export function PageHeader({ title, subtitle, backgroundImage }: PageHeaderProps
                 color: "common.white",
                 py: { xs: 6, md: 8 },
                 backgroundImage: `url(${backgroundImage || "/images/battle-bg.png"})`,
-                backgroundSize: "100% auto",
+                backgroundSize: "cover",
                 backgroundPosition: "center 55%",
                 backgroundRepeat: "no-repeat",
-                mb: "25px",
+                mb: 3,
             }}
         >
             {/* Dark overlay */}

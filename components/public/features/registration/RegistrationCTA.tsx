@@ -22,6 +22,7 @@ export async function RegistrationCTA() {
                             fontFamily: '"Cinzel", serif',
                             color: "common.white",
                             mb: 2,
+                            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                         }}
                     >
                         Registrace bude brzy otevrena
@@ -54,6 +55,7 @@ export async function RegistrationCTA() {
                         fontFamily: '"Cinzel", serif',
                         color: "common.white",
                         mb: 2,
+                        fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                     }}
                 >
                     Pripojte se k dobrodruzstvi

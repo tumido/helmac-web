@@ -20,6 +20,7 @@ function ThemedContent({ children }: { children: React.ReactNode }) {
                     display: "flex",
                     flexDirection: "column",
                     minHeight: "100vh",
+                    overflowX: "hidden",
                     transition: "background-color 0.3s ease-in-out",
                 }}
             >

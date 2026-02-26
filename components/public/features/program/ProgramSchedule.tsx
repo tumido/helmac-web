@@ -107,7 +107,7 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
                                     display: "flex",
                                     flexDirection: "column",
                                     gap: 2,
-                                    ml: "10px",
+                                    ml: { xs: 1, sm: "10px" },
                                 }}
                             >
                                 {groupedEvents[timeOfDay].map((event) => (

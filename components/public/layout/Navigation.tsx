@@ -20,7 +20,7 @@ export function Navigation({ items }: NavigationProps) {
         <Box
             component="nav"
             sx={{
-                display: { xs: "none", md: "flex" },
+                display: { xs: "none", lg: "flex" },
                 gap: 1,
             }}
         >

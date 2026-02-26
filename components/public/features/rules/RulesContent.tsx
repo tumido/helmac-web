@@ -68,6 +68,15 @@ export function RulesContent({ rules }: RulesContentProps) {
                         borderRadius: 2,
                         my: 2,
                     },
+                    "& table": {
+                        display: "block",
+                        overflowX: "auto",
+                    },
+                    "& pre": {
+                        overflowX: "auto",
+                    },
+                    overflowWrap: "break-word",
+                    wordBreak: "break-word",
                     lineHeight: 1.8,
                 }}
                 dangerouslySetInnerHTML={{ __html: selectedRule.content }}

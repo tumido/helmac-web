@@ -97,9 +97,9 @@ export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
 
     const chipStyles = (selected: boolean) => ({
         borderRadius: "50px",
-        height: 40,
+        height: { xs: 34, sm: 40 },
         px: 1,
-        fontSize: "0.95rem",
+        fontSize: { xs: "0.8rem", sm: "0.95rem" },
         fontWeight: selected ? 700 : 500,
         border: "2px solid",
         borderColor: selected ? "primary.main" : isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
@@ -126,7 +126,7 @@ export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
         <Box
             sx={{
                 display: "flex",
-                gap: 1.5,
+                gap: { xs: 1, sm: 1.5 },
                 flexWrap: "wrap",
                 mb: 3,
                 mt: 4,
