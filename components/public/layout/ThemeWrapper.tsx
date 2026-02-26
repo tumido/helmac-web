@@ -6,7 +6,7 @@ import Box from "@mui/material/Box";
 import { publicTheme, publicLightTheme } from "@/styles/theme";
 import { ThemeModeProvider, useThemeMode } from "@/contexts/ThemeContext";
 import { Header } from "./Header";
-import { Footer } from "./Footer";
+
 
 function ThemedContent({ children }: { children: React.ReactNode }) {
     const { isDark } = useThemeMode();
@@ -27,7 +27,7 @@ function ThemedContent({ children }: { children: React.ReactNode }) {
                 <Box component="main" sx={{ flex: 1 }}>
                     {children}
                 </Box>
-                <Footer />
+
             </Box>
         </ThemeProvider>
     );
