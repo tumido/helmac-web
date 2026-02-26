@@ -3,13 +3,14 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { auth } from "@/lib/auth";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { adminTheme } from "@/styles/theme";
+import { getActiveYear } from "@/lib/services/years";
 
 export default async function AdminRootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const session = await auth();
+    const [session, activeYear] = await Promise.all([auth(), getActiveYear()]);
 
     // Login page doesn't need the admin layout
     // The middleware handles the redirect for unauthenticated users
@@ -30,6 +31,7 @@ export default async function AdminRootLayout({
             <AdminLayout
                 userName={session.user.name || session.user.email || undefined}
                 userRole={session.user.role}
+                activeYearId={activeYear?.id}
             >
                 {children}
             </AdminLayout>

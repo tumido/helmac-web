@@ -10,6 +10,8 @@ import {
     CalendarMonth,
     Gavel,
     InfoOutlined,
+    PhotoLibrary,
+    Newspaper,
 } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
@@ -83,6 +85,20 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                             startIcon={<InfoOutlined />}
                         >
                             Spravovat info
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/galerie/nove?yearId=${year.id}`}
+                            variant="contained"
+                            startIcon={<PhotoLibrary />}
+                        >
+                            Nova galerie
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/novinky/nova?yearId=${year.id}`}
+                            variant="contained"
+                            startIcon={<Newspaper />}
+                        >
+                            Nova novinka
                         </LinkButton>
                     </Box>
                 </Box>

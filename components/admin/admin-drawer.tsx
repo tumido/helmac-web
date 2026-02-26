@@ -5,17 +5,19 @@ import {
     Drawer,
     List,
     ListItem,
+    ListItemButton,
     ListItemIcon,
     ListItemText,
     Divider,
     Box,
     Typography,
 } from "@mui/material";
+import { useSnackbar } from "notistack";
 import { ListItemLinkButton } from "@/components/ui/link-button";
 import {
     Dashboard,
     CalendarMonth,
-    Article,
+    Today,
     Newspaper,
     PhotoLibrary,
     People,
@@ -34,10 +36,9 @@ interface MenuDivider {
 
 type MenuItemType = MenuItem | MenuDivider;
 
-const menuItems: MenuItemType[] = [
+const staticMenuItems: MenuItemType[] = [
     { text: "Dashboard", href: "/admin", icon: Dashboard },
     { text: "Rocniky", href: "/admin/rocniky", icon: CalendarMonth },
-    { text: "Stranky", href: "/admin/stranky", icon: Article },
     { text: "Novinky", href: "/admin/novinky", icon: Newspaper },
     { text: "Galerie", href: "/admin/galerie", icon: PhotoLibrary },
     { divider: true },
@@ -49,11 +50,25 @@ const menuItems: MenuItemType[] = [
     },
 ];
 
+const selectedSx = {
+    "&.Mui-selected": {
+        backgroundColor: "primary.main",
+        color: "primary.contrastText",
+        "&:hover": {
+            backgroundColor: "primary.dark",
+        },
+        "& .MuiListItemIcon-root": {
+            color: "inherit",
+        },
+    },
+};
+
 interface AdminDrawerProps {
     width: number;
     mobileOpen: boolean;
     onClose: () => void;
     userRole?: string;
+    activeYearId?: string;
 }
 
 export function AdminDrawer({
@@ -61,14 +76,31 @@ export function AdminDrawer({
     mobileOpen,
     onClose,
     userRole,
+    activeYearId,
 }: AdminDrawerProps) {
     const pathname = usePathname();
+    const { enqueueSnackbar } = useSnackbar();
 
-    const filteredMenuItems = menuItems.filter((item) => {
+    const activeYearHref = activeYearId
+        ? `/admin/rocniky/${activeYearId}`
+        : undefined;
+
+    const filteredMenuItems = staticMenuItems.filter((item) => {
         if ("divider" in item) return true;
         if (!item.roles) return true;
         return userRole && item.roles.includes(userRole);
     });
+
+    const handleActiveYearClick = () => {
+        if (!activeYearId) {
+            enqueueSnackbar("Zadny rocnik neni aktivni", { variant: "info" });
+        }
+        onClose();
+    };
+
+    const activeYearIsActive = activeYearHref
+        ? pathname.startsWith(activeYearHref)
+        : false;
 
     const drawerContent = (
         <Box>
@@ -90,32 +122,54 @@ export function AdminDrawer({
                         (item.href !== "/admin" &&
                             pathname.startsWith(item.href));
 
-                    return (
+                    // Insert "Aktualni rocnik" after "Rocniky"
+                    const elements = [
                         <ListItem key={item.href} disablePadding>
                             <ListItemLinkButton
                                 href={item.href}
                                 selected={isActive}
                                 onClick={onClose}
-                                sx={{
-                                    "&.Mui-selected": {
-                                        backgroundColor: "primary.main",
-                                        color: "primary.contrastText",
-                                        "&:hover": {
-                                            backgroundColor: "primary.dark",
-                                        },
-                                        "& .MuiListItemIcon-root": {
-                                            color: "inherit",
-                                        },
-                                    },
-                                }}
+                                sx={selectedSx}
                             >
                                 <ListItemIcon>
                                     <Icon />
                                 </ListItemIcon>
                                 <ListItemText primary={item.text} />
                             </ListItemLinkButton>
-                        </ListItem>
-                    );
+                        </ListItem>,
+                    ];
+
+                    if (item.href === "/admin/rocniky") {
+                        elements.push(
+                            <ListItem key="active-year" disablePadding>
+                                {activeYearHref ? (
+                                    <ListItemLinkButton
+                                        href={activeYearHref}
+                                        selected={activeYearIsActive}
+                                        onClick={onClose}
+                                        sx={{ pl: 4, ...selectedSx }}
+                                    >
+                                        <ListItemIcon>
+                                            <Today />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Aktualni rocnik" />
+                                    </ListItemLinkButton>
+                                ) : (
+                                    <ListItemButton
+                                        onClick={handleActiveYearClick}
+                                        sx={{ pl: 4, ...selectedSx }}
+                                    >
+                                        <ListItemIcon>
+                                            <Today />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Aktualni rocnik" />
+                                    </ListItemButton>
+                                )}
+                            </ListItem>,
+                        );
+                    }
+
+                    return elements;
                 })}
             </List>
         </Box>

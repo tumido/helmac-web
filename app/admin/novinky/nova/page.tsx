@@ -12,7 +12,12 @@ async function getYears() {
     });
 }
 
-export default async function NewNewsPage() {
+interface NewNewsPageProps {
+    searchParams: Promise<{ yearId?: string }>;
+}
+
+export default async function NewNewsPage({ searchParams }: NewNewsPageProps) {
+    const { yearId } = await searchParams;
     const years = await getYears();
 
     if (years.length === 0) {
@@ -31,7 +36,7 @@ export default async function NewNewsPage() {
                 <Typography variant="h4">Nova novinka</Typography>
             </Box>
 
-            <NewsForm mode="create" years={years} />
+            <NewsForm mode="create" years={years} defaultValues={yearId ? { yearId } : undefined} />
         </Container>
     );
 }

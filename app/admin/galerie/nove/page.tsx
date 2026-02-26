@@ -12,7 +12,12 @@ async function getYears() {
     });
 }
 
-export default async function NewAlbumPage() {
+interface NewAlbumPageProps {
+    searchParams: Promise<{ yearId?: string }>;
+}
+
+export default async function NewAlbumPage({ searchParams }: NewAlbumPageProps) {
+    const { yearId } = await searchParams;
     const years = await getYears();
 
     if (years.length === 0) {
@@ -31,7 +36,7 @@ export default async function NewAlbumPage() {
                 <Typography variant="h4">Nove album</Typography>
             </Box>
 
-            <AlbumForm mode="create" years={years} />
+            <AlbumForm mode="create" years={years} defaultValues={yearId ? { yearId } : undefined} />
         </Container>
     );
 }

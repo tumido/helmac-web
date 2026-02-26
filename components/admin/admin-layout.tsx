@@ -12,9 +12,10 @@ interface AdminLayoutProps {
     children: React.ReactNode;
     userName?: string;
     userRole?: string;
+    activeYearId?: string;
 }
 
-export function AdminLayout({ children, userName, userRole }: AdminLayoutProps) {
+export function AdminLayout({ children, userName, userRole, activeYearId }: AdminLayoutProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
@@ -34,6 +35,7 @@ export function AdminLayout({ children, userName, userRole }: AdminLayoutProps) 
                     mobileOpen={mobileOpen}
                     onClose={() => setMobileOpen(false)}
                     userRole={userRole}
+                    activeYearId={activeYearId}
                 />
                 <Box
                     component="main"
