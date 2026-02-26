@@ -73,6 +73,7 @@ model Year {
   registrations Registration[]
   programDays   ProgramDay[]
   rules         Rule[]
+  infoSections  InfoSection[]
 
   @@map("years")
 }
@@ -138,6 +139,25 @@ model Rule {
     updatedAt DateTime @updatedAt
 
     @@map("rules")
+}
+
+// ============================================
+// INFO SECTIONS - Info tab sections per year
+// ============================================
+
+model InfoSection {
+    id        String   @id @default(cuid())
+    yearId    String
+    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+    title     String
+    content   String   @db.Text
+    sortOrder Int      @default(0)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("info_sections")
 }
 
 // ============================================
