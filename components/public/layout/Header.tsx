@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/components/public/ui";
 
 const navItems = [
     { label: "Program", href: "/program" },
+    { label: "Info", href: "/info" },
     { label: "Pravidla", href: "/pravidla" },
     { label: "Galerie", href: "/galerie" },
     { label: "Novinky", href: "/novinky" },
