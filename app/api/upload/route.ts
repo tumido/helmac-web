@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+import { put } from "@vercel/blob";
 import { requireEditor } from "@/lib/auth";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
@@ -57,23 +58,31 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Ensure upload directory exists
-        if (!existsSync(UPLOAD_DIR)) {
-            await mkdir(UPLOAD_DIR, { recursive: true });
-        }
-
         // Generate a safe filename
         const sanitized = sanitizeFilename(file.name);
         const filename = generateFilename(sanitized);
-        const filepath = path.join(UPLOAD_DIR, filename);
 
-        // Convert file to buffer and save
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        await writeFile(filepath, buffer);
+        let url: string;
 
-        // Return the public URL
-        const url = `/uploads/${filename}`;
+        if (process.env.VERCEL) {
+            // Vercel: upload to Vercel Blob
+            const blob = await put(`uploads/${filename}`, file, {
+                access: "public",
+            });
+            url = blob.url;
+        } else {
+            // Local: save to public/uploads/
+            if (!existsSync(UPLOAD_DIR)) {
+                await mkdir(UPLOAD_DIR, { recursive: true });
+            }
+
+            const filepath = path.join(UPLOAD_DIR, filename);
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            await writeFile(filepath, buffer);
+
+            url = `/uploads/${filename}`;
+        }
 
         return NextResponse.json({ url, filename });
     } catch (error) {
