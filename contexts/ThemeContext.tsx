@@ -3,8 +3,7 @@
 import {
     createContext,
     useContext,
-    useState,
-    useEffect,
+    useSyncExternalStore,
     ReactNode,
 } from "react";
 
@@ -26,38 +25,36 @@ export function useThemeMode() {
     return context;
 }
 
+const listeners = new Set<() => void>();
+
+function subscribe(callback: () => void) {
+    listeners.add(callback);
+    return () => {
+        listeners.delete(callback);
+    };
+}
+
+function getSnapshot(): ThemeMode {
+    const saved = localStorage.getItem("theme-mode");
+    return saved === "dark" || saved === "light" ? saved : "dark";
+}
+
+function getServerSnapshot(): ThemeMode {
+    return "dark";
+}
+
 interface ThemeModeProviderProps {
     children: ReactNode;
 }
 
 export function ThemeModeProvider({ children }: ThemeModeProviderProps) {
-    const [mode, setMode] = useState<ThemeMode>("dark");
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-        const saved = localStorage.getItem("theme-mode") as ThemeMode;
-        if (saved && (saved === "dark" || saved === "light")) {
-            setMode(saved);
-        }
-    }, []);
+    const mode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
     const toggleTheme = () => {
         const newMode = mode === "dark" ? "light" : "dark";
-        setMode(newMode);
         localStorage.setItem("theme-mode", newMode);
+        listeners.forEach((l) => l());
     };
-
-    // Prevent hydration mismatch by returning dark mode on server
-    if (!mounted) {
-        return (
-            <ThemeContext.Provider
-                value={{ mode: "dark", toggleTheme: () => {}, isDark: true }}
-            >
-                {children}
-            </ThemeContext.Provider>
-        );
-    }
 
     return (
         <ThemeContext.Provider

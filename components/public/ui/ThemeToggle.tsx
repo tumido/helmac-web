@@ -9,7 +9,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ size = "medium" }: ThemeToggleProps) {
-    const { mode, toggleTheme, isDark } = useThemeMode();
+    const { toggleTheme, isDark } = useThemeMode();
 
     return (
         <Tooltip title={isDark ? "Prepnout na svetly rezim" : "Prepnout na tmavy rezim"}>

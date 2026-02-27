@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
     Box,
@@ -35,7 +35,15 @@ export function ListFilters({
 }: ListFiltersProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [searchValue, setSearchValue] = useState(searchParams.get("q") ?? "");
+    const urlSearch = searchParams.get("q") ?? "";
+    const [searchValue, setSearchValue] = useState(urlSearch);
+    const [prevUrlSearch, setPrevUrlSearch] = useState(urlSearch);
+
+    // Sync from URL → local state (e.g., browser back/forward)
+    if (urlSearch !== prevUrlSearch) {
+        setPrevUrlSearch(urlSearch);
+        setSearchValue(urlSearch);
+    }
 
     const updateFilter = useCallback(
         (key: string, value: string) => {
@@ -63,14 +71,6 @@ export function ListFilters({
         setSearchValue("");
         updateFilter("q", "");
     };
-
-    // Sync search value with URL params
-    useEffect(() => {
-        const urlSearch = searchParams.get("q") ?? "";
-        if (urlSearch !== searchValue) {
-            setSearchValue(urlSearch);
-        }
-    }, [searchParams]);
 
     return (
         <Box

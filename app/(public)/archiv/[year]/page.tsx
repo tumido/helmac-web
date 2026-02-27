@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
 import { ArrowBack, Article, PhotoLibrary, Newspaper } from "@mui/icons-material";
-import { PageHeader, Section, SectionTitle, Card } from "@/components/public/ui";
+import { PageHeader, Card } from "@/components/public/ui";
 import { getYearByNumber } from "@/lib/services";
 
 interface ArchiveYearPageProps {

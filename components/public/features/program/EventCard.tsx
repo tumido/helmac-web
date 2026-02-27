@@ -16,15 +16,9 @@ import {
     ArrowForward,
     EmojiEvents,
     Restaurant,
-    Groups,
-    Celebration,
     School,
     LocalFireDepartment,
     SportsKabaddi,
-    Star,
-    MusicNote,
-    Hiking,
-    Shield,
     FestivalOutlined,
 } from "@mui/icons-material";
 import { ReactElement } from "react";
