@@ -42,3 +42,4 @@ next-env.d.ts
 /prisma/*.db-journal
 public/uploads/
 .env.vercel
+.env.local
