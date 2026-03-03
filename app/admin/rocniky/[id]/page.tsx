@@ -398,6 +398,50 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                     </Typography>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                         <LinkButton
+                            href={`/admin/galerie/nove?yearId=${year.id}`}
+                            variant="contained"
+                            startIcon={<PhotoLibrary />}
+                        >
+                            Nova galerie
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/novinky/nova?yearId=${year.id}`}
+                            variant="contained"
+                            startIcon={<Newspaper />}
+                        >
+                            Nova novinka
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/program/novy-den`}
+                            variant="contained"
+                            startIcon={<CalendarMonth />}
+                        >
+                            Novy den programu
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/pravidla/nove`}
+                            variant="contained"
+                            startIcon={<Gavel />}
+                        >
+                            Nove pravidlo
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/info/nove`}
+                            variant="contained"
+                            startIcon={<InfoOutlined />}
+                        >
+                            Nova info sekce
+                        </LinkButton>
+                    </Box>
+                </Box>
+
+                {/* Upravy */}
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Upravy
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <LinkButton
                             href={`/admin/rocniky/${year.id}/program`}
                             variant="contained"
                             startIcon={<CalendarMonth />}
@@ -417,20 +461,6 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                             startIcon={<InfoOutlined />}
                         >
                             Spravovat info
-                        </LinkButton>
-                        <LinkButton
-                            href={`/admin/galerie/nove?yearId=${year.id}`}
-                            variant="contained"
-                            startIcon={<PhotoLibrary />}
-                        >
-                            Nova galerie
-                        </LinkButton>
-                        <LinkButton
-                            href={`/admin/novinky/nova?yearId=${year.id}`}
-                            variant="contained"
-                            startIcon={<Newspaper />}
-                        >
-                            Nova novinka
                         </LinkButton>
                     </Box>
                 </Box>
