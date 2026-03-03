@@ -43,3 +43,4 @@ next-env.d.ts
 public/uploads/
 .env.vercel
 .env.local
+.idea/
