@@ -5,6 +5,12 @@ import "./globals.css";
 export const metadata: Metadata = {
     title: "Helmac",
     description: "Helmac - Event website",
+    icons: {
+        icon: [
+            { url: "/images/helmac-logo-centered.svg", type: "image/svg+xml" },
+            // { url: "/favicon.ico", sizes: "any" },
+        ],
+    },
 };
 
 export default function RootLayout({
