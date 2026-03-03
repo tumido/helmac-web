@@ -6,7 +6,7 @@ import { put } from "@vercel/blob";
 import { requireEditor } from "@/lib/auth";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 function generateFilename(originalName: string): string {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         // Validate file size
         if (file.size > MAX_FILE_SIZE) {
             return NextResponse.json(
-                { error: "Soubor je prilis velky. Maximum je 5 MB" },
+                { error: "Soubor je prilis velky. Maximum je 15 MB" },
                 { status: 400 }
             );
         }

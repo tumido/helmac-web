@@ -19,7 +19,7 @@ interface ImageUploaderProps {
     acceptedTypes?: string[];
 }
 
-const DEFAULT_MAX_SIZE_MB = 5;
+const DEFAULT_MAX_SIZE_MB = 15;
 const DEFAULT_ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export function ImageUploader({
