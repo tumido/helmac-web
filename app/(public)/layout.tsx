@@ -1,9 +1,13 @@
 import { ThemeWrapper } from "@/components/public/layout/ThemeWrapper";
+import { getNavigationSubtabs } from "@/lib/services";
+import { NavSubtabs } from "@/lib/services/navigation";
 
-export default function PublicLayout({
+export default async function PublicLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return <ThemeWrapper>{children}</ThemeWrapper>;
+    const navSubtabs: NavSubtabs = await getNavigationSubtabs();
+
+    return <ThemeWrapper navSubtabs={navSubtabs}>{children}</ThemeWrapper>;
 }

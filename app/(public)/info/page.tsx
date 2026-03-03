@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { InfoContent } from "@/components/public/features/info";
@@ -22,7 +23,9 @@ export default async function InfoPage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <InfoContent infoSections={infoSections} />
+                <Suspense>
+                    <InfoContent infoSections={infoSections} />
+                </Suspense>
             </Container>
         </>
     );

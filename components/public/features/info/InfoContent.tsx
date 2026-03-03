@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { InfoTabs } from "./InfoTabs";
 import { InfoItem } from "./info.types";
@@ -10,7 +11,14 @@ interface InfoContentProps {
 }
 
 export function InfoContent({ infoSections }: InfoContentProps) {
-    const [selectedInfoId, setSelectedInfoId] = useState(infoSections[0]?.id || "");
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab");
+
+    const initialId = (tabParam && infoSections.some((i) => i.id === tabParam))
+        ? tabParam
+        : infoSections[0]?.id || "";
+
+    const [selectedInfoId, setSelectedInfoId] = useState(initialId);
 
     if (infoSections.length === 0) {
         return (

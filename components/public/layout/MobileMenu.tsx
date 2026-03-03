@@ -11,11 +11,7 @@ import {
     Divider,
 } from "@mui/material";
 import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
-
-interface NavItem {
-    label: string;
-    href: string;
-}
+import { NavItem } from "./Navigation";
 
 interface MobileMenuProps {
     open: boolean;
@@ -57,32 +53,56 @@ export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
                 <List disablePadding>
                     {items.map((item) => {
                         const isActive = pathname === item.href;
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
 
                         return (
-                            <ListItem key={item.href} disablePadding>
-                                <ListItemLinkButton
-                                    href={item.href}
-                                    onClick={onClose}
-                                    sx={{
-                                        borderLeft: isActive
-                                            ? "3px solid"
-                                            : "3px solid transparent",
-                                        borderColor: isActive
-                                            ? "primary.main"
-                                            : "transparent",
-                                        backgroundColor: isActive
-                                            ? "action.selected"
-                                            : "transparent",
-                                    }}
-                                >
-                                    <ListItemText
-                                        primary={item.label}
-                                        primaryTypographyProps={{
-                                            fontWeight: isActive ? 700 : 400,
+                            <Box key={item.href}>
+                                <ListItem disablePadding>
+                                    <ListItemLinkButton
+                                        href={item.href}
+                                        onClick={onClose}
+                                        sx={{
+                                            borderLeft: isActive
+                                                ? "3px solid"
+                                                : "3px solid transparent",
+                                            borderColor: isActive
+                                                ? "primary.main"
+                                                : "transparent",
+                                            backgroundColor: isActive
+                                                ? "action.selected"
+                                                : "transparent",
                                         }}
-                                    />
-                                </ListItemLinkButton>
-                            </ListItem>
+                                    >
+                                        <ListItemText
+                                            primary={item.label}
+                                            primaryTypographyProps={{
+                                                fontWeight: isActive ? 700 : 400,
+                                            }}
+                                        />
+                                    </ListItemLinkButton>
+                                </ListItem>
+
+                                {hasSubItems && item.subItems!.map((sub) => (
+                                    <ListItem key={sub.id} disablePadding>
+                                        <ListItemLinkButton
+                                            href={sub.href}
+                                            onClick={onClose}
+                                            sx={{
+                                                pl: 4,
+                                                borderLeft: "3px solid transparent",
+                                            }}
+                                        >
+                                            <ListItemText
+                                                primary={sub.label}
+                                                primaryTypographyProps={{
+                                                    fontSize: "0.875rem",
+                                                    color: "text.secondary",
+                                                }}
+                                            />
+                                        </ListItemLinkButton>
+                                    </ListItem>
+                                ))}
+                            </Box>
                         );
                     })}
                 </List>

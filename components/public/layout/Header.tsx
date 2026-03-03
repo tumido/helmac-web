@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
     AppBar,
@@ -12,22 +12,26 @@ import {
     useScrollTrigger,
 } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
-// Note: Typography component={Link} is kept for the logo since it's a client component
 import { Menu as MenuIcon } from "@mui/icons-material";
-import { Navigation } from "./Navigation";
+import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/public/ui";
+import { NavSubtabs } from "@/lib/services/navigation";
 
-const navItems = [
-    { label: "Program", href: "/program" },
-    { label: "Info", href: "/info" },
-    { label: "Pravidla", href: "/pravidla" },
+const baseNavItems: { label: string; href: string; subtabKey?: keyof NavSubtabs }[] = [
+    { label: "Program", href: "/program", subtabKey: "program" },
+    { label: "Info", href: "/info", subtabKey: "info" },
+    { label: "Pravidla", href: "/pravidla", subtabKey: "pravidla" },
     { label: "Galerie", href: "/galerie" },
     { label: "Novinky", href: "/novinky" },
     { label: "Archiv", href: "/archiv" },
 ];
 
-export function Header() {
+interface HeaderProps {
+    navSubtabs?: NavSubtabs;
+}
+
+export function Header({ navSubtabs }: HeaderProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const trigger = useScrollTrigger({
@@ -38,6 +42,24 @@ export function Header() {
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
+
+    const navItems: NavItem[] = useMemo(() => {
+        return baseNavItems.map((item) => {
+            const subtabs = item.subtabKey && navSubtabs?.[item.subtabKey];
+            if (subtabs && subtabs.length > 1) {
+                return {
+                    label: item.label,
+                    href: item.href,
+                    subItems: subtabs.map((sub) => ({
+                        id: sub.id,
+                        label: sub.label,
+                        href: `${item.href}?tab=${sub.id}`,
+                    })),
+                };
+            }
+            return { label: item.label, href: item.href };
+        });
+    }, [navSubtabs]);
 
     return (
         <>

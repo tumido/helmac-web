@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Container, Typography } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { ProgramSchedule } from "@/components/public/features/program";
@@ -28,7 +29,9 @@ export default async function ProgramPage() {
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
                 {scheduleData && scheduleData.days.length > 0 ? (
-                    <ProgramSchedule data={scheduleData} allTags={allTags} />
+                    <Suspense>
+                        <ProgramSchedule data={scheduleData} allTags={allTags} />
+                    </Suspense>
                 ) : (
                     <Typography
                         color="text.secondary"

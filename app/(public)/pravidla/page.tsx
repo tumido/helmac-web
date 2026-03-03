@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { RulesContent } from "@/components/public/features/rules";
@@ -22,7 +23,9 @@ export default async function PravidlaPage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <RulesContent rules={rules} />
+                <Suspense>
+                    <RulesContent rules={rules} />
+                </Suspense>
             </Container>
         </>
     );

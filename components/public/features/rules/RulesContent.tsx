@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { RuleTabs } from "./RuleTabs";
 import { RuleItem } from "./rules.types";
@@ -10,7 +11,14 @@ interface RulesContentProps {
 }
 
 export function RulesContent({ rules }: RulesContentProps) {
-    const [selectedRuleId, setSelectedRuleId] = useState(rules[0]?.id || "");
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab");
+
+    const initialId = (tabParam && rules.some((r) => r.id === tabParam))
+        ? tabParam
+        : rules[0]?.id || "";
+
+    const [selectedRuleId, setSelectedRuleId] = useState(initialId);
 
     if (rules.length === 0) {
         return (

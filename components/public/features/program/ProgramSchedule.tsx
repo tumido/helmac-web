@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { DayTabs } from "./DayTabs";
 import { TagFilter } from "./TagFilter";
@@ -26,7 +27,14 @@ interface GroupedEvents {
 }
 
 export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
-    const [selectedDayId, setSelectedDayId] = useState(data.days[0]?.id || "");
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab");
+
+    const initialDayId = (tabParam && data.days.some((d) => d.id === tabParam))
+        ? tabParam
+        : data.days[0]?.id || "";
+
+    const [selectedDayId, setSelectedDayId] = useState(initialDayId);
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [detailEvent, setDetailEvent] = useState<ProgramEvent | null>(null);
 
