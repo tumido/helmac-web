@@ -17,6 +17,7 @@ import {
     ChevronLeft,
     ChevronRight,
     ZoomIn,
+    Download,
 } from "@mui/icons-material";
 import { AlbumImage } from "./gallery.types";
 
@@ -60,6 +61,26 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
     );
 
     const currentImage = images[currentIndex];
+
+    const handleDownload = useCallback(async () => {
+        if (!currentImage?.url) return;
+
+        try {
+            const response = await fetch(currentImage.url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = currentImage.title || `image-${currentIndex + 1}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+        } catch {
+            window.open(currentImage.url, "_blank");
+        }
+    }, [currentImage, currentIndex]);
 
     return (
         <>
@@ -141,6 +162,19 @@ export function ImageLightbox({ images }: ImageLightboxProps) {
                         minWidth: { xs: "95vw", sm: "80vw" },
                     }}
                 >
+                    <IconButton
+                        onClick={handleDownload}
+                        sx={{
+                            position: "absolute",
+                            top: 16,
+                            right: 64,
+                            color: "white",
+                            zIndex: 1,
+                        }}
+                    >
+                        <Download />
+                    </IconButton>
+
                     <IconButton
                         onClick={handleClose}
                         sx={{
