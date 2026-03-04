@@ -73,7 +73,8 @@ model Year {
   pages         Page[]
   news          News[]
   albums        Album[]
-  registrations Registration[]
+  registrationForm        RegistrationForm?
+  registrationSubmissions RegistrationSubmission[]
   programDays   ProgramDay[]
   rules         Rule[]
   offers        Offer[]
@@ -306,62 +307,42 @@ model AuditLog {
 }
 
 // ============================================
-// REGISTRATION - Event registration
+// REGISTRATION - Dynamic form-based registration
 // ============================================
 
-model Registration {
-  id          String      @id @default(cuid())
-  yearId      String
-  year        Year        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+model RegistrationForm {
+    id        String   @id @default(cuid())
+    yearId    String   @unique
+    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+    fields    Json     // Array of FormField definitions
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  // Personal info
-  firstName   String
-  lastName    String
-  nickname    String?
-  email       String
-  phone       String?
-  birthDate   DateTime?
+    submissions RegistrationSubmission[]
 
-  // LARP-specific
-  experience  ExperienceLevel   @default(BEGINNER)
-  faction     String?
-  character   String?           @db.Text
-
-  // Logistics
-  foodPreference  FoodPreference    @default(NORMAL)
-  allergies       String?
-  notes           String?           @db.Text
-
-  // Status
-  status      RegistrationStatus  @default(PENDING)
-  isPaid      Boolean             @default(false)
-  paidAt      DateTime?
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  @@unique([yearId, email])
-  @@map("registrations")
+    @@map("registration_forms")
 }
 
-enum ExperienceLevel {
-  BEGINNER
-  SOME
-  EXPERIENCED
-  VETERAN
-}
+model RegistrationSubmission {
+    id        String   @id @default(cuid())
+    yearId    String
+    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+    formId    String
+    form      RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+    data      Json     // { [fieldName]: value }
+    status    RegistrationStatus @default(PENDING)
+    isPaid    Boolean  @default(false)
+    paidAt    DateTime?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-enum FoodPreference {
-  NORMAL
-  VEGETARIAN
-  VEGAN
-  OTHER
+    @@map("registration_submissions")
 }
 
 enum RegistrationStatus {
-  PENDING
-  CONFIRMED
-  WAITLIST
-  CANCELLED
-  REJECTED
+    PENDING
+    CONFIRMED
+    WAITLIST
+    CANCELLED
+    REJECTED
 }

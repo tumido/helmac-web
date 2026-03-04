@@ -5,7 +5,7 @@ import { getRegistrationStatus } from "@/lib/services";
 export async function RegistrationCTA() {
     const status = await getRegistrationStatus();
 
-    if (!status.isOpen) {
+    if (!status.isOpen || !status.hasForm) {
         if (!status.registrationStartDate) {
             return null;
         }

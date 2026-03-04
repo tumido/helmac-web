@@ -1,6 +1,5 @@
 export { RegistrationCTA } from "./RegistrationCTA";
-export { RegistrationForm } from "./RegistrationForm";
-export { RegistrationFormFields } from "./RegistrationFormFields";
+export { DynamicRegistrationForm } from "./DynamicRegistrationForm";
+export { DynamicFormField } from "./DynamicFormField";
 export { RegistrationSuccess } from "./RegistrationSuccess";
-export { useRegistrationForm } from "./useRegistrationForm";
-export type { RegistrationFormData } from "./registration.types";
+export { useConditionalFields } from "./useConditionalFields";

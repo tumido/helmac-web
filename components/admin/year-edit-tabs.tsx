@@ -44,7 +44,9 @@ import { SortableRules } from "@/components/admin/sortable-rules";
 import { SortableOffers } from "@/components/admin/sortable-offers";
 import { SortableDays } from "@/components/admin/sortable-days";
 import { SortableInfo } from "@/components/admin/sortable-info";
+import { FormBuilder } from "@/components/admin/form-builder";
 import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
+import type { FormField } from "@/lib/types/registration-form";
 
 interface YearEditTabsProps {
     year: {
@@ -86,6 +88,13 @@ interface YearEditTabsProps {
         }[];
         registrationOpen: boolean;
         registrationStartDate: Date | null;
+        registrationForm: {
+            id: string;
+            fields: unknown;
+        } | null;
+        _count: {
+            registrationSubmissions: number;
+        };
     };
 }
 
@@ -461,7 +470,13 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
 
             {/* Tab 3 — Registrace */}
             {tab === 3 && (
-                <RegistrationTab yearId={year.id} registrationOpen={year.registrationOpen} registrationStartDate={year.registrationStartDate} />
+                <RegistrationTab
+                    yearId={year.id}
+                    registrationOpen={year.registrationOpen}
+                    registrationStartDate={year.registrationStartDate}
+                    registrationForm={year.registrationForm}
+                    submissionCount={year._count.registrationSubmissions}
+                />
             )}
 
             {/* Tab 4 — Nastaveni */}
@@ -488,9 +503,11 @@ interface RegistrationTabProps {
     yearId: string;
     registrationOpen: boolean;
     registrationStartDate: Date | null;
+    registrationForm: { id: string; fields: unknown } | null;
+    submissionCount: number;
 }
 
-function RegistrationTab({ yearId, registrationOpen, registrationStartDate }: RegistrationTabProps) {
+function RegistrationTab({ yearId, registrationOpen, registrationStartDate, registrationForm, submissionCount }: RegistrationTabProps) {
     const [isOpen, setIsOpen] = useState(registrationOpen);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingToggle, setPendingToggle] = useState<boolean | null>(null);
@@ -545,36 +562,63 @@ function RegistrationTab({ yearId, registrationOpen, registrationStartDate }: Re
     };
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, maxWidth: 500 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {error && <Alert severity="error">{error}</Alert>}
 
-            <FormControlLabel
-                control={
-                    <Switch
-                        checked={isOpen}
-                        onChange={handleToggleClick}
-                        disabled={loading}
-                        color="success"
-                    />
-                }
-                label={
-                    <Typography fontWeight={600}>
-                        {isOpen ? "Registrace otevřena" : "Registrace uzavřena"}
-                    </Typography>
-                }
+            <Box sx={{ maxWidth: 500 }}>
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={isOpen}
+                            onChange={handleToggleClick}
+                            disabled={loading}
+                            color="success"
+                        />
+                    }
+                    label={
+                        <Typography fontWeight={600}>
+                            {isOpen ? "Registrace otevřena" : "Registrace uzavřena"}
+                        </Typography>
+                    }
+                />
+
+                <TextField
+                    type="date"
+                    label="Datum otevření registrace"
+                    value={dateValue}
+                    onChange={(e) => setDateValue(e.target.value)}
+                    onBlur={handleDateBlur}
+                    disabled={dateSaving}
+                    helperText="Pokud je registrace uzavřena, na veřejných stránkách se zobrazí datum otevření"
+                    InputLabelProps={{ shrink: true }}
+                    fullWidth
+                    sx={{ mt: 2 }}
+                />
+            </Box>
+
+            <Divider />
+
+            <FormBuilder
+                yearId={yearId}
+                initialFields={registrationForm?.fields as FormField[] | null}
             />
 
-            <TextField
-                type="date"
-                label="Datum otevření registrace"
-                value={dateValue}
-                onChange={(e) => setDateValue(e.target.value)}
-                onBlur={handleDateBlur}
-                disabled={dateSaving}
-                helperText="Pokud je registrace uzavřena, na veřejných stránkách se zobrazí datum otevření"
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-            />
+            <Divider />
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Typography variant="body1">
+                    Registrací: <strong>{submissionCount}</strong>
+                </Typography>
+                {submissionCount > 0 && (
+                    <LinkButton
+                        href={`/admin/rocniky/${yearId}/registrace`}
+                        variant="outlined"
+                        size="small"
+                    >
+                        Zobrazit registrace
+                    </LinkButton>
+                )}
+            </Box>
 
             <Dialog open={confirmOpen} onClose={handleCancel}>
                 <DialogTitle>

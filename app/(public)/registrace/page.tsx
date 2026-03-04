@@ -1,7 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
-import { RegistrationForm } from "@/components/public/features/registration";
+import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
 import { getRegistrationStatus, getActiveYear } from "@/lib/services";
+import type { FormField } from "@/lib/types/registration-form";
 
 export const metadata = {
     title: "Registrace | Helmac",
@@ -51,6 +52,37 @@ export default async function RegistracePage() {
         );
     }
 
+    if (!status.hasForm) {
+        return (
+            <>
+                <PageHeader
+                    title="Registrace"
+                    subtitle={`Registrace na ${status.year?.title}`}
+                    backgroundImage={activeYear?.headerPhoto || undefined}
+                />
+                <Container maxWidth="md" sx={{ pb: 8 }}>
+                    <Box
+                        sx={{
+                            textAlign: "center",
+                            py: 8,
+                            backgroundColor: "background.paper",
+                            borderRadius: 2,
+                        }}
+                    >
+                        <Typography variant="h5">
+                            Registrační formulář zatím není připraven
+                        </Typography>
+                        <Typography color="text.secondary" sx={{ mt: 1 }}>
+                            Zkuste to prosím později.
+                        </Typography>
+                    </Box>
+                </Container>
+            </>
+        );
+    }
+
+    const fields = status.formFields as unknown as FormField[];
+
     return (
         <>
             <PageHeader
@@ -59,7 +91,7 @@ export default async function RegistracePage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <RegistrationForm />
+                <DynamicRegistrationForm fields={fields} />
             </Container>
         </>
     );

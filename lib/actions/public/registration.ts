@@ -1,7 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { registrationSchema } from "@/lib/validators/registration";
+import type { Prisma } from "@prisma/client";
+import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
+import type { FormField, InputField } from "@/lib/types/registration-form";
+import { isInputField } from "@/lib/types/registration-form";
 
 export interface RegistrationState {
     success: boolean;
@@ -10,43 +13,94 @@ export interface RegistrationState {
     registrationId?: string;
 }
 
-export async function submitRegistration(
+export async function submitDynamicRegistration(
     prevState: RegistrationState | null,
     formData: FormData
 ): Promise<RegistrationState> {
-    // Get active year
+    // Get active year with form
     const activeYear = await db.year.findFirst({
-        where: { isActive: true, isArchived: false },
-        select: { id: true, title: true },
+        where: { isActive: true, isArchived: false, registrationOpen: true },
+        select: {
+            id: true,
+            title: true,
+            registrationForm: {
+                select: { id: true, fields: true },
+            },
+        },
     });
 
     if (!activeYear) {
         return {
             success: false,
-            message: "Registrace neni momentalne otevrena",
+            message: "Registrace není momentálně otevřena",
         };
     }
 
-    // Parse form data
-    const rawData = {
-        firstName: formData.get("firstName"),
-        lastName: formData.get("lastName"),
-        nickname: formData.get("nickname") || undefined,
-        email: formData.get("email"),
-        phone: formData.get("phone") || undefined,
-        birthDate: formData.get("birthDate") || undefined,
-        experience: formData.get("experience"),
-        faction: formData.get("faction") || undefined,
-        character: formData.get("character") || undefined,
-        foodPreference: formData.get("foodPreference"),
-        allergies: formData.get("allergies") || undefined,
-        notes: formData.get("notes") || undefined,
-        gdprConsent: formData.get("gdprConsent") === "true",
-        rulesConsent: formData.get("rulesConsent") === "true",
-    };
+    if (!activeYear.registrationForm) {
+        return {
+            success: false,
+            message: "Registrační formulář není nakonfigurován",
+        };
+    }
 
-    // Validate
-    const result = registrationSchema.safeParse(rawData);
+    const fields = activeYear.registrationForm.fields as unknown as FormField[];
+
+    // Build raw data from form
+    const rawData: Record<string, unknown> = {};
+    for (const field of fields) {
+        if (!isInputField(field)) continue;
+
+        const value = formData.get(field.name);
+        if (field.type === "checkbox") {
+            rawData[field.name] = value === "true";
+        } else if (field.type === "number") {
+            rawData[field.name] = value ? Number(value) : "";
+        } else {
+            rawData[field.name] = value ?? "";
+        }
+    }
+
+    // Evaluate conditional logic server-side — strip hidden field values
+    const visibleFieldIds = new Set<string>();
+    for (const field of fields) {
+        if (!isInputField(field) || !field.condition) {
+            visibleFieldIds.add(field.id);
+            continue;
+        }
+
+        const targetField = fields.find((f) => f.id === field.condition!.fieldId);
+        if (!targetField || !isInputField(targetField)) {
+            visibleFieldIds.add(field.id);
+            continue;
+        }
+
+        const currentValue = String(rawData[targetField.name] ?? "");
+        const { operator, value } = field.condition;
+
+        let match = false;
+        if (operator === "equals") match = currentValue === value;
+        else if (operator === "not_equals") match = currentValue !== value;
+
+        if (match) {
+            visibleFieldIds.add(field.id);
+        }
+    }
+
+    // Only validate visible input fields
+    const visibleInputFields = fields.filter(
+        (f) => isInputField(f) && visibleFieldIds.has(f.id)
+    );
+
+    // Build schema from visible fields only
+    const schema = buildSubmissionSchema(visibleInputFields);
+    const visibleRawData: Record<string, unknown> = {};
+    for (const field of visibleInputFields) {
+        if (isInputField(field)) {
+            visibleRawData[field.name] = rawData[field.name];
+        }
+    }
+
+    const result = schema.safeParse(visibleRawData);
 
     if (!result.success) {
         const errors: Record<string, string[]> = {};
@@ -58,62 +112,77 @@ export async function submitRegistration(
 
         return {
             success: false,
-            message: "Prosim opravte chyby ve formulari",
+            message: "Prosím opravte chyby ve formuláři",
             errors,
         };
     }
 
-    const data = result.data;
-
-    // Check for duplicate registration
-    const existingRegistration = await db.registration.findFirst({
-        where: {
-            yearId: activeYear.id,
-            email: data.email.toLowerCase(),
-        },
-    });
-
-    if (existingRegistration) {
-        return {
-            success: false,
-            message: "Na tento email jiz existuje registrace",
-            errors: {
-                email: ["Na tento email jiz existuje registrace"],
-            },
-        };
+    // Build submission data (visible fields only, hidden fields stripped)
+    const submissionData: Record<string, unknown> = {};
+    for (const field of fields) {
+        if (!isInputField(field)) continue;
+        if (visibleFieldIds.has(field.id)) {
+            submissionData[field.name] = rawData[field.name];
+        }
     }
 
-    // Create registration
+    // Duplicate check: find email-type field
+    const emailField = fields.find(
+        (f): f is InputField => isInputField(f) && f.type === "email"
+    );
+
+    if (emailField) {
+        const emailValue = String(submissionData[emailField.name] || "").toLowerCase();
+        if (emailValue) {
+            const existing = await db.registrationSubmission.findFirst({
+                where: {
+                    yearId: activeYear.id,
+                    data: {
+                        path: [emailField.name],
+                        equals: emailValue,
+                    },
+                },
+                select: { id: true },
+            });
+
+            if (existing) {
+                return {
+                    success: false,
+                    message: "Na tento email již existuje registrace",
+                    errors: {
+                        [emailField.name]: ["Na tento email již existuje registrace"],
+                    },
+                };
+            }
+        }
+    }
+
+    // Normalize email value to lowercase in submission
+    if (emailField && submissionData[emailField.name]) {
+        submissionData[emailField.name] = String(submissionData[emailField.name]).toLowerCase();
+    }
+
+    // Create submission
     try {
-        const registration = await db.registration.create({
+        const submission = await db.registrationSubmission.create({
             data: {
                 yearId: activeYear.id,
-                firstName: data.firstName,
-                lastName: data.lastName,
-                nickname: data.nickname || null,
-                email: data.email.toLowerCase(),
-                phone: data.phone || null,
-                birthDate: data.birthDate ? new Date(data.birthDate) : null,
-                experience: data.experience,
-                faction: data.faction || null,
-                character: data.character || null,
-                foodPreference: data.foodPreference,
-                allergies: data.allergies || null,
-                notes: data.notes || null,
+                formId: activeYear.registrationForm.id,
+                data: submissionData as Prisma.InputJsonValue,
                 status: "PENDING",
             },
         });
 
         return {
             success: true,
-            message: `Dekujeme za registraci na ${activeYear.title}!`,
-            registrationId: registration.id,
+            message: `Děkujeme za registraci na ${activeYear.title}!`,
+            registrationId: submission.id,
         };
     } catch (error) {
         console.error("Registration error:", error);
         return {
             success: false,
-            message: "Nastala chyba pri zpracovani registrace. Zkuste to prosim znovu.",
+            message: "Nastala chyba při zpracování registrace. Zkuste to prosím znovu.",
         };
     }
 }

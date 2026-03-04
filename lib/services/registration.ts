@@ -12,8 +12,11 @@ export const getRegistrationStatus = cache(async () => {
             endDate: true,
             registrationOpen: true,
             registrationStartDate: true,
+            registrationForm: {
+                select: { id: true, fields: true },
+            },
             _count: {
-                select: { registrations: true },
+                select: { registrationSubmissions: true },
             },
         },
     });
@@ -24,49 +27,73 @@ export const getRegistrationStatus = cache(async () => {
             year: null,
             registrationCount: 0,
             registrationStartDate: null,
+            hasForm: false,
+            formFields: null,
         };
     }
 
     return {
         isOpen: activeYear.registrationOpen,
         year: activeYear,
-        registrationCount: activeYear._count.registrations,
+        registrationCount: activeYear._count.registrationSubmissions,
         registrationStartDate: activeYear.registrationStartDate,
+        hasForm: !!activeYear.registrationForm,
+        formFields: activeYear.registrationForm?.fields ?? null,
     };
 });
 
-export const checkDuplicateRegistration = cache(
-    async (yearId: string, email: string) => {
-        const existing = await db.registration.findFirst({
-            where: {
-                yearId,
-                email: email.toLowerCase(),
-            },
-            select: { id: true },
-        });
+export const getRegistrationFormForYear = cache(async (yearId: string) => {
+    return db.registrationForm.findUnique({
+        where: { yearId },
+        select: {
+            id: true,
+            fields: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+    });
+});
 
-        return !!existing;
-    }
-);
+export const getSubmissionsForYear = cache(async (yearId: string) => {
+    return db.registrationSubmission.findMany({
+        where: { yearId },
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            data: true,
+            status: true,
+            isPaid: true,
+            paidAt: true,
+            createdAt: true,
+        },
+    });
+});
 
-export const getRegistrationById = cache(async (id: string) => {
-    return db.registration.findUnique({
+export const getSubmissionById = cache(async (id: string) => {
+    return db.registrationSubmission.findUnique({
         where: { id },
         select: {
             id: true,
-            firstName: true,
-            lastName: true,
-            nickname: true,
-            email: true,
+            yearId: true,
+            formId: true,
+            data: true,
             status: true,
             isPaid: true,
+            paidAt: true,
             createdAt: true,
+            updatedAt: true,
+            form: {
+                select: { fields: true },
+            },
             year: {
-                select: {
-                    year: true,
-                    title: true,
-                },
+                select: { year: true, title: true },
             },
         },
+    });
+});
+
+export const getSubmissionCountForYear = cache(async (yearId: string) => {
+    return db.registrationSubmission.count({
+        where: { yearId },
     });
 });

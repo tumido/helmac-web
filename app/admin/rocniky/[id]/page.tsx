@@ -22,6 +22,12 @@ async function getYear(id: string) {
             heroPhoto: true,
             registrationOpen: true,
             registrationStartDate: true,
+            registrationForm: {
+                select: { id: true, fields: true },
+            },
+            _count: {
+                select: { registrationSubmissions: true },
+            },
             albums: {
                 orderBy: { sortOrder: "asc" },
                 select: {
