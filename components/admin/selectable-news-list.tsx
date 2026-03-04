@@ -7,7 +7,6 @@ import {
     Box,
     Checkbox,
     Typography,
-    Chip,
     Divider,
     Tooltip,
     Dialog,
@@ -19,20 +18,17 @@ import {
 } from "@mui/material";
 import {
     Edit,
-    Visibility,
-    VisibilityOff,
 } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { NewsActions } from "@/components/admin/news-actions";
 import { BulkActionBar } from "@/components/admin/bulk-action-bar";
-import { bulkPublishNews, bulkUnpublishNews, bulkDeleteNews } from "@/lib/actions/news";
+import { bulkDeleteNews } from "@/lib/actions/news";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface News {
     id: string;
     slug: string;
     title: string;
-    isPublished: boolean;
     publishedAt: Date | null;
     year: {
         year: number;
@@ -77,32 +73,6 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
         setSelected(newSelected);
     };
 
-    const handleBulkPublish = async () => {
-        setLoading(true);
-        const result = await bulkPublishNews(Array.from(selected));
-        setLoading(false);
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(`${result.count} novinek publikovano`);
-            setSelected(new Set());
-            router.refresh();
-        }
-    };
-
-    const handleBulkUnpublish = async () => {
-        setLoading(true);
-        const result = await bulkUnpublishNews(Array.from(selected));
-        setLoading(false);
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(`${result.count} novinek skryto`);
-            setSelected(new Set());
-            router.refresh();
-        }
-    };
-
     const handleBulkDelete = async () => {
         setLoading(true);
         const result = await bulkDeleteNews(Array.from(selected));
@@ -121,11 +91,10 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
         <>
             <BulkActionBar
                 selectedCount={selected.size}
-                onPublish={handleBulkPublish}
-                onUnpublish={handleBulkUnpublish}
                 onDelete={() => setDeleteDialogOpen(true)}
                 onClear={() => setSelected(new Set())}
                 loading={loading}
+                showPublishActions={false}
             />
 
             <Card>
@@ -176,38 +145,9 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
                                 size="small"
                             />
                             <Box sx={{ flex: 1 }}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1,
-                                        flexWrap: "wrap",
-                                    }}
-                                >
-                                    <Typography fontWeight="medium">
-                                        {item.title}
-                                    </Typography>
-                                    <Chip
-                                        label={
-                                            item.isPublished
-                                                ? "Publikovano"
-                                                : "Koncept"
-                                        }
-                                        size="small"
-                                        color={
-                                            item.isPublished
-                                                ? "success"
-                                                : "default"
-                                        }
-                                        icon={
-                                            item.isPublished ? (
-                                                <Visibility />
-                                            ) : (
-                                                <VisibilityOff />
-                                            )
-                                        }
-                                    />
-                                </Box>
+                                <Typography fontWeight="medium">
+                                    {item.title}
+                                </Typography>
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -257,7 +197,6 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
                                 </Tooltip>
                                 <NewsActions
                                     newsId={item.id}
-                                    isPublished={item.isPublished}
                                 />
                             </Box>
                         </Box>

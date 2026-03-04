@@ -41,7 +41,6 @@ export async function createNews(
         excerpt: formData.get("excerpt") || undefined,
         content: formData.get("content"),
         coverImage: formData.get("coverImage") || undefined,
-        isPublished: formData.get("isPublished") === "true",
     };
 
     const validated = createNewsSchema.safeParse(rawData);
@@ -74,8 +73,8 @@ export async function createNews(
                 excerpt: validated.data.excerpt,
                 content: validated.data.content,
                 coverImage: validated.data.coverImage || null,
-                isPublished: validated.data.isPublished ?? false,
-                publishedAt: validated.data.isPublished ? new Date() : null,
+                isPublished: true,
+                publishedAt: new Date(),
             },
         });
 
@@ -106,7 +105,6 @@ export async function updateNews(
         excerpt: formData.get("excerpt") || undefined,
         content: formData.get("content"),
         coverImage: formData.get("coverImage") || undefined,
-        isPublished: formData.get("isPublished") === "true",
     };
 
     const validated = updateNewsSchema.safeParse(rawData);
@@ -138,14 +136,6 @@ export async function updateNews(
             }
         }
 
-        // Handle publishedAt based on isPublished change
-        let publishedAt = news.publishedAt;
-        if (validated.data.isPublished && !news.isPublished) {
-            publishedAt = new Date();
-        } else if (!validated.data.isPublished) {
-            publishedAt = null;
-        }
-
         await db.news.update({
             where: { id: newsId },
             data: {
@@ -154,8 +144,8 @@ export async function updateNews(
                 excerpt: validated.data.excerpt,
                 content: validated.data.content,
                 coverImage: validated.data.coverImage || null,
-                isPublished: validated.data.isPublished,
-                publishedAt,
+                isPublished: true,
+                publishedAt: news.publishedAt ?? new Date(),
             },
         });
 
@@ -167,53 +157,6 @@ export async function updateNews(
     }
 
     redirect("/admin/novinky");
-}
-
-export async function publishNews(newsId: string) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.news.update({
-            where: { id: newsId },
-            data: {
-                isPublished: true,
-                publishedAt: new Date(),
-            },
-        });
-
-        revalidatePath("/admin/novinky");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to publish news:", error);
-        return { error: "Nepodarilo se publikovat novinku" };
-    }
-}
-
-export async function unpublishNews(newsId: string) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.news.update({
-            where: { id: newsId },
-            data: {
-                isPublished: false,
-            },
-        });
-
-        revalidatePath("/admin/novinky");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to unpublish news:", error);
-        return { error: "Nepodarilo se skryt novinku" };
-    }
 }
 
 export async function deleteNews(newsId: string) {
@@ -237,53 +180,6 @@ export async function deleteNews(newsId: string) {
 }
 
 // Bulk actions
-export async function bulkPublishNews(newsIds: string[]) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.news.updateMany({
-            where: { id: { in: newsIds } },
-            data: {
-                isPublished: true,
-                publishedAt: new Date(),
-            },
-        });
-
-        revalidatePath("/admin/novinky");
-        return { success: true, count: newsIds.length };
-    } catch (error) {
-        console.error("Failed to bulk publish news:", error);
-        return { error: "Nepodarilo se publikovat novinky" };
-    }
-}
-
-export async function bulkUnpublishNews(newsIds: string[]) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.news.updateMany({
-            where: { id: { in: newsIds } },
-            data: {
-                isPublished: false,
-            },
-        });
-
-        revalidatePath("/admin/novinky");
-        return { success: true, count: newsIds.length };
-    } catch (error) {
-        console.error("Failed to bulk unpublish news:", error);
-        return { error: "Nepodarilo se skryt novinky" };
-    }
-}
-
 export async function bulkDeleteNews(newsIds: string[]) {
     try {
         await requireAdmin();

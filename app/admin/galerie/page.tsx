@@ -14,10 +14,10 @@ import { SelectableAlbumList } from "@/components/admin/selectable-album-list";
 import { Prisma } from "@prisma/client";
 
 interface GalleryPageProps {
-    searchParams: Promise<{ q?: string; yearId?: string; status?: string }>;
+    searchParams: Promise<{ q?: string; yearId?: string }>;
 }
 
-async function getAlbums(filters: { q?: string; yearId?: string; status?: string }) {
+async function getAlbums(filters: { q?: string; yearId?: string }) {
     const where: Prisma.AlbumWhereInput = {};
 
     if (filters.q) {
@@ -29,12 +29,6 @@ async function getAlbums(filters: { q?: string; yearId?: string; status?: string
 
     if (filters.yearId) {
         where.yearId = filters.yearId;
-    }
-
-    if (filters.status === "published") {
-        where.isPublished = true;
-    } else if (filters.status === "draft") {
-        where.isPublished = false;
     }
 
     return db.album.findMany({
@@ -89,7 +83,6 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
             {years.length > 0 && (
                 <ListFilters
                     showYearFilter
-                    showStatusFilter
                     years={years}
                     searchPlaceholder="Hledat alba..."
                 />
@@ -115,7 +108,7 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            {params.q || params.yearId || params.status
+                            {params.q || params.yearId
                                 ? "Zadna alba neodpovidaji filtru."
                                 : "Zatim nebyla vytvorena zadna alba."}
                         </Typography>

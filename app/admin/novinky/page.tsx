@@ -14,10 +14,10 @@ import { SelectableNewsList } from "@/components/admin/selectable-news-list";
 import { Prisma } from "@prisma/client";
 
 interface NewsListPageProps {
-    searchParams: Promise<{ q?: string; yearId?: string; status?: string }>;
+    searchParams: Promise<{ q?: string; yearId?: string }>;
 }
 
-async function getNews(filters: { q?: string; yearId?: string; status?: string }) {
+async function getNews(filters: { q?: string; yearId?: string }) {
     const where: Prisma.NewsWhereInput = {};
 
     if (filters.q) {
@@ -30,12 +30,6 @@ async function getNews(filters: { q?: string; yearId?: string; status?: string }
 
     if (filters.yearId) {
         where.yearId = filters.yearId;
-    }
-
-    if (filters.status === "published") {
-        where.isPublished = true;
-    } else if (filters.status === "draft") {
-        where.isPublished = false;
     }
 
     return db.news.findMany({
@@ -90,7 +84,6 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
             {years.length > 0 && (
                 <ListFilters
                     showYearFilter
-                    showStatusFilter
                     years={years}
                     searchPlaceholder="Hledat novinky..."
                 />
@@ -116,7 +109,7 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            {params.q || params.yearId || params.status
+                            {params.q || params.yearId
                                 ? "Zadne novinky neodpovidaji filtru."
                                 : "Zatim nebyly vytvoreny zadne novinky."}
                         </Typography>

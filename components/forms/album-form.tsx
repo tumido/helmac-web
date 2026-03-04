@@ -11,8 +11,6 @@ import {
     Card,
     CardContent,
     CardActions,
-    FormControlLabel,
-    Switch,
     MenuItem,
     Typography,
     IconButton,
@@ -33,7 +31,6 @@ interface AlbumFormProps {
         title?: string;
         description?: string | null;
         coverImage?: string | null;
-        isPublished?: boolean;
     };
 }
 
@@ -205,17 +202,6 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                         )}
                     </Box>
 
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                id="isPublished"
-                                name="isPublished"
-                                value="true"
-                                defaultChecked={defaultValues?.isPublished ?? false}
-                            />
-                        }
-                        label="Publikovat album"
-                    />
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

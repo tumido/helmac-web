@@ -1,5 +1,5 @@
-import { Container, Typography, Box, Chip, Button } from "@mui/material";
-import { Visibility, VisibilityOff, OpenInNew } from "@mui/icons-material";
+import { Container, Typography, Box, Button } from "@mui/material";
+import { OpenInNew } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
@@ -55,17 +55,7 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
                         mb: 1,
                     }}
                 >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Typography variant="h4">Upravit novinku</Typography>
-                        <Chip
-                            label={news.isPublished ? "Publikovano" : "Skryto"}
-                            size="small"
-                            color={news.isPublished ? "success" : "default"}
-                            icon={
-                                news.isPublished ? <Visibility /> : <VisibilityOff />
-                            }
-                        />
-                    </Box>
+                    <Typography variant="h4">Upravit novinku</Typography>
                     <Button
                         href={`/${news.year.year}/novinky/${news.slug}`}
                         target="_blank"
@@ -91,7 +81,6 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
                     excerpt: news.excerpt,
                     content: news.content,
                     coverImage: news.coverImage,
-                    isPublished: news.isPublished,
                 }}
             />
         </Container>

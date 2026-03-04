@@ -52,7 +52,6 @@ export async function createAlbum(
         title: formData.get("title"),
         description: formData.get("description") || undefined,
         coverImage: formData.get("coverImage") || undefined,
-        isPublished: formData.get("isPublished") === "true",
     };
 
     const validated = createAlbumSchema.safeParse(rawData);
@@ -87,7 +86,7 @@ export async function createAlbum(
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
-                isPublished: validated.data.isPublished ?? false,
+                isPublished: true,
                 sortOrder: validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
             },
         });
@@ -118,7 +117,6 @@ export async function updateAlbum(
         title: formData.get("title"),
         description: formData.get("description") || undefined,
         coverImage: formData.get("coverImage") || undefined,
-        isPublished: formData.get("isPublished") === "true",
     };
 
     const validated = updateAlbumSchema.safeParse(rawData);
@@ -156,7 +154,7 @@ export async function updateAlbum(
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
-                isPublished: validated.data.isPublished,
+                isPublished: true,
             },
         });
 
@@ -169,50 +167,6 @@ export async function updateAlbum(
     }
 
     return { success: true };
-}
-
-export async function publishAlbum(albumId: string) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.album.update({
-            where: { id: albumId },
-            data: { isPublished: true },
-        });
-
-        revalidatePath("/admin/galerie");
-        revalidatePath("/galerie");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to publish album:", error);
-        return { error: "Nepodarilo se publikovat album" };
-    }
-}
-
-export async function unpublishAlbum(albumId: string) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.album.update({
-            where: { id: albumId },
-            data: { isPublished: false },
-        });
-
-        revalidatePath("/admin/galerie");
-        revalidatePath("/galerie");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to unpublish album:", error);
-        return { error: "Nepodarilo se skryt album" };
-    }
 }
 
 export async function deleteAlbum(albumId: string) {
@@ -237,50 +191,6 @@ export async function deleteAlbum(albumId: string) {
 }
 
 // Bulk actions
-export async function bulkPublishAlbums(albumIds: string[]) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.album.updateMany({
-            where: { id: { in: albumIds } },
-            data: { isPublished: true },
-        });
-
-        revalidatePath("/admin/galerie");
-        revalidatePath("/galerie");
-        return { success: true, count: albumIds.length };
-    } catch (error) {
-        console.error("Failed to bulk publish albums:", error);
-        return { error: "Nepodarilo se publikovat alba" };
-    }
-}
-
-export async function bulkUnpublishAlbums(albumIds: string[]) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemate opravneni" };
-    }
-
-    try {
-        await db.album.updateMany({
-            where: { id: { in: albumIds } },
-            data: { isPublished: false },
-        });
-
-        revalidatePath("/admin/galerie");
-        revalidatePath("/galerie");
-        return { success: true, count: albumIds.length };
-    } catch (error) {
-        console.error("Failed to bulk unpublish albums:", error);
-        return { error: "Nepodarilo se skryt alba" };
-    }
-}
-
 export async function bulkDeleteAlbums(albumIds: string[]) {
     try {
         await requireAdmin();

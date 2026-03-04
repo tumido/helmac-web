@@ -13,37 +13,21 @@ import {
     Button,
     CircularProgress,
 } from "@mui/material";
-import { Delete, Visibility, VisibilityOff } from "@mui/icons-material";
-import { publishAlbum, unpublishAlbum, deleteAlbum } from "@/lib/actions/albums";
+import { Delete } from "@mui/icons-material";
+import { deleteAlbum } from "@/lib/actions/albums";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface AlbumActionsProps {
     albumId: string;
-    isPublished: boolean;
 }
 
-export function AlbumActions({ albumId, isPublished }: AlbumActionsProps) {
+export function AlbumActions({ albumId }: AlbumActionsProps) {
     const router = useRouter();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const handleTogglePublish = async () => {
-        setLoading(true);
-        setError(null);
-        const result = isPublished
-            ? await unpublishAlbum(albumId)
-            : await publishAlbum(albumId);
-        setLoading(false);
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(isPublished ? "Album bylo skryto" : "Album bylo publikovano");
-            router.refresh();
-        }
-    };
 
     const handleDelete = async () => {
         setLoading(true);
@@ -71,16 +55,6 @@ export function AlbumActions({ albumId, isPublished }: AlbumActionsProps) {
     return (
         <>
             <Box sx={{ display: "flex", gap: 0.5 }}>
-                <Tooltip title={isPublished ? "Skryt album" : "Publikovat album"}>
-                    <IconButton
-                        size="small"
-                        color={isPublished ? "success" : "default"}
-                        onClick={handleTogglePublish}
-                    >
-                        {isPublished ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                </Tooltip>
-
                 <Tooltip title="Smazat album">
                     <IconButton
                         size="small"

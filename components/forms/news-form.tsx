@@ -11,8 +11,6 @@ import {
     Card,
     CardContent,
     CardActions,
-    FormControlLabel,
-    Switch,
     MenuItem,
     Typography,
     IconButton,
@@ -35,7 +33,6 @@ interface NewsFormProps {
         excerpt?: string | null;
         content?: string;
         coverImage?: string | null;
-        isPublished?: boolean;
     };
 }
 
@@ -223,17 +220,6 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                         )}
                     </Box>
 
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                id="isPublished"
-                                name="isPublished"
-                                value="true"
-                                defaultChecked={defaultValues?.isPublished ?? false}
-                            />
-                        }
-                        label="Publikovat novinku"
-                    />
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

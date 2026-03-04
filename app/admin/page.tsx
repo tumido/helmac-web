@@ -101,43 +101,19 @@ async function getRecentActivity() {
 }
 
 async function getPendingItems() {
-    const [unpublishedNews, unpublishedPages, unpublishedAlbums] = await Promise.all([
-        db.news.findMany({
-            where: { isPublished: false },
-            orderBy: { createdAt: "desc" },
-            take: 5,
-            select: {
-                id: true,
-                title: true,
-                year: { select: { id: true, year: true } },
-            },
-        }),
-        db.page.findMany({
-            where: { isPublished: false },
-            orderBy: { createdAt: "desc" },
-            take: 5,
-            select: {
-                id: true,
-                title: true,
-                year: { select: { id: true, year: true } },
-            },
-        }),
-        db.album.findMany({
-            where: { isPublished: false },
-            orderBy: { createdAt: "desc" },
-            take: 5,
-            select: {
-                id: true,
-                title: true,
-                year: { select: { year: true } },
-            },
-        }),
-    ]);
+    const unpublishedPages = await db.page.findMany({
+        where: { isPublished: false },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: {
+            id: true,
+            title: true,
+            year: { select: { id: true, year: true } },
+        },
+    });
 
     return {
-        news: unpublishedNews,
         pages: unpublishedPages,
-        albums: unpublishedAlbums,
     };
 }
 
@@ -224,8 +200,7 @@ export default async function AdminDashboardPage() {
         { label: "Novy rocnik", href: "/admin/rocniky/novy", icon: Add },
     ];
 
-    const totalPending =
-        pending.news.length + pending.pages.length + pending.albums.length;
+    const totalPending = pending.pages.length;
 
     return (
         <Container maxWidth="lg">
@@ -435,42 +410,9 @@ export default async function AdminDashboardPage() {
                                 </Typography>
                             ) : (
                                 <List disablePadding dense>
-                                    {pending.news.map((item, index) => (
-                                        <Box key={item.id}>
-                                            {index > 0 && <Divider />}
-                                            <ListItem
-                                                disablePadding
-                                                sx={{ py: 0.5 }}
-                                                secondaryAction={
-                                                    <LinkButton
-                                                        href={`/admin/novinky/${item.id}`}
-                                                        size="small"
-                                                    >
-                                                        Upravit
-                                                    </LinkButton>
-                                                }
-                                            >
-                                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                                    <Newspaper fontSize="small" color="action" />
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    primary={item.title}
-                                                    secondary={`Rocnik ${item.year.year}`}
-                                                    primaryTypographyProps={{
-                                                        noWrap: true,
-                                                        variant: "body2",
-                                                        sx: { maxWidth: "65%" },
-                                                    }}
-                                                    secondaryTypographyProps={{
-                                                        variant: "caption",
-                                                    }}
-                                                />
-                                            </ListItem>
-                                        </Box>
-                                    ))}
                                     {pending.pages.map((item, index) => (
                                         <Box key={item.id}>
-                                            {(index > 0 || pending.news.length > 0) && <Divider />}
+                                            {index > 0 && <Divider />}
                                             <ListItem
                                                 disablePadding
                                                 sx={{ py: 0.5 }}
@@ -485,39 +427,6 @@ export default async function AdminDashboardPage() {
                                             >
                                                 <ListItemIcon sx={{ minWidth: 32 }}>
                                                     <Article fontSize="small" color="action" />
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    primary={item.title}
-                                                    secondary={`Rocnik ${item.year.year}`}
-                                                    primaryTypographyProps={{
-                                                        noWrap: true,
-                                                        variant: "body2",
-                                                        sx: { maxWidth: "65%" },
-                                                    }}
-                                                    secondaryTypographyProps={{
-                                                        variant: "caption",
-                                                    }}
-                                                />
-                                            </ListItem>
-                                        </Box>
-                                    ))}
-                                    {pending.albums.map((item, index) => (
-                                        <Box key={item.id}>
-                                            {(index > 0 || pending.news.length > 0 || pending.pages.length > 0) && <Divider />}
-                                            <ListItem
-                                                disablePadding
-                                                sx={{ py: 0.5 }}
-                                                secondaryAction={
-                                                    <LinkButton
-                                                        href={`/admin/galerie/${item.id}`}
-                                                        size="small"
-                                                    >
-                                                        Upravit
-                                                    </LinkButton>
-                                                }
-                                            >
-                                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                                    <PhotoLibrary fontSize="small" color="action" />
                                                 </ListItemIcon>
                                                 <ListItemText
                                                     primary={item.title}

@@ -18,8 +18,6 @@ import {
     InfoOutlined,
     PhotoLibrary,
     Newspaper,
-    Visibility,
-    VisibilityOff,
 } from "@mui/icons-material";
 import { LinkButton, IconLinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
@@ -45,7 +43,6 @@ async function getYear(id: string) {
                 select: {
                     id: true,
                     title: true,
-                    isPublished: true,
                     _count: { select: { images: true } },
                 },
             },
@@ -54,7 +51,6 @@ async function getYear(id: string) {
                 select: {
                     id: true,
                     title: true,
-                    isPublished: true,
                     publishedAt: true,
                 },
             },
@@ -181,17 +177,9 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                                             }}
                                         >
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                                                    <Typography noWrap fontWeight="medium">
-                                                        {album.title}
-                                                    </Typography>
-                                                    <Chip
-                                                        label={album.isPublished ? "Publikovano" : "Koncept"}
-                                                        size="small"
-                                                        color={album.isPublished ? "success" : "default"}
-                                                        icon={album.isPublished ? <Visibility /> : <VisibilityOff />}
-                                                    />
-                                                </Box>
+                                                <Typography noWrap fontWeight="medium">
+                                                    {album.title}
+                                                </Typography>
                                                 <Typography variant="body2" color="text.secondary">
                                                     {album._count.images} obrazku
                                                 </Typography>
@@ -202,7 +190,7 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                                                         <Edit />
                                                     </IconLinkButton>
                                                 </Tooltip>
-                                                <AlbumActions albumId={album.id} isPublished={album.isPublished} />
+                                                <AlbumActions albumId={album.id} />
                                             </Box>
                                         </Box>
                                     </Box>
@@ -251,17 +239,9 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                                             }}
                                         >
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                                                    <Typography noWrap fontWeight="medium">
-                                                        {item.title}
-                                                    </Typography>
-                                                    <Chip
-                                                        label={item.isPublished ? "Publikovano" : "Koncept"}
-                                                        size="small"
-                                                        color={item.isPublished ? "success" : "default"}
-                                                        icon={item.isPublished ? <Visibility /> : <VisibilityOff />}
-                                                    />
-                                                </Box>
+                                                <Typography noWrap fontWeight="medium">
+                                                    {item.title}
+                                                </Typography>
                                                 {item.publishedAt && (
                                                     <Typography variant="body2" color="text.secondary">
                                                         {item.publishedAt.toLocaleDateString("cs-CZ")}
@@ -274,7 +254,7 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                                                         <Edit />
                                                     </IconLinkButton>
                                                 </Tooltip>
-                                                <NewsActions newsId={item.id} isPublished={item.isPublished} />
+                                                <NewsActions newsId={item.id} />
                                             </Box>
                                         </Box>
                                     </Box>

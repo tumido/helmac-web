@@ -2,14 +2,11 @@ import {
     Container,
     Typography,
     Box,
-    Chip,
     Card,
     CardContent,
     Button,
 } from "@mui/material";
 import {
-    Visibility,
-    VisibilityOff,
     Add,
     OpenInNew,
 } from "@mui/icons-material";
@@ -73,17 +70,7 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
                         mb: 1,
                     }}
                 >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Typography variant="h4">Upravit album</Typography>
-                        <Chip
-                            label={album.isPublished ? "Publikovano" : "Skryto"}
-                            size="small"
-                            color={album.isPublished ? "success" : "default"}
-                            icon={
-                                album.isPublished ? <Visibility /> : <VisibilityOff />
-                            }
-                        />
-                    </Box>
+                    <Typography variant="h4">Upravit album</Typography>
                     <Button
                         href={`/galerie/${album.year.year}/${album.slug}`}
                         target="_blank"
@@ -120,7 +107,6 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
                             title: album.title,
                             description: album.description,
                             coverImage: album.coverImage,
-                            isPublished: album.isPublished,
                         }}
                     />
                 </Box>

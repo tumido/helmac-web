@@ -7,7 +7,6 @@ import {
     Box,
     Checkbox,
     Typography,
-    Chip,
     Divider,
     Tooltip,
     Dialog,
@@ -19,21 +18,18 @@ import {
 } from "@mui/material";
 import {
     Edit,
-    Visibility,
-    VisibilityOff,
     PhotoLibrary,
 } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { AlbumActions } from "@/components/admin/album-actions";
 import { BulkActionBar } from "@/components/admin/bulk-action-bar";
-import { bulkPublishAlbums, bulkUnpublishAlbums, bulkDeleteAlbums } from "@/lib/actions/albums";
+import { bulkDeleteAlbums } from "@/lib/actions/albums";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface Album {
     id: string;
     slug: string;
     title: string;
-    isPublished: boolean;
     _count: {
         images: number;
     };
@@ -75,32 +71,6 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
         setSelected(newSelected);
     };
 
-    const handleBulkPublish = async () => {
-        setLoading(true);
-        const result = await bulkPublishAlbums(Array.from(selected));
-        setLoading(false);
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(`${result.count} alb publikovano`);
-            setSelected(new Set());
-            router.refresh();
-        }
-    };
-
-    const handleBulkUnpublish = async () => {
-        setLoading(true);
-        const result = await bulkUnpublishAlbums(Array.from(selected));
-        setLoading(false);
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(`${result.count} alb skryto`);
-            setSelected(new Set());
-            router.refresh();
-        }
-    };
-
     const handleBulkDelete = async () => {
         setLoading(true);
         const result = await bulkDeleteAlbums(Array.from(selected));
@@ -119,11 +89,10 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
         <>
             <BulkActionBar
                 selectedCount={selected.size}
-                onPublish={handleBulkPublish}
-                onUnpublish={handleBulkUnpublish}
                 onDelete={() => setDeleteDialogOpen(true)}
                 onClear={() => setSelected(new Set())}
                 loading={loading}
+                showPublishActions={false}
             />
 
             <Card>
@@ -174,38 +143,9 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                                 size="small"
                             />
                             <Box sx={{ flex: 1 }}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1,
-                                        flexWrap: "wrap",
-                                    }}
-                                >
-                                    <Typography fontWeight="medium">
-                                        {album.title}
-                                    </Typography>
-                                    <Chip
-                                        label={
-                                            album.isPublished
-                                                ? "Publikovano"
-                                                : "Koncept"
-                                        }
-                                        size="small"
-                                        color={
-                                            album.isPublished
-                                                ? "success"
-                                                : "default"
-                                        }
-                                        icon={
-                                            album.isPublished ? (
-                                                <Visibility />
-                                            ) : (
-                                                <VisibilityOff />
-                                            )
-                                        }
-                                    />
-                                </Box>
+                                <Typography fontWeight="medium">
+                                    {album.title}
+                                </Typography>
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -263,7 +203,6 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                                 </Tooltip>
                                 <AlbumActions
                                     albumId={album.id}
-                                    isPublished={album.isPublished}
                                 />
                             </Box>
                         </Box>
