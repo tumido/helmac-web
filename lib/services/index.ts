@@ -5,5 +5,6 @@ export * from "./gallery";
 export * from "./registration";
 export * from "./program";
 export * from "./rules";
+export * from "./offers";
 export * from "./info";
 export * from "./navigation";

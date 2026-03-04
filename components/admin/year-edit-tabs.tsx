@@ -32,6 +32,7 @@ import {
     ExpandMore,
     Gavel,
     InfoOutlined,
+    LocalOffer,
     Newspaper,
     PhotoLibrary,
 } from "@mui/icons-material";
@@ -40,6 +41,7 @@ import { YearForm } from "@/components/forms/year-form";
 import { AlbumActions } from "@/components/admin/album-actions";
 import { NewsActions } from "@/components/admin/news-actions";
 import { SortableRules } from "@/components/admin/sortable-rules";
+import { SortableOffers } from "@/components/admin/sortable-offers";
 import { SortableDays } from "@/components/admin/sortable-days";
 import { SortableInfo } from "@/components/admin/sortable-info";
 import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
@@ -65,6 +67,10 @@ interface YearEditTabsProps {
             publishedAt: Date | null;
         }[];
         rules: {
+            id: string;
+            title: string;
+        }[];
+        offers: {
             id: string;
             title: string;
         }[];
@@ -156,6 +162,13 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         Nové pravidlo
                     </LinkButton>
                     <LinkButton
+                        href={`/admin/rocniky/${year.id}/nabidka/nove`}
+                        variant="contained"
+                        startIcon={<LocalOffer />}
+                    >
+                        Nová nabídka
+                    </LinkButton>
+                    <LinkButton
                         href={`/admin/rocniky/${year.id}/info/nove`}
                         variant="contained"
                         startIcon={<InfoOutlined />}
@@ -181,6 +194,13 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         startIcon={<Gavel />}
                     >
                         Spravovat pravidla
+                    </LinkButton>
+                    <LinkButton
+                        href={`/admin/rocniky/${year.id}/nabidka`}
+                        variant="contained"
+                        startIcon={<LocalOffer />}
+                    >
+                        Spravovat nabídky
                     </LinkButton>
                     <LinkButton
                         href={`/admin/rocniky/${year.id}/info`}
@@ -342,6 +362,36 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                     startIcon={<Add />}
                                 >
                                     Nové pravidlo
+                                </LinkButton>
+                            </Box>
+                        </AccordionDetails>
+                    </Accordion>
+
+                    <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMore />}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <LocalOffer fontSize="small" />
+                                <Typography variant="h6">Co nabízíme</Typography>
+                                <Chip label={year.offers.length} size="small" />
+                            </Box>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: 0 }}>
+                            {year.offers.length === 0 ? (
+                                <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
+                                    Zatím nebyly vytvořeny žádné nabídky.
+                                </Typography>
+                            ) : (
+                                <SortableOffers yearId={year.id} offers={year.offers} />
+                            )}
+                            <Divider />
+                            <Box sx={{ p: 1.5, display: "flex", justifyContent: "center" }}>
+                                <LinkButton
+                                    href={`/admin/rocniky/${year.id}/nabidka/nove`}
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<Add />}
+                                >
+                                    Nová nabídka
                                 </LinkButton>
                             </Box>
                         </AccordionDetails>

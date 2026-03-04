@@ -45,6 +45,13 @@ async function getYear(id: string) {
                     title: true,
                 },
             },
+            offers: {
+                orderBy: { sortOrder: "asc" },
+                select: {
+                    id: true,
+                    title: true,
+                },
+            },
             programDays: {
                 orderBy: { sortOrder: "asc" },
                 select: {

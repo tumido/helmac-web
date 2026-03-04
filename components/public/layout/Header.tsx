@@ -20,6 +20,7 @@ import { NavSubtabs } from "@/lib/services/navigation";
 
 const baseNavItems: { label: string; href: string; subtabKey?: keyof NavSubtabs }[] = [
     { label: "Program", href: "/program", subtabKey: "program" },
+    { label: "Co nabízíme", href: "/co-nabizime", subtabKey: "nabidka" },
     { label: "Info", href: "/info", subtabKey: "info" },
     { label: "Pravidla", href: "/pravidla", subtabKey: "pravidla" },
     { label: "Galerie", href: "/galerie" },

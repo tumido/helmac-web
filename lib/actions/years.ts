@@ -306,8 +306,9 @@ async function createDefaultPages(yearId: string) {
         { slug: "program", title: "Program", sortOrder: 1 },
         { slug: "registrace", title: "Registrace", sortOrder: 2 },
         { slug: "pravidla", title: "Pravidla", sortOrder: 3 },
-        { slug: "galerie", title: "Galerie", sortOrder: 4 },
-        { slug: "na-pamatku", title: "Na památku", sortOrder: 5 },
+        { slug: "co-nabizime", title: "Co nabízíme", sortOrder: 4 },
+        { slug: "galerie", title: "Galerie", sortOrder: 5 },
+        { slug: "na-pamatku", title: "Na památku", sortOrder: 6 },
     ];
 
     await db.page.createMany({
