@@ -4,6 +4,7 @@ import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import type { FormField } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
+import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
 interface FieldListItemProps {
     field: FormField;
@@ -26,6 +27,9 @@ export function FieldListItem({ field, onEdit, onDelete }: FieldListItemProps) {
                 minHeight: 48,
             }}
         >
+            <Box sx={{ color: "text.secondary", display: "flex" }}>
+                {FIELD_TYPE_ICONS[meta.icon]}
+            </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Typography variant="body2" noWrap fontWeight={500}>

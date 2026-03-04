@@ -11,32 +11,8 @@ import {
     CardContent,
     Box,
 } from "@mui/material";
-import {
-    TextFields,
-    Email,
-    Notes,
-    Numbers,
-    CheckBox,
-    List,
-    RadioButtonChecked,
-    CalendarMonth,
-    Title,
-    Article,
-} from "@mui/icons-material";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
-
-const ICONS: Record<string, React.ReactNode> = {
-    TextFields: <TextFields />,
-    Email: <Email />,
-    Notes: <Notes />,
-    Numbers: <Numbers />,
-    CheckBox: <CheckBox />,
-    List: <List />,
-    RadioButtonChecked: <RadioButtonChecked />,
-    CalendarMonth: <CalendarMonth />,
-    Title: <Title />,
-    Article: <Article />,
-};
+import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
 interface FieldTypeSelectorProps {
     open: boolean;
@@ -67,7 +43,7 @@ export function FieldTypeSelector({ open, onClose, onSelect }: FieldTypeSelector
                                 <CardActionArea onClick={() => handleSelect(type as FieldType)}>
                                     <CardContent sx={{ textAlign: "center", py: 1.5 }}>
                                         <Box sx={{ color: "primary.main", mb: 0.5 }}>
-                                            {ICONS[meta.icon]}
+                                            {FIELD_TYPE_ICONS[meta.icon]}
                                         </Box>
                                         <Typography variant="body2">{meta.label}</Typography>
                                     </CardContent>
@@ -87,7 +63,7 @@ export function FieldTypeSelector({ open, onClose, onSelect }: FieldTypeSelector
                                 <CardActionArea onClick={() => handleSelect(type as FieldType)}>
                                     <CardContent sx={{ textAlign: "center", py: 1.5 }}>
                                         <Box sx={{ color: "text.secondary", mb: 0.5 }}>
-                                            {ICONS[meta.icon]}
+                                            {FIELD_TYPE_ICONS[meta.icon]}
                                         </Box>
                                         <Typography variant="body2">{meta.label}</Typography>
                                     </CardContent>
