@@ -15,11 +15,13 @@ import {
     Switch,
     MenuItem,
     Typography,
+    IconButton,
 } from "@mui/material";
-import { Save } from "@mui/icons-material";
+import { Save, Refresh } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createNews, updateNews, NewsActionState } from "@/lib/actions/news";
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { generateSlug } from "@/lib/utils/slugify";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 interface NewsFormProps {
@@ -62,6 +64,9 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
     const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
     const [content, setContent] = useState(defaultValues?.content || "");
+    const [title, setTitle] = useState(defaultValues?.title || "");
+    const [slug, setSlug] = useState(defaultValues?.slug || "");
+    const [slugManuallyEdited, setSlugManuallyEdited] = useState(mode === "edit");
 
     const action =
         mode === "create"
@@ -124,7 +129,14 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                             id="title"
                             name="title"
                             label="Nazev novinky"
-                            defaultValue={defaultValues?.title || ""}
+                            value={title}
+                            onChange={(e) => {
+                                const newTitle = e.target.value;
+                                setTitle(newTitle);
+                                if (!slugManuallyEdited) {
+                                    setSlug(generateSlug(newTitle));
+                                }
+                            }}
                             error={!!state?.error?.title}
                             helperText={state?.error?.title?.[0]}
                         />
@@ -135,13 +147,31 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                             id="slug"
                             name="slug"
                             label="URL slug"
-                            defaultValue={defaultValues?.slug || ""}
+                            value={slug}
+                            onChange={(e) => {
+                                setSlug(e.target.value);
+                                setSlugManuallyEdited(true);
+                            }}
                             error={!!state?.error?.slug}
                             helperText={
                                 state?.error?.slug?.[0] ||
                                 "Pouze mala pismena, cisla a pomlcky"
                             }
                             placeholder="napr. nova-akce"
+                            InputProps={{
+                                endAdornment: slugManuallyEdited && mode === "create" ? (
+                                    <IconButton
+                                        size="small"
+                                        title="Generovat z nazvu"
+                                        onClick={() => {
+                                            setSlug(generateSlug(title));
+                                            setSlugManuallyEdited(false);
+                                        }}
+                                    >
+                                        <Refresh fontSize="small" />
+                                    </IconButton>
+                                ) : undefined,
+                            }}
                         />
                     </Box>
 
