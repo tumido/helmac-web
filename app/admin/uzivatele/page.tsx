@@ -67,7 +67,7 @@ export default async function UsersPage() {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs items={[{ label: "Uzivatele" }]} />
+            <AdminBreadcrumbs items={[{ label: "Uživatelé" }]} />
             <Box
                 sx={{
                     display: "flex",
@@ -76,13 +76,13 @@ export default async function UsersPage() {
                     mb: 4,
                 }}
             >
-                <Typography variant="h4">Uzivatele</Typography>
+                <Typography variant="h4">Uživatelé</Typography>
                 <LinkButton
                     href="/admin/uzivatele/novy"
                     variant="contained"
                     startIcon={<Add />}
                 >
-                    Novy uzivatel
+                    Nový uživatel
                 </LinkButton>
             </Box>
 
@@ -91,11 +91,11 @@ export default async function UsersPage() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Jmeno</TableCell>
+                                <TableCell>Jméno</TableCell>
                                 <TableCell>Email</TableCell>
                                 <TableCell>Role</TableCell>
                                 <TableCell>Novinek</TableCell>
-                                <TableCell>Vytvoren</TableCell>
+                                <TableCell>Vytvořen</TableCell>
                                 <TableCell align="right">Akce</TableCell>
                             </TableRow>
                         </TableHead>

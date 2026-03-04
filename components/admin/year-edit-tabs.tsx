@@ -83,7 +83,7 @@ interface YearEditTabsProps {
     };
 }
 
-const TAB_LABELS = ["Rychle akce", "Sprava", "Obsah", "Registrace", "Nastaveni"];
+const TAB_LABELS = ["Rychlé akce", "Správa", "Obsah", "Registrace", "Nastavení"];
 
 export function YearEditTabs({ year }: YearEditTabsProps) {
     const [tab, setTab] = useState(0);
@@ -132,35 +132,35 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         variant="contained"
                         startIcon={<PhotoLibrary />}
                     >
-                        Nova galerie
+                        Nová galerie
                     </LinkButton>
                     <LinkButton
                         href={`/admin/novinky/nova?yearId=${year.id}`}
                         variant="contained"
                         startIcon={<Newspaper />}
                     >
-                        Nova novinka
+                        Nová novinka
                     </LinkButton>
                     <LinkButton
                         href={`/admin/rocniky/${year.id}/program/novy-den`}
                         variant="contained"
                         startIcon={<CalendarMonth />}
                     >
-                        Novy den programu
+                        Nový den programu
                     </LinkButton>
                     <LinkButton
                         href={`/admin/rocniky/${year.id}/pravidla/nove`}
                         variant="contained"
                         startIcon={<Gavel />}
                     >
-                        Nove pravidlo
+                        Nové pravidlo
                     </LinkButton>
                     <LinkButton
                         href={`/admin/rocniky/${year.id}/info/nove`}
                         variant="contained"
                         startIcon={<InfoOutlined />}
                     >
-                        Nova info sekce
+                        Nová info sekce
                     </LinkButton>
                 </Box>
             )}
@@ -206,7 +206,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         <AccordionDetails sx={{ p: 0 }}>
                             {year.albums.length === 0 ? (
                                 <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-                                    Zatim nebyly vytvoreny zadne galerie.
+                                    Zatím nebyly vytvořeny žádné galerie.
                                 </Typography>
                             ) : (
                                 year.albums.map((album, index) => (
@@ -226,7 +226,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                                     {album.title}
                                                 </Typography>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    {album._count.images} obrazku
+                                                    {album._count.images} obrázků
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -249,7 +249,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                     size="small"
                                     startIcon={<PhotoLibrary />}
                                 >
-                                    Nova galerie
+                                    Nová galerie
                                 </LinkButton>
                             </Box>
                         </AccordionDetails>
@@ -266,7 +266,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         <AccordionDetails sx={{ p: 0 }}>
                             {year.news.length === 0 ? (
                                 <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-                                    Zatim nebyly vytvoreny zadne novinky.
+                                    Zatím nebyly vytvořeny žádné novinky.
                                 </Typography>
                             ) : (
                                 year.news.map((item, index) => (
@@ -311,7 +311,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                     size="small"
                                     startIcon={<Newspaper />}
                                 >
-                                    Nova novinka
+                                    Nová novinka
                                 </LinkButton>
                             </Box>
                         </AccordionDetails>
@@ -328,7 +328,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         <AccordionDetails sx={{ p: 0 }}>
                             {year.rules.length === 0 ? (
                                 <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-                                    Zatim nebyla vytvorena zadna pravidla.
+                                    Zatím nebyla vytvořena žádná pravidla.
                                 </Typography>
                             ) : (
                                 <SortableRules yearId={year.id} rules={year.rules} />
@@ -341,7 +341,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                     size="small"
                                     startIcon={<Add />}
                                 >
-                                    Nove pravidlo
+                                    Nové pravidlo
                                 </LinkButton>
                             </Box>
                         </AccordionDetails>
@@ -358,7 +358,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         <AccordionDetails sx={{ p: 0 }}>
                             {year.programDays.length === 0 ? (
                                 <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-                                    Zatim nebyly vytvoreny zadne dny programu.
+                                    Zatím nebyly vytvořeny žádné dny programu.
                                 </Typography>
                             ) : (
                                 <SortableDays yearId={year.id} days={year.programDays} />
@@ -371,7 +371,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                     size="small"
                                     startIcon={<Add />}
                                 >
-                                    Novy den
+                                    Nový den
                                 </LinkButton>
                             </Box>
                         </AccordionDetails>
@@ -388,7 +388,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                         <AccordionDetails sx={{ p: 0 }}>
                             {year.infoSections.length === 0 ? (
                                 <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-                                    Zatim nebyly vytvoreny zadne info sekce.
+                                    Zatím nebyly vytvořeny žádné info sekce.
                                 </Typography>
                             ) : (
                                 <SortableInfo yearId={year.id} infoSections={year.infoSections} />
@@ -401,7 +401,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                                     size="small"
                                     startIcon={<Add />}
                                 >
-                                    Nova info sekce
+                                    Nová info sekce
                                 </LinkButton>
                             </Box>
                         </AccordionDetails>
@@ -509,36 +509,36 @@ function RegistrationTab({ yearId, registrationOpen, registrationStartDate }: Re
                 }
                 label={
                     <Typography fontWeight={600}>
-                        {isOpen ? "Registrace otevrena" : "Registrace uzavrena"}
+                        {isOpen ? "Registrace otevřena" : "Registrace uzavřena"}
                     </Typography>
                 }
             />
 
             <TextField
                 type="date"
-                label="Datum otevreni registrace"
+                label="Datum otevření registrace"
                 value={dateValue}
                 onChange={(e) => setDateValue(e.target.value)}
                 onBlur={handleDateBlur}
                 disabled={dateSaving}
-                helperText="Pokud je registrace uzavrena, na verejnych strankach se zobrazi datum otevreni"
+                helperText="Pokud je registrace uzavřena, na veřejných stránkách se zobrazí datum otevření"
                 InputLabelProps={{ shrink: true }}
                 fullWidth
             />
 
             <Dialog open={confirmOpen} onClose={handleCancel}>
                 <DialogTitle>
-                    {pendingToggle ? "Otevrit registraci?" : "Uzavrit registraci?"}
+                    {pendingToggle ? "Otevřít registraci?" : "Uzavřít registraci?"}
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         {pendingToggle
-                            ? "Registrace bude otevrena a navstevnici se budou moci registrovat na verejnych strankach."
-                            : "Registrace bude uzavrena a registracni formular nebude dostupny na verejnych strankach."}
+                            ? "Registrace bude otevřena a návštěvníci se budou moci registrovat na veřejných stránkách."
+                            : "Registrace bude uzavřena a registrační formulář nebude dostupný na veřejných stránkách."}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCancel}>Zrusit</Button>
+                    <Button onClick={handleCancel}>Zrušit</Button>
                     <Button onClick={handleConfirm} variant="contained" autoFocus>
                         Potvrdit
                     </Button>

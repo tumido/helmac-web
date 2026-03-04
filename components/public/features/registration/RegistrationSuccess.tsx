@@ -23,7 +23,7 @@ export function RegistrationSuccess({ message }: RegistrationSuccessProps) {
                 }}
             />
             <Typography variant="h4" gutterBottom>
-                Registrace uspesna!
+                Registrace úspěšná!
             </Typography>
             <Typography
                 variant="body1"
@@ -33,12 +33,12 @@ export function RegistrationSuccess({ message }: RegistrationSuccessProps) {
                 {message}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                Potvrzeni jsme vam zaslali na email. Sledujte novinky pro dalsi
-                informace o platbe a dalsich pokynech.
+                Potvrzení jsme vám zaslali na email. Sledujte novinky pro další
+                informace o platbě a dalších pokynech.
             </Typography>
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
                 <LinkButton href="/" variant="contained">
-                    Zpet na hlavni stranku
+                    Zpět na hlavní stránku
                 </LinkButton>
                 <LinkButton href="/novinky" variant="outlined">
                     Sledovat novinky

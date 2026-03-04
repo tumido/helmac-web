@@ -48,7 +48,7 @@ export function BulkActionBar({
                 fontWeight="medium"
                 sx={{ minWidth: { xs: "auto", sm: 100 } }}
             >
-                {selectedCount} vybrano
+                {selectedCount} vybráno
             </Typography>
 
             <Box
@@ -89,7 +89,7 @@ export function BulkActionBar({
                             },
                         }}
                     >
-                        Skryt
+                        Skrýt
                     </Button>
                 )}
 
@@ -124,7 +124,7 @@ export function BulkActionBar({
                     },
                 }}
             >
-                Zrusit
+                Zrušit
             </Button>
         </Paper>
     );

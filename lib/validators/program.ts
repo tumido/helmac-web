@@ -5,11 +5,11 @@ import { z } from "zod";
 // ============================================
 
 export const createProgramDaySchema = z.object({
-    date: z.coerce.date({ message: "Datum je povinne" }),
+    date: z.coerce.date({ message: "Datum je povinné" }),
     label: z
         .string()
-        .min(1, "Popisek je povinny")
-        .max(50, "Popisek je prilis dlouhy"),
+        .min(1, "Popisek je povinný")
+        .max(50, "Popisek je příliš dlouhý"),
 });
 
 export const updateProgramDaySchema = createProgramDaySchema.partial();
@@ -24,28 +24,28 @@ export type UpdateProgramDayInput = z.infer<typeof updateProgramDaySchema>;
 export const createProgramEventSchema = z.object({
     startTime: z
         .string()
-        .min(1, "Cas zacatku je povinny")
+        .min(1, "Čas začátku je povinný")
         .regex(
             /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/,
-            "Neplatny format casu (HH:MM)"
+            "Neplatný formát času (HH:MM)"
         ),
     title: z
         .string()
-        .min(1, "Nazev je povinny")
-        .max(200, "Nazev je prilis dlouhy"),
+        .min(1, "Název je povinný")
+        .max(200, "Název je příliš dlouhý"),
     description: z
         .string()
-        .min(1, "Popis je povinny")
-        .max(2000, "Popis je prilis dlouhy"),
+        .min(1, "Popis je povinný")
+        .max(2000, "Popis je příliš dlouhý"),
     location: z
         .string()
-        .min(1, "Misto je povinne")
-        .max(200, "Misto je prilis dlouhe"),
+        .min(1, "Místo je povinné")
+        .max(200, "Místo je příliš dlouhé"),
     imageUrl: z
         .string()
         .refine(
             (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
-            "Neplatna URL obrazku"
+            "Neplatná URL obrázku"
         )
         .optional(),
     tags: z.array(z.string()).default([]),

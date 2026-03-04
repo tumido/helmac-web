@@ -38,7 +38,7 @@ export function SortableDays({ yearId, days }: SortableDaysProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Poradi dnu bylo zmeneno");
+            toast.success("Pořadí dnů bylo změněno");
         }
     };
 

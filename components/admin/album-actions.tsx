@@ -39,7 +39,7 @@ export function AlbumActions({ albumId }: AlbumActionsProps) {
             setError(result.error);
             toast.error(result.error);
         } else {
-            toast.success("Album bylo smazano");
+            toast.success("Album bylo smazáno");
             router.refresh();
         }
     };
@@ -73,8 +73,8 @@ export function AlbumActions({ albumId }: AlbumActionsProps) {
                 <DialogTitle>Smazat album?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat toto album? Tato akce je nevratna a
-                        smaze vsechny obrazky v albu.
+                        Opravdu chcete smazat toto album? Tato akce je nevratná a
+                        smaže všechny obrázky v albu.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -84,7 +84,7 @@ export function AlbumActions({ albumId }: AlbumActionsProps) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleDelete}

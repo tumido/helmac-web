@@ -38,12 +38,12 @@ type MenuItemType = MenuItem | MenuDivider;
 
 const staticMenuItems: MenuItemType[] = [
     { text: "Dashboard", href: "/admin", icon: Dashboard },
-    { text: "Rocniky", href: "/admin/rocniky", icon: CalendarMonth },
+    { text: "Ročníky", href: "/admin/rocniky", icon: CalendarMonth },
     { text: "Novinky", href: "/admin/novinky", icon: Newspaper },
     { text: "Galerie", href: "/admin/galerie", icon: PhotoLibrary },
     { divider: true },
     {
-        text: "Uzivatele",
+        text: "Uživatelé",
         href: "/admin/uzivatele",
         icon: People,
         roles: ["SUPER_ADMIN"],
@@ -93,7 +93,7 @@ export function AdminDrawer({
 
     const handleActiveYearClick = () => {
         if (!activeYearId) {
-            enqueueSnackbar("Zadny rocnik neni aktivni", { variant: "info" });
+            enqueueSnackbar("Žádný ročník není aktivní", { variant: "info" });
         }
         onClose();
     };
@@ -122,7 +122,7 @@ export function AdminDrawer({
                         (item.href !== "/admin" &&
                             pathname.startsWith(item.href));
 
-                    // Insert "Aktualni rocnik" after "Rocniky"
+                    // Insert "Aktuální ročník" after "Rocniky"
                     const elements = [
                         <ListItem key={item.href} disablePadding>
                             <ListItemLinkButton
@@ -152,7 +152,7 @@ export function AdminDrawer({
                                         <ListItemIcon>
                                             <Today />
                                         </ListItemIcon>
-                                        <ListItemText primary="Aktualni rocnik" />
+                                        <ListItemText primary="Aktuální ročník" />
                                     </ListItemLinkButton>
                                 ) : (
                                     <ListItemButton
@@ -162,7 +162,7 @@ export function AdminDrawer({
                                         <ListItemIcon>
                                             <Today />
                                         </ListItemIcon>
-                                        <ListItemText primary="Aktualni rocnik" />
+                                        <ListItemText primary="Aktuální ročník" />
                                     </ListItemButton>
                                 )}
                             </ListItem>,

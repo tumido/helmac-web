@@ -10,7 +10,7 @@ import { getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Program | Helmac",
-    description: "Program akce Helmac - kompletni harmonogram udalosti a aktivit",
+    description: "Program akce Helmac - kompletní harmonogram událostí a aktivit",
 };
 
 export default async function ProgramPage() {
@@ -24,7 +24,7 @@ export default async function ProgramPage() {
         <>
             <PageHeader
                 title="Program"
-                subtitle="Kompletni harmonogram akce"
+                subtitle="Kompletní harmonogram akce"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
@@ -38,7 +38,7 @@ export default async function ProgramPage() {
                         textAlign="center"
                         sx={{ py: 8 }}
                     >
-                        Program zatim neni k dispozici.
+                        Program zatím není k dispozici.
                     </Typography>
                 )}
             </Container>

@@ -19,7 +19,7 @@ export default async function RegistracePage() {
             <>
                 <PageHeader
                     title="Registrace"
-                    subtitle="Registrace neni momentalne otevrena"
+                    subtitle="Registrace není momentálně otevřena"
                     backgroundImage={activeYear?.headerPhoto || undefined}
                 />
                 <Container maxWidth="md" sx={{ pb: 8 }}>
@@ -34,15 +34,15 @@ export default async function RegistracePage() {
                         {status.registrationStartDate ? (
                             <>
                                 <Typography variant="h5" gutterBottom>
-                                    Registrace se otevre {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
+                                    Registrace se otevře {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
                                 </Typography>
                                 <Typography color="text.secondary">
-                                    Sledujte novinky, at nepropsnete zacatek registraci.
+                                    Sledujte novinky, ať nepromeškáte začátek registrací.
                                 </Typography>
                             </>
                         ) : (
                             <Typography variant="h5">
-                                Registrace neni momentalne otevrena
+                                Registrace není momentálně otevřena
                             </Typography>
                         )}
                     </Box>

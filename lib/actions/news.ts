@@ -28,11 +28,11 @@ export async function createNews(
         await requireAdmin();
         session = await auth();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     if (!session?.user?.id) {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -61,7 +61,7 @@ export async function createNews(
         });
 
         if (existing) {
-            return { error: { slug: ["Novinka s timto slugem jiz existuje"] } };
+            return { error: { slug: ["Novinka s tímto slugem již existuje"] } };
         }
 
         await db.news.create({
@@ -82,7 +82,7 @@ export async function createNews(
         revalidatePath(`/admin/rocniky/${yearId}`);
     } catch (error) {
         console.error("Failed to create news:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit novinku"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit novinku"] } };
     }
 
     redirect("/admin/novinky");
@@ -96,7 +96,7 @@ export async function updateNews(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -132,7 +132,7 @@ export async function updateNews(
             });
 
             if (existing) {
-                return { error: { slug: ["Novinka s timto slugem jiz existuje"] } };
+                return { error: { slug: ["Novinka s tímto slugem již existuje"] } };
             }
         }
 
@@ -153,7 +153,7 @@ export async function updateNews(
         revalidatePath(`/admin/novinky/${newsId}`);
     } catch (error) {
         console.error("Failed to update news:", error);
-        return { error: { _form: ["Nepodarilo se upravit novinku"] } };
+        return { error: { _form: ["Nepodařilo se upravit novinku"] } };
     }
 
     redirect("/admin/novinky");
@@ -163,7 +163,7 @@ export async function deleteNews(newsId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -175,7 +175,7 @@ export async function deleteNews(newsId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete news:", error);
-        return { error: "Nepodarilo se smazat novinku" };
+        return { error: "Nepodařilo se smazat novinku" };
     }
 }
 
@@ -184,7 +184,7 @@ export async function bulkDeleteNews(newsIds: string[]) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -196,6 +196,6 @@ export async function bulkDeleteNews(newsIds: string[]) {
         return { success: true, count: newsIds.length };
     } catch (error) {
         console.error("Failed to bulk delete news:", error);
-        return { error: "Nepodarilo se smazat novinky" };
+        return { error: "Nepodařilo se smazat novinky" };
     }
 }

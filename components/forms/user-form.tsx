@@ -32,17 +32,17 @@ const roles = [
     {
         value: "EDITOR",
         label: "Editor",
-        description: "Muze upravovat obsah stranek a novinek",
+        description: "Může upravovat obsah stránek a novinek",
     },
     {
         value: "ADMIN",
         label: "Admin",
-        description: "Muze spravovat rocniky, stranky, novinky a galerie",
+        description: "Může spravovat ročníky, stránky, novinky a galerie",
     },
     {
         value: "SUPER_ADMIN",
         label: "Super Admin",
-        description: "Plny pristup vcetne spravy uzivatelu",
+        description: "Plný přístup včetně správy uživatelů",
     },
 ];
 
@@ -59,10 +59,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit uzivatele"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit uživatele"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -105,7 +105,7 @@ export function UserForm({ mode, userId, defaultValues }: UserFormProps) {
                             fullWidth
                             id="name"
                             name="name"
-                            label="Jmeno"
+                            label="Jméno"
                             defaultValue={defaultValues?.name || ""}
                             error={!!state?.error?.name}
                             helperText={state?.error?.name?.[0]}
@@ -171,7 +171,7 @@ export function UserForm({ mode, userId, defaultValues }: UserFormProps) {
                             helperText={
                                 state?.error?.password?.[0] ||
                                 (mode === "edit"
-                                    ? "Ponechte prazdne pro zachovani stavajiciho hesla"
+                                    ? "Ponechte prázdné pro zachování stávajícího hesla"
                                     : "Minimalne 8 znaku")
                             }
                         />
@@ -192,7 +192,7 @@ export function UserForm({ mode, userId, defaultValues }: UserFormProps) {
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href="/admin/uzivatele">
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

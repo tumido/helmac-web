@@ -26,7 +26,7 @@ export function SortableRules({ yearId, rules }: SortableRulesProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Poradi pravidel bylo zmeneno");
+            toast.success("Pořadí pravidel bylo změněno");
         }
     };
 

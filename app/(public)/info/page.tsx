@@ -6,7 +6,7 @@ import { getInfoSectionsForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Info | Helmac",
-    description: "Dulezite informace pro ucastniky akce Helmac",
+    description: "Důležité informace pro účastníky akce Helmac",
 };
 
 export default async function InfoPage() {
@@ -19,7 +19,7 @@ export default async function InfoPage() {
         <>
             <PageHeader
                 title="Informace"
-                subtitle="Dulezite informace pro ucastniky"
+                subtitle="Důležité informace pro účastníky"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>

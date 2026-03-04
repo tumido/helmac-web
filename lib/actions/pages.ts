@@ -28,7 +28,7 @@ export async function createPage(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -57,7 +57,7 @@ export async function createPage(
         });
 
         if (existing) {
-            return { error: { slug: ["Stranka s timto slugem jiz existuje"] } };
+            return { error: { slug: ["Stránka s tímto slugem již existuje"] } };
         }
 
         // Get max sort order
@@ -81,7 +81,7 @@ export async function createPage(
         revalidatePath(`/admin/rocniky/${yearId}`);
     } catch (error) {
         console.error("Failed to create page:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit stranku"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit stránku"] } };
     }
 
     redirect(`/admin/rocniky/${yearId}`);
@@ -95,7 +95,7 @@ export async function updatePage(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -116,7 +116,7 @@ export async function updatePage(
         const page = await db.page.findUnique({ where: { id: pageId } });
 
         if (!page) {
-            return { error: { _form: ["Stranka nenalezena"] } };
+            return { error: { _form: ["Stránka nenalezena"] } };
         }
 
         // Check if slug conflicts with another page
@@ -131,7 +131,7 @@ export async function updatePage(
             });
 
             if (existing) {
-                return { error: { slug: ["Stranka s timto slugem jiz existuje"] } };
+                return { error: { slug: ["Stránka s tímto slugem již existuje"] } };
             }
         }
 
@@ -150,7 +150,7 @@ export async function updatePage(
         revalidatePath(`/admin/rocniky/${page.yearId}/stranky/${pageId}`);
     } catch (error) {
         console.error("Failed to update page:", error);
-        return { error: { _form: ["Nepodarilo se upravit stranku"] } };
+        return { error: { _form: ["Nepodařilo se upravit stránku"] } };
     }
 
     return { success: true };
@@ -163,14 +163,14 @@ export async function updatePageContent(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
         const page = await db.page.findUnique({ where: { id: pageId } });
 
         if (!page) {
-            return { error: "Stranka nenalezena" };
+            return { error: "Stránka nenalezena" };
         }
 
         await db.page.update({
@@ -183,7 +183,7 @@ export async function updatePageContent(
         return { success: true };
     } catch (error) {
         console.error("Failed to update page content:", error);
-        return { error: "Nepodarilo se ulozit obsah stranky" };
+        return { error: "Nepodařilo se uložit obsah stránky" };
     }
 }
 
@@ -191,7 +191,7 @@ export async function publishPage(pageId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -204,7 +204,7 @@ export async function publishPage(pageId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to publish page:", error);
-        return { error: "Nepodarilo se publikovat stranku" };
+        return { error: "Nepodařilo se publikovat stránku" };
     }
 }
 
@@ -212,7 +212,7 @@ export async function unpublishPage(pageId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -225,7 +225,7 @@ export async function unpublishPage(pageId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to unpublish page:", error);
-        return { error: "Nepodarilo se skryt stranku" };
+        return { error: "Nepodařilo se skrýt stránku" };
     }
 }
 
@@ -236,7 +236,7 @@ export async function reorderPages(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -253,7 +253,7 @@ export async function reorderPages(
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder pages:", error);
-        return { error: "Nepodarilo se zmenit poradi stranek" };
+        return { error: "Nepodařilo se změnit pořadí stránek" };
     }
 }
 
@@ -261,7 +261,7 @@ export async function deletePage(pageId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -273,6 +273,6 @@ export async function deletePage(pageId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete page:", error);
-        return { error: "Nepodarilo se smazat stranku" };
+        return { error: "Nepodařilo se smazat stránku" };
     }
 }

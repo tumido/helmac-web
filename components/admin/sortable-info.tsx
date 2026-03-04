@@ -26,7 +26,7 @@ export function SortableInfo({ yearId, infoSections }: SortableInfoProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Poradi info sekci bylo zmeneno");
+            toast.success("Pořadí info sekcí bylo změněno");
         }
     };
 

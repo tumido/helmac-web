@@ -76,7 +76,7 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
                         variant="contained"
                         startIcon={<Add />}
                     >
-                        Nova novinka
+                        Nová novinka
                     </LinkButton>
                 )}
             </Box>
@@ -93,14 +93,14 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            Nejprve vytvorte rocnik pro pridavani novinek.
+                            Nejprve vytvořte ročník pro přidávání novinek.
                         </Typography>
                         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
                             <LinkButton
                                 href="/admin/rocniky/novy"
                                 variant="outlined"
                             >
-                                Vytvorit rocnik
+                                Vytvořit ročník
                             </LinkButton>
                         </Box>
                     </CardContent>
@@ -110,8 +110,8 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
                             {params.q || params.yearId
-                                ? "Zadne novinky neodpovidaji filtru."
-                                : "Zatim nebyly vytvoreny zadne novinky."}
+                                ? "Žádné novinky neodpovídají filtru."
+                                : "Zatím nebyly vytvořeny žádné novinky."}
                         </Typography>
                     </CardContent>
                 </Card>

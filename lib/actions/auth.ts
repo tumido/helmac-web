@@ -17,9 +17,9 @@ export async function login(
         if (error instanceof AuthError) {
             switch (error.type) {
                 case "CredentialsSignin":
-                    return { error: "Neplatne prihlasovaci udaje" };
+                    return { error: "Neplatné přihlašovací údaje" };
                 default:
-                    return { error: "Nastala chyba pri prihlasovani" };
+                    return { error: "Nastala chyba při přihlašování" };
             }
         }
         throw error;

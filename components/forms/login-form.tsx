@@ -25,7 +25,7 @@ function SubmitButton() {
             {pending ? (
                 <CircularProgress size={24} color="inherit" />
             ) : (
-                "Prihlasit se"
+                "Přihlásit se"
             )}
         </Button>
     );

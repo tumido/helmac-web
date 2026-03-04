@@ -75,7 +75,7 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
                         variant="contained"
                         startIcon={<Add />}
                     >
-                        Nove album
+                        Nové album
                     </LinkButton>
                 )}
             </Box>
@@ -92,14 +92,14 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
-                            Nejprve vytvorte rocnik pro pridavani alb.
+                            Nejprve vytvořte ročník pro přidávání alb.
                         </Typography>
                         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
                             <LinkButton
                                 href="/admin/rocniky/novy"
                                 variant="outlined"
                             >
-                                Vytvorit rocnik
+                                Vytvořit ročník
                             </LinkButton>
                         </Box>
                     </CardContent>
@@ -109,8 +109,8 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
                             {params.q || params.yearId
-                                ? "Zadna alba neodpovidaji filtru."
-                                : "Zatim nebyla vytvorena zadna alba."}
+                                ? "Žádná alba neodpovídají filtru."
+                                : "Zatím nebyla vytvořena žádná alba."}
                         </Typography>
                     </CardContent>
                 </Card>

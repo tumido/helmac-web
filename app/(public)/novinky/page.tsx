@@ -18,7 +18,7 @@ export default async function NovinkyPage() {
         <>
             <PageHeader
                 title="Novinky"
-                subtitle="Sledujte nejnovejsi zpravy a aktualizace"
+                subtitle="Sledujte nejnovější zprávy a aktualizace"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>

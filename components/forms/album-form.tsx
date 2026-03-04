@@ -47,10 +47,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit album"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit album"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -90,7 +90,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                     )}
 
                     {state?.success && (
-                        <Alert severity="success">Zmeny byly ulozeny.</Alert>
+                        <Alert severity="success">Změny byly uloženy.</Alert>
                     )}
 
                     {mode === "create" && (
@@ -100,7 +100,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                             fullWidth
                             id="yearId"
                             name="yearId"
-                            label="Rocnik"
+                            label="Ročník"
                             defaultValue={selectedYearId}
                         >
                             {years.map((year) => (
@@ -126,7 +126,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                             fullWidth
                             id="title"
                             name="title"
-                            label="Nazev alba"
+                            label="Název alba"
                             value={title}
                             onChange={(e) => {
                                 const newTitle = e.target.value;
@@ -153,14 +153,14 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                             error={!!state?.error?.slug}
                             helperText={
                                 state?.error?.slug?.[0] ||
-                                "Pouze mala pismena, cisla a pomlcky"
+                                "Pouze malá písmena, čísla a pomlčky"
                             }
-                            placeholder="napr. fotky-z-akce"
+                            placeholder="např. fotky-z-akce"
                             InputProps={{
                                 endAdornment: slugManuallyEdited && mode === "create" ? (
                                     <IconButton
                                         size="small"
-                                        title="Generovat z nazvu"
+                                        title="Generovat z názvu"
                                         onClick={() => {
                                             setSlug(generateSlug(title));
                                             setSlugManuallyEdited(false);
@@ -188,7 +188,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Titulni obrazek (volitelne)
+                            Titulní obrázek (volitelné)
                         </Typography>
                         <ImageUploader
                             value={coverImage}
@@ -207,7 +207,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href="/admin/galerie">
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

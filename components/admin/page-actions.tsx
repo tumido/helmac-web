@@ -40,7 +40,7 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success(isPublished ? "Stranka byla skryta" : "Stranka byla publikovana");
+            toast.success(isPublished ? "Stránka byla skryta" : "Stránka byla publikována");
             router.refresh();
         }
     };
@@ -55,7 +55,7 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
             setError(result.error);
             toast.error(result.error);
         } else {
-            toast.success("Stranka byla smazana");
+            toast.success("Stránka byla smazána");
             router.refresh();
         }
     };
@@ -71,7 +71,7 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
     return (
         <>
             <Box sx={{ display: "flex", gap: 0.5 }}>
-                <Tooltip title={isPublished ? "Skryt stranku" : "Publikovat stranku"}>
+                <Tooltip title={isPublished ? "Skrýt stránku" : "Publikovat stránku"}>
                     <IconButton
                         size="small"
                         color={isPublished ? "success" : "default"}
@@ -81,7 +81,7 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
                     </IconButton>
                 </Tooltip>
 
-                <Tooltip title="Smazat stranku">
+                <Tooltip title="Smazat stránku">
                     <IconButton
                         size="small"
                         color="error"
@@ -96,10 +96,10 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
-                <DialogTitle>Smazat stranku?</DialogTitle>
+                <DialogTitle>Smazat stránku?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat tuto stranku? Tato akce je nevratna.
+                        Opravdu chcete smazat tuto stránku? Tato akce je nevratná.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -109,7 +109,7 @@ export function PageActions({ pageId, isPublished }: PageActionsProps) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleDelete}

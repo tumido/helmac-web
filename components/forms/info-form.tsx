@@ -41,10 +41,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit info sekci"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit info sekci"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -81,7 +81,7 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
                         fullWidth
                         id="title"
                         name="title"
-                        label="Nazev info sekce"
+                        label="Název info sekce"
                         defaultValue={defaultValues?.title || ""}
                         error={!!state?.error?.title}
                         helperText={state?.error?.title?.[0]}
@@ -108,7 +108,7 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href={`/admin/rocniky/${yearId}/info`}>
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

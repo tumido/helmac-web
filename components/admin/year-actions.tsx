@@ -44,7 +44,7 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Rocnik byl nastaven jako aktivni");
+            toast.success("Ročník byl nastaven jako aktivní");
             router.refresh();
         }
     };
@@ -57,7 +57,7 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Rocnik byl archivovan");
+            toast.success("Ročník byl archivován");
             router.refresh();
         }
     };
@@ -70,7 +70,7 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Rocnik byl obnoven z archivu");
+            toast.success("Ročník byl obnoven z archivu");
             router.refresh();
         }
     };
@@ -85,7 +85,7 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
             setError(result.error);
             toast.error(result.error);
         } else {
-            toast.success("Rocnik byl smazan");
+            toast.success("Ročník byl smazán");
             router.refresh();
         }
     };
@@ -102,7 +102,7 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
         <>
             <Box sx={{ display: "flex", gap: 0.5 }}>
                 {!isActive && (
-                    <Tooltip title="Nastavit jako aktivni">
+                    <Tooltip title="Nastavit jako aktivní">
                         <IconButton
                             size="small"
                             color="primary"
@@ -154,12 +154,12 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
-                <DialogTitle>Smazat rocnik?</DialogTitle>
+                <DialogTitle>Smazat ročník?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat tento rocnik? Tato akce je nevratna
-                        a smaze vsechny stranky, novinky a alba spojene s timto
-                        rocnikem.
+                        Opravdu chcete smazat tento ročník? Tato akce je nevratná
+                        a smaže všechny stránky, novinky a alba spojená s tímto
+                        ročníkem.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -169,7 +169,7 @@ export function YearActions({ yearId, isActive, isArchived }: YearActionsProps) 
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleDelete}

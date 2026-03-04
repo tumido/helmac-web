@@ -29,13 +29,13 @@ export async function RegistrationCTA() {
                             fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                         }}
                     >
-                        Registrace se otevre {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
+                        Registrace se otevře {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
                     </Typography>
                     <Typography
                         variant="body1"
                         sx={{ opacity: 0.9, maxWidth: 600, mx: "auto" }}
                     >
-                        Sledujte novinky, at nepropsnete zacatek registraci.
+                        Sledujte novinky, ať nepromeškáte začátek registrací.
                     </Typography>
                 </Box>
             </Container>
@@ -61,14 +61,14 @@ export async function RegistrationCTA() {
                         fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                     }}
                 >
-                    Pripojte se k dobrodruzstvi
+                    Připojte se k dobrodružství
                 </Typography>
                 <Typography
                     variant="body1"
                     sx={{ opacity: 0.9, mb: 4, maxWidth: 600, mx: "auto" }}
                 >
-                    Registrace na {status.year?.title} je otevrena. Pojdte
-                    zazit nezapomenutelny LARP zazittek.
+                    Registrace na {status.year?.title} je otevřena. Pojďte
+                    zažít nezapomenutelný LARP zážitek.
                 </Typography>
                 <Link
                     href="/registrace"
@@ -92,7 +92,7 @@ export async function RegistrationCTA() {
                         variant="body2"
                         sx={{ mt: 2, opacity: 0.7 }}
                     >
-                        Jiz {status.registrationCount} registrovanych ucastniku
+                        Již {status.registrationCount} registrovaných účastníků
                     </Typography>
                 )}
             </Box>

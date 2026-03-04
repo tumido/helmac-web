@@ -41,7 +41,7 @@ export function UserActions({ userId, userName, isCurrentUser }: UserActionsProp
             toast.error(result.error);
         } else {
             setDeleteDialogOpen(false);
-            toast.success("Uzivatel byl smazan");
+            toast.success("Uživatel byl smazán");
             router.refresh();
         }
     };
@@ -60,8 +60,8 @@ export function UserActions({ userId, userName, isCurrentUser }: UserActionsProp
                 <Tooltip
                     title={
                         isCurrentUser
-                            ? "Nemuzete smazat sami sebe"
-                            : "Smazat uzivatele"
+                            ? "Nemůžete smazat sami sebe"
+                            : "Smazat uživatele"
                     }
                 >
                     <span>
@@ -84,11 +84,11 @@ export function UserActions({ userId, userName, isCurrentUser }: UserActionsProp
                     setError(null);
                 }}
             >
-                <DialogTitle>Smazat uzivatele?</DialogTitle>
+                <DialogTitle>Smazat uživatele?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat uzivatele <strong>{userName}</strong>?
-                        Tato akce je nevratna.
+                        Opravdu chcete smazat uživatele <strong>{userName}</strong>?
+                        Tato akce je nevratná.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -103,7 +103,7 @@ export function UserActions({ userId, userName, isCurrentUser }: UserActionsProp
                             setError(null);
                         }}
                     >
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleDelete}

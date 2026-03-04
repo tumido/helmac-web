@@ -46,10 +46,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit rocnik"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit ročník"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -116,11 +116,11 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
                             fullWidth
                             id="title"
                             name="title"
-                            label="Nazev rocniku"
+                            label="Název ročníku"
                             defaultValue={defaultValues?.title || ""}
                             error={!!state?.error?.title}
                             helperText={state?.error?.title?.[0]}
-                            placeholder="napr. Helmac 2025"
+                            placeholder="např. Helmac 2025"
                         />
                     </Box>
 
@@ -132,7 +132,7 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
                         defaultValue={defaultValues?.subtitle || ""}
                         error={!!state?.error?.subtitle}
                         helperText={state?.error?.subtitle?.[0]}
-                        placeholder="napr. Tema rocniku nebo popis"
+                        placeholder="např. Téma ročníku nebo popis"
                     />
 
                     <Box
@@ -149,7 +149,7 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
                             fullWidth
                             id="startDate"
                             name="startDate"
-                            label="Datum zacatku"
+                            label="Datum začátku"
                             type="date"
                             defaultValue={formatDateForInput(
                                 defaultValues?.startDate
@@ -176,10 +176,10 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Foto zahlavi podstranek
+                            Foto záhlaví podstránek
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                            Obrazek na pozadi zahlavi verejnych podstranek (Program, Pravidla, Galerie, apod.)
+                            Obrázek na pozadí záhlaví veřejných podstránek (Program, Pravidla, Galerie, apod.)
                         </Typography>
                         <ImageUploader
                             value={headerPhoto}
@@ -195,10 +195,10 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Foto hlavni sekce
+                            Foto hlavní sekce
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                            Obrazek na pozadi uvodni sekce domovske stranky
+                            Obrázek na pozadí úvodní sekce domovské stránky
                         </Typography>
                         <ImageUploader
                             value={heroPhoto}
@@ -216,7 +216,7 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href="/admin/rocniky">
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

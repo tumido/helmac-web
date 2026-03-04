@@ -79,7 +79,7 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success(`${result.count} alb smazano`);
+            toast.success(`${result.count} alb smazáno`);
             setSelected(new Set());
             router.refresh();
         }
@@ -116,7 +116,7 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                     />
                     <Typography variant="body2" color="text.secondary">
                         {selected.size > 0
-                            ? `Vybrano ${selected.size} z ${albums.length}`
+                            ? `Vybráno ${selected.size} z ${albums.length}`
                             : `Celkem ${albums.length} alb`}
                     </Typography>
                 </Box>
@@ -181,7 +181,7 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                                             variant="body2"
                                             color="text.secondary"
                                         >
-                                            {album._count.images} obrazku
+                                            {album._count.images} obrázků
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -215,17 +215,17 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
-                <DialogTitle>Smazat vybrana alba?</DialogTitle>
+                <DialogTitle>Smazat vybraná alba?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat {selected.size} vybranych alb?
-                        Budou smazany i vsechny obrazky v techto albech.
-                        Tato akce je nevratna.
+                        Opravdu chcete smazat {selected.size} vybraných alb?
+                        Budou smazány i všechny obrázky v těchto albech.
+                        Tato akce je nevratná.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleBulkDelete}

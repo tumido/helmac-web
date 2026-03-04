@@ -28,7 +28,7 @@ export function SortablePages({ yearId, pages }: SortablePagesProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Poradi stranek bylo zmeneno");
+            toast.success("Pořadí stránek bylo změněno");
         }
     };
 
@@ -62,7 +62,7 @@ export function SortablePages({ yearId, pages }: SortablePagesProps) {
                             <Chip
                                 label={
                                     page.isPublished
-                                        ? "Publikovano"
+                                        ? "Publikováno"
                                         : "Skryto"
                                 }
                                 size="small"
@@ -94,7 +94,7 @@ export function SortablePages({ yearId, pages }: SortablePagesProps) {
                             gap: 0.5,
                         }}
                     >
-                        <Tooltip title="Upravit stranku">
+                        <Tooltip title="Upravit stránku">
                             <IconLinkButton
                                 href={`/admin/rocniky/${yearId}/stranky/${page.id}`}
                                 size="small"

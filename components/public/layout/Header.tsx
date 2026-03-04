@@ -102,7 +102,7 @@ export function Header({ navSubtabs, registrationOpen }: HeaderProps) {
                             <ThemeToggle size="small" />
                             <IconButton
                                 color="inherit"
-                                aria-label="otevrit menu"
+                                aria-label="otevřít menu"
                                 edge="end"
                                 onClick={handleDrawerToggle}
                             >

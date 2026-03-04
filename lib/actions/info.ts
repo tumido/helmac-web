@@ -23,7 +23,7 @@ export async function createInfoSection(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -57,7 +57,7 @@ export async function createInfoSection(
         revalidatePath("/info");
     } catch (error) {
         console.error("Failed to create info section:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit info sekci"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit info sekci"] } };
     }
 
     redirect(`/admin/rocniky/${yearId}/info`);
@@ -71,7 +71,7 @@ export async function updateInfoSection(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -111,7 +111,7 @@ export async function updateInfoSection(
         revalidatePath("/info");
     } catch (error) {
         console.error("Failed to update info section:", error);
-        return { error: { _form: ["Nepodarilo se upravit info sekci"] } };
+        return { error: { _form: ["Nepodařilo se upravit info sekci"] } };
     }
 
     redirect(`/admin/rocniky/${yearId}/info`);
@@ -121,7 +121,7 @@ export async function deleteInfoSection(infoId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -133,7 +133,7 @@ export async function deleteInfoSection(infoId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete info section:", error);
-        return { error: "Nepodarilo se smazat info sekci" };
+        return { error: "Nepodařilo se smazat info sekci" };
     }
 }
 
@@ -144,7 +144,7 @@ export async function reorderInfoSections(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -162,6 +162,6 @@ export async function reorderInfoSections(
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder info sections:", error);
-        return { error: "Nepodarilo se zmenit poradi info sekci" };
+        return { error: "Nepodařilo se změnit pořadí info sekcí" };
     }
 }

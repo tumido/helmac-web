@@ -18,7 +18,7 @@ export default async function HomePage() {
                 backgroundImage={activeYear?.heroPhoto || undefined}
                 subtitle={
                     activeYear?.subtitle ||
-                    "Stredoveka fantasy LARP udalost, kde se pribehy stredoveku misi s magi a dobrodruzstvim"
+                    "Středověká fantasy LARP událost, kde se příběhy středověku mísí s magií a dobrodružstvím"
                 }
                 ctaText={regStatus.isOpen ? "Registrovat se" : undefined}
                 ctaHref={regStatus.isOpen ? "/registrace" : undefined}
@@ -34,7 +34,7 @@ export default async function HomePage() {
                             fontWeight: 300,
                         }}
                     >
-                        Registrace se otevre {new Date(regStatus.registrationStartDate).toLocaleDateString("cs-CZ")}
+                        Registrace se otevře {new Date(regStatus.registrationStartDate).toLocaleDateString("cs-CZ")}
                     </Typography>
                 )}
             </HeroSection>
@@ -42,7 +42,7 @@ export default async function HomePage() {
             <Section>
                 <SectionTitle
                     title="Novinky"
-                    subtitle="Sledujte nejnovejsi zpravy a aktualizace"
+                    subtitle="Sledujte nejnovější zprávy a aktualizace"
                 />
                 <NewsPreview />
             </Section>
@@ -50,7 +50,7 @@ export default async function HomePage() {
             <Section backgroundColor="background.paper">
                 <SectionTitle
                     title="Galerie"
-                    subtitle="Nahlednete do sveta Helmacu"
+                    subtitle="Nahlédněte do světa Helmaců"
                 />
                 <GalleryPreview />
             </Section>

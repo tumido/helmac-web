@@ -44,7 +44,7 @@ export async function createAlbum(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -71,7 +71,7 @@ export async function createAlbum(
         });
 
         if (existing) {
-            return { error: { slug: ["Album s timto slugem jiz existuje"] } };
+            return { error: { slug: ["Album s tímto slugem již existuje"] } };
         }
 
         const maxOrder = await db.album.aggregate({
@@ -95,7 +95,7 @@ export async function createAlbum(
         revalidatePath("/galerie");
     } catch (error) {
         console.error("Failed to create album:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit album"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit album"] } };
     }
 
     redirect("/admin/galerie");
@@ -109,7 +109,7 @@ export async function updateAlbum(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -143,7 +143,7 @@ export async function updateAlbum(
             });
 
             if (existing) {
-                return { error: { slug: ["Album s timto slugem jiz existuje"] } };
+                return { error: { slug: ["Album s tímto slugem již existuje"] } };
             }
         }
 
@@ -163,7 +163,7 @@ export async function updateAlbum(
         revalidatePath("/galerie");
     } catch (error) {
         console.error("Failed to update album:", error);
-        return { error: { _form: ["Nepodarilo se upravit album"] } };
+        return { error: { _form: ["Nepodařilo se upravit album"] } };
     }
 
     return { success: true };
@@ -173,7 +173,7 @@ export async function deleteAlbum(albumId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -186,7 +186,7 @@ export async function deleteAlbum(albumId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete album:", error);
-        return { error: "Nepodarilo se smazat album" };
+        return { error: "Nepodařilo se smazat album" };
     }
 }
 
@@ -195,7 +195,7 @@ export async function bulkDeleteAlbums(albumIds: string[]) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -208,7 +208,7 @@ export async function bulkDeleteAlbums(albumIds: string[]) {
         return { success: true, count: albumIds.length };
     } catch (error) {
         console.error("Failed to bulk delete albums:", error);
-        return { error: "Nepodarilo se smazat alba" };
+        return { error: "Nepodařilo se smazat alba" };
     }
 }
 
@@ -222,7 +222,7 @@ export async function addImage(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -265,7 +265,7 @@ export async function addImage(
         return { success: true };
     } catch (error) {
         console.error("Failed to add image:", error);
-        return { error: { _form: ["Nepodarilo se pridat obrazek"] } };
+        return { error: { _form: ["Nepodařilo se přidat obrázek"] } };
     }
 }
 
@@ -277,7 +277,7 @@ export async function updateImage(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -310,7 +310,7 @@ export async function updateImage(
         return { success: true };
     } catch (error) {
         console.error("Failed to update image:", error);
-        return { error: { _form: ["Nepodarilo se upravit obrazek"] } };
+        return { error: { _form: ["Nepodařilo se upravit obrázek"] } };
     }
 }
 
@@ -318,7 +318,7 @@ export async function deleteImage(imageId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -330,7 +330,7 @@ export async function deleteImage(imageId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete image:", error);
-        return { error: "Nepodarilo se smazat obrazek" };
+        return { error: "Nepodařilo se smazat obrázek" };
     }
 }
 
@@ -341,7 +341,7 @@ export async function reorderImages(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -358,6 +358,6 @@ export async function reorderImages(
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder images:", error);
-        return { error: "Nepodarilo se zmenit poradi obrazku" };
+        return { error: "Nepodařilo se změnit pořadí obrázků" };
     }
 }

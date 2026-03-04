@@ -6,7 +6,7 @@ import { getRulesForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Pravidla | Helmac",
-    description: "Pravidla akce Helmac - herni pravidla a pokyny pro ucastniky",
+    description: "Pravidla akce Helmac - herní pravidla a pokyny pro účastníky",
 };
 
 export default async function PravidlaPage() {
@@ -19,7 +19,7 @@ export default async function PravidlaPage() {
         <>
             <PageHeader
                 title="Pravidla"
-                subtitle="Herni pravidla a pokyny pro ucastniky"
+                subtitle="Herní pravidla a pokyny pro účastníky"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>

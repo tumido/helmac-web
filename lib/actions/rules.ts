@@ -23,7 +23,7 @@ export async function createRule(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -57,7 +57,7 @@ export async function createRule(
         revalidatePath("/pravidla");
     } catch (error) {
         console.error("Failed to create rule:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit pravidlo"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit pravidlo"] } };
     }
 
     redirect(`/admin/rocniky/${yearId}/pravidla`);
@@ -71,7 +71,7 @@ export async function updateRule(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -111,7 +111,7 @@ export async function updateRule(
         revalidatePath("/pravidla");
     } catch (error) {
         console.error("Failed to update rule:", error);
-        return { error: { _form: ["Nepodarilo se upravit pravidlo"] } };
+        return { error: { _form: ["Nepodařilo se upravit pravidlo"] } };
     }
 
     redirect(`/admin/rocniky/${yearId}/pravidla`);
@@ -121,7 +121,7 @@ export async function deleteRule(ruleId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -133,7 +133,7 @@ export async function deleteRule(ruleId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete rule:", error);
-        return { error: "Nepodarilo se smazat pravidlo" };
+        return { error: "Nepodařilo se smazat pravidlo" };
     }
 }
 
@@ -144,7 +144,7 @@ export async function reorderRules(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -162,6 +162,6 @@ export async function reorderRules(
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder rules:", error);
-        return { error: "Nepodarilo se zmenit poradi pravidel" };
+        return { error: "Nepodařilo se změnit pořadí pravidel" };
     }
 }

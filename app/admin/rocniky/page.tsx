@@ -52,7 +52,7 @@ export default async function YearsPage({ searchParams }: YearsPageProps) {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs items={[{ label: "Rocniky" }]} />
+            <AdminBreadcrumbs items={[{ label: "Ročníky" }]} />
             <Box
                 sx={{
                     display: "flex",
@@ -61,25 +61,25 @@ export default async function YearsPage({ searchParams }: YearsPageProps) {
                     mb: 4,
                 }}
             >
-                <Typography variant="h4">Rocniky</Typography>
+                <Typography variant="h4">Ročníky</Typography>
                 <LinkButton
                     href="/admin/rocniky/novy"
                     variant="contained"
                     startIcon={<Add />}
                 >
-                    Novy rocnik
+                    Nový ročník
                 </LinkButton>
             </Box>
 
-            <ListFilters searchPlaceholder="Hledat rocniky..." />
+            <ListFilters searchPlaceholder="Hledat ročníky..." />
 
             {years.length === 0 ? (
                 <Card>
                     <CardContent>
                         <Typography color="text.secondary" textAlign="center">
                             {params.q
-                                ? "Zadne rocniky neodpovidaji hledani."
-                                : "Zatim nebyly vytvoreny zadne rocniky."}
+                                ? "Žádné ročníky neodpovídají hledání."
+                                : "Zatím nebyly vytvořeny žádné ročníky."}
                         </Typography>
                     </CardContent>
                 </Card>
@@ -142,7 +142,7 @@ export default async function YearsPage({ searchParams }: YearsPageProps) {
                                     <Box sx={{ display: "flex", gap: 0.5 }}>
                                         {year.isActive && (
                                             <Chip
-                                                label="Aktivni"
+                                                label="Aktivní"
                                                 color="primary"
                                                 size="small"
                                                 icon={<Star />}
@@ -170,7 +170,7 @@ export default async function YearsPage({ searchParams }: YearsPageProps) {
                                         variant="body2"
                                         color="text.secondary"
                                     >
-                                        {year._count.pages} stranek
+                                        {year._count.pages} stránek
                                     </Typography>
                                     <Typography
                                         variant="body2"

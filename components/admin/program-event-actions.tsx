@@ -47,7 +47,7 @@ export function ProgramEventActions({
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success(isPublished ? "Udalost byla skryta" : "Udalost byla publikovana");
+            toast.success(isPublished ? "Událost byla skryta" : "Událost byla publikována");
             router.refresh();
         }
     };
@@ -62,7 +62,7 @@ export function ProgramEventActions({
             setError(result.error);
             toast.error(result.error);
         } else {
-            toast.success("Udalost byla smazana");
+            toast.success("Událost byla smazána");
             router.refresh();
         }
     };
@@ -79,7 +79,7 @@ export function ProgramEventActions({
         <>
             <Box sx={{ display: "flex", gap: 0.5 }}>
                 <Tooltip
-                    title={isPublished ? "Skryt udalost" : "Publikovat udalost"}
+                    title={isPublished ? "Skrýt událost" : "Publikovat událost"}
                 >
                     <IconButton
                         size="small"
@@ -90,7 +90,7 @@ export function ProgramEventActions({
                     </IconButton>
                 </Tooltip>
 
-                <Tooltip title="Smazat udalost">
+                <Tooltip title="Smazat událost">
                     <IconButton
                         size="small"
                         color="error"
@@ -105,10 +105,10 @@ export function ProgramEventActions({
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
-                <DialogTitle>Smazat udalost?</DialogTitle>
+                <DialogTitle>Smazat událost?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat tuto udalost? Tato akce je nevratna.
+                        Opravdu chcete smazat tuto událost? Tato akce je nevratná.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -117,7 +117,7 @@ export function ProgramEventActions({
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrusit</Button>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrušit</Button>
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Smazat
                     </Button>

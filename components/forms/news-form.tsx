@@ -49,10 +49,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit novinku"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit novinku"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -99,7 +99,7 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                             fullWidth
                             id="yearId"
                             name="yearId"
-                            label="Rocnik"
+                            label="Ročník"
                             defaultValue={selectedYearId}
                         >
                             {years.map((year) => (
@@ -125,7 +125,7 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                             fullWidth
                             id="title"
                             name="title"
-                            label="Nazev novinky"
+                            label="Název novinky"
                             value={title}
                             onChange={(e) => {
                                 const newTitle = e.target.value;
@@ -152,14 +152,14 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                             error={!!state?.error?.slug}
                             helperText={
                                 state?.error?.slug?.[0] ||
-                                "Pouze mala pismena, cisla a pomlcky"
+                                "Pouze malá písmena, čísla a pomlčky"
                             }
-                            placeholder="napr. nova-akce"
+                            placeholder="např. nová-akce"
                             InputProps={{
                                 endAdornment: slugManuallyEdited && mode === "create" ? (
                                     <IconButton
                                         size="small"
-                                        title="Generovat z nazvu"
+                                        title="Generovat z názvu"
                                         onClick={() => {
                                             setSlug(generateSlug(title));
                                             setSlugManuallyEdited(false);
@@ -176,11 +176,11 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                         fullWidth
                         id="excerpt"
                         name="excerpt"
-                        label="Perex (kratky popis)"
+                        label="Perex (krátký popis)"
                         defaultValue={defaultValues?.excerpt || ""}
                         error={!!state?.error?.excerpt}
                         helperText={
-                            state?.error?.excerpt?.[0] || "Zobrazi se v prehledu novinek"
+                            state?.error?.excerpt?.[0] || "Zobrazí se v přehledu novinek"
                         }
                         multiline
                         rows={2}
@@ -206,7 +206,7 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Titulni obrazek (volitelne)
+                            Titulní obrázek (volitelné)
                         </Typography>
                         <ImageUploader
                             value={coverImage}
@@ -225,7 +225,7 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href="/admin/novinky">
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

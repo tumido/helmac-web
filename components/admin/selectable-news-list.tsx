@@ -81,7 +81,7 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success(`${result.count} novinek smazano`);
+            toast.success(`${result.count} novinek smazáno`);
             setSelected(new Set());
             router.refresh();
         }
@@ -118,7 +118,7 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
                     />
                     <Typography variant="body2" color="text.secondary">
                         {selected.size > 0
-                            ? `Vybrano ${selected.size} z ${news.length}`
+                            ? `Vybráno ${selected.size} z ${news.length}`
                             : `Celkem ${news.length} novinek`}
                     </Typography>
                 </Box>
@@ -209,16 +209,16 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
-                <DialogTitle>Smazat vybrane novinky?</DialogTitle>
+                <DialogTitle>Smazat vybrané novinky?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat {selected.size} vybranych novinek?
-                        Tato akce je nevratna.
+                        Opravdu chcete smazat {selected.size} vybraných novinek?
+                        Tato akce je nevratná.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleBulkDelete}

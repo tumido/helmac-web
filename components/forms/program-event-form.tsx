@@ -54,10 +54,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit udalost"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit událost"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -117,7 +117,7 @@ export function ProgramEventForm({
                             type="time"
                             id="startTime"
                             name="startTime"
-                            label="Cas zacatku"
+                            label="Čas začátku"
                             defaultValue={defaultValues?.startTime || ""}
                             error={!!state?.error?.startTime}
                             helperText={state?.error?.startTime?.[0]}
@@ -129,7 +129,7 @@ export function ProgramEventForm({
                             fullWidth
                             id="title"
                             name="title"
-                            label="Nazev udalosti"
+                            label="Název události"
                             defaultValue={defaultValues?.title || ""}
                             error={!!state?.error?.title}
                             helperText={state?.error?.title?.[0]}
@@ -156,11 +156,11 @@ export function ProgramEventForm({
                         fullWidth
                         id="location"
                         name="location"
-                        label="Misto konani"
+                        label="Místo konání"
                         defaultValue={defaultValues?.location || ""}
                         error={!!state?.error?.location}
                         helperText={state?.error?.location?.[0]}
-                        placeholder="Hlavni stan, Namesti, Arena..."
+                        placeholder="Hlavní stan, Náměstí, Arena..."
                         inputProps={{ maxLength: 200 }}
                     />
 
@@ -168,7 +168,7 @@ export function ProgramEventForm({
                         fullWidth
                         id="imageUrl"
                         name="imageUrl"
-                        label="URL obrazku (volitelne)"
+                        label="URL obrázku (volitelné)"
                         defaultValue={defaultValues?.imageUrl || ""}
                         error={!!state?.error?.imageUrl}
                         helperText={state?.error?.imageUrl?.[0]}
@@ -202,10 +202,10 @@ export function ProgramEventForm({
                             <TextField
                                 {...params}
                                 label="Tagy"
-                                placeholder="Pridejte tagy..."
+                                placeholder="Přidejte tagy..."
                                 helperText={
                                     state?.error?.tags?.[0] ||
-                                    "Stisknutim Enter pridejte novy tag"
+                                    "Stisknutím Enter přidejte nový tag"
                                 }
                                 error={!!state?.error?.tags}
                             />
@@ -226,7 +226,7 @@ export function ProgramEventForm({
                                 defaultChecked={defaultValues?.isPublished ?? false}
                             />
                         }
-                        label="Publikovat udalost"
+                        label="Publikovat událost"
                     />
 
                 </CardContent>
@@ -234,7 +234,7 @@ export function ProgramEventForm({
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href={`/admin/rocniky/${yearId}/program/${dayId}`}>
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

@@ -43,10 +43,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
                   ? "Vytvorit den"
-                  : "Ulozit zmeny"}
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -120,7 +120,7 @@ export function ProgramDayForm({
                             error={!!state?.error?.label}
                             helperText={
                                 state?.error?.label?.[0] ||
-                                'Napr. "Den 1", "Patek", "Pribytecne hry"'
+                                'Např. "Den 1", "Pátek"...'
                             }
                             placeholder="Den 1"
                             inputProps={{ maxLength: 50 }}
@@ -132,7 +132,7 @@ export function ProgramDayForm({
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href={`/admin/rocniky/${yearId}/program`}>
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

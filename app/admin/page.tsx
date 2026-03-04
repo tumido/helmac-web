@@ -124,7 +124,7 @@ function formatRelativeTime(date: Date): string {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return "prave ted";
+    if (minutes < 1) return "právě teď";
     if (minutes < 60) return `pred ${minutes} min`;
     if (hours < 24) return `pred ${hours} hod`;
     if (days < 7) return `pred ${days} dny`;
@@ -147,7 +147,7 @@ function getActivityLabel(type: "news" | "page" | "album") {
         case "news":
             return "Novinka";
         case "page":
-            return "Stranka";
+            return "Stránka";
         case "album":
             return "Album";
     }
@@ -163,13 +163,13 @@ export default async function AdminDashboardPage() {
 
     const statCards = [
         {
-            title: "Rocniky",
+            title: "Ročníky",
             value: stats.yearsCount,
             icon: CalendarMonth,
             color: "#1976d2",
         },
         {
-            title: "Stranky",
+            title: "Stránky",
             value: stats.pagesCount,
             icon: Article,
             color: "#388e3c",
@@ -187,7 +187,7 @@ export default async function AdminDashboardPage() {
             color: "#7b1fa2",
         },
         {
-            title: "Obrazky",
+            title: "Obrázky",
             value: stats.imagesCount,
             icon: ImageIcon,
             color: "#00838f",
@@ -195,9 +195,9 @@ export default async function AdminDashboardPage() {
     ];
 
     const quickActions = [
-        { label: "Nova novinka", href: "/admin/novinky/nova", icon: Add },
-        { label: "Nove album", href: "/admin/galerie/nove", icon: Add },
-        { label: "Novy rocnik", href: "/admin/rocniky/novy", icon: Add },
+        { label: "Nová novinka", href: "/admin/novinky/nova", icon: Add },
+        { label: "Nové album", href: "/admin/galerie/nove", icon: Add },
+        { label: "Nový ročník", href: "/admin/rocniky/novy", icon: Add },
     ];
 
     const totalPending = pending.pages.length;
@@ -205,7 +205,7 @@ export default async function AdminDashboardPage() {
     return (
         <Container maxWidth="lg">
             <Typography variant="h4" sx={{ mb: 4 }}>
-                Vitejte, {session?.user?.name || "Admine"}!
+                Vítejte, {session?.user?.name || "Admine"}!
             </Typography>
 
             {/* Stats Cards */}
@@ -288,12 +288,12 @@ export default async function AdminDashboardPage() {
                         >
                             <Schedule color="action" />
                             <Typography variant="h6">
-                                Posledni aktivita
+                                Poslední aktivita
                             </Typography>
                         </Box>
                         {activities.length === 0 ? (
                             <Typography color="text.secondary">
-                                Zadna nedavna aktivita.
+                                Žádná nedávná aktivita.
                             </Typography>
                         ) : (
                             <List disablePadding>
@@ -364,7 +364,7 @@ export default async function AdminDashboardPage() {
                             >
                                 <Add color="action" />
                                 <Typography variant="h6">
-                                    Rychle akce
+                                    Rychlé akce
                                 </Typography>
                             </Box>
                             <Box
@@ -401,12 +401,12 @@ export default async function AdminDashboardPage() {
                             >
                                 <VisibilityOff color="action" />
                                 <Typography variant="h6">
-                                    Nepublikovane ({totalPending})
+                                    Nepublikované ({totalPending})
                                 </Typography>
                             </Box>
                             {totalPending === 0 ? (
                                 <Typography color="text.secondary">
-                                    Vse je publikovano.
+                                    Vše je publikováno.
                                 </Typography>
                             ) : (
                                 <List disablePadding dense>
@@ -430,7 +430,7 @@ export default async function AdminDashboardPage() {
                                                 </ListItemIcon>
                                                 <ListItemText
                                                     primary={item.title}
-                                                    secondary={`Rocnik ${item.year.year}`}
+                                                    secondary={`Ročník ${item.year.year}`}
                                                     primaryTypographyProps={{
                                                         noWrap: true,
                                                         variant: "body2",

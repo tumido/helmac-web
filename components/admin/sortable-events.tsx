@@ -37,7 +37,7 @@ export function SortableEvents({ yearId, dayId, events }: SortableEventsProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Poradi udalosti bylo zmeneno");
+            toast.success("Pořadí událostí bylo změněno");
         }
     };
 
@@ -86,7 +86,7 @@ export function SortableEvents({ yearId, dayId, events }: SortableEventsProps) {
                             <Chip
                                 label={
                                     event.isPublished
-                                        ? "Publikovano"
+                                        ? "Publikováno"
                                         : "Skryto"
                                 }
                                 size="small"
@@ -145,7 +145,7 @@ export function SortableEvents({ yearId, dayId, events }: SortableEventsProps) {
                             gap: 0.5,
                         }}
                     >
-                        <Tooltip title="Upravit udalost">
+                        <Tooltip title="Upravit událost">
                             <IconLinkButton
                                 href={`/admin/rocniky/${yearId}/program/${dayId}/${event.id}`}
                                 size="small"

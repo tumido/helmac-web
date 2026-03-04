@@ -37,7 +37,7 @@ export function InfoActions({ infoId, infoTitle }: InfoActionsProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Info sekce byla smazana");
+            toast.success("Info sekce byla smazána");
             router.refresh();
         }
     };
@@ -73,11 +73,11 @@ export function InfoActions({ infoId, infoTitle }: InfoActionsProps) {
                     <DialogContentText>
                         Opravdu chcete smazat info sekci <strong>&quot;{infoTitle}&quot;</strong>?
                         <br />
-                        Tato akce je nevratna.
+                        Tato akce je nevratná.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrusit</Button>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrušit</Button>
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Smazat
                     </Button>

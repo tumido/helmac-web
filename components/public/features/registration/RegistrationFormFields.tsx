@@ -45,14 +45,14 @@ export function RegistrationFormFields({
     return (
         <>
             <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-                Osobni udaje
+                Osobní údaje
             </Typography>
 
             <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                     <TextField
                         name="firstName"
-                        label="Jmeno"
+                        label="Jméno"
                         value={formData.firstName}
                         onChange={onChange("firstName")}
                         error={!!getError("firstName")}
@@ -64,7 +64,7 @@ export function RegistrationFormFields({
                 <Grid item xs={12} sm={6}>
                     <TextField
                         name="lastName"
-                        label="Prijmeni"
+                        label="Příjmení"
                         value={formData.lastName}
                         onChange={onChange("lastName")}
                         error={!!getError("lastName")}
@@ -76,7 +76,7 @@ export function RegistrationFormFields({
                 <Grid item xs={12} sm={6}>
                     <TextField
                         name="nickname"
-                        label="Prezdivka"
+                        label="Přezdívka"
                         value={formData.nickname}
                         onChange={onChange("nickname")}
                         error={!!getError("nickname")}
@@ -111,7 +111,7 @@ export function RegistrationFormFields({
                 <Grid item xs={12} sm={6}>
                     <TextField
                         name="birthDate"
-                        label="Datum narozeni"
+                        label="Datum narození"
                         type="date"
                         value={formData.birthDate}
                         onChange={onChange("birthDate")}
@@ -128,18 +128,18 @@ export function RegistrationFormFields({
             <Divider sx={{ my: 4 }} />
 
             <Typography variant="h5" gutterBottom>
-                LARP zkusenosti
+                LARP zkušenosti
             </Typography>
 
             <Grid container spacing={3}>
                 <Grid item xs={12}>
                     <FormControl fullWidth error={!!getError("experience")}>
-                        <InputLabel>Uroven zkusenosti *</InputLabel>
+                        <InputLabel>Úroveň zkušeností *</InputLabel>
                         <Select
                             name="experience"
                             value={formData.experience}
                             onChange={onSelectChange("experience")}
-                            label="Uroven zkusenosti *"
+                            label="Úroveň zkušeností *"
                         >
                             {Object.entries(experienceLevelLabels).map(
                                 ([value, label]) => (
@@ -159,7 +159,7 @@ export function RegistrationFormFields({
                 <Grid item xs={12} sm={6}>
                     <TextField
                         name="faction"
-                        label="Preferovana frakce"
+                        label="Preferovaná frakce"
                         value={formData.faction}
                         onChange={onChange("faction")}
                         error={!!getError("faction")}
@@ -170,13 +170,13 @@ export function RegistrationFormFields({
                 <Grid item xs={12}>
                     <TextField
                         name="character"
-                        label="Kratky popis postavy"
+                        label="Krátký popis postavy"
                         value={formData.character}
                         onChange={onChange("character")}
                         error={!!getError("character")}
                         helperText={
                             getError("character") ||
-                            "Nepovinne - muzete popsat svou postavu a pozadi"
+                            "Nepovinné - můžete popsat svou postavu a pozadí"
                         }
                         fullWidth
                         multiline
@@ -188,18 +188,18 @@ export function RegistrationFormFields({
             <Divider sx={{ my: 4 }} />
 
             <Typography variant="h5" gutterBottom>
-                Stravovani
+                Stravování
             </Typography>
 
             <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                     <FormControl fullWidth error={!!getError("foodPreference")}>
-                        <InputLabel>Stravovaci preference *</InputLabel>
+                        <InputLabel>Stravovací preference *</InputLabel>
                         <Select
                             name="foodPreference"
                             value={formData.foodPreference}
                             onChange={onSelectChange("foodPreference")}
-                            label="Stravovaci preference *"
+                            label="Stravovací preference *"
                         >
                             {Object.entries(foodPreferenceLabels).map(
                                 ([value, label]) => (
@@ -230,7 +230,7 @@ export function RegistrationFormFields({
                 <Grid item xs={12}>
                     <TextField
                         name="notes"
-                        label="Dalsi poznamky"
+                        label="Další poznámky"
                         value={formData.notes}
                         onChange={onChange("notes")}
                         error={!!getError("notes")}
@@ -257,7 +257,7 @@ export function RegistrationFormFields({
                             onChange={onCheckboxChange("gdprConsent")}
                         />
                     }
-                    label="Souhlasim se zpracovanim osobnich udaju *"
+                    label="Souhlasím se zpracováním osobních údajů *"
                 />
                 <input
                     type="hidden"
@@ -282,7 +282,7 @@ export function RegistrationFormFields({
                     }
                     label={
                         <>
-                            Prectla/a jsem si a souhlasim s{" "}
+                            Přečetl/a jsem si a souhlasím s{" "}
                             <Link
                                 href="/pravidla"
                                 target="_blank"

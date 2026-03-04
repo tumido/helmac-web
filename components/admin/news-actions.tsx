@@ -39,7 +39,7 @@ export function NewsActions({ newsId }: NewsActionsProps) {
             setError(result.error);
             toast.error(result.error);
         } else {
-            toast.success("Novinka byla smazana");
+            toast.success("Novinka byla smazána");
             router.refresh();
         }
     };
@@ -73,7 +73,7 @@ export function NewsActions({ newsId }: NewsActionsProps) {
                 <DialogTitle>Smazat novinku?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat tuto novinku? Tato akce je nevratna.
+                        Opravdu chcete smazat tuto novinku? Tato akce je nevratná.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -83,7 +83,7 @@ export function NewsActions({ newsId }: NewsActionsProps) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleDelete}

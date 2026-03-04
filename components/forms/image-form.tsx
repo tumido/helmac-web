@@ -44,10 +44,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Pridat obrazek"
-                  : "Ulozit zmeny"}
+                  ? "Přidat obrázek"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -82,14 +82,14 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                     {state?.success && (
                         <Alert severity="success">
                             {mode === "create"
-                                ? "Obrazek byl pridan."
-                                : "Zmeny byly ulozeny."}
+                                ? "Obrázek byl přidán."
+                                : "Změny byly uloženy."}
                         </Alert>
                     )}
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Obrazek *
+                            Obrázek *
                         </Typography>
                         <ImageUploader
                             value={imageUrl}
@@ -107,12 +107,12 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                         fullWidth
                         id="thumbnailUrl"
                         name="thumbnailUrl"
-                        label="URL nahledu (volitelne)"
+                        label="URL náhledu (volitelné)"
                         defaultValue={defaultValues?.thumbnailUrl || ""}
                         error={!!state?.error?.thumbnailUrl}
                         helperText={
                             state?.error?.thumbnailUrl?.[0] ||
-                            "Automaticky generovano, nebo vlastni URL"
+                            "Automaticky generováno, nebo vlastní URL"
                         }
                         placeholder="https://example.com/thumbnail.jpg"
                     />
@@ -121,7 +121,7 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                         fullWidth
                         id="title"
                         name="title"
-                        label="Nazev obrazku"
+                        label="Název obrázku"
                         defaultValue={defaultValues?.title || ""}
                         error={!!state?.error?.title}
                         helperText={state?.error?.title?.[0]}
@@ -131,12 +131,12 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                         fullWidth
                         id="altText"
                         name="altText"
-                        label="Alt text (pro pristupnost)"
+                        label="Alt text (pro přístupnost)"
                         defaultValue={defaultValues?.altText || ""}
                         error={!!state?.error?.altText}
                         helperText={
                             state?.error?.altText?.[0] ||
-                            "Popis obrazku pro ctenky obrazovky"
+                            "Popis obrázku pro čtečky obrazovky"
                         }
                     />
 
@@ -144,7 +144,7 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                         fullWidth
                         id="description"
                         name="description"
-                        label="Popis obrazku"
+                        label="Popis obrázku"
                         defaultValue={defaultValues?.description || ""}
                         error={!!state?.error?.description}
                         helperText={state?.error?.description?.[0]}
@@ -156,7 +156,7 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href={`/admin/galerie/${albumId}`}>
-                        Zpet na album
+                        Zpět na album
                     </LinkButton>
                 </CardActions>
             </Box>

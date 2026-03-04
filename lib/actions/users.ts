@@ -26,7 +26,7 @@ export async function createUser(
     try {
         await requireSuperAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -50,7 +50,7 @@ export async function createUser(
         });
 
         if (existing) {
-            return { error: { email: ["Uzivatel s timto emailem jiz existuje"] } };
+            return { error: { email: ["Uživatel s tímto emailem již existuje"] } };
         }
 
         // Hash password
@@ -68,7 +68,7 @@ export async function createUser(
         revalidatePath("/admin/uzivatele");
     } catch (error) {
         console.error("Failed to create user:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit uzivatele"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit uživatele"] } };
     }
 
     redirect("/admin/uzivatele");
@@ -82,7 +82,7 @@ export async function updateUser(
     try {
         await requireSuperAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -103,7 +103,7 @@ export async function updateUser(
         const user = await db.user.findUnique({ where: { id: userId } });
 
         if (!user) {
-            return { error: { _form: ["Uzivatel nenalezen"] } };
+            return { error: { _form: ["Uživatel nenalezen"] } };
         }
 
         // Check if email conflicts with another user
@@ -113,7 +113,7 @@ export async function updateUser(
             });
 
             if (existing) {
-                return { error: { email: ["Uzivatel s timto emailem jiz existuje"] } };
+                return { error: { email: ["Uživatel s tímto emailem již existuje"] } };
             }
         }
 
@@ -143,7 +143,7 @@ export async function updateUser(
         revalidatePath(`/admin/uzivatele/${userId}`);
     } catch (error) {
         console.error("Failed to update user:", error);
-        return { error: { _form: ["Nepodarilo se upravit uzivatele"] } };
+        return { error: { _form: ["Nepodařilo se upravit uživatele"] } };
     }
 
     redirect("/admin/uzivatele");
@@ -153,20 +153,20 @@ export async function deleteUser(userId: string) {
     try {
         await requireSuperAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     // Get current user to prevent self-deletion
     const session = await auth();
     if (session?.user?.id === userId) {
-        return { error: "Nemuzete smazat sami sebe" };
+        return { error: "Nemůžete smazat sami sebe" };
     }
 
     try {
         const user = await db.user.findUnique({ where: { id: userId } });
 
         if (!user) {
-            return { error: "Uzivatel nenalezen" };
+            return { error: "Uživatel nenalezen" };
         }
 
         // Check if user has created news
@@ -176,7 +176,7 @@ export async function deleteUser(userId: string) {
 
         if (newsCount > 0) {
             return {
-                error: `Nelze smazat uzivatele, ktery vytvoril ${newsCount} novinek. Nejprve smazte nebo prevedte novinky.`,
+                error: `Nelze smazat uživatele, který vytvořil ${newsCount} novinek. Nejprve smažte nebo převeďte novinky.`,
             };
         }
 
@@ -188,6 +188,6 @@ export async function deleteUser(userId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete user:", error);
-        return { error: "Nepodarilo se smazat uzivatele" };
+        return { error: "Nepodařilo se smazat uživatele" };
     }
 }

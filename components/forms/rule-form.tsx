@@ -41,10 +41,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit pravidlo"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit pravidlo"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -81,7 +81,7 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                         fullWidth
                         id="title"
                         name="title"
-                        label="Nazev pravidla"
+                        label="Název pravidla"
                         defaultValue={defaultValues?.title || ""}
                         error={!!state?.error?.title}
                         helperText={state?.error?.title?.[0]}
@@ -108,7 +108,7 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href={`/admin/rocniky/${yearId}/pravidla`}>
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

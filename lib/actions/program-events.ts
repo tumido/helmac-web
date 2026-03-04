@@ -32,7 +32,7 @@ export async function createProgramEvent(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     // Parse tags from comma-separated string or JSON array
@@ -98,7 +98,7 @@ export async function createProgramEvent(
         revalidatePath("/program");
     } catch (error) {
         console.error("Failed to create program event:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit udalost"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit událost"] } };
     }
 
     const yearId = formData.get("yearId");
@@ -113,7 +113,7 @@ export async function updateProgramEvent(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     // Parse tags
@@ -153,7 +153,7 @@ export async function updateProgramEvent(
         });
 
         if (!event) {
-            return { error: { _form: ["Udalost nenalezena"] } };
+            return { error: { _form: ["Událost nenalezena"] } };
         }
 
         await db.programEvent.update({
@@ -178,7 +178,7 @@ export async function updateProgramEvent(
         revalidatePath("/program");
     } catch (error) {
         console.error("Failed to update program event:", error);
-        return { error: { _form: ["Nepodarilo se upravit udalost"] } };
+        return { error: { _form: ["Nepodařilo se upravit událost"] } };
     }
 
     return { success: true };
@@ -191,7 +191,7 @@ export async function updateProgramEventStory(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -201,7 +201,7 @@ export async function updateProgramEventStory(
         });
 
         if (!event) {
-            return { error: "Udalost nenalezena" };
+            return { error: "Událost nenalezena" };
         }
 
         await db.programEvent.update({
@@ -216,7 +216,7 @@ export async function updateProgramEventStory(
         return { success: true };
     } catch (error) {
         console.error("Failed to update event story:", error);
-        return { error: "Nepodarilo se ulozit pribeh udalosti" };
+        return { error: "Nepodařilo se uložit příběh události" };
     }
 }
 
@@ -224,7 +224,7 @@ export async function publishProgramEvent(eventId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -241,7 +241,7 @@ export async function publishProgramEvent(eventId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to publish event:", error);
-        return { error: "Nepodarilo se publikovat udalost" };
+        return { error: "Nepodařilo se publikovat událost" };
     }
 }
 
@@ -249,7 +249,7 @@ export async function unpublishProgramEvent(eventId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -266,7 +266,7 @@ export async function unpublishProgramEvent(eventId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to unpublish event:", error);
-        return { error: "Nepodarilo se skryt udalost" };
+        return { error: "Nepodařilo se skrýt událost" };
     }
 }
 
@@ -274,7 +274,7 @@ export async function deleteProgramEvent(eventId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -290,7 +290,7 @@ export async function deleteProgramEvent(eventId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete event:", error);
-        return { error: "Nepodarilo se smazat udalost" };
+        return { error: "Nepodařilo se smazat událost" };
     }
 }
 
@@ -301,7 +301,7 @@ export async function reorderProgramEvents(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -328,6 +328,6 @@ export async function reorderProgramEvents(
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder events:", error);
-        return { error: "Nepodarilo se zmenit poradi udalosti" };
+        return { error: "Nepodařilo se změnit pořadí událostí" };
     }
 }

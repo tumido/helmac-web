@@ -43,7 +43,7 @@ export function ProgramDayActions({
             setError(result.error);
             toast.error(result.error);
         } else {
-            toast.success("Den programu byl smazan");
+            toast.success("Den programu byl smazán");
             router.refresh();
         }
     };
@@ -93,7 +93,7 @@ export function ProgramDayActions({
                             </>
                         )}
                         <br />
-                        Tato akce je nevratna.
+                        Tato akce je nevratná.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>
@@ -102,7 +102,7 @@ export function ProgramDayActions({
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrusit</Button>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrušit</Button>
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Smazat
                     </Button>

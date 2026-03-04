@@ -49,7 +49,7 @@ function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Obrazek byl smazan");
+            toast.success("Obrázek byl smazán");
             router.refresh();
         }
     };
@@ -162,15 +162,15 @@ function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
             >
-                <DialogTitle>Smazat obrazek?</DialogTitle>
+                <DialogTitle>Smazat obrázek?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat tento obrazek? Tato akce je nevratna.
+                        Opravdu chcete smazat tento obrázek? Tato akce je nevratná.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Zrusit
+                        Zrušit
                     </Button>
                     <Button
                         onClick={handleDelete}

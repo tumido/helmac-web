@@ -37,7 +37,7 @@ export function RuleActions({ ruleId, ruleTitle }: RuleActionsProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Pravidlo bylo smazano");
+            toast.success("Pravidlo bylo smazáno");
             router.refresh();
         }
     };
@@ -73,11 +73,11 @@ export function RuleActions({ ruleId, ruleTitle }: RuleActionsProps) {
                     <DialogContentText>
                         Opravdu chcete smazat pravidlo <strong>&quot;{ruleTitle}&quot;</strong>?
                         <br />
-                        Tato akce je nevratna.
+                        Tato akce je nevratná.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrusit</Button>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrušit</Button>
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Smazat
                     </Button>

@@ -46,10 +46,10 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             }
         >
             {pending
-                ? "Ukladam..."
+                ? "Ukládám..."
                 : mode === "create"
-                  ? "Vytvorit stranku"
-                  : "Ulozit zmeny"}
+                  ? "Vytvořit stránku"
+                  : "Uložit změny"}
         </Button>
     );
 }
@@ -80,7 +80,7 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
                     )}
 
                     {state?.success && (
-                        <Alert severity="success">Zmeny byly ulozeny.</Alert>
+                        <Alert severity="success">Změny byly uloženy.</Alert>
                     )}
 
                     <Box
@@ -98,7 +98,7 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
                             fullWidth
                             id="title"
                             name="title"
-                            label="Nazev stranky"
+                            label="Název stránky"
                             defaultValue={defaultValues?.title || ""}
                             error={!!state?.error?.title}
                             helperText={state?.error?.title?.[0]}
@@ -114,15 +114,15 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
                             error={!!state?.error?.slug}
                             helperText={
                                 state?.error?.slug?.[0] ||
-                                "Pouze mala pismena, cisla a pomlcky"
+                                "Pouze malá písmena, čísla a pomlčky"
                             }
-                            placeholder="napr. o-akci"
+                            placeholder="např. o-akci"
                         />
                     </Box>
 
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography>SEO nastaveni</Typography>
+                            <Typography>SEO nastavení</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box
@@ -141,7 +141,7 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
                                     error={!!state?.error?.seoTitle}
                                     helperText={
                                         state?.error?.seoTitle?.[0] ||
-                                        "Max 70 znaku"
+                                        "Max 70 znaků"
                                     }
                                     inputProps={{ maxLength: 70 }}
                                 />
@@ -155,7 +155,7 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
                                     error={!!state?.error?.seoDesc}
                                     helperText={
                                         state?.error?.seoDesc?.[0] ||
-                                        "Max 160 znaku"
+                                        "Max 160 znaků"
                                     }
                                     multiline
                                     rows={2}
@@ -175,7 +175,7 @@ export function PageForm({ mode, yearId, pageId, defaultValues }: PageFormProps)
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
                     <LinkButton href={`/admin/rocniky/${yearId}`}>
-                        Zrusit
+                        Zrušit
                     </LinkButton>
                 </CardActions>
             </Box>

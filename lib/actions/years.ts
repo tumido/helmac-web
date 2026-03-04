@@ -27,7 +27,7 @@ export async function createYear(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -53,7 +53,7 @@ export async function createYear(
         });
 
         if (existing) {
-            return { error: { year: ["Tento rocnik jiz existuje"] } };
+            return { error: { year: ["Tento ročník již existuje"] } };
         }
 
         const year = await db.year.create({
@@ -74,7 +74,7 @@ export async function createYear(
         revalidatePath("/admin/rocniky");
     } catch (error) {
         console.error("Failed to create year:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit rocnik"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit ročník"] } };
     }
 
     redirect("/admin/rocniky");
@@ -88,7 +88,7 @@ export async function updateYear(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -118,7 +118,7 @@ export async function updateYear(
             });
 
             if (existing) {
-                return { error: { year: ["Tento rocnik jiz existuje"] } };
+                return { error: { year: ["Tento ročník již existuje"] } };
             }
         }
 
@@ -140,7 +140,7 @@ export async function updateYear(
         revalidatePath("/");
     } catch (error) {
         console.error("Failed to update year:", error);
-        return { error: { _form: ["Nepodarilo se upravit rocnik"] } };
+        return { error: { _form: ["Nepodařilo se upravit ročník"] } };
     }
 
     redirect("/admin/rocniky");
@@ -150,7 +150,7 @@ export async function setActiveYear(yearId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -171,7 +171,7 @@ export async function setActiveYear(yearId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to set active year:", error);
-        return { error: "Nepodarilo se aktivovat rocnik" };
+        return { error: "Nepodařilo se aktivovat ročník" };
     }
 }
 
@@ -179,14 +179,14 @@ export async function archiveYear(yearId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
         const year = await db.year.findUnique({ where: { id: yearId } });
 
         if (year?.isActive) {
-            return { error: "Nelze archivovat aktivni rocnik" };
+            return { error: "Nelze archivovat aktivní ročník" };
         }
 
         await db.year.update({
@@ -199,7 +199,7 @@ export async function archiveYear(yearId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to archive year:", error);
-        return { error: "Nepodarilo se archivovat rocnik" };
+        return { error: "Nepodařilo se archivovat ročník" };
     }
 }
 
@@ -207,7 +207,7 @@ export async function unarchiveYear(yearId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -220,7 +220,7 @@ export async function unarchiveYear(yearId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to unarchive year:", error);
-        return { error: "Nepodarilo se obnovit rocnik" };
+        return { error: "Nepodařilo se obnovit ročník" };
     }
 }
 
@@ -228,14 +228,14 @@ export async function deleteYear(yearId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
         const year = await db.year.findUnique({ where: { id: yearId } });
 
         if (year?.isActive) {
-            return { error: "Nelze smazat aktivni rocnik" };
+            return { error: "Nelze smazat aktivní ročník" };
         }
 
         await db.year.delete({
@@ -246,7 +246,7 @@ export async function deleteYear(yearId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete year:", error);
-        return { error: "Nepodarilo se smazat rocnik" };
+        return { error: "Nepodařilo se smazat ročník" };
     }
 }
 
@@ -254,7 +254,7 @@ export async function toggleRegistration(yearId: string, open: boolean) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -270,7 +270,7 @@ export async function toggleRegistration(yearId: string, open: boolean) {
         return { success: true };
     } catch (error) {
         console.error("Failed to toggle registration:", error);
-        return { error: "Nepodarilo se zmenit stav registrace" };
+        return { error: "Nepodařilo se změnit stav registrace" };
     }
 }
 
@@ -278,7 +278,7 @@ export async function updateRegistrationStartDate(yearId: string, date: string |
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -296,18 +296,18 @@ export async function updateRegistrationStartDate(yearId: string, date: string |
         return { success: true };
     } catch (error) {
         console.error("Failed to update registration start date:", error);
-        return { error: "Nepodarilo se ulozit datum otevreni registrace" };
+        return { error: "Nepodařilo se uložit datum otevření registrace" };
     }
 }
 
 async function createDefaultPages(yearId: string) {
     const defaultPages = [
-        { slug: "uvod", title: "Uvod", sortOrder: 0 },
+        { slug: "uvod", title: "Úvod", sortOrder: 0 },
         { slug: "program", title: "Program", sortOrder: 1 },
         { slug: "registrace", title: "Registrace", sortOrder: 2 },
         { slug: "pravidla", title: "Pravidla", sortOrder: 3 },
         { slug: "galerie", title: "Galerie", sortOrder: 4 },
-        { slug: "na-pamatku", title: "Na pamatku", sortOrder: 5 },
+        { slug: "na-pamatku", title: "Na památku", sortOrder: 5 },
     ];
 
     await db.page.createMany({

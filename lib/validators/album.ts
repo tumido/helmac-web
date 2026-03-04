@@ -3,22 +3,22 @@ import { z } from "zod";
 export const createAlbumSchema = z.object({
     slug: z
         .string()
-        .min(1, "Slug je povinny")
-        .max(100, "Slug je prilis dlouhy")
+        .min(1, "Slug je povinný")
+        .max(100, "Slug je příliš dlouhý")
         .regex(
             /^[a-z0-9-]+$/,
-            "Slug muze obsahovat pouze mala pismena, cisla a pomlcky"
+            "Slug může obsahovat pouze malá písmena, čísla a pomlčky"
         ),
     title: z
         .string()
-        .min(1, "Nazev je povinny")
-        .max(200, "Nazev je prilis dlouhy"),
-    description: z.string().max(1000, "Popis je prilis dlouhy").optional(),
+        .min(1, "Název je povinný")
+        .max(200, "Název je příliš dlouhý"),
+    description: z.string().max(1000, "Popis je příliš dlouhý").optional(),
     coverImage: z
         .string()
         .refine(
             (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
-            "Neplatna URL obrazku"
+            "Neplatná URL obrázku"
         )
         .optional(),
     isPublished: z.coerce.boolean().optional(),
@@ -30,21 +30,21 @@ export const updateAlbumSchema = createAlbumSchema.partial();
 export const createImageSchema = z.object({
     url: z
         .string()
-        .min(1, "URL obrazku je povinna")
+        .min(1, "URL obrázku je povinná")
         .refine(
             (val) => val.startsWith("/") || val.startsWith("http"),
-            "Neplatna URL obrazku"
+            "Neplatná URL obrázku"
         ),
     thumbnailUrl: z
         .string()
         .refine(
             (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
-            "Neplatna URL nahledu"
+            "Neplatná URL náhledu"
         )
         .optional(),
-    title: z.string().max(200, "Nazev je prilis dlouhy").optional(),
-    description: z.string().max(1000, "Popis je prilis dlouhy").optional(),
-    altText: z.string().max(200, "Alt text je prilis dlouhy").optional(),
+    title: z.string().max(200, "Název je příliš dlouhý").optional(),
+    description: z.string().max(1000, "Popis je příliš dlouhý").optional(),
+    altText: z.string().max(200, "Alt text je příliš dlouhý").optional(),
     width: z.coerce.number().int().positive().optional(),
     height: z.coerce.number().int().positive().optional(),
     sortOrder: z.coerce.number().int().min(0).optional(),

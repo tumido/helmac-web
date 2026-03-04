@@ -26,7 +26,7 @@ export async function createProgramDay(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -52,7 +52,7 @@ export async function createProgramDay(
         });
 
         if (existing) {
-            return { error: { date: ["Den s timto datem jiz existuje"] } };
+            return { error: { date: ["Den s tímto datem již existuje"] } };
         }
 
         // Get max sort order
@@ -73,7 +73,7 @@ export async function createProgramDay(
         revalidatePath(`/admin/rocniky/${yearId}/program`);
     } catch (error) {
         console.error("Failed to create program day:", error);
-        return { error: { _form: ["Nepodarilo se vytvorit den programu"] } };
+        return { error: { _form: ["Nepodařilo se vytvořit den programu"] } };
     }
 
     redirect(`/admin/rocniky/${yearId}/program`);
@@ -87,7 +87,7 @@ export async function updateProgramDay(
     try {
         await requireAdmin();
     } catch {
-        return { error: { _form: ["Nemate opravneni"] } };
+        return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
     const rawData = {
@@ -123,7 +123,7 @@ export async function updateProgramDay(
             });
 
             if (existing) {
-                return { error: { date: ["Den s timto datem jiz existuje"] } };
+                return { error: { date: ["Den s tímto datem již existuje"] } };
             }
         }
 
@@ -139,7 +139,7 @@ export async function updateProgramDay(
         revalidatePath(`/admin/rocniky/${day.yearId}/program/${dayId}`);
     } catch (error) {
         console.error("Failed to update program day:", error);
-        return { error: { _form: ["Nepodarilo se upravit den programu"] } };
+        return { error: { _form: ["Nepodařilo se upravit den programu"] } };
     }
 
     return { success: true };
@@ -149,7 +149,7 @@ export async function deleteProgramDay(dayId: string) {
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -161,7 +161,7 @@ export async function deleteProgramDay(dayId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete program day:", error);
-        return { error: "Nepodarilo se smazat den programu" };
+        return { error: "Nepodařilo se smazat den programu" };
     }
 }
 
@@ -172,7 +172,7 @@ export async function reorderProgramDays(
     try {
         await requireAdmin();
     } catch {
-        return { error: "Nemate opravneni" };
+        return { error: "Nemáte oprávnění" };
     }
 
     try {
@@ -189,6 +189,6 @@ export async function reorderProgramDays(
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder program days:", error);
-        return { error: "Nepodarilo se zmenit poradi dnu" };
+        return { error: "Nepodařilo se změnit pořadí dnů" };
     }
 }
