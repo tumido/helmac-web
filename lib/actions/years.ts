@@ -250,6 +250,56 @@ export async function deleteYear(yearId: string) {
     }
 }
 
+export async function toggleRegistration(yearId: string, open: boolean) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.year.update({
+            where: { id: yearId },
+            data: { registrationOpen: open },
+        });
+
+        revalidatePath("/admin/rocniky");
+        revalidatePath(`/admin/rocniky/${yearId}`);
+        revalidatePath("/");
+        revalidatePath("/registrace");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle registration:", error);
+        return { error: "Nepodarilo se zmenit stav registrace" };
+    }
+}
+
+export async function updateRegistrationStartDate(yearId: string, date: string | null) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemate opravneni" };
+    }
+
+    try {
+        await db.year.update({
+            where: { id: yearId },
+            data: {
+                registrationStartDate: date ? new Date(date) : null,
+            },
+        });
+
+        revalidatePath("/admin/rocniky");
+        revalidatePath(`/admin/rocniky/${yearId}`);
+        revalidatePath("/");
+        revalidatePath("/registrace");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update registration start date:", error);
+        return { error: "Nepodarilo se ulozit datum otevreni registrace" };
+    }
+}
+
 async function createDefaultPages(yearId: string) {
     const defaultPages = [
         { slug: "uvod", title: "Uvod", sortOrder: 0 },

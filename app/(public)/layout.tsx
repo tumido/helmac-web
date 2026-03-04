@@ -1,5 +1,5 @@
 import { ThemeWrapper } from "@/components/public/layout/ThemeWrapper";
-import { getNavigationSubtabs } from "@/lib/services";
+import { getNavigationSubtabs, getRegistrationStatus } from "@/lib/services";
 import { NavSubtabs } from "@/lib/services/navigation";
 
 export default async function PublicLayout({
@@ -7,7 +7,14 @@ export default async function PublicLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const navSubtabs: NavSubtabs = await getNavigationSubtabs();
+    const [navSubtabs, regStatus] = await Promise.all([
+        getNavigationSubtabs(),
+        getRegistrationStatus(),
+    ]);
 
-    return <ThemeWrapper navSubtabs={navSubtabs}>{children}</ThemeWrapper>;
+    return (
+        <ThemeWrapper navSubtabs={navSubtabs as NavSubtabs} registrationOpen={regStatus.isOpen}>
+            {children}
+        </ThemeWrapper>
+    );
 }

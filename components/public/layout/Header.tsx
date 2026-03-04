@@ -29,9 +29,10 @@ const baseNavItems: { label: string; href: string; subtabKey?: keyof NavSubtabs 
 
 interface HeaderProps {
     navSubtabs?: NavSubtabs;
+    registrationOpen?: boolean;
 }
 
-export function Header({ navSubtabs }: HeaderProps) {
+export function Header({ navSubtabs, registrationOpen }: HeaderProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const trigger = useScrollTrigger({
@@ -111,17 +112,19 @@ export function Header({ navSubtabs }: HeaderProps) {
 
                         <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 2 }}>
                             <ThemeToggle />
-                            <LinkButton
-                                href="/registrace"
-                                variant="contained"
-                                color="secondary"
-                                sx={{
-                                    fontWeight: 700,
-                                    px: 3,
-                                }}
-                            >
-                                Registrace
-                            </LinkButton>
+                            {registrationOpen && (
+                                <LinkButton
+                                    href="/registrace"
+                                    variant="contained"
+                                    color="secondary"
+                                    sx={{
+                                        fontWeight: 700,
+                                        px: 3,
+                                    }}
+                                >
+                                    Registrace
+                                </LinkButton>
+                            )}
                         </Box>
                     </Toolbar>
                 </Container>
@@ -131,6 +134,7 @@ export function Header({ navSubtabs }: HeaderProps) {
                 open={mobileOpen}
                 onClose={handleDrawerToggle}
                 items={navItems}
+                registrationOpen={registrationOpen}
             />
         </>
     );

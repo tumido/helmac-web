@@ -12,9 +12,10 @@ import { NavSubtabs } from "@/lib/services/navigation";
 interface ThemedContentProps {
     children: React.ReactNode;
     navSubtabs?: NavSubtabs;
+    registrationOpen?: boolean;
 }
 
-function ThemedContent({ children, navSubtabs }: ThemedContentProps) {
+function ThemedContent({ children, navSubtabs, registrationOpen }: ThemedContentProps) {
     const { isDark } = useThemeMode();
     const theme = isDark ? publicTheme : publicLightTheme;
 
@@ -30,7 +31,7 @@ function ThemedContent({ children, navSubtabs }: ThemedContentProps) {
                     transition: "background-color 0.3s ease-in-out",
                 }}
             >
-                <Header navSubtabs={navSubtabs} />
+                <Header navSubtabs={navSubtabs} registrationOpen={registrationOpen} />
                 <Box component="main" sx={{ flex: 1 }}>
                     {children}
                 </Box>
@@ -43,12 +44,13 @@ function ThemedContent({ children, navSubtabs }: ThemedContentProps) {
 interface ThemeWrapperProps {
     children: React.ReactNode;
     navSubtabs?: NavSubtabs;
+    registrationOpen?: boolean;
 }
 
-export function ThemeWrapper({ children, navSubtabs }: ThemeWrapperProps) {
+export function ThemeWrapper({ children, navSubtabs, registrationOpen }: ThemeWrapperProps) {
     return (
         <ThemeModeProvider>
-            <ThemedContent navSubtabs={navSubtabs}>{children}</ThemedContent>
+            <ThemedContent navSubtabs={navSubtabs} registrationOpen={registrationOpen}>{children}</ThemedContent>
         </ThemeModeProvider>
     );
 }

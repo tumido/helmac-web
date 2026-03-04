@@ -17,9 +17,10 @@ interface MobileMenuProps {
     open: boolean;
     onClose: () => void;
     items: NavItem[];
+    registrationOpen?: boolean;
 }
 
-export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
+export function MobileMenu({ open, onClose, items, registrationOpen }: MobileMenuProps) {
     const pathname = usePathname();
 
     return (
@@ -107,18 +108,22 @@ export function MobileMenu({ open, onClose, items }: MobileMenuProps) {
                     })}
                 </List>
 
-                <Divider sx={{ my: 2 }} />
+                {registrationOpen && (
+                    <>
+                        <Divider sx={{ my: 2 }} />
 
-                <LinkButton
-                    href="/registrace"
-                    variant="contained"
-                    color="secondary"
-                    fullWidth
-                    onClick={onClose}
-                    sx={{ fontWeight: 700 }}
-                >
-                    Registrace
-                </LinkButton>
+                        <LinkButton
+                            href="/registrace"
+                            variant="contained"
+                            color="secondary"
+                            fullWidth
+                            onClick={onClose}
+                            sx={{ fontWeight: 700 }}
+                        >
+                            Registrace
+                        </LinkButton>
+                    </>
+                )}
             </Box>
         </Drawer>
     );

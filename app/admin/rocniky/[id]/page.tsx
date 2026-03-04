@@ -11,7 +11,17 @@ interface EditYearPageProps {
 async function getYear(id: string) {
     return db.year.findUnique({
         where: { id },
-        include: {
+        select: {
+            id: true,
+            year: true,
+            title: true,
+            subtitle: true,
+            startDate: true,
+            endDate: true,
+            headerPhoto: true,
+            heroPhoto: true,
+            registrationOpen: true,
+            registrationStartDate: true,
             albums: {
                 orderBy: { sortOrder: "asc" },
                 select: {

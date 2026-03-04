@@ -5,11 +5,21 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Alert,
     Box,
+    Button,
     Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
     Divider,
+    FormControlLabel,
+    Switch,
     Tab,
     Tabs,
+    TextField,
     Tooltip,
     Typography,
     useMediaQuery,
@@ -32,6 +42,7 @@ import { NewsActions } from "@/components/admin/news-actions";
 import { SortableRules } from "@/components/admin/sortable-rules";
 import { SortableDays } from "@/components/admin/sortable-days";
 import { SortableInfo } from "@/components/admin/sortable-info";
+import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
 
 interface YearEditTabsProps {
     year: {
@@ -67,6 +78,8 @@ interface YearEditTabsProps {
             id: string;
             title: string;
         }[];
+        registrationOpen: boolean;
+        registrationStartDate: Date | null;
     };
 }
 
@@ -398,7 +411,7 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
 
             {/* Tab 3 — Registrace */}
             {tab === 3 && (
-                <Typography color="text.secondary">Zatim neni k dispozici.</Typography>
+                <RegistrationTab yearId={year.id} registrationOpen={year.registrationOpen} registrationStartDate={year.registrationStartDate} />
             )}
 
             {/* Tab 4 — Nastaveni */}
@@ -418,5 +431,119 @@ export function YearEditTabs({ year }: YearEditTabsProps) {
                 />
             )}
         </>
+    );
+}
+
+interface RegistrationTabProps {
+    yearId: string;
+    registrationOpen: boolean;
+    registrationStartDate: Date | null;
+}
+
+function RegistrationTab({ yearId, registrationOpen, registrationStartDate }: RegistrationTabProps) {
+    const [isOpen, setIsOpen] = useState(registrationOpen);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [pendingToggle, setPendingToggle] = useState<boolean | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [dateValue, setDateValue] = useState(
+        registrationStartDate
+            ? new Date(registrationStartDate).toISOString().split("T")[0]
+            : ""
+    );
+    const [dateSaving, setDateSaving] = useState(false);
+
+    const handleToggleClick = () => {
+        setPendingToggle(!isOpen);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirm = async () => {
+        if (pendingToggle === null) return;
+        setConfirmOpen(false);
+        setLoading(true);
+        setError(null);
+
+        const result = await toggleRegistration(yearId, pendingToggle);
+        if (result.error) {
+            setError(typeof result.error === "string" ? result.error : "Chyba");
+        } else {
+            setIsOpen(pendingToggle);
+        }
+        setLoading(false);
+        setPendingToggle(null);
+    };
+
+    const handleCancel = () => {
+        setConfirmOpen(false);
+        setPendingToggle(null);
+    };
+
+    const handleDateBlur = async () => {
+        const currentDbDate = registrationStartDate
+            ? new Date(registrationStartDate).toISOString().split("T")[0]
+            : "";
+        if (dateValue === currentDbDate) return;
+
+        setDateSaving(true);
+        setError(null);
+        const result = await updateRegistrationStartDate(yearId, dateValue || null);
+        if (result.error) {
+            setError(typeof result.error === "string" ? result.error : "Chyba");
+        }
+        setDateSaving(false);
+    };
+
+    return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, maxWidth: 500 }}>
+            {error && <Alert severity="error">{error}</Alert>}
+
+            <FormControlLabel
+                control={
+                    <Switch
+                        checked={isOpen}
+                        onChange={handleToggleClick}
+                        disabled={loading}
+                        color="success"
+                    />
+                }
+                label={
+                    <Typography fontWeight={600}>
+                        {isOpen ? "Registrace otevrena" : "Registrace uzavrena"}
+                    </Typography>
+                }
+            />
+
+            <TextField
+                type="date"
+                label="Datum otevreni registrace"
+                value={dateValue}
+                onChange={(e) => setDateValue(e.target.value)}
+                onBlur={handleDateBlur}
+                disabled={dateSaving}
+                helperText="Pokud je registrace uzavrena, na verejnych strankach se zobrazi datum otevreni"
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+            />
+
+            <Dialog open={confirmOpen} onClose={handleCancel}>
+                <DialogTitle>
+                    {pendingToggle ? "Otevrit registraci?" : "Uzavrit registraci?"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {pendingToggle
+                            ? "Registrace bude otevrena a navstevnici se budou moci registrovat na verejnych strankach."
+                            : "Registrace bude uzavrena a registracni formular nebude dostupny na verejnych strankach."}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancel}>Zrusit</Button>
+                    <Button onClick={handleConfirm} variant="contained" autoFocus>
+                        Potvrdit
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 }

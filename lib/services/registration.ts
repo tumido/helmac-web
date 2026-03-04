@@ -10,6 +10,8 @@ export const getRegistrationStatus = cache(async () => {
             title: true,
             startDate: true,
             endDate: true,
+            registrationOpen: true,
+            registrationStartDate: true,
             _count: {
                 select: { registrations: true },
             },
@@ -21,13 +23,15 @@ export const getRegistrationStatus = cache(async () => {
             isOpen: false,
             year: null,
             registrationCount: 0,
+            registrationStartDate: null,
         };
     }
 
     return {
-        isOpen: true,
+        isOpen: activeYear.registrationOpen,
         year: activeYear,
         registrationCount: activeYear._count.registrations,
+        registrationStartDate: activeYear.registrationStartDate,
     };
 });
 

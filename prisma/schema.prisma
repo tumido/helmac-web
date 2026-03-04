@@ -64,6 +64,9 @@ model Year {
   headerPhoto String?
   heroPhoto   String?
 
+  registrationOpen      Boolean   @default(false)
+  registrationStartDate DateTime?
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

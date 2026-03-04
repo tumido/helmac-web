@@ -6,6 +6,10 @@ export async function RegistrationCTA() {
     const status = await getRegistrationStatus();
 
     if (!status.isOpen) {
+        if (!status.registrationStartDate) {
+            return null;
+        }
+
         return (
             <Container maxWidth="md">
                 <Box
@@ -25,14 +29,13 @@ export async function RegistrationCTA() {
                             fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                         }}
                     >
-                        Registrace bude brzy otevrena
+                        Registrace se otevre {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
                     </Typography>
                     <Typography
                         variant="body1"
                         sx={{ opacity: 0.9, maxWidth: 600, mx: "auto" }}
                     >
-                        Sledujte novinky, at nepropsnete zacatek registraci na
-                        dalsi rocnik.
+                        Sledujte novinky, at nepropsnete zacatek registraci.
                     </Typography>
                 </Box>
             </Container>

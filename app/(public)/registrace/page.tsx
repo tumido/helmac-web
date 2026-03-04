@@ -31,13 +31,20 @@ export default async function RegistracePage() {
                             borderRadius: 2,
                         }}
                     >
-                        <Typography variant="h5" gutterBottom>
-                            Registrace bude brzy otevrena
-                        </Typography>
-                        <Typography color="text.secondary">
-                            Sledujte novinky, at nepropsnete zacatek registraci
-                            na dalsi rocnik.
-                        </Typography>
+                        {status.registrationStartDate ? (
+                            <>
+                                <Typography variant="h5" gutterBottom>
+                                    Registrace se otevre {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
+                                </Typography>
+                                <Typography color="text.secondary">
+                                    Sledujte novinky, at nepropsnete zacatek registraci.
+                                </Typography>
+                            </>
+                        ) : (
+                            <Typography variant="h5">
+                                Registrace neni momentalne otevrena
+                            </Typography>
+                        )}
                     </Box>
                 </Container>
             </>
