@@ -44,3 +44,4 @@ public/uploads/
 .env.vercel
 .env.local
 .idea/
+.claude/plans/

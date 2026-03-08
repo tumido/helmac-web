@@ -1,8 +1,9 @@
 import { Container, Typography, Box } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
-import { getRegistrationStatus, getActiveYear } from "@/lib/services";
+import { getRegistrationStatus, getActiveYear, getOptionCountsForYear } from "@/lib/services";
 import type { FormField } from "@/lib/types/registration-form";
+import { isInputField } from "@/lib/types/registration-form";
 
 export const metadata = {
     title: "Registrace | Helmac",
@@ -83,6 +84,14 @@ export default async function RegistracePage() {
 
     const fields = status.formFields as unknown as FormField[];
 
+    // Only fetch counts if any field has a countCondition
+    const hasCountConditions = fields.some(
+        (f) => isInputField(f) && f.countCondition
+    );
+    const optionCounts = hasCountConditions
+        ? await getOptionCountsForYear(status.year!.id)
+        : undefined;
+
     return (
         <>
             <PageHeader
@@ -91,7 +100,7 @@ export default async function RegistracePage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <DynamicRegistrationForm fields={fields} />
+                <DynamicRegistrationForm fields={fields} optionCounts={optionCounts} />
             </Container>
         </>
     );

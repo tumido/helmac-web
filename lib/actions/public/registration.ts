@@ -3,8 +3,9 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { FormField, InputField } from "@/lib/types/registration-form";
+import type { FormField, InputField, OptionCounts } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
+import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 
 export interface RegistrationState {
     success: boolean;
@@ -86,6 +87,44 @@ export async function submitDynamicRegistration(
         }
     }
 
+    // Evaluate count conditions (fresh DB query, no cache)
+    const hasCountConditions = fields.some(
+        (f) => isInputField(f) && f.countCondition
+    );
+    let optionCounts: OptionCounts | undefined;
+    const disabledOptionsByName: Record<string, Set<string>> = {};
+
+    if (hasCountConditions) {
+        optionCounts = await getOptionCountsForYearFresh(activeYear.id);
+
+        for (const field of fields) {
+            if (!isInputField(field) || !field.countCondition) continue;
+            const cc = field.countCondition;
+
+            if (cc.action === "hide_field" && cc.fieldId && cc.value && cc.maxCount != null) {
+                const targetField = fields.find((f) => f.id === cc.fieldId);
+                if (targetField && isInputField(targetField)) {
+                    const currentCount = optionCounts[targetField.name]?.[cc.value] ?? 0;
+                    if (currentCount >= cc.maxCount) {
+                        visibleFieldIds.delete(field.id);
+                    }
+                }
+            }
+
+            if (cc.action === "disable_option" && cc.optionLimits) {
+                for (const limit of cc.optionLimits) {
+                    const currentCount = optionCounts[field.name]?.[limit.value] ?? 0;
+                    if (currentCount >= limit.maxCount) {
+                        if (!disabledOptionsByName[field.name]) {
+                            disabledOptionsByName[field.name] = new Set();
+                        }
+                        disabledOptionsByName[field.name].add(limit.value);
+                    }
+                }
+            }
+        }
+    }
+
     // Only validate visible input fields
     const visibleInputFields = fields.filter(
         (f) => isInputField(f) && visibleFieldIds.has(f.id)
@@ -115,6 +154,18 @@ export async function submitDynamicRegistration(
             message: "Prosím opravte chyby ve formuláři",
             errors,
         };
+    }
+
+    // Check submitted values against disabled options (capacity limits)
+    for (const [fieldName, disabledValues] of Object.entries(disabledOptionsByName)) {
+        const submitted = String(visibleRawData[fieldName] ?? "");
+        if (submitted && disabledValues.has(submitted)) {
+            return {
+                success: false,
+                message: "Zvolená možnost je již obsazena. Načtěte formulář znovu.",
+                errors: { [fieldName]: ["Tato možnost je již obsazena"] },
+            };
+        }
     }
 
     // Build submission data (visible fields only, hidden fields stripped)

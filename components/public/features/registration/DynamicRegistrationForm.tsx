@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useActionState } from "react";
 import { Box, Button, Alert, Paper } from "@mui/material";
-import type { FormField, SubmissionData } from "@/lib/types/registration-form";
+import type { FormField, SubmissionData, OptionCounts } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
@@ -11,6 +11,7 @@ import { submitDynamicRegistration, type RegistrationState } from "@/lib/actions
 
 interface DynamicRegistrationFormProps {
     fields: FormField[];
+    optionCounts?: OptionCounts;
 }
 
 function buildInitialValues(fields: FormField[]): SubmissionData {
@@ -26,9 +27,9 @@ function buildInitialValues(fields: FormField[]): SubmissionData {
     return values;
 }
 
-export function DynamicRegistrationForm({ fields }: DynamicRegistrationFormProps) {
+export function DynamicRegistrationForm({ fields, optionCounts }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(fields));
-    const visibleFields = useConditionalFields(fields, values);
+    const { visibleFields, disabledOptions } = useConditionalFields(fields, values, optionCounts);
 
     const [state, formAction, isPending] = useActionState<RegistrationState | null, FormData>(
         submitDynamicRegistration,
@@ -88,6 +89,7 @@ export function DynamicRegistrationForm({ fields }: DynamicRegistrationFormProps
                                 value={value}
                                 error={isInputField(field) ? getFieldError(field.name) : undefined}
                                 onChange={handleChange}
+                                disabledOptions={isInputField(field) ? disabledOptions[field.id] : undefined}
                             />
                         );
                     })}

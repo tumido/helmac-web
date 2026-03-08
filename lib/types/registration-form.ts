@@ -18,6 +18,20 @@ export interface FieldCondition {
     value: string;
 }
 
+// Count-based capacity condition
+export interface CountCondition {
+    action: "hide_field" | "disable_option";
+    // hide_field: hide when count of `value` on target field >= maxCount
+    fieldId?: string;
+    value?: string;
+    maxCount?: number;
+    // disable_option: per-option limits on THIS field
+    optionLimits?: Array<{ value: string; maxCount: number }>;
+}
+
+// Aggregated option counts: fieldName -> optionValue -> count
+export type OptionCounts = Record<string, Record<string, number>>;
+
 // Input field (user fills in a value)
 export interface InputField {
     type: Exclude<FieldType, "heading" | "description">;
@@ -28,6 +42,7 @@ export interface InputField {
     placeholder?: string;
     options?: string[]; // For select/radio
     condition?: FieldCondition;
+    countCondition?: CountCondition;
 }
 
 // Layout: heading

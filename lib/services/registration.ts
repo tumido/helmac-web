@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import type { OptionCounts } from "@/lib/types/registration-form";
 
 export const getRegistrationStatus = cache(async () => {
     const activeYear = await db.year.findFirst({
@@ -97,3 +98,35 @@ export const getSubmissionCountForYear = cache(async (yearId: string) => {
         where: { yearId },
     });
 });
+
+// Cached version for page load
+export const getOptionCountsForYear = cache(async (yearId: string): Promise<OptionCounts> => {
+    return computeOptionCounts(yearId);
+});
+
+// Fresh version for submission validation (no cache)
+export async function getOptionCountsForYearFresh(yearId: string): Promise<OptionCounts> {
+    return computeOptionCounts(yearId);
+}
+
+async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
+    const submissions = await db.registrationSubmission.findMany({
+        where: {
+            yearId,
+            status: { notIn: ["CANCELLED", "REJECTED"] },
+        },
+        select: { data: true },
+    });
+
+    const counts: OptionCounts = {};
+    for (const sub of submissions) {
+        const data = sub.data as Record<string, unknown>;
+        for (const [name, val] of Object.entries(data)) {
+            const str = String(val ?? "");
+            if (!str || str === "false") continue;
+            if (!counts[name]) counts[name] = {};
+            counts[name][str] = (counts[name][str] || 0) + 1;
+        }
+    }
+    return counts;
+}
