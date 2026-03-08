@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
 import { LinkButton } from "@/components/ui/link-button";
-import type { FormField } from "@/lib/types/registration-form";
+import { getAllFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface SubmissionsPageProps {
     params: Promise<{ id: string }>;
@@ -46,7 +47,8 @@ export default async function SubmissionsPage({ params, searchParams }: Submissi
         notFound();
     }
 
-    const fields = year.registrationForm.fields as unknown as FormField[];
+    const formData = migrateFormData(year.registrationForm.fields);
+    const fields = getAllFields(formData.fields);
     const statusFilter = status && ["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"].includes(status)
         ? (status as "PENDING" | "CONFIRMED" | "WAITLIST" | "CANCELLED" | "REJECTED")
         : null;

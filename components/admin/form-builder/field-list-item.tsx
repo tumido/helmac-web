@@ -49,22 +49,6 @@ export function FieldListItem({ field, onEdit, onDelete }: FieldListItemProps) {
                             sx={{ fontSize: "0.7rem", height: 20 }}
                         />
                     )}
-                    {isInput && field.condition && (
-                        <Chip
-                            label="Podmíněné"
-                            size="small"
-                            color="info"
-                            sx={{ fontSize: "0.7rem", height: 20 }}
-                        />
-                    )}
-                    {isInput && field.countCondition && (
-                        <Chip
-                            label="Kapacita"
-                            size="small"
-                            color="warning"
-                            sx={{ fontSize: "0.7rem", height: 20 }}
-                        />
-                    )}
                 </Box>
                 {isInput && (
                     <Typography variant="caption" color="text.secondary">

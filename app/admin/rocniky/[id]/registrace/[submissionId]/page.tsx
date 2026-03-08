@@ -4,7 +4,8 @@ import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
 import { getSubmissionById } from "@/lib/services/registration";
-import type { FormField } from "@/lib/types/registration-form";
+import { getAllFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface SubmissionDetailPageProps {
     params: Promise<{ id: string; submissionId: string }>;
@@ -18,7 +19,8 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
         notFound();
     }
 
-    const fields = submission.form.fields as unknown as FormField[];
+    const formData = migrateFormData(submission.form.fields);
+    const fields = getAllFields(formData.fields);
     const data = submission.data as Record<string, unknown>;
 
     return (

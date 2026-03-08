@@ -3,8 +3,9 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { FormField, InputField, OptionCounts } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
+import type { FormCondition, FormElement, FormField, InputField, OptionCounts } from "@/lib/types/registration-form";
+import { isInputField, isConditionBlock, getAllFields, getAllInputFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 
 export interface RegistrationState {
@@ -12,6 +13,71 @@ export interface RegistrationState {
     message: string;
     errors?: Record<string, string[]>;
     registrationId?: string;
+}
+
+/**
+ * Evaluate whether a condition passes (all rules must be true = AND logic).
+ */
+function evaluateCondition(
+    condition: FormCondition,
+    rawData: Record<string, unknown>,
+    allFields: FormField[],
+    optionCounts?: OptionCounts,
+): boolean {
+    for (const rule of condition.rules) {
+        if (rule.type === "field_value") {
+            if (!rule.fieldId || rule.operator === undefined) return false;
+            const targetField = allFields.find((f) => f.id === rule.fieldId);
+            if (!targetField || !isInputField(targetField)) return false;
+
+            const currentValue = String(rawData[targetField.name] ?? "");
+            if (rule.operator === "equals" && currentValue !== rule.value) return false;
+            if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+        } else if (rule.type === "capacity") {
+            if (!rule.fieldId || !rule.value || rule.maxCount == null) return false;
+            const targetField = allFields.find((f) => f.id === rule.fieldId);
+            if (!targetField || !isInputField(targetField)) return false;
+
+            if (optionCounts) {
+                const currentCount = optionCounts[targetField.name]?.[rule.value] ?? 0;
+                if (currentCount >= rule.maxCount) return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Walk elements and build set of visible field IDs based on conditions.
+ */
+function buildVisibleFieldIds(
+    elements: FormElement[],
+    conditions: FormCondition[],
+    rawData: Record<string, unknown>,
+    allFields: FormField[],
+    optionCounts?: OptionCounts,
+): Set<string> {
+    const visibleFieldIds = new Set<string>();
+    const conditionMap = new Map(conditions.map((c) => [c.id, c]));
+
+    for (const el of elements) {
+        if (isConditionBlock(el)) {
+            const condition = conditionMap.get(el.conditionId);
+            if (!condition) continue;
+
+            const passes = evaluateCondition(condition, rawData, allFields, optionCounts);
+            if (passes) {
+                for (const child of el.children) {
+                    visibleFieldIds.add(child.id);
+                }
+            }
+        } else {
+            // Top-level fields are always visible
+            visibleFieldIds.add(el.id);
+        }
+    }
+
+    return visibleFieldIds;
 }
 
 export async function submitDynamicRegistration(
@@ -44,13 +110,13 @@ export async function submitDynamicRegistration(
         };
     }
 
-    const fields = activeYear.registrationForm.fields as unknown as FormField[];
+    const formDataStored = migrateFormData(activeYear.registrationForm.fields);
+    const allFields = getAllFields(formDataStored.fields);
+    const allInputFields = getAllInputFields(formDataStored.fields);
 
     // Build raw data from form
     const rawData: Record<string, unknown> = {};
-    for (const field of fields) {
-        if (!isInputField(field)) continue;
-
+    for (const field of allInputFields) {
         const value = formData.get(field.name);
         if (field.type === "checkbox") {
             rawData[field.name] = value === "true";
@@ -61,82 +127,35 @@ export async function submitDynamicRegistration(
         }
     }
 
-    // Evaluate conditional logic server-side — strip hidden field values
-    const visibleFieldIds = new Set<string>();
-    for (const field of fields) {
-        if (!isInputField(field) || !field.condition) {
-            visibleFieldIds.add(field.id);
-            continue;
-        }
-
-        const targetField = fields.find((f) => f.id === field.condition!.fieldId);
-        if (!targetField || !isInputField(targetField)) {
-            visibleFieldIds.add(field.id);
-            continue;
-        }
-
-        const currentValue = String(rawData[targetField.name] ?? "");
-        const { operator, value } = field.condition;
-
-        let match = false;
-        if (operator === "equals") match = currentValue === value;
-        else if (operator === "not_equals") match = currentValue !== value;
-
-        if (match) {
-            visibleFieldIds.add(field.id);
-        }
-    }
-
-    // Evaluate count conditions (fresh DB query, no cache)
-    const hasCountConditions = fields.some(
-        (f) => isInputField(f) && f.countCondition
+    // Evaluate conditions — check if any condition uses capacity rules
+    const hasCapacityRules = formDataStored.conditions.some(
+        (c) => c.rules.some((r) => r.type === "capacity")
     );
     let optionCounts: OptionCounts | undefined;
-    const disabledOptionsByName: Record<string, Set<string>> = {};
 
-    if (hasCountConditions) {
+    if (hasCapacityRules) {
         optionCounts = await getOptionCountsForYearFresh(activeYear.id);
-
-        for (const field of fields) {
-            if (!isInputField(field) || !field.countCondition) continue;
-            const cc = field.countCondition;
-
-            if (cc.action === "hide_field" && cc.fieldId && cc.value && cc.maxCount != null) {
-                const targetField = fields.find((f) => f.id === cc.fieldId);
-                if (targetField && isInputField(targetField)) {
-                    const currentCount = optionCounts[targetField.name]?.[cc.value] ?? 0;
-                    if (currentCount >= cc.maxCount) {
-                        visibleFieldIds.delete(field.id);
-                    }
-                }
-            }
-
-            if (cc.action === "disable_option" && cc.optionLimits) {
-                for (const limit of cc.optionLimits) {
-                    const currentCount = optionCounts[field.name]?.[limit.value] ?? 0;
-                    if (currentCount >= limit.maxCount) {
-                        if (!disabledOptionsByName[field.name]) {
-                            disabledOptionsByName[field.name] = new Set();
-                        }
-                        disabledOptionsByName[field.name].add(limit.value);
-                    }
-                }
-            }
-        }
     }
 
+    // Build visible field IDs
+    const visibleFieldIds = buildVisibleFieldIds(
+        formDataStored.fields,
+        formDataStored.conditions,
+        rawData,
+        allFields,
+        optionCounts,
+    );
+
     // Only validate visible input fields
-    const visibleInputFields = fields.filter(
-        (f) => isInputField(f) && visibleFieldIds.has(f.id)
+    const visibleInputFields = allInputFields.filter(
+        (f) => visibleFieldIds.has(f.id)
     );
 
     // Build schema from visible fields only
     const schema = buildSubmissionSchema(visibleInputFields);
     const visibleRawData: Record<string, unknown> = {};
     for (const field of visibleInputFields) {
-        if (isInputField(field)) {
-            visibleRawData[field.name] = rawData[field.name];
-        }
+        visibleRawData[field.name] = rawData[field.name];
     }
 
     const result = schema.safeParse(visibleRawData);
@@ -156,30 +175,17 @@ export async function submitDynamicRegistration(
         };
     }
 
-    // Check submitted values against disabled options (capacity limits)
-    for (const [fieldName, disabledValues] of Object.entries(disabledOptionsByName)) {
-        const submitted = String(visibleRawData[fieldName] ?? "");
-        if (submitted && disabledValues.has(submitted)) {
-            return {
-                success: false,
-                message: "Zvolená možnost je již obsazena. Načtěte formulář znovu.",
-                errors: { [fieldName]: ["Tato možnost je již obsazena"] },
-            };
-        }
-    }
-
     // Build submission data (visible fields only, hidden fields stripped)
     const submissionData: Record<string, unknown> = {};
-    for (const field of fields) {
-        if (!isInputField(field)) continue;
+    for (const field of allInputFields) {
         if (visibleFieldIds.has(field.id)) {
             submissionData[field.name] = rawData[field.name];
         }
     }
 
     // Duplicate check: find email-type field
-    const emailField = fields.find(
-        (f): f is InputField => isInputField(f) && f.type === "email"
+    const emailField = allInputFields.find(
+        (f): f is InputField => f.type === "email"
     );
 
     if (emailField) {

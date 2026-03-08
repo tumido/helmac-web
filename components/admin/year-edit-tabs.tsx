@@ -46,7 +46,7 @@ import { SortableDays } from "@/components/admin/sortable-days";
 import { SortableInfo } from "@/components/admin/sortable-info";
 import { FormBuilder } from "@/components/admin/form-builder";
 import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
-import type { FormField } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface YearEditTabsProps {
     year: {
@@ -600,7 +600,7 @@ function RegistrationTab({ yearId, registrationOpen, registrationStartDate, regi
 
             <FormBuilder
                 yearId={yearId}
-                initialFields={registrationForm?.fields as FormField[] | null}
+                initialFormData={migrateFormData(registrationForm?.fields)}
             />
 
             <Divider />

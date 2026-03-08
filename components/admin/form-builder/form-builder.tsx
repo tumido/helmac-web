@@ -14,6 +14,8 @@ import {
     DialogContentText,
     DialogActions,
     Paper,
+    Tabs,
+    Tab,
     useMediaQuery,
     useTheme,
 } from "@mui/material";
@@ -31,6 +33,7 @@ import {
     useDroppable,
     type DragStartEvent,
     type DragEndEvent,
+    type DragOverEvent,
     type CollisionDetection,
 } from "@dnd-kit/core";
 import {
@@ -44,23 +47,38 @@ import { FieldEditor } from "./field-editor";
 import { FieldListItem } from "./field-list-item";
 import { FieldPalette } from "./field-palette";
 import { SortableFieldItem } from "./sortable-field-item";
+import { ConditionBlockItem } from "./condition-block-item";
+import { ConditionEditor } from "./condition-editor";
 import { FormPreview } from "./form-preview";
 import { saveRegistrationForm, deleteRegistrationForm } from "@/lib/actions/registration-forms";
-import { FIELD_TYPE_META } from "@/lib/types/registration-form";
+import { FIELD_TYPE_META, getAllFields } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
-import type { FormField, FieldType, InputField, HeadingField, DescriptionField } from "@/lib/types/registration-form";
+import type {
+    FormField,
+    FormElement,
+    FormCondition,
+    ConditionBlock,
+    FieldType,
+    InputField,
+    HeadingField,
+    DescriptionField,
+    RegistrationFormData,
+} from "@/lib/types/registration-form";
+import { isConditionBlock } from "@/lib/types/registration-form";
 
 interface FormBuilderProps {
     yearId: string;
-    initialFields: FormField[] | null;
+    initialFormData: RegistrationFormData;
 }
 
-export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
+export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-    const [fields, setFields] = useState<FormField[]>(initialFields || []);
+    const [elements, setElements] = useState<FormElement[]>(initialFormData.fields);
+    const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
     const [mode, setMode] = useState<"edit" | "preview">("edit");
+    const [builderTab, setBuilderTab] = useState<0 | 1>(0); // 0 = Formulář, 1 = Podmínky
     const [typeSelectorOpen, setTypeSelectorOpen] = useState(false);
     const [editingField, setEditingField] = useState<FormField | null>(null);
     const [saving, setSaving] = useState(false);
@@ -77,15 +95,18 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
         }),
     );
 
-    const createField = useCallback((type: FieldType, fields: FormField[]): FormField => {
+    const allFields = getAllFields(elements);
+
+    const createField = useCallback((type: FieldType, currentElements: FormElement[]): FormField => {
         const id = crypto.randomUUID();
+        const existingFields = getAllFields(currentElements);
 
         if (type === "heading") {
             return { type: "heading", id, text: "Nový nadpis" } as HeadingField;
         } else if (type === "description") {
             return { type: "description", id, text: "Popisek textu" } as DescriptionField;
         } else {
-            const fieldCount = fields.filter((f) => f.type !== "heading" && f.type !== "description").length;
+            const fieldCount = existingFields.filter((f) => f.type !== "heading" && f.type !== "description").length;
             return {
                 type,
                 id,
@@ -98,7 +119,7 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
     }, []);
 
     const handleAddField = useCallback((type: FieldType) => {
-        setFields((prev) => {
+        setElements((prev) => {
             const newField = createField(type, prev);
             setEditingField(newField);
             return [...prev, newField];
@@ -110,12 +131,24 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
     }, []);
 
     const handleSaveField = useCallback((updatedField: FormField) => {
-        setFields((prev) => prev.map((f) => (f.id === updatedField.id ? updatedField : f)));
+        setElements((prev) => updateFieldInElements(prev, updatedField));
         setEditingField(null);
     }, []);
 
     const handleDeleteField = useCallback((fieldId: string) => {
-        setFields((prev) => prev.filter((f) => f.id !== fieldId));
+        setElements((prev) => removeFieldFromElements(prev, fieldId));
+    }, []);
+
+    const handleDeleteBlock = useCallback((blockId: string) => {
+        setElements((prev) => {
+            // When deleting a block, move its children to root at the same position
+            const idx = prev.findIndex((el) => isConditionBlock(el) && el.id === blockId);
+            if (idx === -1) return prev;
+            const block = prev[idx] as ConditionBlock;
+            const result = [...prev];
+            result.splice(idx, 1, ...block.children);
+            return result;
+        });
     }, []);
 
     const handleSave = async () => {
@@ -123,7 +156,12 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
         setError(null);
         setSuccess(false);
 
-        const result = await saveRegistrationForm(yearId, fields);
+        const formData: RegistrationFormData = {
+            conditions,
+            fields: elements,
+        };
+
+        const result = await saveRegistrationForm(yearId, formData);
 
         if (result.error) {
             setError(result.error);
@@ -143,26 +181,54 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
         if (result.error) {
             setError(typeof result.error === "string" ? result.error : "Nepodařilo se smazat formulář");
         } else {
-            setFields([]);
+            setElements([]);
+            setConditions([]);
         }
         setDeleting(false);
     };
 
-    // Custom collision detection: prefer sortable items, fall back to droppable zone
+    // -- DnD logic --
+
+    // Find which container an item belongs to
+    const findContainer = useCallback((itemId: string): string | null => {
+        // Check root-level elements
+        for (const el of elements) {
+            if (isConditionBlock(el)) {
+                if (el.id === itemId) return "root";
+                if (el.children.some((c) => c.id === itemId)) return el.id;
+            } else {
+                if (el.id === itemId) return "root";
+            }
+        }
+        return null;
+    }, [elements]);
+
+    // Custom collision detection
     const collisionDetection: CollisionDetection = useCallback((args) => {
-        // First try closestCenter among sortable items
+        // First try pointerWithin to detect containers
+        const pointerCollisions = pointerWithin(args);
+        if (pointerCollisions.length > 0) {
+            // Prefer container droppables
+            const containerHit = pointerCollisions.find(
+                (c) => String(c.id).startsWith("container-") || c.id === "root-droppable"
+            );
+            if (containerHit) {
+                // Also check for sortable items within
+                const closestItems = closestCenter(args);
+                if (closestItems.length > 0) {
+                    return closestItems;
+                }
+                return [containerHit];
+            }
+            return pointerCollisions;
+        }
+
+        // Fall back to closestCenter
         const closestCenterCollisions = closestCenter(args);
         if (closestCenterCollisions.length > 0) {
             return closestCenterCollisions;
         }
 
-        // Fall back to pointerWithin for the drop zone container
-        const pointerCollisions = pointerWithin(args);
-        if (pointerCollisions.length > 0) {
-            return pointerCollisions;
-        }
-
-        // Last resort: rectIntersection
         return rectIntersection(args);
     }, []);
 
@@ -170,25 +236,159 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
         setActiveId(String(event.active.id));
     }, []);
 
+    const handleDragOver = useCallback((event: DragOverEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeIdStr = String(active.id);
+        const overIdStr = String(over.id);
+
+        // Don't process palette items during over
+        if (activeIdStr.startsWith("palette-")) return;
+
+        // Find containers
+        const activeContainer = findContainer(activeIdStr);
+        let overContainer: string | null = null;
+
+        if (overIdStr.startsWith("container-")) {
+            // Dropping directly on a container
+            overContainer = overIdStr.replace("container-", "");
+        } else if (overIdStr === "root-droppable") {
+            overContainer = "root";
+        } else {
+            overContainer = findContainer(overIdStr);
+        }
+
+        if (!activeContainer || !overContainer) return;
+        if (activeContainer === overContainer) return;
+
+        // Move between containers
+        setElements((prev) => {
+            // Extract the field from its current container
+            const field = findFieldById(prev, activeIdStr);
+            if (!field || isConditionBlock(field as FormElement)) return prev;
+
+            let updated = removeFieldFromElements(prev, activeIdStr);
+
+            // Add to new container
+            if (overContainer === "root") {
+                // Add at root level
+                const overIndex = updated.findIndex((el) => {
+                    if (isConditionBlock(el)) return el.id === overIdStr;
+                    return el.id === overIdStr;
+                });
+                if (overIndex !== -1) {
+                    updated.splice(overIndex + 1, 0, field);
+                } else {
+                    updated.push(field);
+                }
+            } else {
+                // Add into a condition block
+                updated = updated.map((el) => {
+                    if (isConditionBlock(el) && el.id === overContainer) {
+                        const overChildIdx = el.children.findIndex((c) => c.id === overIdStr);
+                        const children = [...el.children];
+                        if (overChildIdx !== -1) {
+                            children.splice(overChildIdx + 1, 0, field);
+                        } else {
+                            children.push(field);
+                        }
+                        return { ...el, children };
+                    }
+                    return el;
+                });
+            }
+
+            return updated;
+        });
+    }, [findContainer]);
+
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
 
         const activeIdStr = String(active.id);
 
-        // Palette drop → create new field
+        // -- Palette condition drop: create new condition block
+        if (activeIdStr.startsWith("palette-condition-")) {
+            const conditionId = activeIdStr.replace("palette-condition-", "");
+
+            setElements((prev) => {
+                const newBlock: ConditionBlock = {
+                    type: "condition",
+                    id: crypto.randomUUID(),
+                    conditionId,
+                    children: [],
+                };
+
+                if (over) {
+                    const overIdStr = String(over.id);
+                    // Find root-level insert position
+                    const overIndex = prev.findIndex((el) => {
+                        if (isConditionBlock(el)) return el.id === overIdStr;
+                        return el.id === overIdStr;
+                    });
+
+                    if (overIndex !== -1) {
+                        const updated = [...prev];
+                        updated.splice(overIndex + 1, 0, newBlock);
+                        return updated;
+                    }
+                }
+
+                return [...prev, newBlock];
+            });
+            return;
+        }
+
+        // -- Palette field drop: create new field
         if (activeIdStr.startsWith("palette-")) {
             const type = activeIdStr.replace("palette-", "") as FieldType;
 
-            setFields((prev) => {
+            setElements((prev) => {
                 const newField = createField(type, prev);
 
                 if (over) {
                     const overIdStr = String(over.id);
-                    const overIndex = prev.findIndex((f) => f.id === overIdStr);
+
+                    // Check if dropping into a container
+                    if (overIdStr.startsWith("container-")) {
+                        const blockId = overIdStr.replace("container-", "");
+                        const updated = prev.map((el) => {
+                            if (isConditionBlock(el) && el.id === blockId) {
+                                return { ...el, children: [...el.children, newField] };
+                            }
+                            return el;
+                        });
+                        setEditingField(newField);
+                        return updated;
+                    }
+
+                    // Check if over target is inside a condition block
+                    const parentBlock = prev.find(
+                        (el) => isConditionBlock(el) && el.children.some((c) => c.id === overIdStr)
+                    );
+                    if (parentBlock && isConditionBlock(parentBlock)) {
+                        const updated = prev.map((el) => {
+                            if (isConditionBlock(el) && el.id === parentBlock.id) {
+                                const childIdx = el.children.findIndex((c) => c.id === overIdStr);
+                                const children = [...el.children];
+                                children.splice(childIdx + 1, 0, newField);
+                                return { ...el, children };
+                            }
+                            return el;
+                        });
+                        setEditingField(newField);
+                        return updated;
+                    }
+
+                    // Root level insert
+                    const overIndex = prev.findIndex((el) => {
+                        if (isConditionBlock(el)) return el.id === overIdStr;
+                        return el.id === overIdStr;
+                    });
 
                     if (overIndex !== -1) {
-                        // Insert after the item we're hovering over
                         const updated = [...prev];
                         updated.splice(overIndex + 1, 0, newField);
                         setEditingField(newField);
@@ -203,13 +403,40 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
             return;
         }
 
-        // Internal reorder
+        // -- Internal reorder (same container)
         if (over && active.id !== over.id) {
-            setFields((prev) => {
-                const oldIndex = prev.findIndex((f) => f.id === activeIdStr);
-                const newIndex = prev.findIndex((f) => f.id === String(over.id));
-                if (oldIndex === -1 || newIndex === -1) return prev;
-                return arrayMove(prev, oldIndex, newIndex);
+            const overIdStr = String(over.id);
+
+            setElements((prev) => {
+                const activeContainer = findContainerInElements(prev, activeIdStr);
+                const overContainer = findContainerForOver(prev, overIdStr);
+
+                if (!activeContainer || !overContainer) return prev;
+                if (activeContainer !== overContainer) return prev; // cross-container handled in onDragOver
+
+                if (activeContainer === "root") {
+                    const oldIndex = prev.findIndex((el) => {
+                        if (isConditionBlock(el)) return el.id === activeIdStr;
+                        return el.id === activeIdStr;
+                    });
+                    const newIndex = prev.findIndex((el) => {
+                        if (isConditionBlock(el)) return el.id === overIdStr;
+                        return el.id === overIdStr;
+                    });
+                    if (oldIndex === -1 || newIndex === -1) return prev;
+                    return arrayMove(prev, oldIndex, newIndex);
+                } else {
+                    // Reorder within a condition block
+                    return prev.map((el) => {
+                        if (isConditionBlock(el) && el.id === activeContainer) {
+                            const oldIndex = el.children.findIndex((c) => c.id === activeIdStr);
+                            const newIndex = el.children.findIndex((c) => c.id === overIdStr);
+                            if (oldIndex === -1 || newIndex === -1) return el;
+                            return { ...el, children: arrayMove(el.children, oldIndex, newIndex) };
+                        }
+                        return el;
+                    });
+                }
             });
         }
     }, [createField]);
@@ -221,6 +448,31 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
     // Render the drag overlay content
     const renderDragOverlay = () => {
         if (!activeId) return null;
+
+        if (activeId.startsWith("palette-condition-")) {
+            const conditionId = activeId.replace("palette-condition-", "");
+            const condition = conditions.find((c) => c.id === conditionId);
+            return (
+                <Paper
+                    variant="outlined"
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 1.5,
+                        py: 1,
+                        backgroundColor: "background.paper",
+                        borderColor: "info.main",
+                        width: 200,
+                    }}
+                >
+                    <Box sx={{ color: "info.main", display: "flex" }}>
+                        {FIELD_TYPE_ICONS["AccountTree"]}
+                    </Box>
+                    <Typography variant="body2">{condition?.name || "Podmínka"}</Typography>
+                </Paper>
+            );
+        }
 
         if (activeId.startsWith("palette-")) {
             const type = activeId.replace("palette-", "") as FieldType;
@@ -248,7 +500,7 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
         }
 
         // Existing field overlay
-        const field = fields.find((f) => f.id === activeId);
+        const field = findFieldById(elements, activeId);
         if (field) {
             const meta = FIELD_TYPE_META[field.type];
             return (
@@ -260,8 +512,23 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
             );
         }
 
+        // Condition block overlay
+        const block = elements.find((el) => isConditionBlock(el) && el.id === activeId);
+        if (block && isConditionBlock(block)) {
+            const condition = conditions.find((c) => c.id === block.conditionId);
+            return (
+                <Paper elevation={4} sx={{ p: 1.5, borderLeft: "4px solid", borderLeftColor: "info.main" }}>
+                    <Typography variant="body2" fontWeight={500}>
+                        Podmínka: {condition?.name || "(nepojmenovaná)"}
+                    </Typography>
+                </Paper>
+            );
+        }
+
         return null;
     };
+
+    const hasElements = elements.length > 0 || initialFormData.fields.length > 0;
 
     return (
         <Box>
@@ -301,68 +568,92 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
                     variant="contained"
                     startIcon={<Save />}
                     onClick={handleSave}
-                    disabled={saving || fields.length === 0}
+                    disabled={saving || (elements.length === 0 && conditions.length === 0)}
                 >
                     {saving ? "Ukládám..." : "Uložit formulář"}
                 </Button>
             </Box>
 
             {mode === "edit" ? (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={collisionDetection}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onDragCancel={handleDragCancel}
-                >
-                    <Box sx={{ display: "flex", gap: 3 }}>
-                        {/* Left column: field list */}
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <FieldDropZone
-                                fields={fields}
-                                onEdit={handleEditField}
-                                onDelete={handleDeleteField}
-                            />
+                <>
+                    <Tabs
+                        value={builderTab}
+                        onChange={(_e, v) => setBuilderTab(v)}
+                        sx={{ mb: 2 }}
+                    >
+                        <Tab label="Formulář" />
+                        <Tab label="Podmínky" />
+                    </Tabs>
 
-                            <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
-                                {isMobile && (
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<Add />}
-                                        onClick={() => setTypeSelectorOpen(true)}
-                                    >
-                                        Přidat pole
-                                    </Button>
-                                )}
-                                <Box sx={{ flex: 1 }} />
-                                {initialFields && initialFields.length > 0 && (
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        startIcon={<Delete />}
-                                        onClick={() => setDeleteConfirmOpen(true)}
-                                        disabled={deleting}
-                                    >
-                                        Smazat formulář
-                                    </Button>
+                    {builderTab === 0 && (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={collisionDetection}
+                            onDragStart={handleDragStart}
+                            onDragOver={handleDragOver}
+                            onDragEnd={handleDragEnd}
+                            onDragCancel={handleDragCancel}
+                        >
+                            <Box sx={{ display: "flex", gap: 3 }}>
+                                {/* Left column: element list */}
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <FormDropZone
+                                        elements={elements}
+                                        conditions={conditions}
+                                        onEditField={handleEditField}
+                                        onDeleteField={handleDeleteField}
+                                        onDeleteBlock={handleDeleteBlock}
+                                    />
+
+                                    <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
+                                        {isMobile && (
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<Add />}
+                                                onClick={() => setTypeSelectorOpen(true)}
+                                            >
+                                                Přidat pole
+                                            </Button>
+                                        )}
+                                        <Box sx={{ flex: 1 }} />
+                                        {hasElements && (
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                startIcon={<Delete />}
+                                                onClick={() => setDeleteConfirmOpen(true)}
+                                                disabled={deleting}
+                                            >
+                                                Smazat formulář
+                                            </Button>
+                                        )}
+                                    </Box>
+                                </Box>
+
+                                {/* Right column: palette (desktop only) */}
+                                {!isMobile && (
+                                    <Box sx={{ width: 220, flexShrink: 0 }}>
+                                        <FieldPalette conditions={conditions} />
+                                    </Box>
                                 )}
                             </Box>
-                        </Box>
 
-                        {/* Right column: palette (desktop only) */}
-                        {!isMobile && (
-                            <Box sx={{ width: 220, flexShrink: 0 }}>
-                                <FieldPalette />
-                            </Box>
-                        )}
-                    </Box>
+                            <DragOverlay dropAnimation={null}>
+                                {renderDragOverlay()}
+                            </DragOverlay>
+                        </DndContext>
+                    )}
 
-                    <DragOverlay dropAnimation={null}>
-                        {renderDragOverlay()}
-                    </DragOverlay>
-                </DndContext>
+                    {builderTab === 1 && (
+                        <ConditionEditor
+                            conditions={conditions}
+                            allFields={allFields}
+                            onChange={setConditions}
+                        />
+                    )}
+                </>
             ) : (
-                <FormPreview fields={fields} />
+                <FormPreview elements={elements} conditions={conditions} />
             )}
 
             <FieldTypeSelector
@@ -374,7 +665,6 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
             <FieldEditor
                 open={!!editingField}
                 field={editingField}
-                allFields={fields}
                 onClose={() => setEditingField(null)}
                 onSave={handleSaveField}
             />
@@ -397,21 +687,30 @@ export function FormBuilder({ yearId, initialFields }: FormBuilderProps) {
     );
 }
 
-// Drop zone component for the field list
-interface FieldDropZoneProps {
-    fields: FormField[];
-    onEdit: (field: FormField) => void;
-    onDelete: (fieldId: string) => void;
+// -- Drop zone component for the form elements --
+
+interface FormDropZoneProps {
+    elements: FormElement[];
+    conditions: FormCondition[];
+    onEditField: (field: FormField) => void;
+    onDeleteField: (fieldId: string) => void;
+    onDeleteBlock: (blockId: string) => void;
 }
 
-function FieldDropZone({ fields, onEdit, onDelete }: FieldDropZoneProps) {
+function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDeleteBlock }: FormDropZoneProps) {
     const { setNodeRef, isOver } = useDroppable({
-        id: "field-list-droppable",
+        id: "root-droppable",
+    });
+
+    // Build sortable IDs for root level (both fields and condition blocks)
+    const rootIds = elements.map((el) => {
+        if (isConditionBlock(el)) return el.id;
+        return el.id;
     });
 
     return (
         <SortableContext
-            items={fields.map((f) => f.id)}
+            items={rootIds}
             strategy={verticalListSortingStrategy}
         >
             <Box
@@ -423,10 +722,10 @@ function FieldDropZone({ fields, onEdit, onDelete }: FieldDropZoneProps) {
                     borderRadius: 1,
                     backgroundColor: isOver ? "action.hover" : "transparent",
                     transition: "all 0.2s ease",
-                    p: fields.length === 0 ? 0 : 0.5,
+                    p: elements.length === 0 ? 0 : 0.5,
                 }}
             >
-                {fields.length === 0 ? (
+                {elements.length === 0 ? (
                     <Typography
                         color="text.secondary"
                         sx={{ textAlign: "center", py: 4 }}
@@ -434,17 +733,91 @@ function FieldDropZone({ fields, onEdit, onDelete }: FieldDropZoneProps) {
                         Formulář je prázdný. Přetáhněte pole z palety nebo použijte tlačítko.
                     </Typography>
                 ) : (
-                    fields.map((field) => (
-                        <SortableFieldItem key={field.id} id={field.id}>
-                            <FieldListItem
-                                field={field}
-                                onEdit={() => onEdit(field)}
-                                onDelete={() => onDelete(field.id)}
-                            />
-                        </SortableFieldItem>
-                    ))
+                    elements.map((el) => {
+                        if (isConditionBlock(el)) {
+                            const condition = conditions.find((c) => c.id === el.conditionId);
+                            return (
+                                <SortableFieldItem key={el.id} id={el.id}>
+                                    <ConditionBlockItem
+                                        block={el}
+                                        condition={condition}
+                                        onEditField={onEditField}
+                                        onDeleteField={onDeleteField}
+                                        onDeleteBlock={onDeleteBlock}
+                                    />
+                                </SortableFieldItem>
+                            );
+                        }
+
+                        return (
+                            <SortableFieldItem key={el.id} id={el.id}>
+                                <FieldListItem
+                                    field={el}
+                                    onEdit={() => onEditField(el)}
+                                    onDelete={() => onDeleteField(el.id)}
+                                />
+                            </SortableFieldItem>
+                        );
+                    })
                 )}
             </Box>
         </SortableContext>
     );
+}
+
+// -- Helper functions --
+
+function findFieldById(elements: FormElement[], fieldId: string): FormField | null {
+    for (const el of elements) {
+        if (isConditionBlock(el)) {
+            const child = el.children.find((c) => c.id === fieldId);
+            if (child) return child;
+        } else if (el.id === fieldId) {
+            return el;
+        }
+    }
+    return null;
+}
+
+function updateFieldInElements(elements: FormElement[], updatedField: FormField): FormElement[] {
+    return elements.map((el) => {
+        if (isConditionBlock(el)) {
+            return {
+                ...el,
+                children: el.children.map((c) => (c.id === updatedField.id ? updatedField : c)),
+            };
+        }
+        return el.id === updatedField.id ? updatedField : el;
+    });
+}
+
+function removeFieldFromElements(elements: FormElement[], fieldId: string): FormElement[] {
+    const result: FormElement[] = [];
+    for (const el of elements) {
+        if (isConditionBlock(el)) {
+            const filteredChildren = el.children.filter((c) => c.id !== fieldId);
+            result.push({ ...el, children: filteredChildren });
+        } else if (el.id !== fieldId) {
+            result.push(el);
+        }
+    }
+    return result;
+}
+
+function findContainerInElements(elements: FormElement[], itemId: string): string | null {
+    for (const el of elements) {
+        if (isConditionBlock(el)) {
+            if (el.id === itemId) return "root";
+            if (el.children.some((c) => c.id === itemId)) return el.id;
+        } else {
+            if (el.id === itemId) return "root";
+        }
+    }
+    return null;
+}
+
+function findContainerForOver(elements: FormElement[], overId: string): string | null {
+    if (overId === "root-droppable") return "root";
+    if (overId.startsWith("container-")) return overId.replace("container-", "");
+    return findContainerInElements(elements, overId);
 }

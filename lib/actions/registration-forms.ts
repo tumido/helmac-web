@@ -4,33 +4,40 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { saveRegistrationFormSchema } from "@/lib/validators/registration-form";
-import type { FormField } from "@/lib/types/registration-form";
+import type { RegistrationFormData } from "@/lib/types/registration-form";
 
 interface SaveFormResult {
     success?: boolean;
     error?: string;
 }
 
-export async function saveRegistrationForm(yearId: string, fields: FormField[]): Promise<SaveFormResult> {
+export async function saveRegistrationForm(yearId: string, formData: RegistrationFormData): Promise<SaveFormResult> {
     await requireAdmin();
 
-    const validated = saveRegistrationFormSchema.safeParse({ fields });
+    const validated = saveRegistrationFormSchema.safeParse(formData);
 
     if (!validated.success) {
         const fieldErrors = validated.error.flatten().fieldErrors;
         const firstError = Object.values(fieldErrors).flat()[0];
-        return { error: firstError || "Neplatná data formuláře" };
+        const formErrors = validated.error.flatten().formErrors;
+        const firstFormError = formErrors[0];
+        return { error: firstError || firstFormError || "Neplatná data formuláře" };
     }
 
     try {
+        const dataToStore = {
+            conditions: validated.data.conditions,
+            fields: validated.data.fields,
+        };
+
         await db.registrationForm.upsert({
             where: { yearId },
             create: {
                 yearId,
-                fields: validated.data.fields as unknown as object[],
+                fields: dataToStore as unknown as object,
             },
             update: {
-                fields: validated.data.fields as unknown as object[],
+                fields: dataToStore as unknown as object,
             },
         });
 

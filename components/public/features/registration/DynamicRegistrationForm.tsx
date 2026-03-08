@@ -2,22 +2,22 @@
 
 import { useState, useCallback, useActionState } from "react";
 import { Box, Button, Alert, Paper } from "@mui/material";
-import type { FormField, SubmissionData, OptionCounts } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
+import type { RegistrationFormData, SubmissionData, OptionCounts } from "@/lib/types/registration-form";
+import { isInputField, getAllFields, getAllInputFields } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
 import { useConditionalFields } from "./useConditionalFields";
 import { submitDynamicRegistration, type RegistrationState } from "@/lib/actions/public/registration";
 
 interface DynamicRegistrationFormProps {
-    fields: FormField[];
+    formData: RegistrationFormData;
     optionCounts?: OptionCounts;
 }
 
-function buildInitialValues(fields: FormField[]): SubmissionData {
+function buildInitialValues(formData: RegistrationFormData): SubmissionData {
     const values: SubmissionData = {};
-    for (const field of fields) {
-        if (!isInputField(field)) continue;
+    const inputFields = getAllInputFields(formData.fields);
+    for (const field of inputFields) {
         if (field.type === "checkbox") {
             values[field.name] = false;
         } else {
@@ -27,9 +27,9 @@ function buildInitialValues(fields: FormField[]): SubmissionData {
     return values;
 }
 
-export function DynamicRegistrationForm({ fields, optionCounts }: DynamicRegistrationFormProps) {
-    const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(fields));
-    const { visibleFields, disabledOptions } = useConditionalFields(fields, values, optionCounts);
+export function DynamicRegistrationForm({ formData, optionCounts }: DynamicRegistrationFormProps) {
+    const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData));
+    const { visibleFields } = useConditionalFields(formData, values, optionCounts);
 
     const [state, formAction, isPending] = useActionState<RegistrationState | null, FormData>(
         submitDynamicRegistration,
@@ -51,6 +51,10 @@ export function DynamicRegistrationForm({ fields, optionCounts }: DynamicRegistr
         return <RegistrationSuccess message={state.message} />;
     }
 
+    // Flatten all fields for rendering (preserving order from elements)
+    const allFields = getAllFields(formData.fields);
+    const allInputFields = getAllInputFields(formData.fields);
+
     return (
         <Paper sx={{ p: { xs: 3, md: 5 } }}>
             {state?.message && !state.success && (
@@ -60,8 +64,8 @@ export function DynamicRegistrationForm({ fields, optionCounts }: DynamicRegistr
             )}
 
             <Box component="form" action={formAction}>
-                {/* Include all values as hidden inputs for FormData */}
-                {fields.filter(isInputField).map((field) => {
+                {/* Include checkbox values as hidden inputs for FormData */}
+                {allInputFields.map((field) => {
                     if (field.type === "checkbox") {
                         return (
                             <input
@@ -72,12 +76,11 @@ export function DynamicRegistrationForm({ fields, optionCounts }: DynamicRegistr
                             />
                         );
                     }
-                    // Select/radio/other text fields have name on the visible input
                     return null;
                 })}
 
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                    {fields.map((field) => {
+                    {allFields.map((field) => {
                         if (!visibleFields.has(field.id)) return null;
 
                         const value = isInputField(field) ? (values[field.name] ?? "") : "";
@@ -89,7 +92,6 @@ export function DynamicRegistrationForm({ fields, optionCounts }: DynamicRegistr
                                 value={value}
                                 error={isInputField(field) ? getFieldError(field.name) : undefined}
                                 onChange={handleChange}
-                                disabledOptions={isInputField(field) ? disabledOptions[field.id] : undefined}
                             />
                         );
                     })}

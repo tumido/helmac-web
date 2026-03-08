@@ -2,8 +2,7 @@ import { Container, Typography, Box } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
 import { getRegistrationStatus, getActiveYear, getOptionCountsForYear } from "@/lib/services";
-import type { FormField } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 
 export const metadata = {
     title: "Registrace | Helmac",
@@ -82,13 +81,13 @@ export default async function RegistracePage() {
         );
     }
 
-    const fields = status.formFields as unknown as FormField[];
+    const formData = migrateFormData(status.formFields);
 
-    // Only fetch counts if any field has a countCondition
-    const hasCountConditions = fields.some(
-        (f) => isInputField(f) && f.countCondition
+    // Only fetch counts if any condition uses capacity rules
+    const hasCapacityRules = formData.conditions.some(
+        (c) => c.rules.some((r) => r.type === "capacity")
     );
-    const optionCounts = hasCountConditions
+    const optionCounts = hasCapacityRules
         ? await getOptionCountsForYear(status.year!.id)
         : undefined;
 
@@ -100,7 +99,7 @@ export default async function RegistracePage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <DynamicRegistrationForm fields={fields} optionCounts={optionCounts} />
+                <DynamicRegistrationForm formData={formData} optionCounts={optionCounts} />
             </Container>
         </>
     );

@@ -1,8 +1,10 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
+import { AccountTree } from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
+import type { FormCondition } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
 interface DraggablePaletteItemProps {
@@ -46,7 +48,55 @@ function DraggablePaletteItem({ type, label, icon }: DraggablePaletteItemProps) 
     );
 }
 
-export function FieldPalette() {
+interface DraggableConditionItemProps {
+    condition: FormCondition;
+}
+
+function DraggableConditionItem({ condition }: DraggableConditionItemProps) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `palette-condition-${condition.id}`,
+        data: { type: "condition", conditionId: condition.id },
+    });
+
+    return (
+        <Paper
+            ref={setNodeRef}
+            {...attributes}
+            {...listeners}
+            variant="outlined"
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: 1.5,
+                py: 1,
+                cursor: "grab",
+                opacity: isDragging ? 0.5 : 1,
+                borderColor: "info.main",
+                "&:hover": {
+                    borderColor: "info.dark",
+                    backgroundColor: "action.hover",
+                },
+                "&:active": {
+                    cursor: "grabbing",
+                },
+            }}
+        >
+            <Box sx={{ color: "info.main", display: "flex" }}>
+                <AccountTree fontSize="small" />
+            </Box>
+            <Typography variant="body2" noWrap>
+                {condition.name || "(nepojmenovaná)"}
+            </Typography>
+        </Paper>
+    );
+}
+
+interface FieldPaletteProps {
+    conditions?: FormCondition[];
+}
+
+export function FieldPalette({ conditions = [] }: FieldPaletteProps) {
     const inputTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "input");
     const layoutTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "layout");
 
@@ -69,7 +119,7 @@ export function FieldPalette() {
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                 Rozložení
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
                 {layoutTypes.map(([type, meta]) => (
                     <DraggablePaletteItem
                         key={type}
@@ -79,6 +129,22 @@ export function FieldPalette() {
                     />
                 ))}
             </Box>
+
+            {conditions.length > 0 && (
+                <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                        Podmínky
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                        {conditions.map((condition) => (
+                            <DraggableConditionItem
+                                key={condition.id}
+                                condition={condition}
+                            />
+                        ))}
+                    </Box>
+                </>
+            )}
         </Box>
     );
 }

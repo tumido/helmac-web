@@ -1,26 +1,25 @@
 import { z } from "zod";
 
-const fieldConditionSchema = z.object({
-    fieldId: z.string().min(1),
-    operator: z.enum(["equals", "not_equals"]),
-    value: z.string(),
-});
-
-const countConditionSchema = z.discriminatedUnion("action", [
+const conditionRuleSchema = z.discriminatedUnion("type", [
     z.object({
-        action: z.literal("hide_field"),
+        type: z.literal("field_value"),
+        fieldId: z.string().min(1),
+        operator: z.enum(["equals", "not_equals"]),
+        value: z.string(),
+    }),
+    z.object({
+        type: z.literal("capacity"),
         fieldId: z.string().min(1),
         value: z.string().min(1),
         maxCount: z.number().int().min(1),
     }),
-    z.object({
-        action: z.literal("disable_option"),
-        optionLimits: z.array(z.object({
-            value: z.string().min(1),
-            maxCount: z.number().int().min(1),
-        })).min(1),
-    }),
 ]);
+
+const formConditionSchema = z.object({
+    id: z.string().min(1),
+    name: z.string().min(1, "Název podmínky je povinný"),
+    rules: z.array(conditionRuleSchema).min(1, "Podmínka musí mít alespoň jedno pravidlo"),
+});
 
 const inputFieldSchema = z.object({
     type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date"]),
@@ -30,8 +29,6 @@ const inputFieldSchema = z.object({
     required: z.boolean(),
     placeholder: z.string().optional(),
     options: z.array(z.string().min(1)).optional(),
-    condition: fieldConditionSchema.optional(),
-    countCondition: countConditionSchema.optional(),
 });
 
 const headingFieldSchema = z.object({
@@ -52,69 +49,98 @@ const formFieldSchema = z.discriminatedUnion("type", [
     descriptionFieldSchema,
 ]);
 
+const conditionBlockSchema = z.object({
+    type: z.literal("condition"),
+    id: z.string().min(1),
+    conditionId: z.string().min(1),
+    children: z.array(formFieldSchema),
+});
+
+const formElementSchema = z.union([formFieldSchema, conditionBlockSchema]);
+
 export const saveRegistrationFormSchema = z.object({
-    fields: z
-        .array(formFieldSchema)
-        .min(1, "Formulář musí obsahovat alespoň jedno pole")
-        .superRefine((fields, ctx) => {
-            // Check unique field names among input fields
-            const names = fields
-                .filter((f) => f.type !== "heading" && f.type !== "description")
-                .map((f) => (f as { name: string }).name);
-            const seen = new Set<string>();
-            names.forEach((name, idx) => {
-                if (seen.has(name)) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: `Duplicitní název pole: ${name}`,
-                        path: [idx, "name"],
-                    });
-                }
-                seen.add(name);
+    conditions: z.array(formConditionSchema),
+    fields: z.array(formElementSchema),
+}).superRefine((data, ctx) => {
+    const { conditions, fields } = data;
+
+    // Collect all FormField items (flattened from elements)
+    const allFields: z.infer<typeof formFieldSchema>[] = [];
+    for (const el of fields) {
+        if (el.type === "condition") {
+            allFields.push(...el.children);
+        } else {
+            allFields.push(el);
+        }
+    }
+
+    // Must have at least one field
+    if (allFields.length === 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Formulář musí obsahovat alespoň jedno pole",
+            path: ["fields"],
+        });
+    }
+
+    // Check unique field names among input fields
+    const inputFields = allFields.filter(
+        (f) => f.type !== "heading" && f.type !== "description"
+    ) as z.infer<typeof inputFieldSchema>[];
+
+    const names = new Set<string>();
+    for (const field of inputFields) {
+        if (names.has(field.name)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Duplicitní název pole: ${field.name}`,
+                path: ["fields"],
             });
+        }
+        names.add(field.name);
+    }
 
-            // Check select/radio fields have options
-            fields.forEach((field, idx) => {
-                if (
-                    (field.type === "select" || field.type === "radio") &&
-                    (!("options" in field) || !field.options || field.options.length === 0)
-                ) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: "Pole typu výběr musí mít alespoň jednu možnost",
-                        path: [idx, "options"],
-                    });
-                }
+    // Check select/radio fields have options
+    for (const field of inputFields) {
+        if (
+            (field.type === "select" || field.type === "radio") &&
+            (!field.options || field.options.length === 0)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Pole typu výběr musí mít alespoň jednu možnost",
+                path: ["fields"],
             });
+        }
+    }
 
-            // Validate count conditions
-            const fieldIds = new Set(fields.map((f) => f.id));
-            fields.forEach((field, idx) => {
-                if (field.type === "heading" || field.type === "description") return;
-                const cc = (field as { countCondition?: { action: string; fieldId?: string } }).countCondition;
-                if (!cc) return;
+    // Validate condition blocks reference existing conditions
+    const conditionIds = new Set(conditions.map((c) => c.id));
+    for (const el of fields) {
+        if (el.type === "condition") {
+            if (!conditionIds.has(el.conditionId)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Blok podmínky odkazuje na neexistující podmínku`,
+                    path: ["fields"],
+                });
+            }
+        }
+    }
 
-                if (cc.action === "hide_field") {
-                    if (cc.fieldId && !fieldIds.has(cc.fieldId)) {
-                        ctx.addIssue({
-                            code: z.ZodIssueCode.custom,
-                            message: "Kapacitní podmínka odkazuje na neexistující pole",
-                            path: [idx, "countCondition", "fieldId"],
-                        });
-                    }
-                }
-
-                if (cc.action === "disable_option") {
-                    if (field.type !== "select" && field.type !== "radio") {
-                        ctx.addIssue({
-                            code: z.ZodIssueCode.custom,
-                            message: "Omezení možností lze použít pouze u polí typu výběr nebo přepínač",
-                            path: [idx, "countCondition"],
-                        });
-                    }
-                }
-            });
-        }),
+    // Validate condition rules reference existing field IDs
+    const allFieldIds = new Set(allFields.map((f) => f.id));
+    for (const condition of conditions) {
+        for (const rule of condition.rules) {
+            if (rule.fieldId && !allFieldIds.has(rule.fieldId)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Pravidlo podmínky "${condition.name}" odkazuje na neexistující pole`,
+                    path: ["conditions"],
+                });
+            }
+        }
+    }
 });
 
 export type SaveRegistrationFormInput = z.infer<typeof saveRegistrationFormSchema>;

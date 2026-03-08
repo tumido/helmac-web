@@ -23,10 +23,9 @@ interface DynamicFormFieldProps {
     value: string | number | boolean;
     error?: string;
     onChange: (name: string, value: string | number | boolean) => void;
-    disabledOptions?: Set<string>;
 }
 
-export function DynamicFormField({ field, value, error, onChange, disabledOptions }: DynamicFormFieldProps) {
+export function DynamicFormField({ field, value, error, onChange }: DynamicFormFieldProps) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -78,14 +77,11 @@ export function DynamicFormField({ field, value, error, onChange, disabledOption
                         <MenuItem value="">
                             <em>Vyberte...</em>
                         </MenuItem>
-                        {(field.options || []).map((opt) => {
-                            const isDisabled = disabledOptions?.has(opt) ?? false;
-                            return (
-                                <MenuItem key={opt} value={opt} disabled={isDisabled}>
-                                    {opt}{isDisabled ? " (obsazeno)" : ""}
-                                </MenuItem>
-                            );
-                        })}
+                        {(field.options || []).map((opt) => (
+                            <MenuItem key={opt} value={opt}>
+                                {opt}
+                            </MenuItem>
+                        ))}
                     </Select>
                     {error && <FormHelperText>{error}</FormHelperText>}
                 </FormControl>
@@ -102,18 +98,14 @@ export function DynamicFormField({ field, value, error, onChange, disabledOption
                         value={String(value)}
                         onChange={(e) => onChange(field.name, e.target.value)}
                     >
-                        {(field.options || []).map((opt) => {
-                            const isDisabled = disabledOptions?.has(opt) ?? false;
-                            return (
-                                <FormControlLabel
-                                    key={opt}
-                                    value={opt}
-                                    control={<Radio />}
-                                    label={`${opt}${isDisabled ? " (obsazeno)" : ""}`}
-                                    disabled={isDisabled}
-                                />
-                            );
-                        })}
+                        {(field.options || []).map((opt) => (
+                            <FormControlLabel
+                                key={opt}
+                                value={opt}
+                                control={<Radio />}
+                                label={opt}
+                            />
+                        ))}
                     </RadioGroup>
                     {error && <FormHelperText>{error}</FormHelperText>}
                 </FormControl>

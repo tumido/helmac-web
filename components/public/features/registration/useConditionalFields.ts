@@ -1,85 +1,72 @@
 "use client";
 
 import { useMemo } from "react";
-import type { FormField, SubmissionData, OptionCounts } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
+import type { RegistrationFormData, SubmissionData, OptionCounts, FormCondition, FormField } from "@/lib/types/registration-form";
+import { isInputField, isConditionBlock, getAllFields } from "@/lib/types/registration-form";
 
 export interface ConditionalFieldsResult {
     visibleFields: Set<string>;
-    disabledOptions: Record<string, Set<string>>;
+}
+
+function evaluateCondition(
+    condition: FormCondition,
+    values: SubmissionData,
+    allFields: FormField[],
+    optionCounts?: OptionCounts,
+): boolean {
+    for (const rule of condition.rules) {
+        if (rule.type === "field_value") {
+            if (!rule.fieldId || rule.operator === undefined) return false;
+            const targetField = allFields.find((f) => f.id === rule.fieldId);
+            if (!targetField || !isInputField(targetField)) return false;
+
+            const currentValue = String(values[targetField.name] ?? "");
+            if (rule.operator === "equals" && currentValue !== rule.value) return false;
+            if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+        } else if (rule.type === "capacity") {
+            if (!rule.fieldId || !rule.value || rule.maxCount == null) return false;
+            const targetField = allFields.find((f) => f.id === rule.fieldId);
+            if (!targetField || !isInputField(targetField)) return false;
+
+            if (optionCounts) {
+                const currentCount = optionCounts[targetField.name]?.[rule.value] ?? 0;
+                if (currentCount >= rule.maxCount) return false;
+            }
+        }
+    }
+    return true;
 }
 
 /**
- * Returns visible field IDs and disabled options based on current form values
- * and aggregate option counts (capacity conditions).
+ * Returns visible field IDs based on current form values and conditions.
  */
 export function useConditionalFields(
-    fields: FormField[],
+    formData: RegistrationFormData,
     values: SubmissionData,
-    optionCounts?: OptionCounts
+    optionCounts?: OptionCounts,
 ): ConditionalFieldsResult {
     return useMemo(() => {
         const visibleFields = new Set<string>();
-        const disabledOptions: Record<string, Set<string>> = {};
+        const allFields = getAllFields(formData.fields);
+        const conditionMap = new Map(formData.conditions.map((c) => [c.id, c]));
 
-        for (const field of fields) {
-            if (!isInputField(field)) {
-                visibleFields.add(field.id);
-                continue;
-            }
+        for (const el of formData.fields) {
+            if (isConditionBlock(el)) {
+                const condition = conditionMap.get(el.conditionId);
+                if (!condition) continue;
 
-            // 1. Evaluate regular condition
-            let regularConditionPasses = true;
-            if (field.condition) {
-                const { fieldId, operator, value } = field.condition;
-                const targetField = fields.find((f) => f.id === fieldId);
-                if (targetField && isInputField(targetField)) {
-                    const currentValue = String(values[targetField.name] ?? "");
-                    if (operator === "equals") {
-                        regularConditionPasses = currentValue === value;
-                    } else if (operator === "not_equals") {
-                        regularConditionPasses = currentValue !== value;
+                const passes = evaluateCondition(condition, values, allFields, optionCounts);
+                if (passes) {
+                    for (const child of el.children) {
+                        visibleFields.add(child.id);
                     }
                 }
-            }
-
-            // 2. Evaluate count condition
-            let countConditionPasses = true;
-            if (field.countCondition && optionCounts) {
-                const cc = field.countCondition;
-
-                if (cc.action === "hide_field" && cc.fieldId && cc.value && cc.maxCount != null) {
-                    const targetField = fields.find((f) => f.id === cc.fieldId);
-                    if (targetField && isInputField(targetField)) {
-                        const targetName = targetField.name;
-                        const currentCount = optionCounts[targetName]?.[cc.value] ?? 0;
-                        if (currentCount >= cc.maxCount) {
-                            countConditionPasses = false;
-                        }
-                    }
-                }
-
-                if (cc.action === "disable_option" && cc.optionLimits) {
-                    const fieldName = field.name;
-                    for (const limit of cc.optionLimits) {
-                        const currentCount = optionCounts[fieldName]?.[limit.value] ?? 0;
-                        if (currentCount >= limit.maxCount) {
-                            if (!disabledOptions[field.id]) {
-                                disabledOptions[field.id] = new Set();
-                            }
-                            disabledOptions[field.id].add(limit.value);
-                        }
-                    }
-                    // disable_option never hides the field itself
-                }
-            }
-
-            // 3. AND logic: both must pass
-            if (regularConditionPasses && countConditionPasses) {
-                visibleFields.add(field.id);
+            } else {
+                // Top-level fields are always visible
+                visibleFields.add(el.id);
             }
         }
 
-        return { visibleFields, disabledOptions };
-    }, [fields, values, optionCounts]);
+        return { visibleFields };
+    }, [formData, values, optionCounts]);
 }

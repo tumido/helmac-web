@@ -15,15 +15,16 @@ import {
     Radio,
     Paper,
 } from "@mui/material";
-import type { FormField } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
+import type { FormField, FormElement, FormCondition } from "@/lib/types/registration-form";
+import { isInputField, isConditionBlock } from "@/lib/types/registration-form";
 
 interface FormPreviewProps {
-    fields: FormField[];
+    elements: FormElement[];
+    conditions: FormCondition[];
 }
 
-export function FormPreview({ fields }: FormPreviewProps) {
-    if (fields.length === 0) {
+export function FormPreview({ elements, conditions }: FormPreviewProps) {
+    if (elements.length === 0) {
         return (
             <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
                 Formulář je prázdný. Přidejte pole pomocí tlačítka výše.
@@ -37,9 +38,34 @@ export function FormPreview({ fields }: FormPreviewProps) {
                 Náhled formuláře
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {fields.map((field) => (
-                    <PreviewField key={field.id} field={field} />
-                ))}
+                {elements.map((el) => {
+                    if (isConditionBlock(el)) {
+                        const condition = conditions.find((c) => c.id === el.conditionId);
+                        return (
+                            <Box
+                                key={el.id}
+                                sx={{
+                                    borderLeft: "4px solid",
+                                    borderLeftColor: "info.main",
+                                    pl: 2,
+                                    py: 1,
+                                    backgroundColor: "action.hover",
+                                    borderRadius: 1,
+                                }}
+                            >
+                                <Typography variant="caption" color="info.main" fontWeight={600} sx={{ mb: 1, display: "block" }}>
+                                    Podmínka: {condition?.name || "(nepojmenovaná)"}
+                                </Typography>
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    {el.children.map((child) => (
+                                        <PreviewField key={child.id} field={child} />
+                                    ))}
+                                </Box>
+                            </Box>
+                        );
+                    }
+                    return <PreviewField key={el.id} field={el} />;
+                })}
             </Box>
         </Paper>
     );

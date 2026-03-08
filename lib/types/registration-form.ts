@@ -11,27 +11,6 @@ export type FieldType =
     | "heading"
     | "description";
 
-// Condition for conditional field visibility
-export interface FieldCondition {
-    fieldId: string;
-    operator: "equals" | "not_equals";
-    value: string;
-}
-
-// Count-based capacity condition
-export interface CountCondition {
-    action: "hide_field" | "disable_option";
-    // hide_field: hide when count of `value` on target field >= maxCount
-    fieldId?: string;
-    value?: string;
-    maxCount?: number;
-    // disable_option: per-option limits on THIS field
-    optionLimits?: Array<{ value: string; maxCount: number }>;
-}
-
-// Aggregated option counts: fieldName -> optionValue -> count
-export type OptionCounts = Record<string, Record<string, number>>;
-
 // Input field (user fills in a value)
 export interface InputField {
     type: Exclude<FieldType, "heading" | "description">;
@@ -41,8 +20,6 @@ export interface InputField {
     required: boolean;
     placeholder?: string;
     options?: string[]; // For select/radio
-    condition?: FieldCondition;
-    countCondition?: CountCondition;
 }
 
 // Layout: heading
@@ -61,7 +38,38 @@ export interface DescriptionField {
 
 export type FormField = InputField | HeadingField | DescriptionField;
 
-// Type guards
+// --- Condition system (named condition blocks) ---
+
+export interface ConditionRule {
+    type: "field_value" | "capacity";
+    fieldId?: string;              // target field ID (shared by both types)
+    operator?: "equals" | "not_equals";  // field_value only
+    value?: string;                // field_value: compare value; capacity: option value to count
+    maxCount?: number;             // capacity only
+}
+
+export interface FormCondition {
+    id: string;
+    name: string;                  // admin-defined label, e.g. "Děti"
+    rules: ConditionRule[];        // AND logic — all must pass for block to be visible
+}
+
+export interface ConditionBlock {
+    type: "condition";
+    id: string;
+    conditionId: string;           // references FormCondition.id
+    children: FormField[];         // nested fields (no nesting of blocks)
+}
+
+export type FormElement = FormField | ConditionBlock;
+
+export interface RegistrationFormData {
+    conditions: FormCondition[];   // defined in "Podmínky" tab
+    fields: FormElement[];         // form content, can contain ConditionBlocks
+}
+
+// --- Type guards ---
+
 export function isInputField(field: FormField): field is InputField {
     return field.type !== "heading" && field.type !== "description";
 }
@@ -69,6 +77,33 @@ export function isInputField(field: FormField): field is InputField {
 export function isLayoutField(field: FormField): field is HeadingField | DescriptionField {
     return field.type === "heading" || field.type === "description";
 }
+
+export function isConditionBlock(element: FormElement): element is ConditionBlock {
+    return (element as ConditionBlock).type === "condition";
+}
+
+// --- Utility functions ---
+
+/** Get all FormField items from elements (flattens condition blocks) */
+export function getAllFields(elements: FormElement[]): FormField[] {
+    const result: FormField[] = [];
+    for (const el of elements) {
+        if (isConditionBlock(el)) {
+            result.push(...el.children);
+        } else {
+            result.push(el);
+        }
+    }
+    return result;
+}
+
+/** Get all InputField items from elements (flattens condition blocks, filters layout) */
+export function getAllInputFields(elements: FormElement[]): InputField[] {
+    return getAllFields(elements).filter((f): f is InputField => isInputField(f));
+}
+
+// Aggregated option counts: fieldName -> optionValue -> count
+export type OptionCounts = Record<string, Record<string, number>>;
 
 // Submission data shape
 export type SubmissionData = Record<string, string | number | boolean>;

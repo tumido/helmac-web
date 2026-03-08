@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import type { FormField, InputField } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
+import { getAllInputFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 
 const STATUS_LABELS: Record<string, string> = {
     PENDING: "Čeká",
@@ -54,8 +54,8 @@ export async function GET(
         return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const fields = year.registrationForm.fields as unknown as FormField[];
-    const inputFields = fields.filter((f): f is InputField => isInputField(f));
+    const formData = migrateFormData(year.registrationForm.fields);
+    const inputFields = getAllInputFields(formData.fields);
 
     // Build CSV header
     const headers = [
