@@ -4,7 +4,7 @@ import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
 import { getSubmissionById } from "@/lib/services/registration";
-import { getAllFields } from "@/lib/types/registration-form";
+import { getAllFields, getAPInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface SubmissionDetailPageProps {
@@ -23,6 +23,7 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
     const fields = getAllFields(formData.fields);
     const data = submission.data as Record<string, unknown>;
     const pricingDefinitions = formData.pricingDefinitions;
+    const apFields = getAPInputFields(formData.fields);
 
     return (
         <Container maxWidth="lg">
@@ -54,6 +55,7 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                             fields={fields}
                             data={data}
                             pricingDefinitions={pricingDefinitions}
+                            apFields={apFields}
                         />
                     </Paper>
                 </Grid>

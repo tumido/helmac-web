@@ -8,7 +8,7 @@ export interface ConditionalFieldsResult {
     visibleFields: Set<string>;
 }
 
-function evaluateCondition(
+export function evaluateCondition(
     condition: FormCondition,
     values: SubmissionData,
     allFields: FormField[],
@@ -69,4 +69,37 @@ export function useConditionalFields(
 
         return { visibleFields };
     }, [formData, values, optionCounts]);
+}
+
+/**
+ * Evaluates which fields are visible for an additional person.
+ * Uses merged values (AP fields from person, rest from main registrant).
+ * Plain function (not a hook) — can be called in a loop.
+ */
+export function evaluateAPVisibleFields(
+    formData: RegistrationFormData,
+    mergedValues: SubmissionData,
+    optionCounts?: OptionCounts,
+): Set<string> {
+    const visibleFields = new Set<string>();
+    const allFields = getAllFields(formData.fields);
+    const conditionMap = new Map(formData.conditions.map((c) => [c.id, c]));
+
+    for (const el of formData.fields) {
+        if (isConditionBlock(el)) {
+            const condition = conditionMap.get(el.conditionId);
+            if (!condition) continue;
+
+            const passes = evaluateCondition(condition, mergedValues, allFields, optionCounts);
+            if (passes) {
+                for (const child of el.children) {
+                    visibleFields.add(child.id);
+                }
+            }
+        } else {
+            visibleFields.add(el.id);
+        }
+    }
+
+    return visibleFields;
 }

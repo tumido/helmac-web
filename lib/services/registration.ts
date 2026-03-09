@@ -109,6 +109,16 @@ export async function getOptionCountsForYearFresh(yearId: string): Promise<Optio
     return computeOptionCounts(yearId);
 }
 
+function countValues(counts: OptionCounts, data: Record<string, unknown>): void {
+    for (const [name, val] of Object.entries(data)) {
+        if (name === "additionalPeople") continue;
+        const str = String(val ?? "");
+        if (!str || str === "false") continue;
+        if (!counts[name]) counts[name] = {};
+        counts[name][str] = (counts[name][str] || 0) + 1;
+    }
+}
+
 async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
     const submissions = await db.registrationSubmission.findMany({
         where: {
@@ -121,11 +131,16 @@ async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
     const counts: OptionCounts = {};
     for (const sub of submissions) {
         const data = sub.data as Record<string, unknown>;
-        for (const [name, val] of Object.entries(data)) {
-            const str = String(val ?? "");
-            if (!str || str === "false") continue;
-            if (!counts[name]) counts[name] = {};
-            counts[name][str] = (counts[name][str] || 0) + 1;
+        // Count main person values
+        countValues(counts, data);
+        // Count additional people values
+        const ap = data.additionalPeople;
+        if (Array.isArray(ap)) {
+            for (const person of ap) {
+                if (person && typeof person === "object") {
+                    countValues(counts, person as Record<string, unknown>);
+                }
+            }
         }
     }
     return counts;

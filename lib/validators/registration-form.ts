@@ -30,6 +30,7 @@ const inputFieldSchema = z.object({
     placeholder: z.string().optional(),
     options: z.array(z.string().min(1)).optional(),
     pricingId: z.string().optional(),
+    includeForAdditionalPeople: z.boolean().optional(),
 });
 
 const pricedOptionSchema = z.object({
@@ -103,6 +104,17 @@ export const saveRegistrationFormSchema = z.object({
     const inputFields = allFields.filter(
         (f) => f.type !== "heading" && f.type !== "description"
     ) as z.infer<typeof inputFieldSchema>[];
+
+    // Reserved name check
+    for (const field of inputFields) {
+        if (field.name === "additionalPeople") {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Název pole \"additionalPeople\" je rezervovaný",
+                path: ["fields"],
+            });
+        }
+    }
 
     const names = new Set<string>();
     for (const field of inputFields) {

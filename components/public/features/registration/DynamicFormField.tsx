@@ -25,9 +25,10 @@ interface DynamicFormFieldProps {
     error?: string;
     onChange: (name: string, value: string | number | boolean) => void;
     pricingDefinitions?: PricingDefinition[];
+    namePrefix?: string; // Prefix for HTML name attributes (used by AP fields to avoid DOM conflicts)
 }
 
-export function DynamicFormField({ field, value, error, onChange, pricingDefinitions }: DynamicFormFieldProps) {
+export function DynamicFormField({ field, value, error, onChange, pricingDefinitions, namePrefix }: DynamicFormFieldProps) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -47,6 +48,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
     }
 
     const label = `${field.label}${field.required ? " *" : ""}`;
+    const htmlName = (namePrefix ?? "") + field.name;
 
     switch (field.type) {
         case "checkbox":
@@ -61,7 +63,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                         }
                         label={label}
                     />
-                    <input type="hidden" name={field.name} value={String(!!value)} />
+                    <input type="hidden" name={htmlName} value={String(!!value)} />
                     {error && <FormHelperText error>{error}</FormHelperText>}
                 </Box>
             );
@@ -71,7 +73,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                 <FormControl fullWidth error={!!error}>
                     <InputLabel>{label}</InputLabel>
                     <Select
-                        name={field.name}
+                        name={htmlName}
                         value={String(value)}
                         onChange={(e) => onChange(field.name, e.target.value)}
                         label={label}
@@ -96,7 +98,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                         {label}
                     </Typography>
                     <RadioGroup
-                        name={field.name}
+                        name={htmlName}
                         value={String(value)}
                         onChange={(e) => onChange(field.name, e.target.value)}
                     >
@@ -116,7 +118,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "textarea":
             return (
                 <TextField
-                    name={field.name}
+                    name={htmlName}
                     label={label}
                     placeholder={field.placeholder}
                     value={String(value)}
@@ -132,7 +134,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "number":
             return (
                 <TextField
-                    name={field.name}
+                    name={htmlName}
                     label={label}
                     placeholder={field.placeholder}
                     type="number"
@@ -147,7 +149,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "date":
             return (
                 <TextField
-                    name={field.name}
+                    name={htmlName}
                     label={label}
                     type="date"
                     value={String(value)}
@@ -162,7 +164,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "email":
             return (
                 <TextField
-                    name={field.name}
+                    name={htmlName}
                     label={label}
                     placeholder={field.placeholder}
                     type="email"
@@ -240,7 +242,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                             );
                         })}
                     </Box>
-                    <input type="hidden" name={field.name} value={String(value)} />
+                    <input type="hidden" name={htmlName} value={String(value)} />
                     {error && <FormHelperText error>{error}</FormHelperText>}
                 </Box>
             );
@@ -250,7 +252,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         default:
             return (
                 <TextField
-                    name={field.name}
+                    name={htmlName}
                     label={label}
                     placeholder={field.placeholder}
                     value={String(value)}

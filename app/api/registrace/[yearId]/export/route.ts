@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllInputFields, getAPInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -56,19 +56,25 @@ export async function GET(
 
     const formData = migrateFormData(year.registrationForm.fields);
     const inputFields = getAllInputFields(formData.fields);
+    const apFieldNames = new Set(getAPInputFields(formData.fields).map((f) => f.name));
 
     // Build CSV header
     const headers = [
+        "Typ",
         ...inputFields.map((f) => f.label),
         "Stav",
         "Zaplaceno",
         "Datum registrace",
     ];
 
-    // Build CSV rows
-    const rows = year.registrationSubmissions.map((sub) => {
+    // Build CSV rows (main person + AP rows)
+    const rows: string[][] = [];
+    for (const sub of year.registrationSubmissions) {
         const data = sub.data as Record<string, unknown>;
-        return [
+
+        // Main person row
+        rows.push([
+            "Hlavní",
             ...inputFields.map((f) => {
                 const val = data[f.name];
                 if (val === true) return "Ano";
@@ -78,8 +84,30 @@ export async function GET(
             STATUS_LABELS[sub.status] || sub.status,
             sub.isPaid ? "Ano" : "Ne",
             new Date(sub.createdAt).toLocaleString("cs-CZ"),
-        ];
-    });
+        ]);
+
+        // Additional people rows
+        const ap = data.additionalPeople;
+        if (Array.isArray(ap)) {
+            ap.forEach((person, idx) => {
+                if (!person || typeof person !== "object") return;
+                const personData = person as Record<string, unknown>;
+                rows.push([
+                    `Další osoba ${idx + 1}`,
+                    ...inputFields.map((f) => {
+                        if (!apFieldNames.has(f.name)) return "";
+                        const val = personData[f.name];
+                        if (val === true) return "Ano";
+                        if (val === false) return "Ne";
+                        return String(val ?? "");
+                    }),
+                    "", // Status empty for AP rows
+                    "", // Paid empty for AP rows
+                    "", // Date empty for AP rows
+                ]);
+            });
+        }
+    }
 
     // Generate CSV with UTF-8 BOM for Excel
     const BOM = "\uFEFF";

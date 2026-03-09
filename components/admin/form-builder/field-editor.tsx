@@ -111,6 +111,20 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                 }
                                 label="Povinné pole"
                             />
+                            <Box>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={inputData.includeForAdditionalPeople ?? false}
+                                            onChange={(e) => updateInput({ includeForAdditionalPeople: e.target.checked || undefined })}
+                                        />
+                                    }
+                                    label="Další osoby"
+                                />
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 4, mt: -0.5 }}>
+                                    Pole bude zobrazeno i pro další přidané osoby
+                                </Typography>
+                            </Box>
 
                             {isPricingSelect && (() => {
                                 const def = pricingDefinitions?.find((d) => d.id === inputData.pricingId);

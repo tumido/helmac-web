@@ -77,6 +77,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter }: 
                         {displayFields.map((field) => (
                             <TableCell key={field.id}>{field.label}</TableCell>
                         ))}
+                        <TableCell>Osoby</TableCell>
                         <TableCell>Stav</TableCell>
                         <TableCell>Zaplaceno</TableCell>
                         <TableCell>Datum</TableCell>
@@ -101,6 +102,15 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter }: 
                                         </Typography>
                                     </TableCell>
                                 ))}
+                                <TableCell>
+                                    <Typography variant="body2">
+                                        {(() => {
+                                            const ap = data.additionalPeople;
+                                            const apCount = Array.isArray(ap) ? ap.length : 0;
+                                            return apCount > 0 ? `1 + ${apCount}` : "1";
+                                        })()}
+                                    </Typography>
+                                </TableCell>
                                 <TableCell>
                                     <Chip
                                         label={STATUS_LABELS[submission.status]}

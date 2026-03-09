@@ -51,6 +51,15 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricin
                             sx={{ fontSize: "0.7rem", height: 20 }}
                         />
                     )}
+                    {isInput && field.includeForAdditionalPeople && (
+                        <Chip
+                            label="Další osoby"
+                            size="small"
+                            variant="outlined"
+                            color="secondary"
+                            sx={{ fontSize: "0.7rem", height: 20 }}
+                        />
+                    )}
                     {usedInCondition && (
                         <Chip
                             label="Podmínka"

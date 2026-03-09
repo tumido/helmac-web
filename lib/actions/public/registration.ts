@@ -3,15 +3,17 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { FormCondition, FormElement, FormField, InputField, OptionCounts } from "@/lib/types/registration-form";
-import { isInputField, isConditionBlock, getAllFields, getAllInputFields } from "@/lib/types/registration-form";
+import type { FormCondition, FormElement, FormField, InputField, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
+import { isInputField, isConditionBlock, getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
+import { getAPFieldNames } from "@/lib/utils/additional-people";
 
 export interface RegistrationState {
     success: boolean;
     message: string;
     errors?: Record<string, string[]>;
+    apErrors?: Record<number, Record<string, string[]>>;
     registrationId?: string;
 }
 
@@ -175,12 +177,118 @@ export async function submitDynamicRegistration(
         };
     }
 
+    // --- Additional People validation ---
+    const apFieldNames = getAPFieldNames(formDataStored.fields);
+    const apInputFields = getAPInputFields(formDataStored.fields);
+    let parsedAP: AdditionalPersonData[] = [];
+    const apErrors: Record<number, Record<string, string[]>> = {};
+
+    const rawAPJson = formData.get("__additionalPeople");
+    if (rawAPJson && String(rawAPJson) !== "[]") {
+        try {
+            const parsed = JSON.parse(String(rawAPJson));
+            if (!Array.isArray(parsed)) {
+                return {
+                    success: false,
+                    message: "Neplatná data dalších osob",
+                };
+            }
+            if (parsed.length > MAX_ADDITIONAL_PEOPLE) {
+                return {
+                    success: false,
+                    message: `Maximální počet dalších osob je ${MAX_ADDITIONAL_PEOPLE}`,
+                };
+            }
+            parsedAP = parsed;
+        } catch {
+            return {
+                success: false,
+                message: "Neplatná data dalších osob",
+            };
+        }
+
+        for (let i = 0; i < parsedAP.length; i++) {
+            const person = parsedAP[i];
+
+            // Build merged data for condition evaluation
+            const mergedRaw: Record<string, unknown> = {};
+            for (const field of allInputFields) {
+                if (apFieldNames.has(field.name)) {
+                    mergedRaw[field.name] = person[field.name] ?? "";
+                } else {
+                    mergedRaw[field.name] = rawData[field.name];
+                }
+            }
+
+            // Evaluate conditions with merged data
+            const apVisibleFieldIds = buildVisibleFieldIds(
+                formDataStored.fields,
+                formDataStored.conditions,
+                mergedRaw,
+                allFields,
+                optionCounts,
+            );
+
+            // Get visible AP fields for this person
+            const visibleAPFields = apInputFields.filter(
+                (f) => apVisibleFieldIds.has(f.id)
+            );
+
+            // Type-convert AP values
+            const typedPersonData: Record<string, unknown> = {};
+            for (const field of visibleAPFields) {
+                const val = person[field.name];
+                if (field.type === "checkbox") {
+                    typedPersonData[field.name] = val === true || val === "true";
+                } else if (field.type === "number") {
+                    typedPersonData[field.name] = val !== undefined && val !== "" ? Number(val) : "";
+                } else {
+                    typedPersonData[field.name] = val ?? "";
+                }
+            }
+
+            // Validate with schema
+            const apSchema = buildSubmissionSchema(visibleAPFields);
+            const apResult = apSchema.safeParse(typedPersonData);
+
+            if (!apResult.success) {
+                apErrors[i] = {};
+                apResult.error.issues.forEach((issue) => {
+                    const path = issue.path.join(".");
+                    if (!apErrors[i][path]) apErrors[i][path] = [];
+                    apErrors[i][path].push(issue.message);
+                });
+            }
+
+            // Store only visible AP field values
+            const cleanedPerson: AdditionalPersonData = {};
+            for (const field of visibleAPFields) {
+                cleanedPerson[field.name] = typedPersonData[field.name] as string | number | boolean;
+            }
+            parsedAP[i] = cleanedPerson;
+        }
+
+        if (Object.keys(apErrors).length > 0) {
+            return {
+                success: false,
+                message: "Prosím opravte chyby ve formuláři",
+                errors: result.success ? undefined : undefined,
+                apErrors,
+            };
+        }
+    }
+
     // Build submission data (visible fields only, hidden fields stripped)
     const submissionData: Record<string, unknown> = {};
     for (const field of allInputFields) {
         if (visibleFieldIds.has(field.id)) {
             submissionData[field.name] = rawData[field.name];
         }
+    }
+
+    // Include additional people data if present
+    if (parsedAP.length > 0) {
+        submissionData.additionalPeople = parsedAP;
     }
 
     // Duplicate check: find email-type field

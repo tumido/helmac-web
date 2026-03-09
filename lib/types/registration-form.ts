@@ -22,7 +22,13 @@ export interface InputField {
     placeholder?: string;
     options?: string[]; // For select/radio
     pricingId?: string; // For pricing_select: references PricingDefinition.id
+    includeForAdditionalPeople?: boolean; // Field shown for additional people in group registration
 }
+
+// --- Group registration ---
+
+export const MAX_ADDITIONAL_PEOPLE = 20;
+export type AdditionalPersonData = Record<string, string | number | boolean>;
 
 // --- Pricing system ---
 
@@ -119,6 +125,16 @@ export function getAllFields(elements: FormElement[]): FormField[] {
 /** Get all InputField items from elements (flattens condition blocks, filters layout) */
 export function getAllInputFields(elements: FormElement[]): InputField[] {
     return getAllFields(elements).filter((f): f is InputField => isInputField(f));
+}
+
+/** Get all InputField items marked for additional people */
+export function getAPInputFields(elements: FormElement[]): InputField[] {
+    return getAllInputFields(elements).filter((f) => f.includeForAdditionalPeople === true);
+}
+
+/** Check if any input field is marked for additional people */
+export function hasAdditionalPeopleFields(elements: FormElement[]): boolean {
+    return getAllInputFields(elements).some((f) => f.includeForAdditionalPeople === true);
 }
 
 // Aggregated option counts: fieldName -> optionValue -> count

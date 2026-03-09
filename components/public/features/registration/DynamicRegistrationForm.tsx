@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useCallback, useActionState, type FormEvent } from "react";
+import { useState, useCallback, useMemo, useActionState, type FormEvent } from "react";
 import { Box, Button, Alert, Paper, Snackbar } from "@mui/material";
-import type { RegistrationFormData, SubmissionData, OptionCounts } from "@/lib/types/registration-form";
-import { isInputField, getAllFields, getAllInputFields } from "@/lib/types/registration-form";
+import type { RegistrationFormData, SubmissionData, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
+import { isInputField, getAllFields, getAllInputFields, getAPInputFields, hasAdditionalPeopleFields } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
-import { useConditionalFields } from "./useConditionalFields";
+import { useConditionalFields, evaluateAPVisibleFields } from "./useConditionalFields";
+import { AdditionalPeopleSection } from "./AdditionalPeopleSection";
+import { PriceSummary } from "./PriceSummary";
+import { buildMergedDataForAP, getAPFieldNames } from "@/lib/utils/additional-people";
 import { submitDynamicRegistration, type RegistrationState } from "@/lib/actions/public/registration";
 
 interface DynamicRegistrationFormProps {
@@ -30,6 +33,7 @@ function buildInitialValues(formData: RegistrationFormData): SubmissionData {
 
 export function DynamicRegistrationForm({ formData, optionCounts, previewMode }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData));
+    const [additionalPeople, setAdditionalPeople] = useState<AdditionalPersonData[]>([]);
     const { visibleFields } = useConditionalFields(formData, values, optionCounts);
     const [previewSnackbar, setPreviewSnackbar] = useState(false);
 
@@ -54,13 +58,25 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
         setPreviewSnackbar(true);
     }, []);
 
-    if (!previewMode && state?.success) {
-        return <RegistrationSuccess message={state.message} />;
-    }
-
     // Flatten all fields for rendering (preserving order from elements)
     const allFields = getAllFields(formData.fields);
     const allInputFields = getAllInputFields(formData.fields);
+    const showAPSection = hasAdditionalPeopleFields(formData.fields);
+    const apFields = showAPSection ? getAPInputFields(formData.fields) : [];
+
+    // Compute visible AP fields per person for price summary
+    const visibleAPFieldsPerPerson = useMemo(() => {
+        if (!showAPSection) return [];
+        const apNames = getAPFieldNames(formData.fields);
+        return additionalPeople.map((person) => {
+            const merged = buildMergedDataForAP(values, person, apNames);
+            return evaluateAPVisibleFields(formData, merged, optionCounts);
+        });
+    }, [showAPSection, additionalPeople, values, formData, optionCounts]);
+
+    if (!previewMode && state?.success) {
+        return <RegistrationSuccess message={state.message} />;
+    }
 
     return (
         <Paper sx={{ p: { xs: 3, md: 5 } }}>
@@ -108,6 +124,29 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
                         );
                     })}
                 </Box>
+
+                {showAPSection && (
+                    <AdditionalPeopleSection
+                        formData={formData}
+                        apFields={apFields}
+                        mainValues={values}
+                        optionCounts={optionCounts}
+                        people={additionalPeople}
+                        onPeopleChange={setAdditionalPeople}
+                        errors={state?.apErrors}
+                    />
+                )}
+
+                {formData.pricingDefinitions.length > 0 && (
+                    <PriceSummary
+                        pricingDefinitions={formData.pricingDefinitions}
+                        allInputFields={allInputFields}
+                        mainValues={values}
+                        additionalPeople={additionalPeople}
+                        visibleMainFields={visibleFields}
+                        visibleAPFieldsPerPerson={visibleAPFieldsPerPerson}
+                    />
+                )}
 
                 <Box sx={{ mt: 4, textAlign: "center" }}>
                     <Button
