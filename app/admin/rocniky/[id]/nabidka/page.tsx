@@ -40,21 +40,9 @@ export default async function NabidkaPage({ params }: NabidkaPageProps) {
                     { label: "Co nabízíme" },
                 ]}
             />
-            <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <LocalOffer sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Co nabízíme</Typography>
-                </Box>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                <LocalOffer sx={{ fontSize: 32, color: "primary.main" }} />
+                <Typography variant="h4">Co nabízíme</Typography>
             </Box>
 
             <Box

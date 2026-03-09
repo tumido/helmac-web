@@ -40,21 +40,9 @@ export default async function PravidlaPage({ params }: PravidlaPageProps) {
                     { label: "Pravidla" },
                 ]}
             />
-            <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <Gavel sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Pravidla</Typography>
-                </Box>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                <Gavel sx={{ fontSize: 32, color: "primary.main" }} />
+                <Typography variant="h4">Pravidla</Typography>
             </Box>
 
             <Box

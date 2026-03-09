@@ -49,7 +49,7 @@ export default function FormPreviewPage() {
                 </Alert>
                 <Button
                     component={Link}
-                    href={`/admin/rocniky/${params.id}`}
+                    href={`/admin/rocniky/${params.id}/registrace/formular`}
                     startIcon={<ArrowBack />}
                     variant="outlined"
                 >
@@ -68,7 +68,7 @@ export default function FormPreviewPage() {
             <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
                 <Button
                     component={Link}
-                    href={`/admin/rocniky/${params.id}`}
+                    href={`/admin/rocniky/${params.id}/registrace/formular`}
                     startIcon={<ArrowBack />}
                     variant="outlined"
                     size="small"

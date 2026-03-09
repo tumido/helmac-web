@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { Menu as MenuIcon, Logout } from "@mui/icons-material";
 import { signOut } from "next-auth/react";
+import { useSidebarContext } from "@/lib/contexts/sidebar-context";
 
 interface AdminAppBarProps {
     drawerWidth: number;
@@ -22,9 +23,15 @@ export function AdminAppBar({
     onMenuClick,
     userName,
 }: AdminAppBarProps) {
+    const { sidebarYear } = useSidebarContext();
+
     const handleLogout = async () => {
         await signOut({ callbackUrl: "/admin/login" });
     };
+
+    const title = sidebarYear
+        ? `Ročník ${sidebarYear.year} — ${sidebarYear.title}`
+        : "Administrace";
 
     return (
         <AppBar
@@ -45,7 +52,7 @@ export function AdminAppBar({
                     <MenuIcon />
                 </IconButton>
                 <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                    Administrace
+                    {title}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     {userName && (

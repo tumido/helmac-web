@@ -40,21 +40,9 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
                     { label: "Program" },
                 ]}
             />
-            <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <CalendarMonth sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Program</Typography>
-                </Box>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                <CalendarMonth sx={{ fontSize: 32, color: "primary.main" }} />
+                <Typography variant="h4">Program</Typography>
             </Box>
 
             <Box

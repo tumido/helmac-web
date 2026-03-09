@@ -22,6 +22,8 @@ import {
     PhotoLibrary,
     People,
 } from "@mui/icons-material";
+import { useSidebarContext } from "@/lib/contexts/sidebar-context";
+import { YearSidebar } from "./year-sidebar";
 
 interface MenuItem {
     text: string;
@@ -80,6 +82,7 @@ export function AdminDrawer({
 }: AdminDrawerProps) {
     const pathname = usePathname();
     const { enqueueSnackbar } = useSnackbar();
+    const { sidebarYear } = useSidebarContext();
 
     const activeYearHref = activeYearId
         ? `/admin/rocniky/${activeYearId}`
@@ -102,7 +105,7 @@ export function AdminDrawer({
         ? pathname.startsWith(activeYearHref)
         : false;
 
-    const drawerContent = (
+    const defaultDrawerContent = (
         <Box>
             <Box sx={{ p: 2, textAlign: "center" }}>
                 <Typography variant="h6" fontWeight="bold">
@@ -122,7 +125,6 @@ export function AdminDrawer({
                         (item.href !== "/admin" &&
                             pathname.startsWith(item.href));
 
-                    // Insert "Aktuální ročník" after "Rocniky"
                     const elements = [
                         <ListItem key={item.href} disablePadding>
                             <ListItemLinkButton
@@ -174,6 +176,10 @@ export function AdminDrawer({
             </List>
         </Box>
     );
+
+    const drawerContent = sidebarYear
+        ? <YearSidebar yearData={sidebarYear} onClose={onClose} />
+        : defaultDrawerContent;
 
     return (
         <Box

@@ -40,21 +40,9 @@ export default async function InfoPage({ params }: InfoPageProps) {
                     { label: "Info" },
                 ]}
             />
-            <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <InfoOutlined sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Info</Typography>
-                </Box>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                <InfoOutlined sx={{ fontSize: 32, color: "primary.main" }} />
+                <Typography variant="h4">Info</Typography>
             </Box>
 
             <Box
