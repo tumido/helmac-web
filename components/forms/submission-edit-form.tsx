@@ -17,7 +17,7 @@ import {
     Alert,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import type { FormField } from "@/lib/types/registration-form";
+import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { updateSubmissionData } from "@/lib/actions/registration-submissions";
 
@@ -25,9 +25,10 @@ interface SubmissionEditFormProps {
     submissionId: string;
     fields: FormField[];
     data: Record<string, unknown>;
+    pricingDefinitions?: PricingDefinition[];
 }
 
-export function SubmissionEditForm({ submissionId, fields, data }: SubmissionEditFormProps) {
+export function SubmissionEditForm({ submissionId, fields, data, pricingDefinitions }: SubmissionEditFormProps) {
     const [values, setValues] = useState<Record<string, unknown>>({ ...data });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -115,6 +116,27 @@ export function SubmissionEditForm({ submissionId, fields, data }: SubmissionEdi
                                 </RadioGroup>
                             </FormControl>
                         );
+
+                    case "pricing_select": {
+                        const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                        const options = def ? def.options.map((o) => o.name) : [];
+                        return (
+                            <FormControl key={field.id} fullWidth size="small">
+                                <InputLabel>{field.label}</InputLabel>
+                                <Select
+                                    value={String(value ?? "")}
+                                    onChange={(e) => handleChange(field.name, e.target.value)}
+                                    label={field.label}
+                                >
+                                    {options.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>
+                                            {opt}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        );
+                    }
 
                     case "textarea":
                         return (

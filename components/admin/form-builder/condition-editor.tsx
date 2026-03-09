@@ -28,7 +28,7 @@ import {
     ExpandMore,
     ExpandLess,
 } from "@mui/icons-material";
-import type { FormCondition, ConditionRule, FormField, FormElement, InputField } from "@/lib/types/registration-form";
+import type { FormCondition, ConditionRule, FormField, FormElement, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { getBlocksUsingCondition } from "@/lib/utils/condition-validation";
 
@@ -37,6 +37,7 @@ interface ConditionEditorProps {
     allFields: FormField[];
     elements: FormElement[];
     onChange: (conditions: FormCondition[]) => void;
+    pricingDefinitions?: PricingDefinition[];
 }
 
 interface BlockInfo {
@@ -44,7 +45,7 @@ interface BlockInfo {
     blockCount: number;
 }
 
-export function ConditionEditor({ conditions, allFields, elements, onChange }: ConditionEditorProps) {
+export function ConditionEditor({ conditions, allFields, elements, onChange, pricingDefinitions }: ConditionEditorProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [blockInfo, setBlockInfo] = useState<BlockInfo | null>(null);
 
@@ -200,6 +201,7 @@ export function ConditionEditor({ conditions, allFields, elements, onChange }: C
                                             rule={rule}
                                             inputFields={inputFields}
                                             allFields={allFields}
+                                            pricingDefinitions={pricingDefinitions}
                                             onUpdate={(updates) => handleUpdateRule(condition.id, ruleIdx, updates)}
                                             onChangeType={(type) => handleChangeRuleType(condition.id, ruleIdx, type)}
                                             onDelete={() => handleDeleteRule(condition.id, ruleIdx)}
@@ -255,13 +257,14 @@ interface RuleRowProps {
     rule: ConditionRule;
     inputFields: InputField[];
     allFields: FormField[];
+    pricingDefinitions?: PricingDefinition[];
     onUpdate: (updates: Partial<ConditionRule>) => void;
     onChangeType: (type: "field_value" | "capacity") => void;
     onDelete: () => void;
     canDelete: boolean;
 }
 
-function RuleRow({ rule, inputFields, allFields, onUpdate, onChangeType, onDelete, canDelete }: RuleRowProps) {
+function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onChangeType, onDelete, canDelete }: RuleRowProps) {
     const targetField = allFields.find((f) => f.id === rule.fieldId);
     const targetInput = targetField && isInputField(targetField) ? targetField : null;
 
@@ -331,6 +334,7 @@ function RuleRow({ rule, inputFields, allFields, onUpdate, onChangeType, onDelet
                     </FormControl>
                     <FieldValuePicker
                         targetField={targetInput}
+                        pricingDefinitions={pricingDefinitions}
                         value={rule.value || ""}
                         onChange={(value) => onUpdate({ value })}
                     />
@@ -341,6 +345,7 @@ function RuleRow({ rule, inputFields, allFields, onUpdate, onChangeType, onDelet
                 <Box sx={{ display: "flex", gap: 1 }}>
                     <FieldValuePicker
                         targetField={targetInput}
+                        pricingDefinitions={pricingDefinitions}
                         value={rule.value || ""}
                         onChange={(value) => onUpdate({ value })}
                     />
@@ -361,10 +366,12 @@ function RuleRow({ rule, inputFields, allFields, onUpdate, onChangeType, onDelet
 
 function FieldValuePicker({
     targetField,
+    pricingDefinitions,
     value,
     onChange,
 }: {
     targetField: InputField | null;
+    pricingDefinitions?: PricingDefinition[];
     value: string;
     onChange: (value: string) => void;
 }) {
@@ -405,6 +412,22 @@ function FieldValuePicker({
                 </Select>
             </FormControl>
         );
+    }
+
+    if (targetField.type === "pricing_select" && targetField.pricingId && pricingDefinitions) {
+        const def = pricingDefinitions.find((d) => d.id === targetField.pricingId);
+        if (def) {
+            return (
+                <FormControl size="small" fullWidth>
+                    <InputLabel>Hodnota</InputLabel>
+                    <Select value={value} onChange={(e) => onChange(e.target.value)} label="Hodnota">
+                        {def.options.map((opt) => (
+                            <MenuItem key={opt.id} value={opt.name}>{opt.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            );
+        }
     }
 
     return (

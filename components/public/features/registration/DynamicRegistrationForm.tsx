@@ -92,6 +92,7 @@ export function DynamicRegistrationForm({ formData, optionCounts }: DynamicRegis
                                 value={value}
                                 error={isInputField(field) ? getFieldError(field.name) : undefined}
                                 onChange={handleChange}
+                                pricingDefinitions={formData.pricingDefinitions}
                             />
                         );
                     })}

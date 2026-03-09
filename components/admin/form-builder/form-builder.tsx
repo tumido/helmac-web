@@ -49,6 +49,7 @@ import { FieldPalette } from "./field-palette";
 import { SortableFieldItem } from "./sortable-field-item";
 import { ConditionBlockItem } from "./condition-block-item";
 import { ConditionEditor } from "./condition-editor";
+import { PricingEditor } from "./pricing-editor";
 import { FormPreview } from "./form-preview";
 import { saveRegistrationForm, deleteRegistrationForm } from "@/lib/actions/registration-forms";
 import { FIELD_TYPE_META, getAllFields } from "@/lib/types/registration-form";
@@ -68,8 +69,10 @@ import type {
     HeadingField,
     DescriptionField,
     RegistrationFormData,
+    PricingDefinition,
 } from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
+import { getFieldOptionValues } from "@/lib/utils/pricing";
 
 interface FormBuilderProps {
     yearId: string;
@@ -82,8 +85,9 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
     const [elements, setElements] = useState<FormElement[]>(initialFormData.fields);
     const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
+    const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
     const [mode, setMode] = useState<"edit" | "preview">("edit");
-    const [builderTab, setBuilderTab] = useState<0 | 1>(0); // 0 = Formulář, 1 = Podmínky
+    const [builderTab, setBuilderTab] = useState<0 | 1 | 2>(0); // 0 = Formulář, 1 = Podmínky, 2 = Ceník
     const [typeSelectorOpen, setTypeSelectorOpen] = useState(false);
     const [editingField, setEditingField] = useState<FormField | null>(null);
     const [saving, setSaving] = useState(false);
@@ -103,7 +107,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
     const allFields = getAllFields(elements);
 
-    const createField = useCallback((type: FieldType, currentElements: FormElement[]): FormField => {
+    const createField = useCallback((type: FieldType, currentElements: FormElement[], pricingId?: string): FormField => {
         const id = crypto.randomUUID();
         const existingFields = getAllFields(currentElements);
 
@@ -113,14 +117,18 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
             return { type: "description", id, text: "Popisek textu" } as DescriptionField;
         } else {
             const fieldCount = existingFields.filter((f) => f.type !== "heading" && f.type !== "description").length;
-            return {
+            const field: InputField = {
                 type,
                 id,
                 name: `field_${fieldCount + 1}`,
                 label: `Pole ${fieldCount + 1}`,
                 required: false,
                 options: type === "select" || type === "radio" ? ["Možnost 1"] : undefined,
-            } as InputField;
+            };
+            if (type === "pricing_select") {
+                field.pricingId = pricingId || "";
+            }
+            return field;
         }
     }, []);
 
@@ -138,22 +146,28 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
     const handleSaveField = useCallback((updatedField: FormField) => {
         // Check if saving would break conditions by removing referenced options
-        if ("options" in updatedField && editingField && "options" in editingField) {
-            const originalOptions = (editingField as { options?: string[] }).options || [];
-            const newOptions = (updatedField as { options?: string[] }).options || [];
-            const broken = getBrokenOptionRemovals(updatedField.id, originalOptions, newOptions, conditions);
-            if (broken.length > 0) {
-                setDeletionBlock({
-                    title: "Nelze uložit změny",
-                    message: "Odebrané možnosti jsou používány v podmínkách:",
-                    details: broken.map((b) => `„${b.removedValue}" v podmínce „${b.conditionName}"`),
-                });
-                return;
+        if (editingField && ("options" in updatedField || "pricingId" in updatedField)) {
+            const originalOptions = editingField && "options" in editingField
+                ? getFieldOptionValues(editingField as InputField, pricingDefinitions)
+                : [];
+            const newOptions = "options" in updatedField
+                ? getFieldOptionValues(updatedField as InputField, pricingDefinitions)
+                : [];
+            if (originalOptions.length > 0) {
+                const broken = getBrokenOptionRemovals(updatedField.id, originalOptions, newOptions, conditions);
+                if (broken.length > 0) {
+                    setDeletionBlock({
+                        title: "Nelze uložit změny",
+                        message: "Odebrané možnosti jsou používány v podmínkách:",
+                        details: broken.map((b) => `„${b.removedValue}" v podmínce „${b.conditionName}"`),
+                    });
+                    return;
+                }
             }
         }
         setElements((prev) => updateFieldInElements(prev, updatedField));
         setEditingField(null);
-    }, [editingField, conditions]);
+    }, [editingField, conditions, pricingDefinitions]);
 
     const handleDeleteField = useCallback((fieldId: string) => {
         const usages = getConditionsUsingField(fieldId, conditions);
@@ -187,6 +201,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
         const formData: RegistrationFormData = {
             conditions,
+            pricingDefinitions,
             fields: elements,
         };
 
@@ -212,6 +227,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         } else {
             setElements([]);
             setConditions([]);
+            setPricingDefinitions([]);
         }
         setDeleting(false);
     };
@@ -370,6 +386,69 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
             return;
         }
 
+        // -- Palette pricing drop: create new pricing_select field
+        if (activeIdStr.startsWith("palette-pricing-")) {
+            const definitionId = activeIdStr.replace("palette-pricing-", "");
+            const def = pricingDefinitions.find((d) => d.id === definitionId);
+
+            setElements((prev) => {
+                const newField = createField("pricing_select", prev, definitionId);
+                // Auto-set label from definition name
+                if (def && "label" in newField) {
+                    (newField as InputField).label = def.name || "Cenový výběr";
+                }
+
+                if (over) {
+                    const overIdStr = String(over.id);
+
+                    if (overIdStr.startsWith("container-")) {
+                        const blockId = overIdStr.replace("container-", "");
+                        const updated = prev.map((el) => {
+                            if (isConditionBlock(el) && el.id === blockId) {
+                                return { ...el, children: [...el.children, newField] };
+                            }
+                            return el;
+                        });
+                        setEditingField(newField);
+                        return updated;
+                    }
+
+                    const parentBlock = prev.find(
+                        (el) => isConditionBlock(el) && el.children.some((c) => c.id === overIdStr)
+                    );
+                    if (parentBlock && isConditionBlock(parentBlock)) {
+                        const updated = prev.map((el) => {
+                            if (isConditionBlock(el) && el.id === parentBlock.id) {
+                                const childIdx = el.children.findIndex((c) => c.id === overIdStr);
+                                const children = [...el.children];
+                                children.splice(childIdx + 1, 0, newField);
+                                return { ...el, children };
+                            }
+                            return el;
+                        });
+                        setEditingField(newField);
+                        return updated;
+                    }
+
+                    const overIndex = prev.findIndex((el) => {
+                        if (isConditionBlock(el)) return el.id === overIdStr;
+                        return el.id === overIdStr;
+                    });
+
+                    if (overIndex !== -1) {
+                        const updated = [...prev];
+                        updated.splice(overIndex + 1, 0, newField);
+                        setEditingField(newField);
+                        return updated;
+                    }
+                }
+
+                setEditingField(newField);
+                return [...prev, newField];
+            });
+            return;
+        }
+
         // -- Palette field drop: create new field
         if (activeIdStr.startsWith("palette-")) {
             const type = activeIdStr.replace("palette-", "") as FieldType;
@@ -468,7 +547,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 }
             });
         }
-    }, [createField]);
+    }, [createField, pricingDefinitions]);
 
     const handleDragCancel = useCallback(() => {
         setActiveId(null);
@@ -477,6 +556,31 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     // Render the drag overlay content
     const renderDragOverlay = () => {
         if (!activeId) return null;
+
+        if (activeId.startsWith("palette-pricing-")) {
+            const definitionId = activeId.replace("palette-pricing-", "");
+            const def = pricingDefinitions.find((d) => d.id === definitionId);
+            return (
+                <Paper
+                    variant="outlined"
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 1.5,
+                        py: 1,
+                        backgroundColor: "background.paper",
+                        borderColor: "success.main",
+                        width: 200,
+                    }}
+                >
+                    <Box sx={{ color: "success.main", display: "flex" }}>
+                        {FIELD_TYPE_ICONS["Sell"]}
+                    </Box>
+                    <Typography variant="body2">{def?.name || "Ceník"}</Typography>
+                </Paper>
+            );
+        }
 
         if (activeId.startsWith("palette-condition-")) {
             const conditionId = activeId.replace("palette-condition-", "");
@@ -612,6 +716,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                     >
                         <Tab label="Formulář" />
                         <Tab label="Podmínky" />
+                        <Tab label="Ceník" />
                     </Tabs>
 
                     {builderTab === 0 && (
@@ -629,6 +734,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                                     <FormDropZone
                                         elements={elements}
                                         conditions={conditions}
+                                        pricingDefinitions={pricingDefinitions}
                                         onEditField={handleEditField}
                                         onDeleteField={handleDeleteField}
                                         onDeleteBlock={handleDeleteBlock}
@@ -662,7 +768,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                                 {/* Right column: palette (desktop only) */}
                                 {!isMobile && (
                                     <Box sx={{ width: 220, flexShrink: 0 }}>
-                                        <FieldPalette conditions={conditions} />
+                                        <FieldPalette conditions={conditions} pricingDefinitions={pricingDefinitions} />
                                     </Box>
                                 )}
                             </Box>
@@ -679,11 +785,20 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                             allFields={allFields}
                             elements={elements}
                             onChange={setConditions}
+                            pricingDefinitions={pricingDefinitions}
+                        />
+                    )}
+
+                    {builderTab === 2 && (
+                        <PricingEditor
+                            pricingDefinitions={pricingDefinitions}
+                            elements={elements}
+                            onChange={setPricingDefinitions}
                         />
                     )}
                 </>
             ) : (
-                <FormPreview elements={elements} conditions={conditions} />
+                <FormPreview elements={elements} conditions={conditions} pricingDefinitions={pricingDefinitions} />
             )}
 
             <FieldTypeSelector
@@ -698,6 +813,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 onClose={() => setEditingField(null)}
                 onSave={handleSaveField}
                 conditions={conditions}
+                pricingDefinitions={pricingDefinitions}
             />
 
             <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
@@ -744,12 +860,13 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 interface FormDropZoneProps {
     elements: FormElement[];
     conditions: FormCondition[];
+    pricingDefinitions?: PricingDefinition[];
     onEditField: (field: FormField) => void;
     onDeleteField: (fieldId: string) => void;
     onDeleteBlock: (blockId: string) => void;
 }
 
-function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDeleteBlock }: FormDropZoneProps) {
+function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, onDeleteField, onDeleteBlock }: FormDropZoneProps) {
     const usedFieldIds = getFieldIdsUsedInConditions(conditions);
 
     const { setNodeRef, isOver } = useDroppable({
@@ -799,6 +916,7 @@ function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDele
                                         onDeleteField={onDeleteField}
                                         onDeleteBlock={onDeleteBlock}
                                         usedFieldIds={usedFieldIds}
+                                        pricingDefinitions={pricingDefinitions}
                                     />
                                 </SortableFieldItem>
                             );
@@ -811,6 +929,7 @@ function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDele
                                     onEdit={() => onEditField(el)}
                                     onDelete={() => onDeleteField(el.id)}
                                     usedInCondition={usedFieldIds.has(el.id)}
+                                    pricingDefinitions={pricingDefinitions}
                                 />
                             </SortableFieldItem>
                         );

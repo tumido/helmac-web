@@ -8,6 +8,7 @@ export type FieldType =
     | "select"
     | "radio"
     | "date"
+    | "pricing_select"
     | "heading"
     | "description";
 
@@ -20,6 +21,23 @@ export interface InputField {
     required: boolean;
     placeholder?: string;
     options?: string[]; // For select/radio
+    pricingId?: string; // For pricing_select: references PricingDefinition.id
+}
+
+// --- Pricing system ---
+
+export interface PricedOption {
+    id: string;
+    name: string;           // e.g. "Základní balíček"
+    description: string;    // e.g. "Ubytování ve stanu, strava"
+    prices: number[];       // prices[i] for priceTiers[i], prices[length-1] = fallback (after last tier)
+}
+
+export interface PricingDefinition {
+    id: string;
+    name: string;           // admin label, e.g. "Ubytování"
+    priceTiers: string[];   // ISO date deadlines, shared across options
+    options: PricedOption[];
 }
 
 // Layout: heading
@@ -64,8 +82,9 @@ export interface ConditionBlock {
 export type FormElement = FormField | ConditionBlock;
 
 export interface RegistrationFormData {
-    conditions: FormCondition[];   // defined in "Podmínky" tab
-    fields: FormElement[];         // form content, can contain ConditionBlocks
+    conditions: FormCondition[];           // defined in "Podmínky" tab
+    pricingDefinitions: PricingDefinition[]; // defined in "Ceník" tab
+    fields: FormElement[];                 // form content, can contain ConditionBlocks
 }
 
 // --- Type guards ---
@@ -111,7 +130,7 @@ export type SubmissionData = Record<string, string | number | boolean>;
 // Metadata for each field type (Czech labels for admin UI)
 export const FIELD_TYPE_META: Record<
     FieldType,
-    { label: string; icon: string; group: "input" | "layout" }
+    { label: string; icon: string; group: "input" | "layout" | "pricing" }
 > = {
     text: { label: "Text", icon: "TextFields", group: "input" },
     email: { label: "Email", icon: "Email", group: "input" },
@@ -121,6 +140,7 @@ export const FIELD_TYPE_META: Record<
     select: { label: "Výběr z možností", icon: "List", group: "input" },
     radio: { label: "Přepínač", icon: "RadioButtonChecked", group: "input" },
     date: { label: "Datum", icon: "CalendarMonth", group: "input" },
+    pricing_select: { label: "Cenový výběr", icon: "Sell", group: "pricing" },
     heading: { label: "Nadpis", icon: "Title", group: "layout" },
     description: { label: "Popisek", icon: "Article", group: "layout" },
 };

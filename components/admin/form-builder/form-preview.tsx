@@ -15,15 +15,17 @@ import {
     Radio,
     Paper,
 } from "@mui/material";
-import type { FormField, FormElement, FormCondition } from "@/lib/types/registration-form";
+import type { FormField, FormElement, FormCondition, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, isConditionBlock } from "@/lib/types/registration-form";
+import { getCurrentPrice, formatPrice } from "@/lib/utils/pricing";
 
 interface FormPreviewProps {
     elements: FormElement[];
     conditions: FormCondition[];
+    pricingDefinitions?: PricingDefinition[];
 }
 
-export function FormPreview({ elements, conditions }: FormPreviewProps) {
+export function FormPreview({ elements, conditions, pricingDefinitions }: FormPreviewProps) {
     if (elements.length === 0) {
         return (
             <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
@@ -58,20 +60,20 @@ export function FormPreview({ elements, conditions }: FormPreviewProps) {
                                 </Typography>
                                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                     {el.children.map((child) => (
-                                        <PreviewField key={child.id} field={child} />
+                                        <PreviewField key={child.id} field={child} pricingDefinitions={pricingDefinitions} />
                                     ))}
                                 </Box>
                             </Box>
                         );
                     }
-                    return <PreviewField key={el.id} field={el} />;
+                    return <PreviewField key={el.id} field={el} pricingDefinitions={pricingDefinitions} />;
                 })}
             </Box>
         </Paper>
     );
 }
 
-function PreviewField({ field }: { field: FormField }) {
+function PreviewField({ field, pricingDefinitions }: { field: FormField; pricingDefinitions?: PricingDefinition[] }) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -131,6 +133,40 @@ function PreviewField({ field }: { field: FormField }) {
                     </RadioGroup>
                 </FormControl>
             );
+
+        case "pricing_select": {
+            const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+            if (!def) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
+            return (
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {field.label}{field.required ? " *" : ""}
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {def.options.map((opt) => {
+                            const price = getCurrentPrice(def.priceTiers, opt.prices);
+                            return (
+                                <Paper
+                                    key={opt.id}
+                                    variant="outlined"
+                                    sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                >
+                                    <Box>
+                                        <Typography variant="body2" fontWeight={500}>{opt.name}</Typography>
+                                        {opt.description && (
+                                            <Typography variant="caption" color="text.secondary">{opt.description}</Typography>
+                                        )}
+                                    </Box>
+                                    <Typography variant="body2" fontWeight={600} color="primary">
+                                        {formatPrice(price)}
+                                    </Typography>
+                                </Paper>
+                            );
+                        })}
+                    </Box>
+                </Box>
+            );
+        }
 
         case "textarea":
             return (

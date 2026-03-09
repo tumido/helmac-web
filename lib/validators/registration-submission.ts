@@ -52,7 +52,8 @@ function buildFieldSchema(field: InputField): z.ZodTypeAny {
         }
 
         case "select":
-        case "radio": {
+        case "radio":
+        case "pricing_select": {
             let schema = z.string();
             if (field.required) {
                 schema = schema.min(1, "Vyberte jednu z možností");

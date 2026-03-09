@@ -22,6 +22,7 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
     const formData = migrateFormData(submission.form.fields);
     const fields = getAllFields(formData.fields);
     const data = submission.data as Record<string, unknown>;
+    const pricingDefinitions = formData.pricingDefinitions;
 
     return (
         <Container maxWidth="lg">
@@ -52,6 +53,7 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                             submissionId={submissionId}
                             fields={fields}
                             data={data}
+                            pricingDefinitions={pricingDefinitions}
                         />
                     </Paper>
                 </Grid>

@@ -1,10 +1,10 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { AccountTree } from "@mui/icons-material";
+import { AccountTree, Sell } from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
-import type { FormCondition } from "@/lib/types/registration-form";
+import type { FormCondition, PricingDefinition } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
 interface DraggablePaletteItemProps {
@@ -92,11 +92,56 @@ function DraggableConditionItem({ condition }: DraggableConditionItemProps) {
     );
 }
 
-interface FieldPaletteProps {
-    conditions?: FormCondition[];
+interface DraggablePricingItemProps {
+    definition: PricingDefinition;
 }
 
-export function FieldPalette({ conditions = [] }: FieldPaletteProps) {
+function DraggablePricingItem({ definition }: DraggablePricingItemProps) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `palette-pricing-${definition.id}`,
+        data: { type: "pricing", definitionId: definition.id },
+    });
+
+    return (
+        <Paper
+            ref={setNodeRef}
+            {...attributes}
+            {...listeners}
+            variant="outlined"
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: 1.5,
+                py: 1,
+                cursor: "grab",
+                opacity: isDragging ? 0.5 : 1,
+                borderColor: "success.main",
+                "&:hover": {
+                    borderColor: "success.dark",
+                    backgroundColor: "action.hover",
+                },
+                "&:active": {
+                    cursor: "grabbing",
+                },
+            }}
+        >
+            <Box sx={{ color: "success.main", display: "flex" }}>
+                <Sell fontSize="small" />
+            </Box>
+            <Typography variant="body2" noWrap>
+                {definition.name || "(nepojmenovaná)"}
+            </Typography>
+        </Paper>
+    );
+}
+
+interface FieldPaletteProps {
+    conditions?: FormCondition[];
+    pricingDefinitions?: PricingDefinition[];
+}
+
+export function FieldPalette({ conditions = [], pricingDefinitions = [] }: FieldPaletteProps) {
     const inputTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "input");
     const layoutTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "layout");
 
@@ -135,11 +180,27 @@ export function FieldPalette({ conditions = [] }: FieldPaletteProps) {
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                         Podmínky
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
                         {conditions.map((condition) => (
                             <DraggableConditionItem
                                 key={condition.id}
                                 condition={condition}
+                            />
+                        ))}
+                    </Box>
+                </>
+            )}
+
+            {pricingDefinitions.length > 0 && (
+                <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                        Ceník
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                        {pricingDefinitions.map((def) => (
+                            <DraggablePricingItem
+                                key={def.id}
+                                definition={def}
                             />
                         ))}
                     </Box>

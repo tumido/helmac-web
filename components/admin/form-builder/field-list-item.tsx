@@ -2,7 +2,7 @@
 
 import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
-import type { FormField } from "@/lib/types/registration-form";
+import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
@@ -11,9 +11,10 @@ interface FieldListItemProps {
     onEdit: () => void;
     onDelete: () => void;
     usedInCondition?: boolean;
+    pricingDefinitions?: PricingDefinition[];
 }
 
-export function FieldListItem({ field, onEdit, onDelete, usedInCondition }: FieldListItemProps) {
+export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricingDefinitions }: FieldListItemProps) {
     const meta = FIELD_TYPE_META[field.type];
     const isInput = isInputField(field);
 
@@ -63,6 +64,10 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition }: Fiel
                 {isInput && (
                     <Typography variant="caption" color="text.secondary">
                         {field.name}
+                        {field.type === "pricing_select" && field.pricingId && pricingDefinitions && (() => {
+                            const def = pricingDefinitions.find((d) => d.id === field.pricingId);
+                            return def ? ` · Ceník: ${def.name}` : "";
+                        })()}
                     </Typography>
                 )}
             </Box>

@@ -17,9 +17,10 @@ import {
     Tooltip,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import type { FormField, FormCondition, InputField, HeadingField, DescriptionField } from "@/lib/types/registration-form";
+import type { FormField, FormCondition, InputField, HeadingField, DescriptionField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { getConditionsUsingOptionValue } from "@/lib/utils/condition-validation";
+import { formatPrice } from "@/lib/utils/pricing";
 
 interface FieldEditorProps {
     open: boolean;
@@ -27,9 +28,10 @@ interface FieldEditorProps {
     onClose: () => void;
     onSave: (field: FormField) => void;
     conditions?: FormCondition[];
+    pricingDefinitions?: PricingDefinition[];
 }
 
-export function FieldEditor({ open, field, onClose, onSave, conditions }: FieldEditorProps) {
+export function FieldEditor({ open, field, onClose, onSave, conditions, pricingDefinitions }: FieldEditorProps) {
     if (!field) return null;
 
     return (
@@ -40,15 +42,17 @@ export function FieldEditor({ open, field, onClose, onSave, conditions }: FieldE
             onClose={onClose}
             onSave={onSave}
             conditions={conditions}
+            pricingDefinitions={pricingDefinitions}
         />
     );
 }
 
-function FieldEditorInner({ open, field, onClose, onSave, conditions }: Omit<FieldEditorProps, "field"> & { field: FormField }) {
+function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDefinitions }: Omit<FieldEditorProps, "field"> & { field: FormField }) {
     const [editData, setEditData] = useState<FormField>(() => structuredClone(field));
 
     const isInput = isInputField(editData);
     const needsOptions = isInput && (editData.type === "select" || editData.type === "radio");
+    const isPricingSelect = isInput && editData.type === "pricing_select";
 
     const handleSave = () => {
         if (!editData) return;
@@ -90,12 +94,14 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions }: Omit<Fie
                                 required
                                 helperText="Unikátní identifikátor pole (pouze a-z, 0-9, _)"
                             />
-                            <TextField
-                                label="Placeholder"
-                                value={inputData.placeholder || ""}
-                                onChange={(e) => updateInput({ placeholder: e.target.value || undefined })}
-                                fullWidth
-                            />
+                            {!isPricingSelect && (
+                                <TextField
+                                    label="Placeholder"
+                                    value={inputData.placeholder || ""}
+                                    onChange={(e) => updateInput({ placeholder: e.target.value || undefined })}
+                                    fullWidth
+                                />
+                            )}
                             <FormControlLabel
                                 control={
                                     <Switch
@@ -105,6 +111,35 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions }: Omit<Fie
                                 }
                                 label="Povinné pole"
                             />
+
+                            {isPricingSelect && (() => {
+                                const def = pricingDefinitions?.find((d) => d.id === inputData.pricingId);
+                                return (
+                                    <Box sx={{ p: 2, backgroundColor: "action.hover", borderRadius: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                            Cenová skupina: {def?.name || "(nenalezena)"}
+                                        </Typography>
+                                        {def && (
+                                            <>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"} · {def.priceTiers.length} {def.priceTiers.length === 1 ? "termín" : "termíny"}
+                                                </Typography>
+                                                <Box sx={{ mt: 1 }}>
+                                                    {def.options.map((opt) => (
+                                                        <Typography key={opt.id} variant="body2" sx={{ mb: 0.5 }}>
+                                                            {opt.name}{opt.description ? ` — ${opt.description}` : ""} ({def.priceTiers.map((_, i) => formatPrice(opt.prices[i])).join(" / ")}
+                                                            {def.priceTiers.length > 0 ? " / " : ""}{formatPrice(opt.prices[def.priceTiers.length])})
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            </>
+                                        )}
+                                        <Typography variant="caption" color="primary" sx={{ mt: 1, display: "block" }}>
+                                            Upravit ceny v záložce Ceník
+                                        </Typography>
+                                    </Box>
+                                );
+                            })()}
 
                             {needsOptions && (
                                 <Box>

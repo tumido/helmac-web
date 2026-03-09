@@ -9,7 +9,7 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableFieldItem } from "./sortable-field-item";
 import { FieldListItem } from "./field-list-item";
-import type { ConditionBlock, FormCondition, FormField } from "@/lib/types/registration-form";
+import type { ConditionBlock, FormCondition, FormField, PricingDefinition } from "@/lib/types/registration-form";
 
 interface ConditionBlockItemProps {
     block: ConditionBlock;
@@ -18,6 +18,7 @@ interface ConditionBlockItemProps {
     onDeleteField: (fieldId: string) => void;
     onDeleteBlock: (blockId: string) => void;
     usedFieldIds?: Set<string>;
+    pricingDefinitions?: PricingDefinition[];
 }
 
 export function ConditionBlockItem({
@@ -27,6 +28,7 @@ export function ConditionBlockItem({
     onDeleteField,
     onDeleteBlock,
     usedFieldIds,
+    pricingDefinitions,
 }: ConditionBlockItemProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: `container-${block.id}`,
@@ -104,6 +106,7 @@ export function ConditionBlockItem({
                                     onEdit={() => onEditField(child)}
                                     onDelete={() => onDeleteField(child.id)}
                                     usedInCondition={usedFieldIds?.has(child.id)}
+                                    pricingDefinitions={pricingDefinitions}
                                 />
                             </SortableFieldItem>
                         ))

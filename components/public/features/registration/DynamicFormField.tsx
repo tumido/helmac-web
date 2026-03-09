@@ -15,17 +15,19 @@ import {
     Divider,
     Box,
 } from "@mui/material";
-import type { FormField } from "@/lib/types/registration-form";
+import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
+import { getCurrentTierIndex, formatPrice } from "@/lib/utils/pricing";
 
 interface DynamicFormFieldProps {
     field: FormField;
     value: string | number | boolean;
     error?: string;
     onChange: (name: string, value: string | number | boolean) => void;
+    pricingDefinitions?: PricingDefinition[];
 }
 
-export function DynamicFormField({ field, value, error, onChange }: DynamicFormFieldProps) {
+export function DynamicFormField({ field, value, error, onChange, pricingDefinitions }: DynamicFormFieldProps) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -171,6 +173,78 @@ export function DynamicFormField({ field, value, error, onChange }: DynamicFormF
                     fullWidth
                 />
             );
+
+        case "pricing_select": {
+            const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+            if (!def) return null;
+            const currentTier = getCurrentTierIndex(def.priceTiers);
+            return (
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {label}
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {def.options.map((opt) => {
+                            const isSelected = String(value) === opt.name;
+                            return (
+                                <Box
+                                    key={opt.id}
+                                    onClick={() => onChange(field.name, opt.name)}
+                                    sx={{
+                                        p: 2,
+                                        border: "2px solid",
+                                        borderColor: isSelected ? "primary.main" : "divider",
+                                        borderRadius: 1,
+                                        backgroundColor: isSelected ? "primary.50" : "transparent",
+                                        cursor: "pointer",
+                                        "&:hover": {
+                                            borderColor: isSelected ? "primary.main" : "action.selected",
+                                        },
+                                    }}
+                                >
+                                    <Typography variant="body1" fontWeight={600}>
+                                        {opt.name}
+                                    </Typography>
+                                    {opt.description && (
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                            {opt.description}
+                                        </Typography>
+                                    )}
+                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mt: 0.5 }}>
+                                        {def.priceTiers.map((tier, idx) => {
+                                            const isCurrent = idx === currentTier;
+                                            return (
+                                                <Typography
+                                                    key={idx}
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontWeight: isCurrent ? 700 : 400,
+                                                        color: isCurrent ? "primary.main" : "text.secondary",
+                                                    }}
+                                                >
+                                                    {isCurrent && "► "}do {new Date(tier).toLocaleDateString("cs-CZ")}: {formatPrice(opt.prices[idx])}
+                                                </Typography>
+                                            );
+                                        })}
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                fontWeight: currentTier === def.priceTiers.length ? 700 : 400,
+                                                color: currentTier === def.priceTiers.length ? "primary.main" : "text.secondary",
+                                            }}
+                                        >
+                                            {currentTier === def.priceTiers.length && "► "}po termínu: {formatPrice(opt.prices[def.priceTiers.length])}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                    <input type="hidden" name={field.name} value={String(value)} />
+                    {error && <FormHelperText error>{error}</FormHelperText>}
+                </Box>
+            );
+        }
 
         case "text":
         default:

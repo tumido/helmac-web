@@ -22,13 +22,28 @@ const formConditionSchema = z.object({
 });
 
 const inputFieldSchema = z.object({
-    type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date"]),
+    type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date", "pricing_select"]),
     id: z.string().min(1),
     name: z.string().min(1),
     label: z.string().min(1, "Popisek je povinný"),
     required: z.boolean(),
     placeholder: z.string().optional(),
     options: z.array(z.string().min(1)).optional(),
+    pricingId: z.string().optional(),
+});
+
+const pricedOptionSchema = z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    description: z.string(),
+    prices: z.array(z.number()),
+});
+
+const pricingDefinitionSchema = z.object({
+    id: z.string().min(1),
+    name: z.string().min(1, "Název cenové skupiny je povinný"),
+    priceTiers: z.array(z.string()),
+    options: z.array(pricedOptionSchema).min(1, "Cenová skupina musí mít alespoň jednu možnost"),
 });
 
 const headingFieldSchema = z.object({
@@ -60,9 +75,10 @@ const formElementSchema = z.union([formFieldSchema, conditionBlockSchema]);
 
 export const saveRegistrationFormSchema = z.object({
     conditions: z.array(formConditionSchema),
+    pricingDefinitions: z.array(pricingDefinitionSchema),
     fields: z.array(formElementSchema),
 }).superRefine((data, ctx) => {
-    const { conditions, fields } = data;
+    const { conditions, pricingDefinitions, fields } = data;
 
     // Collect all FormField items (flattened from elements)
     const allFields: z.infer<typeof formFieldSchema>[] = [];
@@ -137,6 +153,33 @@ export const saveRegistrationFormSchema = z.object({
                     code: z.ZodIssueCode.custom,
                     message: `Pravidlo podmínky "${condition.name}" odkazuje na neexistující pole`,
                     path: ["conditions"],
+                });
+            }
+        }
+    }
+
+    // Validate pricing_select fields reference existing pricing definitions
+    const pricingIds = new Set(pricingDefinitions.map((d) => d.id));
+    for (const field of inputFields) {
+        if (field.type === "pricing_select") {
+            if (!field.pricingId || !pricingIds.has(field.pricingId)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Pole "${field.label}" odkazuje na neexistující cenovou skupinu`,
+                    path: ["fields"],
+                });
+            }
+        }
+    }
+
+    // Validate pricing option prices length matches tiers + 1
+    for (const def of pricingDefinitions) {
+        for (const opt of def.options) {
+            if (opt.prices.length !== def.priceTiers.length + 1) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Možnost "${opt.name}" v cenové skupině "${def.name}" má nesprávný počet cen`,
+                    path: ["pricingDefinitions"],
                 });
             }
         }
