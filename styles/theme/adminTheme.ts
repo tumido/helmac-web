@@ -40,6 +40,34 @@ export const adminTheme = createTheme(
             },
         },
         components: {
+            MuiAppBar: {
+                defaultProps: {
+                    elevation: 0,
+                },
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        backgroundColor: theme.palette.background.paper,
+                        color: theme.palette.text.primary,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                    }),
+                },
+            },
+            MuiDrawer: {
+                styleOverrides: {
+                    paper: ({ theme }) => ({
+                        backgroundColor: theme.palette.background.paper,
+                        borderRight: `1px solid ${theme.palette.divider}`,
+                    }),
+                },
+            },
+            MuiTab: {
+                styleOverrides: {
+                    root: {
+                        textTransform: "none",
+                        fontWeight: 600,
+                    },
+                },
+            },
             MuiButton: {
                 styleOverrides: {
                     root: {

@@ -30,13 +30,15 @@ export function SortableFieldItem({ id, children }: SortableFieldItemProps) {
         <Paper
             ref={setNodeRef}
             style={style}
+            variant={isDragging ? "elevation" : "outlined"}
             sx={{
                 display: "flex",
                 alignItems: "center",
                 mb: 1,
+                borderRadius: 2,
                 "&:last-child": { mb: 0 },
             }}
-            elevation={isDragging ? 4 : 1}
+            elevation={isDragging ? 4 : 0}
         >
             <Box
                 {...attributes}

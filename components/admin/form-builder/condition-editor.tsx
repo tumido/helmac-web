@@ -7,6 +7,7 @@ import {
     Card,
     CardContent,
     CardActions,
+    Chip,
     Collapse,
     Dialog,
     DialogTitle,
@@ -27,6 +28,7 @@ import {
     Delete,
     ExpandMore,
     ExpandLess,
+    AccountTree,
 } from "@mui/icons-material";
 import type { FormCondition, ConditionRule, FormField, FormElement, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
@@ -147,25 +149,41 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                 {conditions.map((condition) => {
                     const isExpanded = expandedId === condition.id;
                     return (
-                        <Card key={condition.id} variant="outlined">
+                        <Card key={condition.id} variant="outlined" sx={{ borderRadius: 2 }}>
                             <Box
                                 sx={{
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 1,
+                                    gap: 1.5,
                                     px: 2,
-                                    py: 1,
+                                    py: 1.5,
                                     cursor: "pointer",
                                 }}
                                 onClick={() => setExpandedId(isExpanded ? null : condition.id)}
                             >
-                                {isExpanded ? <ExpandLess /> : <ExpandMore />}
-                                <Typography variant="body1" fontWeight={500} sx={{ flex: 1 }}>
-                                    {condition.name || "(nepojmenovaná)"}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {condition.rules.length} {condition.rules.length === 1 ? "pravidlo" : "pravidla"}
-                                </Typography>
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 1,
+                                        backgroundColor: "info.main",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <AccountTree sx={{ fontSize: 18, color: "white" }} />
+                                </Box>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="body1" fontWeight={500} noWrap>
+                                        {condition.name || "(nepojmenovaná)"}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {condition.rules.length} {condition.rules.length === 1 ? "pravidlo" : "pravidla"}
+                                    </Typography>
+                                </Box>
+                                {isExpanded ? <ExpandLess color="action" /> : <ExpandMore color="action" />}
                                 <Tooltip title="Smazat podmínku">
                                     <IconButton
                                         size="small"
@@ -195,19 +213,78 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                                         Pravidla (všechna musí platit)
                                     </Typography>
 
+                                    {/* Column labels */}
+                                    {condition.rules.length > 0 && (
+                                        <Box sx={{ display: "flex", gap: 1, px: 1.5, mb: 0.5 }}>
+                                            <Typography
+                                                variant="overline"
+                                                color="text.secondary"
+                                                sx={{ minWidth: 140, fontSize: "0.65rem", letterSpacing: 1 }}
+                                            >
+                                                TYP
+                                            </Typography>
+                                            <Typography
+                                                variant="overline"
+                                                color="text.secondary"
+                                                sx={{ flex: 1, fontSize: "0.65rem", letterSpacing: 1 }}
+                                            >
+                                                POLE
+                                            </Typography>
+                                        </Box>
+                                    )}
+
                                     {condition.rules.map((rule, ruleIdx) => (
-                                        <RuleRow
-                                            key={ruleIdx}
-                                            rule={rule}
-                                            inputFields={inputFields}
-                                            allFields={allFields}
-                                            pricingDefinitions={pricingDefinitions}
-                                            onUpdate={(updates) => handleUpdateRule(condition.id, ruleIdx, updates)}
-                                            onChangeType={(type) => handleChangeRuleType(condition.id, ruleIdx, type)}
-                                            onDelete={() => handleDeleteRule(condition.id, ruleIdx)}
-                                            canDelete={condition.rules.length > 1}
-                                        />
+                                        <Box key={ruleIdx}>
+                                            {ruleIdx > 0 && (
+                                                <Box sx={{ display: "flex", justifyContent: "center", my: 0.5 }}>
+                                                    <Chip
+                                                        label="AND"
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        sx={{ fontSize: "0.65rem", height: 20 }}
+                                                    />
+                                                </Box>
+                                            )}
+                                            <RuleRow
+                                                rule={rule}
+                                                inputFields={inputFields}
+                                                allFields={allFields}
+                                                pricingDefinitions={pricingDefinitions}
+                                                onUpdate={(updates) => handleUpdateRule(condition.id, ruleIdx, updates)}
+                                                onChangeType={(type) => handleChangeRuleType(condition.id, ruleIdx, type)}
+                                                onDelete={() => handleDeleteRule(condition.id, ruleIdx)}
+                                                canDelete={condition.rules.length > 1}
+                                            />
+                                        </Box>
                                     ))}
+
+                                    {/* Action summary */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                            mt: 1.5,
+                                            px: 1.5,
+                                            py: 1,
+                                            borderRadius: 1,
+                                            backgroundColor: (theme) => theme.palette.mode === "light" ? "rgba(46, 125, 50, 0.06)" : "rgba(46, 125, 50, 0.12)",
+                                        }}
+                                    >
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.65rem" }}>
+                                            Pak provést:
+                                        </Typography>
+                                        <Chip
+                                            label="ZOBRAZIT"
+                                            size="small"
+                                            color="success"
+                                            sx={{ fontSize: "0.65rem", height: 20 }}
+                                        />
+                                        <Typography variant="caption" color="text.secondary">
+                                            pole v bloku
+                                        </Typography>
+                                    </Box>
                                 </CardContent>
                                 <CardActions sx={{ px: 2, pt: 0 }}>
                                     <Button
@@ -224,15 +301,32 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                 })}
             </Box>
 
-            <Button
-                variant="outlined"
-                startIcon={<Add />}
+            {/* Add condition area */}
+            <Box
                 onClick={handleAddCondition}
-                sx={{ mt: 2 }}
-                fullWidth
+                sx={{
+                    mt: 2,
+                    p: 3,
+                    border: "2px dashed",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                        borderColor: "primary.main",
+                        backgroundColor: "action.hover",
+                    },
+                }}
             >
-                Přidat podmínku
-            </Button>
+                <Add color="action" />
+                <Typography variant="body2" color="text.secondary">
+                    Přidat novou podmínku
+                </Typography>
+            </Box>
 
             <Dialog open={!!blockInfo} onClose={() => setBlockInfo(null)}>
                 <DialogTitle>Nelze smazat podmínku</DialogTitle>
@@ -275,7 +369,6 @@ function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, o
                 flexDirection: "column",
                 gap: 1,
                 p: 1.5,
-                mb: 1,
                 border: "1px solid",
                 borderColor: "divider",
                 borderRadius: 1,

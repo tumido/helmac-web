@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { AccountTree, Sell } from "@mui/icons-material";
+import { AccountTree, Sell, InfoOutlined } from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import type { FormCondition, PricingDefinition } from "@/lib/types/registration-form";
@@ -11,13 +11,48 @@ interface DraggablePaletteItemProps {
     type: FieldType;
     label: string;
     icon: React.ReactNode;
+    compact?: boolean;
 }
 
-function DraggablePaletteItem({ type, label, icon }: DraggablePaletteItemProps) {
+function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-${type}`,
         data: { type },
     });
+
+    if (compact) {
+        return (
+            <Paper
+                ref={setNodeRef}
+                {...attributes}
+                {...listeners}
+                variant="outlined"
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 0.5,
+                    p: 1,
+                    cursor: "grab",
+                    opacity: isDragging ? 0.5 : 1,
+                    minHeight: 64,
+                    "&:hover": {
+                        borderColor: "primary.main",
+                        backgroundColor: "action.hover",
+                    },
+                    "&:active": {
+                        cursor: "grabbing",
+                    },
+                }}
+            >
+                <Box sx={{ color: "primary.main", display: "flex" }}>{icon}</Box>
+                <Typography variant="caption" sx={{ fontSize: "0.65rem", textAlign: "center" }}>
+                    {label}
+                </Typography>
+            </Paper>
+        );
+    }
 
     return (
         <Paper
@@ -146,17 +181,33 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
     const layoutTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "layout");
 
     return (
-        <Box sx={{ position: "sticky", top: 16 }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2,
+                borderRadius: 2,
+                position: "sticky",
+                top: 16,
+            }}
+        >
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                 Vstupní pole
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 1,
+                    mb: 2,
+                }}
+            >
                 {inputTypes.map(([type, meta]) => (
                     <DraggablePaletteItem
                         key={type}
                         type={type as FieldType}
                         label={meta.label}
                         icon={FIELD_TYPE_ICONS[meta.icon]}
+                        compact
                     />
                 ))}
             </Box>
@@ -196,7 +247,7 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                         Ceník
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
                         {pricingDefinitions.map((def) => (
                             <DraggablePricingItem
                                 key={def.id}
@@ -206,6 +257,23 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
                     </Box>
                 </>
             )}
-        </Box>
+
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 1,
+                    p: 1.5,
+                    borderRadius: 1,
+                    backgroundColor: "info.50",
+                    bgcolor: (theme) => theme.palette.mode === "light" ? "rgba(2, 136, 209, 0.08)" : "rgba(2, 136, 209, 0.15)",
+                }}
+            >
+                <InfoOutlined sx={{ fontSize: 16, color: "info.main", mt: 0.25 }} />
+                <Typography variant="caption" color="text.secondary">
+                    Přetáhněte pole do formuláře. Kliknutím upravíte nastavení.
+                </Typography>
+            </Box>
+        </Paper>
     );
 }

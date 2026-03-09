@@ -25,24 +25,33 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricin
                 alignItems: "center",
                 gap: 1,
                 px: 1.5,
-                py: 1,
-                minHeight: 48,
+                py: 1.5,
+                minHeight: 56,
             }}
         >
             <Box sx={{ color: "text.secondary", display: "flex" }}>
                 {FIELD_TYPE_ICONS[meta.icon]}
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: "primary.main",
+                        fontWeight: 700,
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
+                        fontSize: "0.6rem",
+                        lineHeight: 1,
+                        mb: 0.25,
+                        display: "block",
+                    }}
+                >
+                    {meta.label}
+                </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Typography variant="body2" noWrap fontWeight={500}>
                         {isInput ? field.label : field.text}
                     </Typography>
-                    <Chip
-                        label={meta.label}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.7rem", height: 20 }}
-                    />
                     {isInput && field.required && (
                         <Chip
                             label="Povinné"
@@ -70,15 +79,14 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricin
                         />
                     )}
                 </Box>
-                {isInput && (
-                    <Typography variant="caption" color="text.secondary">
-                        {field.name}
-                        {field.type === "pricing_select" && field.pricingId && pricingDefinitions && (() => {
-                            const def = pricingDefinitions.find((d) => d.id === field.pricingId);
-                            return def ? ` · Ceník: ${def.name}` : "";
-                        })()}
-                    </Typography>
-                )}
+                {isInput && field.type === "pricing_select" && field.pricingId && pricingDefinitions && (() => {
+                    const def = pricingDefinitions.find((d) => d.id === field.pricingId);
+                    return def ? (
+                        <Typography variant="caption" color="text.secondary">
+                            Ceník: {def.name}
+                        </Typography>
+                    ) : null;
+                })()}
             </Box>
             <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
                 <Tooltip title="Upravit">

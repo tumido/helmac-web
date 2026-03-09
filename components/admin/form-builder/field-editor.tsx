@@ -86,14 +86,6 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                 fullWidth
                                 required
                             />
-                            <TextField
-                                label="Název pole (name)"
-                                value={inputData.name}
-                                onChange={(e) => updateInput({ name: e.target.value.replace(/[^a-zA-Z0-9_]/g, "") })}
-                                fullWidth
-                                required
-                                helperText="Unikátní identifikátor pole (pouze a-z, 0-9, _)"
-                            />
                             {!isPricingSelect && (
                                 <TextField
                                     label="Placeholder"

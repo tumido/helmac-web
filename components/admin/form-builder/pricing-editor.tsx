@@ -14,6 +14,7 @@ import {
     DialogContentText,
     DialogActions,
     IconButton,
+    Paper,
     TextField,
     Tooltip,
     Typography,
@@ -23,6 +24,10 @@ import {
     Delete,
     ExpandMore,
     ExpandLess,
+    Sell,
+    CategoryOutlined,
+    CalendarTodayOutlined,
+    WarningAmberOutlined,
 } from "@mui/icons-material";
 import type { PricingDefinition, PricedOption, FormElement } from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
@@ -177,6 +182,19 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
         }));
     };
 
+    // Stats
+    const totalGroups = pricingDefinitions.length;
+    const totalActiveTiers = pricingDefinitions.reduce((sum, d) => {
+        const now = new Date().toISOString().split("T")[0];
+        return sum + d.priceTiers.filter((t) => t && t >= now).length;
+    }, 0);
+    const expiringTiers = pricingDefinitions.reduce((sum, d) => {
+        const now = new Date();
+        const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const today = now.toISOString().split("T")[0];
+        return sum + d.priceTiers.filter((t) => t && t >= today && t <= twoWeeksFromNow).length;
+    }, 0);
+
     return (
         <Box>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
@@ -196,25 +214,41 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                 {pricingDefinitions.map((def) => {
                     const isExpanded = expandedId === def.id;
                     return (
-                        <Card key={def.id} variant="outlined">
+                        <Card key={def.id} variant="outlined" sx={{ borderRadius: 2 }}>
                             <Box
                                 sx={{
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 1,
+                                    gap: 1.5,
                                     px: 2,
-                                    py: 1,
+                                    py: 1.5,
                                     cursor: "pointer",
                                 }}
                                 onClick={() => setExpandedId(isExpanded ? null : def.id)}
                             >
-                                {isExpanded ? <ExpandLess /> : <ExpandMore />}
-                                <Typography variant="body1" fontWeight={500} sx={{ flex: 1 }}>
-                                    {def.name || "(nepojmenovaná)"}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"} · {def.priceTiers.length} {def.priceTiers.length === 1 ? "termín" : "termíny"}
-                                </Typography>
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 1,
+                                        backgroundColor: "success.main",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Sell sx={{ fontSize: 18, color: "white" }} />
+                                </Box>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="body1" fontWeight={500} noWrap>
+                                        {def.name || "(nepojmenovaná)"}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"} · {def.priceTiers.length} {def.priceTiers.length === 1 ? "termín" : "termíny"}
+                                    </Typography>
+                                </Box>
+                                {isExpanded ? <ExpandLess color="action" /> : <ExpandMore color="action" />}
                                 <Tooltip title="Smazat cenovou skupinu">
                                     <IconButton
                                         size="small"
@@ -247,30 +281,48 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
                                         Ceny platí do uvedeného data. Po posledním termínu platí cena &bdquo;na místě&ldquo;.
                                     </Typography>
-                                    {def.priceTiers.map((tier, idx) => (
-                                        <Box key={idx} sx={{ display: "flex", gap: 1, mb: 1, alignItems: "center" }}>
-                                            <Typography variant="body2" sx={{ minWidth: 80 }}>
-                                                Termín {idx + 1}:
-                                            </Typography>
-                                            <TextField
-                                                type="date"
-                                                value={tier}
-                                                onChange={(e) => handleUpdateTier(def.id, idx, e.target.value)}
-                                                size="small"
-                                                sx={{ flex: 1 }}
-                                                InputLabelProps={{ shrink: true }}
-                                            />
-                                            <Tooltip title="Odebrat termín">
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => handleRemoveTier(def.id, idx)}
+
+                                    {/* Tier cards displayed side by side */}
+                                    {def.priceTiers.length > 0 && (
+                                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
+                                            {def.priceTiers.map((tier, idx) => (
+                                                <Paper
+                                                    key={idx}
+                                                    variant="outlined"
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1,
+                                                        p: 1,
+                                                        borderRadius: 1,
+                                                        flex: "1 1 auto",
+                                                        minWidth: 180,
+                                                    }}
                                                 >
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                                    <Typography variant="body2" sx={{ minWidth: 60, fontWeight: 500 }}>
+                                                        Termín {idx + 1}
+                                                    </Typography>
+                                                    <TextField
+                                                        type="date"
+                                                        value={tier}
+                                                        onChange={(e) => handleUpdateTier(def.id, idx, e.target.value)}
+                                                        size="small"
+                                                        sx={{ flex: 1 }}
+                                                        InputLabelProps={{ shrink: true }}
+                                                    />
+                                                    <Tooltip title="Odebrat termín">
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => handleRemoveTier(def.id, idx)}
+                                                        >
+                                                            <Delete fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Paper>
+                                            ))}
                                         </Box>
-                                    ))}
+                                    )}
                                     <Button
                                         size="small"
                                         startIcon={<Add />}
@@ -336,6 +388,9 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                                         size="small"
                                                         sx={{ width: 130 }}
                                                         inputProps={{ min: 0 }}
+                                                        InputProps={{
+                                                            endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                        }}
                                                     />
                                                 ))}
                                                 <TextField
@@ -346,6 +401,9 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                                     size="small"
                                                     sx={{ width: 130 }}
                                                     inputProps={{ min: 0 }}
+                                                    InputProps={{
+                                                        endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                    }}
                                                 />
                                             </Box>
                                         </Box>
@@ -375,6 +433,45 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
             >
                 Přidat cenovou skupinu
             </Button>
+
+            {/* Stats summary */}
+            {pricingDefinitions.length > 0 && (
+                <Box sx={{ display: "flex", gap: 2, mt: 3, flexWrap: "wrap" }}>
+                    <Paper variant="outlined" sx={{ p: 2, flex: "1 1 0", minWidth: 140, borderRadius: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                            <CategoryOutlined sx={{ fontSize: 18, color: "primary.main" }} />
+                            <Typography variant="caption" color="text.secondary">
+                                Celkem skupin
+                            </Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight={600}>
+                            {totalGroups}
+                        </Typography>
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 2, flex: "1 1 0", minWidth: 140, borderRadius: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                            <CalendarTodayOutlined sx={{ fontSize: 18, color: "success.main" }} />
+                            <Typography variant="caption" color="text.secondary">
+                                Aktivních termínů
+                            </Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight={600}>
+                            {totalActiveTiers}
+                        </Typography>
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 2, flex: "1 1 0", minWidth: 140, borderRadius: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                            <WarningAmberOutlined sx={{ fontSize: 18, color: "warning.main" }} />
+                            <Typography variant="caption" color="text.secondary">
+                                Končící termíny
+                            </Typography>
+                        </Box>
+                        <Typography variant="h6" fontWeight={600}>
+                            {expiringTiers}
+                        </Typography>
+                    </Paper>
+                </Box>
+            )}
 
             <Dialog open={!!blockInfo} onClose={() => setBlockInfo(null)}>
                 <DialogTitle>Nelze smazat cenovou skupinu</DialogTitle>

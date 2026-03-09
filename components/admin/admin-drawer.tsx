@@ -11,8 +11,13 @@ import {
     Divider,
     Box,
     Typography,
+    Avatar,
+    Chip,
+    IconButton,
+    Tooltip,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
+import { signOut } from "next-auth/react";
 import { ListItemLinkButton } from "@/components/ui/link-button";
 import {
     Dashboard,
@@ -21,6 +26,7 @@ import {
     Newspaper,
     PhotoLibrary,
     People,
+    Logout,
 } from "@mui/icons-material";
 import { useSidebarContext } from "@/lib/contexts/sidebar-context";
 import { YearSidebar } from "./year-sidebar";
@@ -65,11 +71,18 @@ const selectedSx = {
     },
 };
 
+const ROLE_LABELS: Record<string, string> = {
+    SUPER_ADMIN: "Super Admin",
+    ADMIN: "Admin",
+    EDITOR: "Editor",
+};
+
 interface AdminDrawerProps {
     width: number;
     mobileOpen: boolean;
     onClose: () => void;
     userRole?: string;
+    userName?: string;
     activeYearId?: string;
 }
 
@@ -78,6 +91,7 @@ export function AdminDrawer({
     mobileOpen,
     onClose,
     userRole,
+    userName,
     activeYearId,
 }: AdminDrawerProps) {
     const pathname = usePathname();
@@ -101,9 +115,57 @@ export function AdminDrawer({
         onClose();
     };
 
+    const handleLogout = async () => {
+        await signOut({ callbackUrl: "/admin/login" });
+    };
+
     const activeYearIsActive = activeYearHref
         ? pathname.startsWith(activeYearHref)
         : false;
+
+    const userSection = (
+        <Box>
+            <Divider />
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    px: 2,
+                    py: 1.5,
+                }}
+            >
+                <Avatar
+                    sx={{
+                        width: 32,
+                        height: 32,
+                        fontSize: "0.85rem",
+                        bgcolor: "primary.main",
+                    }}
+                >
+                    {userName ? userName.charAt(0).toUpperCase() : "U"}
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={500} noWrap>
+                        {userName || "Uživatel"}
+                    </Typography>
+                    {userRole && (
+                        <Chip
+                            label={ROLE_LABELS[userRole] || userRole}
+                            size="small"
+                            variant="outlined"
+                            sx={{ height: 18, fontSize: "0.65rem", mt: 0.25 }}
+                        />
+                    )}
+                </Box>
+                <Tooltip title="Odhlásit">
+                    <IconButton size="small" onClick={handleLogout}>
+                        <Logout fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            </Box>
+        </Box>
+    );
 
     const defaultDrawerContent = (
         <Box>
@@ -177,9 +239,18 @@ export function AdminDrawer({
         </Box>
     );
 
-    const drawerContent = sidebarYear
+    const sidebarContent = sidebarYear
         ? <YearSidebar yearData={sidebarYear} onClose={onClose} />
         : defaultDrawerContent;
+
+    const drawerContent = (
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            <Box sx={{ flex: 1, overflow: "auto" }}>
+                {sidebarContent}
+            </Box>
+            {userSection}
+        </Box>
+    );
 
     return (
         <Box

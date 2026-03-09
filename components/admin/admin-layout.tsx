@@ -30,13 +30,13 @@ export function AdminLayout({ children, userName, userRole, activeYearId }: Admi
                     <AdminAppBar
                         drawerWidth={DRAWER_WIDTH}
                         onMenuClick={() => setMobileOpen(!mobileOpen)}
-                        userName={userName}
                     />
                     <AdminDrawer
                         width={DRAWER_WIDTH}
                         mobileOpen={mobileOpen}
                         onClose={() => setMobileOpen(false)}
                         userRole={userRole}
+                        userName={userName}
                         activeYearId={activeYearId}
                     />
                     <Box

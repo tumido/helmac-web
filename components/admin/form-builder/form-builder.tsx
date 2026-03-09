@@ -17,7 +17,7 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
-import { Add, Save, Visibility, Delete } from "@mui/icons-material";
+import { Add, Save, Visibility, Delete, TuneOutlined } from "@mui/icons-material";
 import {
     DndContext,
     DragOverlay,
@@ -116,7 +116,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
             const field: InputField = {
                 type,
                 id,
-                name: `field_${fieldCount + 1}`,
+                name: `field_${id.substring(0, 8)}`,
                 label: `Pole ${fieldCount + 1}`,
                 required: false,
                 options: type === "select" || type === "radio" ? ["Možnost 1"] : undefined,
@@ -672,7 +672,19 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 </Alert>
             )}
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: 2,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    flexWrap: "wrap",
+                    borderRadius: 2,
+                }}
+            >
+                <TuneOutlined color="primary" />
                 <Typography variant="h6" sx={{ flex: 1 }}>
                     Registrační formulář
                 </Typography>
@@ -702,12 +714,16 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 >
                     {saving ? "Ukládám..." : "Uložit formulář"}
                 </Button>
-            </Box>
+            </Paper>
 
             <Tabs
                 value={builderTab}
                 onChange={(_e, v) => setBuilderTab(v)}
-                sx={{ mb: 2 }}
+                sx={{
+                    mb: 2,
+                    borderBottom: 1,
+                    borderColor: "divider",
+                }}
             >
                 <Tab label="Formulář" />
                 <Tab label="Podmínky" />
