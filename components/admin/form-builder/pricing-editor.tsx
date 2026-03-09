@@ -245,7 +245,7 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         Cenové termíny
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-                                        Ceny platí do uvedeného data. Po posledním termínu platí cena &bdquo;po termínu&ldquo;.
+                                        Ceny platí do uvedeného data. Po posledním termínu platí cena &bdquo;na místě&ldquo;.
                                     </Typography>
                                     {def.priceTiers.map((tier, idx) => (
                                         <Box key={idx} sx={{ display: "flex", gap: 1, mb: 1, alignItems: "center" }}>
@@ -339,7 +339,7 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                                     />
                                                 ))}
                                                 <TextField
-                                                    label="Po termínu"
+                                                    label="Na místě"
                                                     type="number"
                                                     value={option.prices[def.priceTiers.length] ?? 0}
                                                     onChange={(e) => handleUpdateOptionPrice(def.id, option.id, def.priceTiers.length, Number(e.target.value) || 0)}

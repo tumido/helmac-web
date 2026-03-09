@@ -233,7 +233,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                                 color: currentTier === def.priceTiers.length ? "primary.main" : "text.secondary",
                                             }}
                                         >
-                                            {currentTier === def.priceTiers.length && "► "}po termínu: {formatPrice(opt.prices[def.priceTiers.length])}
+                                            {currentTier === def.priceTiers.length && "► "}na místě: {formatPrice(opt.prices[def.priceTiers.length])}
                                         </Typography>
                                     </Box>
                                 </Box>
