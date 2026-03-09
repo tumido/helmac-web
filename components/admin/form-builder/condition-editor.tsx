@@ -8,6 +8,11 @@ import {
     CardContent,
     CardActions,
     Collapse,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
     FormControl,
     IconButton,
     InputLabel,
@@ -23,17 +28,25 @@ import {
     ExpandMore,
     ExpandLess,
 } from "@mui/icons-material";
-import type { FormCondition, ConditionRule, FormField, InputField } from "@/lib/types/registration-form";
+import type { FormCondition, ConditionRule, FormField, FormElement, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
+import { getBlocksUsingCondition } from "@/lib/utils/condition-validation";
 
 interface ConditionEditorProps {
     conditions: FormCondition[];
     allFields: FormField[];
+    elements: FormElement[];
     onChange: (conditions: FormCondition[]) => void;
 }
 
-export function ConditionEditor({ conditions, allFields, onChange }: ConditionEditorProps) {
+interface BlockInfo {
+    conditionName: string;
+    blockCount: number;
+}
+
+export function ConditionEditor({ conditions, allFields, elements, onChange }: ConditionEditorProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [blockInfo, setBlockInfo] = useState<BlockInfo | null>(null);
 
     const inputFields = allFields.filter(
         (f): f is InputField => isInputField(f)
@@ -54,6 +67,15 @@ export function ConditionEditor({ conditions, allFields, onChange }: ConditionEd
     };
 
     const handleDeleteCondition = (id: string) => {
+        const blocks = getBlocksUsingCondition(id, elements);
+        if (blocks.length > 0) {
+            const condition = conditions.find((c) => c.id === id);
+            setBlockInfo({
+                conditionName: condition?.name || "(nepojmenovaná)",
+                blockCount: blocks.length,
+            });
+            return;
+        }
         onChange(conditions.filter((c) => c.id !== id));
         if (expandedId === id) setExpandedId(null);
     };
@@ -209,6 +231,22 @@ export function ConditionEditor({ conditions, allFields, onChange }: ConditionEd
             >
                 Přidat podmínku
             </Button>
+
+            <Dialog open={!!blockInfo} onClose={() => setBlockInfo(null)}>
+                <DialogTitle>Nelze smazat podmínku</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Podmínka &bdquo;{blockInfo?.conditionName}&ldquo; je používána v {blockInfo?.blockCount}{" "}
+                        {blockInfo?.blockCount === 1 ? "bloku" : "blocích"} ve formuláři.
+                        Nejdříve odstraňte všechny bloky této podmínky z formuláře.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setBlockInfo(null)} variant="contained">
+                        Rozumím
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

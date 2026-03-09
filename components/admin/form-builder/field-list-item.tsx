@@ -10,9 +10,10 @@ interface FieldListItemProps {
     field: FormField;
     onEdit: () => void;
     onDelete: () => void;
+    usedInCondition?: boolean;
 }
 
-export function FieldListItem({ field, onEdit, onDelete }: FieldListItemProps) {
+export function FieldListItem({ field, onEdit, onDelete, usedInCondition }: FieldListItemProps) {
     const meta = FIELD_TYPE_META[field.type];
     const isInput = isInputField(field);
 
@@ -46,6 +47,15 @@ export function FieldListItem({ field, onEdit, onDelete }: FieldListItemProps) {
                             label="Povinné"
                             size="small"
                             color="error"
+                            sx={{ fontSize: "0.7rem", height: 20 }}
+                        />
+                    )}
+                    {usedInCondition && (
+                        <Chip
+                            label="Podmínka"
+                            size="small"
+                            variant="outlined"
+                            color="info"
                             sx={{ fontSize: "0.7rem", height: 20 }}
                         />
                     )}

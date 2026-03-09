@@ -13,19 +13,23 @@ import {
     Box,
     Typography,
     IconButton,
+    Chip,
+    Tooltip,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import type { FormField, InputField, HeadingField, DescriptionField } from "@/lib/types/registration-form";
+import type { FormField, FormCondition, InputField, HeadingField, DescriptionField } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
+import { getConditionsUsingOptionValue } from "@/lib/utils/condition-validation";
 
 interface FieldEditorProps {
     open: boolean;
     field: FormField | null;
     onClose: () => void;
     onSave: (field: FormField) => void;
+    conditions?: FormCondition[];
 }
 
-export function FieldEditor({ open, field, onClose, onSave }: FieldEditorProps) {
+export function FieldEditor({ open, field, onClose, onSave, conditions }: FieldEditorProps) {
     if (!field) return null;
 
     return (
@@ -35,11 +39,12 @@ export function FieldEditor({ open, field, onClose, onSave }: FieldEditorProps) 
             field={field}
             onClose={onClose}
             onSave={onSave}
+            conditions={conditions}
         />
     );
 }
 
-function FieldEditorInner({ open, field, onClose, onSave }: Omit<FieldEditorProps, "field"> & { field: FormField }) {
+function FieldEditorInner({ open, field, onClose, onSave, conditions }: Omit<FieldEditorProps, "field"> & { field: FormField }) {
     const [editData, setEditData] = useState<FormField>(() => structuredClone(field));
 
     const isInput = isInputField(editData);
@@ -48,7 +53,6 @@ function FieldEditorInner({ open, field, onClose, onSave }: Omit<FieldEditorProp
     const handleSave = () => {
         if (!editData) return;
         onSave(editData);
-        onClose();
     };
 
     const updateInput = (updates: Partial<InputField>) => {
@@ -107,31 +111,50 @@ function FieldEditorInner({ open, field, onClose, onSave }: Omit<FieldEditorProp
                                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
                                         Možnosti
                                     </Typography>
-                                    {(inputData.options || []).map((opt, idx) => (
-                                        <Box key={idx} sx={{ display: "flex", gap: 1, mb: 1 }}>
-                                            <TextField
-                                                value={opt}
-                                                onChange={(e) => {
-                                                    const newOptions = [...(inputData.options || [])];
-                                                    newOptions[idx] = e.target.value;
-                                                    updateInput({ options: newOptions });
-                                                }}
-                                                size="small"
-                                                fullWidth
-                                                placeholder={`Možnost ${idx + 1}`}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => {
-                                                    const newOptions = (inputData.options || []).filter((_, i) => i !== idx);
-                                                    updateInput({ options: newOptions });
-                                                }}
-                                                color="error"
-                                            >
-                                                <Delete fontSize="small" />
-                                            </IconButton>
-                                        </Box>
-                                    ))}
+                                    {(inputData.options || []).map((opt, idx) => {
+                                        const optionUsedInCondition = opt && conditions
+                                            ? getConditionsUsingOptionValue(field.id, opt, conditions).length > 0
+                                            : false;
+                                        return (
+                                            <Box key={idx} sx={{ display: "flex", gap: 1, mb: 1, alignItems: "center" }}>
+                                                <TextField
+                                                    value={opt}
+                                                    onChange={(e) => {
+                                                        const newOptions = [...(inputData.options || [])];
+                                                        newOptions[idx] = e.target.value;
+                                                        updateInput({ options: newOptions });
+                                                    }}
+                                                    size="small"
+                                                    fullWidth
+                                                    placeholder={`Možnost ${idx + 1}`}
+                                                />
+                                                {optionUsedInCondition && (
+                                                    <Chip
+                                                        label="Podmínka"
+                                                        size="small"
+                                                        variant="outlined"
+                                                        color="info"
+                                                        sx={{ fontSize: "0.7rem", height: 20, flexShrink: 0 }}
+                                                    />
+                                                )}
+                                                <Tooltip title={optionUsedInCondition ? "Možnost je používána v podmínce" : "Smazat"}>
+                                                    <span>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                const newOptions = (inputData.options || []).filter((_, i) => i !== idx);
+                                                                updateInput({ options: newOptions });
+                                                            }}
+                                                            color="error"
+                                                            disabled={optionUsedInCondition}
+                                                        >
+                                                            <Delete fontSize="small" />
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                            </Box>
+                                        );
+                                    })}
                                     <Button
                                         startIcon={<Add />}
                                         size="small"

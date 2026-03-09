@@ -53,6 +53,11 @@ import { FormPreview } from "./form-preview";
 import { saveRegistrationForm, deleteRegistrationForm } from "@/lib/actions/registration-forms";
 import { FIELD_TYPE_META, getAllFields } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
+import {
+    getConditionsUsingField,
+    getBrokenOptionRemovals,
+    getFieldIdsUsedInConditions,
+} from "@/lib/utils/condition-validation";
 import type {
     FormField,
     FormElement,
@@ -87,6 +92,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [deletionBlock, setDeletionBlock] = useState<{ title: string; message: string; details: string[] } | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -131,13 +137,36 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     }, []);
 
     const handleSaveField = useCallback((updatedField: FormField) => {
+        // Check if saving would break conditions by removing referenced options
+        if ("options" in updatedField && editingField && "options" in editingField) {
+            const originalOptions = (editingField as { options?: string[] }).options || [];
+            const newOptions = (updatedField as { options?: string[] }).options || [];
+            const broken = getBrokenOptionRemovals(updatedField.id, originalOptions, newOptions, conditions);
+            if (broken.length > 0) {
+                setDeletionBlock({
+                    title: "Nelze uložit změny",
+                    message: "Odebrané možnosti jsou používány v podmínkách:",
+                    details: broken.map((b) => `„${b.removedValue}" v podmínce „${b.conditionName}"`),
+                });
+                return;
+            }
+        }
         setElements((prev) => updateFieldInElements(prev, updatedField));
         setEditingField(null);
-    }, []);
+    }, [editingField, conditions]);
 
     const handleDeleteField = useCallback((fieldId: string) => {
+        const usages = getConditionsUsingField(fieldId, conditions);
+        if (usages.length > 0) {
+            setDeletionBlock({
+                title: "Nelze smazat pole",
+                message: "Pole je používáno v podmínkách:",
+                details: usages.map((u) => u.conditionName),
+            });
+            return;
+        }
         setElements((prev) => removeFieldFromElements(prev, fieldId));
-    }, []);
+    }, [conditions]);
 
     const handleDeleteBlock = useCallback((blockId: string) => {
         setElements((prev) => {
@@ -648,6 +677,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                         <ConditionEditor
                             conditions={conditions}
                             allFields={allFields}
+                            elements={elements}
                             onChange={setConditions}
                         />
                     )}
@@ -667,6 +697,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 field={editingField}
                 onClose={() => setEditingField(null)}
                 onSave={handleSaveField}
+                conditions={conditions}
             />
 
             <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
@@ -680,6 +711,27 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                     <Button onClick={() => setDeleteConfirmOpen(false)}>Zrušit</Button>
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Smazat
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={!!deletionBlock} onClose={() => setDeletionBlock(null)}>
+                <DialogTitle>{deletionBlock?.title}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>{deletionBlock?.message}</DialogContentText>
+                    {deletionBlock?.details && (
+                        <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+                            {deletionBlock.details.map((detail, idx) => (
+                                <li key={idx}>
+                                    <Typography variant="body2">{detail}</Typography>
+                                </li>
+                            ))}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeletionBlock(null)} variant="contained">
+                        Rozumím
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -698,6 +750,8 @@ interface FormDropZoneProps {
 }
 
 function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDeleteBlock }: FormDropZoneProps) {
+    const usedFieldIds = getFieldIdsUsedInConditions(conditions);
+
     const { setNodeRef, isOver } = useDroppable({
         id: "root-droppable",
     });
@@ -744,6 +798,7 @@ function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDele
                                         onEditField={onEditField}
                                         onDeleteField={onDeleteField}
                                         onDeleteBlock={onDeleteBlock}
+                                        usedFieldIds={usedFieldIds}
                                     />
                                 </SortableFieldItem>
                             );
@@ -755,6 +810,7 @@ function FormDropZone({ elements, conditions, onEditField, onDeleteField, onDele
                                     field={el}
                                     onEdit={() => onEditField(el)}
                                     onDelete={() => onDeleteField(el.id)}
+                                    usedInCondition={usedFieldIds.has(el.id)}
                                 />
                             </SortableFieldItem>
                         );

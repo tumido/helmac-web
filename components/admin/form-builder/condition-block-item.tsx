@@ -17,6 +17,7 @@ interface ConditionBlockItemProps {
     onEditField: (field: FormField) => void;
     onDeleteField: (fieldId: string) => void;
     onDeleteBlock: (blockId: string) => void;
+    usedFieldIds?: Set<string>;
 }
 
 export function ConditionBlockItem({
@@ -25,6 +26,7 @@ export function ConditionBlockItem({
     onEditField,
     onDeleteField,
     onDeleteBlock,
+    usedFieldIds,
 }: ConditionBlockItemProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: `container-${block.id}`,
@@ -101,6 +103,7 @@ export function ConditionBlockItem({
                                     field={child}
                                     onEdit={() => onEditField(child)}
                                     onDelete={() => onDeleteField(child.id)}
+                                    usedInCondition={usedFieldIds?.has(child.id)}
                                 />
                             </SortableFieldItem>
                         ))
