@@ -6,8 +6,6 @@ import {
     Button,
     Alert,
     Typography,
-    ToggleButtonGroup,
-    ToggleButton,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -19,7 +17,7 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
-import { Add, Save, Visibility, Edit, Delete } from "@mui/icons-material";
+import { Add, Save, Visibility, Delete } from "@mui/icons-material";
 import {
     DndContext,
     DragOverlay,
@@ -50,7 +48,6 @@ import { SortableFieldItem } from "./sortable-field-item";
 import { ConditionBlockItem } from "./condition-block-item";
 import { ConditionEditor } from "./condition-editor";
 import { PricingEditor } from "./pricing-editor";
-import { FormPreview } from "./form-preview";
 import { saveRegistrationForm, deleteRegistrationForm } from "@/lib/actions/registration-forms";
 import { FIELD_TYPE_META, getAllFields } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
@@ -86,7 +83,6 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     const [elements, setElements] = useState<FormElement[]>(initialFormData.fields);
     const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
     const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
-    const [mode, setMode] = useState<"edit" | "preview">("edit");
     const [builderTab, setBuilderTab] = useState<0 | 1 | 2>(0); // 0 = Formulář, 1 = Podmínky, 2 = Ceník
     const [typeSelectorOpen, setTypeSelectorOpen] = useState(false);
     const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -681,21 +677,22 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                     Registrační formulář
                 </Typography>
 
-                <ToggleButtonGroup
-                    value={mode}
-                    exclusive
-                    onChange={(_e, v) => v && setMode(v)}
-                    size="small"
+                <Button
+                    variant="outlined"
+                    startIcon={<Visibility />}
+                    onClick={() => {
+                        const formData: RegistrationFormData = {
+                            conditions,
+                            pricingDefinitions,
+                            fields: elements,
+                        };
+                        localStorage.setItem("form-preview-data", JSON.stringify(formData));
+                        window.open(`/admin/rocniky/${yearId}/registrace/nahled`, "_blank");
+                    }}
+                    disabled={elements.length === 0}
                 >
-                    <ToggleButton value="edit">
-                        <Edit fontSize="small" sx={{ mr: 0.5 }} />
-                        Upravit
-                    </ToggleButton>
-                    <ToggleButton value="preview">
-                        <Visibility fontSize="small" sx={{ mr: 0.5 }} />
-                        Náhled
-                    </ToggleButton>
-                </ToggleButtonGroup>
+                    Náhled
+                </Button>
 
                 <Button
                     variant="contained"
@@ -707,98 +704,92 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 </Button>
             </Box>
 
-            {mode === "edit" ? (
-                <>
-                    <Tabs
-                        value={builderTab}
-                        onChange={(_e, v) => setBuilderTab(v)}
-                        sx={{ mb: 2 }}
-                    >
-                        <Tab label="Formulář" />
-                        <Tab label="Podmínky" />
-                        <Tab label="Ceník" />
-                    </Tabs>
+            <Tabs
+                value={builderTab}
+                onChange={(_e, v) => setBuilderTab(v)}
+                sx={{ mb: 2 }}
+            >
+                <Tab label="Formulář" />
+                <Tab label="Podmínky" />
+                <Tab label="Ceník" />
+            </Tabs>
 
-                    {builderTab === 0 && (
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={collisionDetection}
-                            onDragStart={handleDragStart}
-                            onDragOver={handleDragOver}
-                            onDragEnd={handleDragEnd}
-                            onDragCancel={handleDragCancel}
-                        >
-                            <Box sx={{ display: "flex", gap: 3 }}>
-                                {/* Left column: element list */}
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <FormDropZone
-                                        elements={elements}
-                                        conditions={conditions}
-                                        pricingDefinitions={pricingDefinitions}
-                                        onEditField={handleEditField}
-                                        onDeleteField={handleDeleteField}
-                                        onDeleteBlock={handleDeleteBlock}
-                                    />
+            {builderTab === 0 && (
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={collisionDetection}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    onDragCancel={handleDragCancel}
+                >
+                    <Box sx={{ display: "flex", gap: 3 }}>
+                        {/* Left column: element list */}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <FormDropZone
+                                elements={elements}
+                                conditions={conditions}
+                                pricingDefinitions={pricingDefinitions}
+                                onEditField={handleEditField}
+                                onDeleteField={handleDeleteField}
+                                onDeleteBlock={handleDeleteBlock}
+                            />
 
-                                    <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
-                                        {isMobile && (
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<Add />}
-                                                onClick={() => setTypeSelectorOpen(true)}
-                                            >
-                                                Přidat pole
-                                            </Button>
-                                        )}
-                                        <Box sx={{ flex: 1 }} />
-                                        {hasElements && (
-                                            <Button
-                                                variant="outlined"
-                                                color="error"
-                                                startIcon={<Delete />}
-                                                onClick={() => setDeleteConfirmOpen(true)}
-                                                disabled={deleting}
-                                            >
-                                                Smazat formulář
-                                            </Button>
-                                        )}
-                                    </Box>
-                                </Box>
-
-                                {/* Right column: palette (desktop only) */}
-                                {!isMobile && (
-                                    <Box sx={{ width: 220, flexShrink: 0 }}>
-                                        <FieldPalette conditions={conditions} pricingDefinitions={pricingDefinitions} />
-                                    </Box>
+                            <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
+                                {isMobile && (
+                                    <Button
+                                        variant="outlined"
+                                        startIcon={<Add />}
+                                        onClick={() => setTypeSelectorOpen(true)}
+                                    >
+                                        Přidat pole
+                                    </Button>
+                                )}
+                                <Box sx={{ flex: 1 }} />
+                                {hasElements && (
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<Delete />}
+                                        onClick={() => setDeleteConfirmOpen(true)}
+                                        disabled={deleting}
+                                    >
+                                        Smazat formulář
+                                    </Button>
                                 )}
                             </Box>
+                        </Box>
 
-                            <DragOverlay dropAnimation={null}>
-                                {renderDragOverlay()}
-                            </DragOverlay>
-                        </DndContext>
-                    )}
+                        {/* Right column: palette (desktop only) */}
+                        {!isMobile && (
+                            <Box sx={{ width: 220, flexShrink: 0 }}>
+                                <FieldPalette conditions={conditions} pricingDefinitions={pricingDefinitions} />
+                            </Box>
+                        )}
+                    </Box>
 
-                    {builderTab === 1 && (
-                        <ConditionEditor
-                            conditions={conditions}
-                            allFields={allFields}
-                            elements={elements}
-                            onChange={setConditions}
-                            pricingDefinitions={pricingDefinitions}
-                        />
-                    )}
+                    <DragOverlay dropAnimation={null}>
+                        {renderDragOverlay()}
+                    </DragOverlay>
+                </DndContext>
+            )}
 
-                    {builderTab === 2 && (
-                        <PricingEditor
-                            pricingDefinitions={pricingDefinitions}
-                            elements={elements}
-                            onChange={setPricingDefinitions}
-                        />
-                    )}
-                </>
-            ) : (
-                <FormPreview elements={elements} conditions={conditions} pricingDefinitions={pricingDefinitions} />
+            {builderTab === 1 && (
+                <ConditionEditor
+                    conditions={conditions}
+                    allFields={allFields}
+                    elements={elements}
+                    onChange={setConditions}
+                    pricingDefinitions={pricingDefinitions}
+                />
+            )}
+
+            {builderTab === 2 && (
+                <PricingEditor
+                    pricingDefinitions={pricingDefinitions}
+                    elements={elements}
+                    onChange={setPricingDefinitions}
+                />
             )}
 
             <FieldTypeSelector

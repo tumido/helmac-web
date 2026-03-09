@@ -27,6 +27,7 @@ export async function saveRegistrationForm(yearId: string, formData: Registratio
     try {
         const dataToStore = {
             conditions: validated.data.conditions,
+            pricingDefinitions: validated.data.pricingDefinitions,
             fields: validated.data.fields,
         };
 

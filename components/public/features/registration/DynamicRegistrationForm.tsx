@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useActionState } from "react";
-import { Box, Button, Alert, Paper } from "@mui/material";
+import { useState, useCallback, useActionState, type FormEvent } from "react";
+import { Box, Button, Alert, Paper, Snackbar } from "@mui/material";
 import type { RegistrationFormData, SubmissionData, OptionCounts } from "@/lib/types/registration-form";
 import { isInputField, getAllFields, getAllInputFields } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
@@ -12,6 +12,7 @@ import { submitDynamicRegistration, type RegistrationState } from "@/lib/actions
 interface DynamicRegistrationFormProps {
     formData: RegistrationFormData;
     optionCounts?: OptionCounts;
+    previewMode?: boolean;
 }
 
 function buildInitialValues(formData: RegistrationFormData): SubmissionData {
@@ -27,9 +28,10 @@ function buildInitialValues(formData: RegistrationFormData): SubmissionData {
     return values;
 }
 
-export function DynamicRegistrationForm({ formData, optionCounts }: DynamicRegistrationFormProps) {
+export function DynamicRegistrationForm({ formData, optionCounts, previewMode }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData));
     const { visibleFields } = useConditionalFields(formData, values, optionCounts);
+    const [previewSnackbar, setPreviewSnackbar] = useState(false);
 
     const [state, formAction, isPending] = useActionState<RegistrationState | null, FormData>(
         submitDynamicRegistration,
@@ -47,7 +49,12 @@ export function DynamicRegistrationForm({ formData, optionCounts }: DynamicRegis
         [state?.errors]
     );
 
-    if (state?.success) {
+    const handlePreviewSubmit = useCallback((e: FormEvent) => {
+        e.preventDefault();
+        setPreviewSnackbar(true);
+    }, []);
+
+    if (!previewMode && state?.success) {
         return <RegistrationSuccess message={state.message} />;
     }
 
@@ -63,7 +70,11 @@ export function DynamicRegistrationForm({ formData, optionCounts }: DynamicRegis
                 </Alert>
             )}
 
-            <Box component="form" action={formAction}>
+            <Box
+                component="form"
+                action={previewMode ? undefined : formAction}
+                onSubmit={previewMode ? handlePreviewSubmit : undefined}
+            >
                 {/* Include checkbox values as hidden inputs for FormData */}
                 {allInputFields.map((field) => {
                     if (field.type === "checkbox") {
@@ -104,17 +115,34 @@ export function DynamicRegistrationForm({ formData, optionCounts }: DynamicRegis
                         variant="contained"
                         color="secondary"
                         size="large"
-                        disabled={isPending}
+                        disabled={!previewMode && isPending}
                         sx={{
                             px: 6,
                             py: 1.5,
                             fontSize: "1.1rem",
                         }}
                     >
-                        {isPending ? "Odesílám..." : "Odeslat registraci"}
+                        {!previewMode && isPending
+                            ? "Odesílám..."
+                            : previewMode
+                                ? "Odeslat registraci (náhled)"
+                                : "Odeslat registraci"}
                     </Button>
                 </Box>
             </Box>
+
+            {previewMode && (
+                <Snackbar
+                    open={previewSnackbar}
+                    autoHideDuration={4000}
+                    onClose={() => setPreviewSnackbar(false)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                >
+                    <Alert severity="info" onClose={() => setPreviewSnackbar(false)}>
+                        Toto je pouze náhled. Registrace nebyla odeslána.
+                    </Alert>
+                </Snackbar>
+            )}
         </Paper>
     );
 }
