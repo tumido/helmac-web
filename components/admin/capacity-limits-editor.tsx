@@ -7,16 +7,18 @@ import {
     Button,
     Card,
     CardContent,
+    Chip,
     FormControl,
     IconButton,
     InputLabel,
+    LinearProgress,
     MenuItem,
     Select,
     TextField,
     Tooltip,
     Typography,
 } from "@mui/material";
-import { Add, Delete, Save } from "@mui/icons-material";
+import { Add, Delete, Edit, Save } from "@mui/icons-material";
 import type { CapacityLimit, InputField, PricingDefinition, OptionCounts } from "@/lib/types/registration-form";
 import { saveCapacityLimits } from "@/lib/actions/capacity-limits";
 import { getFieldOptionValues } from "@/lib/utils/pricing";
@@ -37,6 +39,8 @@ export function CapacityLimitsEditor({
     optionCounts,
 }: CapacityLimitsEditorProps) {
     const [limits, setLimits] = useState<CapacityLimit[]>(initialLimits);
+    const [savedLimits, setSavedLimits] = useState<CapacityLimit[]>(initialLimits);
+    const [editing, setEditing] = useState(initialLimits.length === 0);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -45,6 +49,22 @@ export function CapacityLimitsEditor({
     const eligibleFields = allInputFields.filter(
         (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
     );
+
+    const getFieldLabel = (fieldId: string) => {
+        return eligibleFields.find((f) => f.id === fieldId)?.label ?? "(neznámé pole)";
+    };
+
+    const getOptionsForField = (fieldId: string): string[] => {
+        const field = eligibleFields.find((f) => f.id === fieldId);
+        if (!field) return [];
+        return getFieldOptionValues(field, pricingDefinitions);
+    };
+
+    const getCurrentCount = (fieldId: string, value: string): number => {
+        const field = eligibleFields.find((f) => f.id === fieldId);
+        if (!field) return 0;
+        return optionCounts?.[field.name]?.[value] ?? 0;
+    };
 
     const handleAdd = () => {
         setLimits((prev) => [
@@ -73,7 +93,6 @@ export function CapacityLimitsEditor({
         setError(null);
         setSuccess(false);
 
-        // Filter out incomplete limits
         const validLimits = limits.filter((l) => l.fieldId && l.value && l.maxCount > 0);
 
         const result = await saveCapacityLimits(yearId, validLimits);
@@ -82,31 +101,117 @@ export function CapacityLimitsEditor({
             setError(result.error);
         } else {
             setLimits(validLimits);
+            setSavedLimits(validLimits);
+            setEditing(false);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         }
         setSaving(false);
     };
 
-    const getOptionsForField = (fieldId: string): string[] => {
-        const field = eligibleFields.find((f) => f.id === fieldId);
-        if (!field) return [];
-        return getFieldOptionValues(field, pricingDefinitions);
+    const handleCancel = () => {
+        setLimits(savedLimits);
+        setEditing(false);
+        setError(null);
     };
 
-    const getCurrentCount = (fieldName: string, value: string): number => {
-        return optionCounts?.[fieldName]?.[value] ?? 0;
-    };
+    // --- Read-only view ---
+    if (!editing) {
+        return (
+            <Box>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                    <Typography variant="h6">
+                        Limity kapacity
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        startIcon={<Edit />}
+                        onClick={() => setEditing(true)}
+                        size="small"
+                    >
+                        Upravit
+                    </Button>
+                </Box>
 
-    const isDirty = JSON.stringify(limits) !== JSON.stringify(initialLimits);
+                {success && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        Limity kapacity byly uloženy
+                    </Alert>
+                )}
 
+                {savedLimits.length === 0 ? (
+                    <Typography color="text.secondary" sx={{ py: 1 }}>
+                        Zatím nejsou nastaveny žádné limity kapacity.
+                    </Typography>
+                ) : (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {savedLimits.map((limit) => {
+                            const currentCount = getCurrentCount(limit.fieldId, limit.value);
+                            const ratio = limit.maxCount > 0 ? currentCount / limit.maxCount : 0;
+                            const isFull = currentCount >= limit.maxCount;
+
+                            return (
+                                <Box
+                                    key={limit.id}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1.5,
+                                        px: 2,
+                                        py: 1,
+                                        borderRadius: 1,
+                                        backgroundColor: "action.hover",
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ flex: 1 }}>
+                                        {getFieldLabel(limit.fieldId)}{" "}
+                                        <Typography component="span" variant="body2" fontWeight={600}>
+                                            {limit.value}
+                                        </Typography>
+                                    </Typography>
+
+                                    <Box sx={{ width: 80 }}>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={Math.min(ratio * 100, 100)}
+                                            color={isFull ? "error" : ratio >= 0.8 ? "warning" : "primary"}
+                                            sx={{ height: 6, borderRadius: 3 }}
+                                        />
+                                    </Box>
+
+                                    <Chip
+                                        label={`${currentCount}/${limit.maxCount}`}
+                                        size="small"
+                                        color={isFull ? "error" : "default"}
+                                        variant={isFull ? "filled" : "outlined"}
+                                        sx={{ minWidth: 56, justifyContent: "center", fontWeight: 600 }}
+                                    />
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                )}
+            </Box>
+        );
+    }
+
+    // --- Edit mode ---
     return (
         <Box>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                 <Typography variant="h6">
                     Limity kapacity
                 </Typography>
-                {isDirty && (
+                <Box sx={{ display: "flex", gap: 1 }}>
+                    {savedLimits.length > 0 && (
+                        <Button
+                            variant="outlined"
+                            onClick={handleCancel}
+                            size="small"
+                        >
+                            Zrušit
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         startIcon={<Save />}
@@ -114,9 +219,9 @@ export function CapacityLimitsEditor({
                         disabled={saving}
                         size="small"
                     >
-                        {saving ? "Ukládám..." : "Uložit limity"}
+                        {saving ? "Ukládám..." : "Uložit"}
                     </Button>
-                )}
+                </Box>
             </Box>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -129,11 +234,6 @@ export function CapacityLimitsEditor({
                     {error}
                 </Alert>
             )}
-            {success && (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                    Limity kapacity byly uloženy
-                </Alert>
-            )}
 
             {limits.length === 0 && (
                 <Typography color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
@@ -143,11 +243,9 @@ export function CapacityLimitsEditor({
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {limits.map((limit) => {
-                    const field = eligibleFields.find((f) => f.id === limit.fieldId);
-                    const fieldName = field?.name ?? "";
                     const options = getOptionsForField(limit.fieldId);
                     const currentCount = limit.fieldId && limit.value
-                        ? getCurrentCount(fieldName, limit.value)
+                        ? getCurrentCount(limit.fieldId, limit.value)
                         : 0;
 
                     return (
