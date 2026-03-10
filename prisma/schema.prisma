@@ -325,17 +325,20 @@ model RegistrationForm {
 }
 
 model RegistrationSubmission {
-    id        String   @id @default(cuid())
-    yearId    String
-    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
-    formId    String
-    form      RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
-    data      Json     // { [fieldName]: value }
-    status    RegistrationStatus @default(PENDING)
-    isPaid    Boolean  @default(false)
-    paidAt    DateTime?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id              String   @id @default(cuid())
+    yearId          String
+    year            Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+    formId          String
+    form            RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+    data            Json     // { [fieldName]: value }
+    status          RegistrationStatus @default(PENDING)
+    isPaid          Boolean  @default(false)
+    paidAt          DateTime?
+    pricingSummary  Json?    // { tiers: [{tierDate, totalPrice}], applicableTierIndex, totalPrice }
+    variableSymbol  String?  @unique // 10-digit random numeric string
+    totalPrice      Int?     // applicable total at submission time (CZK)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
     @@map("registration_submissions")
 }

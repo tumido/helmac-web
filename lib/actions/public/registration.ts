@@ -8,6 +8,8 @@ import { isInputField, isConditionBlock, getAllFields, getAllInputFields, getAPI
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
+import { computePricingSummary } from "@/lib/utils/pricing-summary";
+import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 
 export interface RegistrationState {
     success: boolean;
@@ -15,6 +17,8 @@ export interface RegistrationState {
     errors?: Record<string, string[]>;
     apErrors?: Record<number, Record<string, string[]>>;
     registrationId?: string;
+    variableSymbol?: string;
+    totalPrice?: number;
 }
 
 /**
@@ -204,6 +208,7 @@ export async function submitDynamicRegistration(
     const apInputFields = getAPInputFields(formDataStored.fields);
     let parsedAP: AdditionalPersonData[] = [];
     const apErrors: Record<number, Record<string, string[]>> = {};
+    const apVisibleFieldIdsPerPerson: Set<string>[] = [];
 
     const rawAPJson = formData.get("__additionalPeople");
     if (rawAPJson && String(rawAPJson) !== "[]") {
@@ -249,6 +254,8 @@ export async function submitDynamicRegistration(
                 mergedRaw,
                 allFields,
             );
+
+            apVisibleFieldIdsPerPerson.push(apVisibleFieldIds);
 
             // Get visible AP fields for this person
             const visibleAPFields = apInputFields.filter(
@@ -368,6 +375,18 @@ export async function submitDynamicRegistration(
         submissionData[emailField.name] = String(submissionData[emailField.name]).toLowerCase();
     }
 
+    // Compute pricing summary and generate variable symbol
+    const pricingSummary = computePricingSummary({
+        pricingDefinitions: formDataStored.pricingDefinitions,
+        allInputFields,
+        submissionData,
+        additionalPeople: parsedAP,
+        visibleFieldIds,
+        apVisibleFieldIdsPerPerson,
+    });
+    const variableSymbol = await generateUniqueVariableSymbol();
+    const totalPrice = pricingSummary?.totalPrice ?? null;
+
     // Create submission
     try {
         const submission = await db.registrationSubmission.create({
@@ -376,6 +395,9 @@ export async function submitDynamicRegistration(
                 formId: activeYear.registrationForm.id,
                 data: submissionData as Prisma.InputJsonValue,
                 status: "PENDING",
+                pricingSummary: pricingSummary as unknown as Prisma.InputJsonValue ?? undefined,
+                variableSymbol,
+                totalPrice,
             },
         });
 
@@ -383,6 +405,8 @@ export async function submitDynamicRegistration(
             success: true,
             message: `Děkujeme za registraci na ${activeYear.title}!`,
             registrationId: submission.id,
+            variableSymbol,
+            totalPrice: totalPrice ?? undefined,
         };
     } catch (error) {
         console.error("Registration error:", error);

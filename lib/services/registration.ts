@@ -65,6 +65,8 @@ export const getSubmissionsForYear = cache(async (yearId: string) => {
             status: true,
             isPaid: true,
             paidAt: true,
+            totalPrice: true,
+            variableSymbol: true,
             createdAt: true,
         },
     });
@@ -81,6 +83,9 @@ export const getSubmissionById = cache(async (id: string) => {
             status: true,
             isPaid: true,
             paidAt: true,
+            pricingSummary: true,
+            variableSymbol: true,
+            totalPrice: true,
             createdAt: true,
             updatedAt: true,
             form: {

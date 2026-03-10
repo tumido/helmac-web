@@ -46,6 +46,8 @@ export async function GET(
                     data: true,
                     status: true,
                     isPaid: true,
+                    totalPrice: true,
+                    variableSymbol: true,
                     createdAt: true,
                 },
             },
@@ -69,6 +71,8 @@ export async function GET(
         ),
         "Stav",
         "Zaplaceno",
+        "Cena",
+        "VS",
         "Datum registrace",
     ];
 
@@ -91,6 +95,8 @@ export async function GET(
             }),
             STATUS_LABELS[sub.status] || sub.status,
             sub.isPaid ? "Ano" : "Ne",
+            sub.totalPrice != null ? String(sub.totalPrice) : "",
+            sub.variableSymbol ?? "",
             new Date(sub.createdAt).toLocaleString("cs-CZ"),
         ]);
 
@@ -116,6 +122,8 @@ export async function GET(
                     }),
                     "", // Status empty for AP rows
                     "", // Paid empty for AP rows
+                    "", // Price empty for AP rows
+                    "", // VS empty for AP rows
                     "", // Date empty for AP rows
                 ]);
             });

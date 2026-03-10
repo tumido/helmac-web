@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
+import { SubmissionPricingSummary } from "@/components/admin/submission-pricing-summary";
 import { getSubmissionById } from "@/lib/services/registration";
 import { getAllFields, getAPInputFields } from "@/lib/types/registration-form";
+import type { PricingSummaryData } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface SubmissionDetailPageProps {
@@ -57,6 +59,16 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                     </Paper>
                 </Grid>
                 <Grid item xs={12} md={4}>
+                    <Paper sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Platba
+                        </Typography>
+                        <SubmissionPricingSummary
+                            pricingSummary={submission.pricingSummary as PricingSummaryData | null}
+                            variableSymbol={submission.variableSymbol}
+                            totalPrice={submission.totalPrice}
+                        />
+                    </Paper>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>
                             Správa

@@ -75,7 +75,13 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
     }, [showAPSection, additionalPeople, values, formData]);
 
     if (!previewMode && state?.success) {
-        return <RegistrationSuccess message={state.message} />;
+        return (
+            <RegistrationSuccess
+                message={state.message}
+                variableSymbol={state.variableSymbol}
+                totalPrice={state.totalPrice}
+            />
+        );
     }
 
     return (

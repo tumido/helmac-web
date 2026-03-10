@@ -17,6 +17,7 @@ import type { FormField, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import type { RegistrationStatus } from "@prisma/client";
 import { isMinor } from "@/lib/utils/minor-detection";
+import { formatPrice } from "@/lib/utils/pricing";
 
 const STATUS_COLORS: Record<RegistrationStatus, "default" | "success" | "warning" | "error" | "info"> = {
     PENDING: "warning",
@@ -40,6 +41,8 @@ interface Submission {
     status: RegistrationStatus;
     isPaid: boolean;
     paidAt: Date | null;
+    totalPrice: number | null;
+    variableSymbol: string | null;
     createdAt: Date;
 }
 
@@ -88,6 +91,8 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                         <TableCell>Osoby</TableCell>
                         <TableCell>Stav</TableCell>
                         <TableCell>Zaplaceno</TableCell>
+                        <TableCell>Cena</TableCell>
+                        <TableCell>VS</TableCell>
                         <TableCell>Datum</TableCell>
                     </TableRow>
                 </TableHead>
@@ -165,6 +170,16 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                                     ) : (
                                         <Cancel fontSize="small" color="disabled" />
                                     )}
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2" noWrap>
+                                        {submission.totalPrice != null ? formatPrice(submission.totalPrice) : "—"}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2" noWrap sx={{ fontFamily: "monospace" }}>
+                                        {submission.variableSymbol ?? "—"}
+                                    </Typography>
                                 </TableCell>
                                 <TableCell>
                                     <Typography variant="body2" noWrap>

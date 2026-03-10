@@ -168,6 +168,19 @@ export function getDisabledOptionsForField(
     return disabled;
 }
 
+// --- Pricing summary (stored in DB) ---
+
+export interface PricingTier {
+    tierDate: string | null; // ISO date deadline, null = fallback
+    totalPrice: number;
+}
+
+export interface PricingSummaryData {
+    tiers: PricingTier[];
+    applicableTierIndex: number;
+    totalPrice: number;
+}
+
 // Submission data shape
 export type SubmissionData = Record<string, string | number | boolean>;
 
