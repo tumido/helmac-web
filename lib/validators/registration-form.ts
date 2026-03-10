@@ -22,7 +22,7 @@ const formConditionSchema = z.object({
 });
 
 const inputFieldSchema = z.object({
-    type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date", "pricing_select"]),
+    type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date", "birth_date", "pricing_select"]),
     id: z.string().min(1),
     name: z.string().min(1),
     label: z.string().min(1, "Popisek je povinný"),

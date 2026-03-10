@@ -187,10 +187,10 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                                 label={field.label}
                                 value={String(value ?? "")}
                                 onChange={(e) => handleChange(field.name, e.target.value)}
-                                type={field.type === "email" ? "email" : field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                                type={field.type === "email" ? "email" : field.type === "number" ? "number" : (field.type === "date" || field.type === "birth_date") ? "date" : "text"}
                                 fullWidth
                                 size="small"
-                                InputLabelProps={field.type === "date" ? { shrink: true } : undefined}
+                                InputLabelProps={(field.type === "date" || field.type === "birth_date") ? { shrink: true } : undefined}
                             />
                         );
                 }
@@ -288,9 +288,9 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                                                         label={field.label}
                                                         value={String(value ?? "")}
                                                         onChange={(e) => handleAPChange(personIndex, field.name, e.target.value)}
-                                                        type={field.type === "email" ? "email" : field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                                                        type={field.type === "email" ? "email" : field.type === "number" ? "number" : (field.type === "date" || field.type === "birth_date") ? "date" : "text"}
                                                         fullWidth size="small"
-                                                        InputLabelProps={field.type === "date" ? { shrink: true } : undefined}
+                                                        InputLabelProps={(field.type === "date" || field.type === "birth_date") ? { shrink: true } : undefined}
                                                     />
                                                 );
                                         }

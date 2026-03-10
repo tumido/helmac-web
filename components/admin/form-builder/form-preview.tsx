@@ -185,10 +185,10 @@ function PreviewField({ field, pricingDefinitions }: { field: FormField; pricing
                 <TextField
                     label={`${field.label}${field.required ? " *" : ""}`}
                     placeholder={field.placeholder}
-                    type={field.type === "email" ? "email" : field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                    type={field.type === "email" ? "email" : field.type === "number" ? "number" : (field.type === "date" || field.type === "birth_date") ? "date" : "text"}
                     fullWidth
                     disabled
-                    InputLabelProps={field.type === "date" ? { shrink: true } : undefined}
+                    InputLabelProps={(field.type === "date" || field.type === "birth_date") ? { shrink: true } : undefined}
                 />
             );
     }

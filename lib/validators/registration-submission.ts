@@ -43,7 +43,8 @@ function buildFieldSchema(field: InputField): z.ZodTypeAny {
             return schema;
         }
 
-        case "date": {
+        case "date":
+        case "birth_date": {
             let schema = z.string();
             if (field.required) {
                 schema = schema.min(1, "Toto pole je povinné");

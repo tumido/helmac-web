@@ -147,6 +147,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
             );
 
         case "date":
+        case "birth_date":
             return (
                 <TextField
                     name={htmlName}

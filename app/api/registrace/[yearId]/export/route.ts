@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAllInputFields, getAPInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { isMinor } from "@/lib/utils/minor-detection";
 
 const STATUS_LABELS: Record<string, string> = {
     PENDING: "Čeká",
@@ -35,6 +36,7 @@ export async function GET(
         where: { id: yearId },
         select: {
             year: true,
+            startDate: true,
             registrationForm: {
                 select: { fields: true },
             },
@@ -57,11 +59,14 @@ export async function GET(
     const formData = migrateFormData(year.registrationForm.fields);
     const inputFields = getAllInputFields(formData.fields);
     const apFieldNames = new Set(getAPInputFields(formData.fields).map((f) => f.name));
+    const refDate = year.startDate ? new Date(year.startDate) : undefined;
 
-    // Build CSV header
+    // Build CSV header (add "Nezletilý" column after each birth_date field)
     const headers = [
         "Typ",
-        ...inputFields.map((f) => f.label),
+        ...inputFields.flatMap((f) =>
+            f.type === "birth_date" ? [f.label, "Nezletilý"] : [f.label]
+        ),
         "Stav",
         "Zaplaceno",
         "Datum registrace",
@@ -75,11 +80,14 @@ export async function GET(
         // Main person row
         rows.push([
             "Hlavní",
-            ...inputFields.map((f) => {
+            ...inputFields.flatMap((f) => {
                 const val = data[f.name];
-                if (val === true) return "Ano";
-                if (val === false) return "Ne";
-                return String(val ?? "");
+                const formatted = val === true ? "Ano" : val === false ? "Ne" : String(val ?? "");
+                if (f.type === "birth_date") {
+                    const minor = val ? isMinor(String(val), refDate) : false;
+                    return [formatted, minor ? "Ano" : "Ne"];
+                }
+                return [formatted];
             }),
             STATUS_LABELS[sub.status] || sub.status,
             sub.isPaid ? "Ano" : "Ne",
@@ -94,12 +102,17 @@ export async function GET(
                 const personData = person as Record<string, unknown>;
                 rows.push([
                     `Další osoba ${idx + 1}`,
-                    ...inputFields.map((f) => {
-                        if (!apFieldNames.has(f.name)) return "";
+                    ...inputFields.flatMap((f) => {
+                        if (!apFieldNames.has(f.name)) {
+                            return f.type === "birth_date" ? ["", ""] : [""];
+                        }
                         const val = personData[f.name];
-                        if (val === true) return "Ano";
-                        if (val === false) return "Ne";
-                        return String(val ?? "");
+                        const formatted = val === true ? "Ano" : val === false ? "Ne" : String(val ?? "");
+                        if (f.type === "birth_date") {
+                            const minor = val ? isMinor(String(val), refDate) : false;
+                            return [formatted, minor ? "Ano" : "Ne"];
+                        }
+                        return [formatted];
                     }),
                     "", // Status empty for AP rows
                     "", // Paid empty for AP rows

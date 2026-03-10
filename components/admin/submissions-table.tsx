@@ -16,6 +16,7 @@ import { CheckCircle, Cancel } from "@mui/icons-material";
 import type { FormField, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import type { RegistrationStatus } from "@prisma/client";
+import { isMinor } from "@/lib/utils/minor-detection";
 
 const STATUS_COLORS: Record<RegistrationStatus, "default" | "success" | "warning" | "error" | "info"> = {
     PENDING: "warning",
@@ -47,15 +48,22 @@ interface SubmissionsTableProps {
     fields: FormField[];
     yearId: string;
     statusFilter: RegistrationStatus | null;
+    eventStartDate?: Date | null;
 }
 
-export function SubmissionsTable({ submissions, fields, yearId, statusFilter }: SubmissionsTableProps) {
+export function SubmissionsTable({ submissions, fields, yearId, statusFilter, eventStartDate }: SubmissionsTableProps) {
     const router = useRouter();
 
     // Get first 4 input fields for column display
     const displayFields = fields
         .filter((f): f is InputField => isInputField(f))
         .slice(0, 4);
+
+    // Find birth_date fields for minor detection
+    const allInputFields = fields.filter((f): f is InputField => isInputField(f));
+    const birthDateFields = allInputFields.filter((f) => f.type === "birth_date");
+    const apBirthDateFields = birthDateFields.filter((f) => f.includeForAdditionalPeople);
+    const refDate = eventStartDate ? new Date(eventStartDate) : undefined;
 
     const filtered = statusFilter
         ? submissions.filter((s) => s.status === statusFilter)
@@ -97,9 +105,17 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter }: 
                             >
                                 {displayFields.map((field) => (
                                     <TableCell key={field.id}>
-                                        <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                                        <Typography variant="body2" noWrap sx={{ maxWidth: 200, display: "inline" }}>
                                             {String(data[field.name] ?? "")}
                                         </Typography>
+                                        {field.type === "birth_date" && !!data[field.name] && isMinor(String(data[field.name]), refDate) && (
+                                            <Chip
+                                                label="Nezletilý"
+                                                color="warning"
+                                                size="small"
+                                                sx={{ ml: 1 }}
+                                            />
+                                        )}
                                     </TableCell>
                                 ))}
                                 <TableCell>
@@ -107,7 +123,32 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter }: 
                                         {(() => {
                                             const ap = data.additionalPeople;
                                             const apCount = Array.isArray(ap) ? ap.length : 0;
-                                            return apCount > 0 ? `1 + ${apCount}` : "1";
+
+                                            // Count minors among main person and additional people
+                                            let minorCount = 0;
+                                            if (birthDateFields.length > 0) {
+                                                for (const bf of birthDateFields) {
+                                                    const val = data[bf.name];
+                                                    if (val && isMinor(String(val), refDate)) {
+                                                        minorCount++;
+                                                    }
+                                                }
+                                            }
+                                            if (apBirthDateFields.length > 0 && Array.isArray(ap)) {
+                                                for (const person of ap) {
+                                                    if (!person || typeof person !== "object") continue;
+                                                    const personData = person as Record<string, unknown>;
+                                                    for (const bf of apBirthDateFields) {
+                                                        const val = personData[bf.name];
+                                                        if (val && isMinor(String(val), refDate)) {
+                                                            minorCount++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            const base = apCount > 0 ? `1 + ${apCount}` : "1";
+                                            return minorCount > 0 ? `${base} (${minorCount} nezl.)` : base;
                                         })()}
                                     </Typography>
                                 </TableCell>

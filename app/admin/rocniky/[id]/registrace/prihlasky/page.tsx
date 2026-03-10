@@ -20,6 +20,7 @@ async function getYearWithSubmissions(yearId: string) {
             id: true,
             year: true,
             title: true,
+            startDate: true,
             registrationForm: { select: { fields: true } },
             registrationSubmissions: {
                 orderBy: { createdAt: "desc" },
@@ -110,6 +111,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 fields={fields}
                 yearId={year.id}
                 statusFilter={statusFilter}
+                eventStartDate={year.startDate}
             />
         </Container>
     );

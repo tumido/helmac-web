@@ -8,6 +8,7 @@ export type FieldType =
     | "select"
     | "radio"
     | "date"
+    | "birth_date"
     | "pricing_select"
     | "heading"
     | "description";
@@ -156,6 +157,7 @@ export const FIELD_TYPE_META: Record<
     select: { label: "Výběr z možností", icon: "List", group: "input" },
     radio: { label: "Přepínač", icon: "RadioButtonChecked", group: "input" },
     date: { label: "Datum", icon: "CalendarMonth", group: "input" },
+    birth_date: { label: "Datum narození", icon: "Cake", group: "input" },
     pricing_select: { label: "Cenový výběr", icon: "Sell", group: "pricing" },
     heading: { label: "Nadpis", icon: "Title", group: "layout" },
     description: { label: "Popisek", icon: "Article", group: "layout" },
