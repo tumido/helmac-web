@@ -30,7 +30,7 @@ export function FieldTypeSelector({ open, onClose, onSelect }: FieldTypeSelector
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog open={open} maxWidth="sm" fullWidth>
             <DialogTitle>Přidat pole</DialogTitle>
             <DialogContent>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>

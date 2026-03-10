@@ -68,7 +68,7 @@ import type {
     RegistrationFormData,
     PricingDefinition,
 } from "@/lib/types/registration-form";
-import { isConditionBlock } from "@/lib/types/registration-form";
+import { isConditionBlock, isInputField } from "@/lib/types/registration-form";
 import { getFieldOptionValues } from "@/lib/utils/pricing";
 
 interface FormBuilderProps {
@@ -129,12 +129,10 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     }, []);
 
     const handleAddField = useCallback((type: FieldType) => {
-        setElements((prev) => {
-            const newField = createField(type, prev);
-            setEditingField(newField);
-            return [...prev, newField];
-        });
-    }, [createField]);
+        const newField = createField(type, elements);
+        setElements((prev) => [...prev, newField]);
+        setEditingField(newField);
+    }, [createField, elements]);
 
     const handleAddConditionBlock = useCallback((conditionId: string) => {
         setElements((prev) => {
@@ -150,15 +148,13 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
     const handleAddPricingField = useCallback((definitionId: string) => {
         const def = pricingDefinitions.find((d) => d.id === definitionId);
-        setElements((prev) => {
-            const newField = createField("pricing_select", prev, definitionId);
-            if (def && "label" in newField) {
-                (newField as InputField).label = def.name || "Cenový výběr";
-            }
-            setEditingField(newField);
-            return [...prev, newField];
-        });
-    }, [createField, pricingDefinitions]);
+        const newField = createField("pricing_select", elements, definitionId);
+        if (def && "label" in newField) {
+            (newField as InputField).label = def.name || "Cenový výběr";
+        }
+        setElements((prev) => [...prev, newField]);
+        setEditingField(newField);
+    }, [createField, pricingDefinitions, elements]);
 
     const handleEditField = useCallback((field: FormField) => {
         setEditingField(field);
@@ -201,6 +197,23 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         }
         setElements((prev) => removeFieldFromElements(prev, fieldId));
     }, [conditions]);
+
+    const handleCreateConditionFromOption = useCallback((fieldId: string, fieldLabel: string, optionValue: string) => {
+        const newCondition: FormCondition = {
+            id: crypto.randomUUID(),
+            name: `${fieldLabel} je ${optionValue}`,
+            rules: [{ type: "field_value", fieldId, operator: "equals", value: optionValue }],
+        };
+        setConditions((prev) => [...prev, newCondition]);
+    }, []);
+
+    const handleToggleField = useCallback((fieldId: string, updates: Partial<InputField>) => {
+        setElements((prev) => {
+            const field = findFieldById(prev, fieldId);
+            if (!field || !isInputField(field)) return prev;
+            return updateFieldInElements(prev, { ...field, ...updates });
+        });
+    }, []);
 
     const handleDeleteBlock = useCallback((blockId: string) => {
         setElements((prev) => {
@@ -410,34 +423,30 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         if (activeIdStr.startsWith("palette-pricing-")) {
             const definitionId = activeIdStr.replace("palette-pricing-", "");
             const def = pricingDefinitions.find((d) => d.id === definitionId);
+            const newField = createField("pricing_select", elements, definitionId);
+            if (def && "label" in newField) {
+                (newField as InputField).label = def.name || "Cenový výběr";
+            }
 
             setElements((prev) => {
-                const newField = createField("pricing_select", prev, definitionId);
-                // Auto-set label from definition name
-                if (def && "label" in newField) {
-                    (newField as InputField).label = def.name || "Cenový výběr";
-                }
-
                 if (over) {
                     const overIdStr = String(over.id);
 
                     if (overIdStr.startsWith("container-")) {
                         const blockId = overIdStr.replace("container-", "");
-                        const updated = prev.map((el) => {
+                        return prev.map((el) => {
                             if (isConditionBlock(el) && el.id === blockId) {
                                 return { ...el, children: [...el.children, newField] };
                             }
                             return el;
                         });
-                        setEditingField(newField);
-                        return updated;
                     }
 
                     const parentBlock = prev.find(
                         (el) => isConditionBlock(el) && el.children.some((c) => c.id === overIdStr)
                     );
                     if (parentBlock && isConditionBlock(parentBlock)) {
-                        const updated = prev.map((el) => {
+                        return prev.map((el) => {
                             if (isConditionBlock(el) && el.id === parentBlock.id) {
                                 const childIdx = el.children.findIndex((c) => c.id === overIdStr);
                                 const children = [...el.children];
@@ -446,8 +455,6 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                             }
                             return el;
                         });
-                        setEditingField(newField);
-                        return updated;
                     }
 
                     const overIndex = prev.findIndex((el) => {
@@ -458,38 +465,34 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                     if (overIndex !== -1) {
                         const updated = [...prev];
                         updated.splice(overIndex + 1, 0, newField);
-                        setEditingField(newField);
                         return updated;
                     }
                 }
 
-                setEditingField(newField);
                 return [...prev, newField];
             });
+            setEditingField(newField);
             return;
         }
 
         // -- Palette field drop: create new field
         if (activeIdStr.startsWith("palette-")) {
             const type = activeIdStr.replace("palette-", "") as FieldType;
+            const newField = createField(type, elements);
 
             setElements((prev) => {
-                const newField = createField(type, prev);
-
                 if (over) {
                     const overIdStr = String(over.id);
 
                     // Check if dropping into a container
                     if (overIdStr.startsWith("container-")) {
                         const blockId = overIdStr.replace("container-", "");
-                        const updated = prev.map((el) => {
+                        return prev.map((el) => {
                             if (isConditionBlock(el) && el.id === blockId) {
                                 return { ...el, children: [...el.children, newField] };
                             }
                             return el;
                         });
-                        setEditingField(newField);
-                        return updated;
                     }
 
                     // Check if over target is inside a condition block
@@ -497,7 +500,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                         (el) => isConditionBlock(el) && el.children.some((c) => c.id === overIdStr)
                     );
                     if (parentBlock && isConditionBlock(parentBlock)) {
-                        const updated = prev.map((el) => {
+                        return prev.map((el) => {
                             if (isConditionBlock(el) && el.id === parentBlock.id) {
                                 const childIdx = el.children.findIndex((c) => c.id === overIdStr);
                                 const children = [...el.children];
@@ -506,8 +509,6 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                             }
                             return el;
                         });
-                        setEditingField(newField);
-                        return updated;
                     }
 
                     // Root level insert
@@ -519,15 +520,14 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                     if (overIndex !== -1) {
                         const updated = [...prev];
                         updated.splice(overIndex + 1, 0, newField);
-                        setEditingField(newField);
                         return updated;
                     }
                 }
 
                 // Append to end
-                setEditingField(newField);
                 return [...prev, newField];
             });
+            setEditingField(newField);
             return;
         }
 
@@ -567,7 +567,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 }
             });
         }
-    }, [createField, pricingDefinitions]);
+    }, [createField, pricingDefinitions, elements]);
 
     const handleDragCancel = useCallback(() => {
         setActiveId(null);
@@ -773,6 +773,8 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                                 onEditField={handleEditField}
                                 onDeleteField={handleDeleteField}
                                 onDeleteBlock={handleDeleteBlock}
+                                onToggleField={handleToggleField}
+                                onCreateCondition={handleCreateConditionFromOption}
                             />
 
                             <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
@@ -901,9 +903,11 @@ interface FormDropZoneProps {
     onEditField: (field: FormField) => void;
     onDeleteField: (fieldId: string) => void;
     onDeleteBlock: (blockId: string) => void;
+    onToggleField?: (fieldId: string, updates: Partial<InputField>) => void;
+    onCreateCondition?: (fieldId: string, fieldLabel: string, optionValue: string) => void;
 }
 
-function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, onDeleteField, onDeleteBlock }: FormDropZoneProps) {
+function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, onDeleteField, onDeleteBlock, onToggleField, onCreateCondition }: FormDropZoneProps) {
     const usedFieldIds = getFieldIdsUsedInConditions(conditions);
 
     const { setNodeRef, isOver } = useDroppable({
@@ -952,8 +956,10 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                                         onEditField={onEditField}
                                         onDeleteField={onDeleteField}
                                         onDeleteBlock={onDeleteBlock}
+                                        onToggleField={onToggleField}
                                         usedFieldIds={usedFieldIds}
                                         pricingDefinitions={pricingDefinitions}
+                                        onCreateCondition={onCreateCondition}
                                     />
                                 </SortableFieldItem>
                             );
@@ -965,8 +971,10 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                                     field={el}
                                     onEdit={() => onEditField(el)}
                                     onDelete={() => onDeleteField(el.id)}
+                                    onToggleField={onToggleField}
                                     usedInCondition={usedFieldIds.has(el.id)}
                                     pricingDefinitions={pricingDefinitions}
+                                    onCreateCondition={onCreateCondition}
                                 />
                             </SortableFieldItem>
                         );

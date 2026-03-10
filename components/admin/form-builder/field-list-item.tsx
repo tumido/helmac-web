@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
-import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
+import { Edit, Delete, AddCircleOutline, People } from "@mui/icons-material";
+import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
@@ -10,11 +10,13 @@ interface FieldListItemProps {
     field: FormField;
     onEdit: () => void;
     onDelete: () => void;
+    onToggleField?: (fieldId: string, updates: Partial<InputField>) => void;
     usedInCondition?: boolean;
     pricingDefinitions?: PricingDefinition[];
+    onCreateCondition?: (fieldId: string, fieldLabel: string, optionValue: string) => void;
 }
 
-export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricingDefinitions }: FieldListItemProps) {
+export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCondition, pricingDefinitions, onCreateCondition }: FieldListItemProps) {
     const meta = FIELD_TYPE_META[field.type];
     const isInput = isInputField(field);
 
@@ -52,23 +54,6 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricin
                     <Typography variant="body2" noWrap fontWeight={500}>
                         {isInput ? field.label : field.text}
                     </Typography>
-                    {isInput && field.required && (
-                        <Chip
-                            label="Povinné"
-                            size="small"
-                            color="error"
-                            sx={{ fontSize: "0.7rem", height: 20 }}
-                        />
-                    )}
-                    {isInput && field.includeForAdditionalPeople && (
-                        <Chip
-                            label="Další osoby"
-                            size="small"
-                            variant="outlined"
-                            color="secondary"
-                            sx={{ fontSize: "0.7rem", height: 20 }}
-                        />
-                    )}
                     {usedInCondition && (
                         <Chip
                             label="Podmínka"
@@ -79,6 +64,31 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricin
                         />
                     )}
                 </Box>
+                {isInput && (field.type === "select" || field.type === "radio") && field.options && field.options.length > 0 && (
+                    <Box sx={{ mt: 0.5 }}>
+                        {field.options.map((opt, idx) => (
+                            <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                                    {opt || `Možnost ${idx + 1}`}
+                                </Typography>
+                                {onCreateCondition && opt && (
+                                    <Tooltip title="Vytvořit podmínku">
+                                        <IconButton
+                                            size="small"
+                                            sx={{ p: 0, ml: 0.5, minWidth: 0, minHeight: 0, lineHeight: 1 }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onCreateCondition(field.id, field.label, opt);
+                                            }}
+                                        >
+                                            <AddCircleOutline sx={{ fontSize: 14 }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
+                )}
                 {isInput && field.type === "pricing_select" && field.pricingId && pricingDefinitions && (() => {
                     const def = pricingDefinitions.find((d) => d.id === field.pricingId);
                     return def ? (
@@ -89,6 +99,62 @@ export function FieldListItem({ field, onEdit, onDelete, usedInCondition, pricin
                 })()}
             </Box>
             <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+                {isInput && onToggleField && (
+                    <>
+                        <Tooltip title={field.required ? "Zrušit povinné" : "Nastavit jako povinné"}>
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleField(field.id, { required: !field.required });
+                                }}
+                                sx={{
+                                    border: 1,
+                                    borderColor: field.required ? "error.main" : "grey.400",
+                                    color: field.required ? "error.main" : "grey.400",
+                                    borderRadius: 1,
+                                    width: 28,
+                                    height: 28,
+                                    fontSize: "1rem",
+                                    fontWeight: 700,
+                                    "&:hover": {
+                                        borderColor: "error.main",
+                                        color: "error.main",
+                                        backgroundColor: "error.50",
+                                    },
+                                }}
+                            >
+                                *
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title={field.includeForAdditionalPeople ? "Zrušit pro další osoby" : "Zobrazit pro další osoby"}>
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleField(field.id, {
+                                        includeForAdditionalPeople: !field.includeForAdditionalPeople || undefined,
+                                    });
+                                }}
+                                sx={{
+                                    border: 1,
+                                    borderColor: field.includeForAdditionalPeople ? "warning.main" : "grey.400",
+                                    color: field.includeForAdditionalPeople ? "warning.main" : "grey.400",
+                                    borderRadius: 1,
+                                    width: 28,
+                                    height: 28,
+                                    "&:hover": {
+                                        borderColor: "warning.main",
+                                        color: "warning.main",
+                                        backgroundColor: "warning.50",
+                                    },
+                                }}
+                            >
+                                <People sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
                 <Tooltip title="Upravit">
                     <IconButton size="small" onClick={onEdit}>
                         <Edit fontSize="small" />

@@ -71,7 +71,7 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
     const layoutData = editData as HeadingField | DescriptionField;
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog open={open} maxWidth="sm" fullWidth>
             <DialogTitle>
                 Upravit pole — {FIELD_TYPE_META[editData.type].label}
             </DialogTitle>
