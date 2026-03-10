@@ -12,9 +12,10 @@ interface DraggablePaletteItemProps {
     label: string;
     icon: React.ReactNode;
     compact?: boolean;
+    onAdd?: (type: FieldType) => void;
 }
 
-function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteItemProps) {
+function DraggablePaletteItem({ type, label, icon, compact, onAdd }: DraggablePaletteItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-${type}`,
         data: { type },
@@ -26,6 +27,7 @@ function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteIt
                 ref={setNodeRef}
                 {...attributes}
                 {...listeners}
+                onClick={() => onAdd?.(type)}
                 variant="outlined"
                 sx={{
                     display: "flex",
@@ -34,7 +36,7 @@ function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteIt
                     justifyContent: "center",
                     gap: 0.5,
                     p: 1,
-                    cursor: "grab",
+                    cursor: "pointer",
                     opacity: isDragging ? 0.5 : 1,
                     minHeight: 64,
                     "&:hover": {
@@ -59,6 +61,7 @@ function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteIt
             ref={setNodeRef}
             {...attributes}
             {...listeners}
+            onClick={() => onAdd?.(type)}
             variant="outlined"
             sx={{
                 display: "flex",
@@ -66,7 +69,7 @@ function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteIt
                 gap: 1,
                 px: 1.5,
                 py: 1,
-                cursor: "grab",
+                cursor: "pointer",
                 opacity: isDragging ? 0.5 : 1,
                 "&:hover": {
                     borderColor: "primary.main",
@@ -85,9 +88,10 @@ function DraggablePaletteItem({ type, label, icon, compact }: DraggablePaletteIt
 
 interface DraggableConditionItemProps {
     condition: FormCondition;
+    onAdd?: (conditionId: string) => void;
 }
 
-function DraggableConditionItem({ condition }: DraggableConditionItemProps) {
+function DraggableConditionItem({ condition, onAdd }: DraggableConditionItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-condition-${condition.id}`,
         data: { type: "condition", conditionId: condition.id },
@@ -98,6 +102,7 @@ function DraggableConditionItem({ condition }: DraggableConditionItemProps) {
             ref={setNodeRef}
             {...attributes}
             {...listeners}
+            onClick={() => onAdd?.(condition.id)}
             variant="outlined"
             sx={{
                 display: "flex",
@@ -105,7 +110,7 @@ function DraggableConditionItem({ condition }: DraggableConditionItemProps) {
                 gap: 1,
                 px: 1.5,
                 py: 1,
-                cursor: "grab",
+                cursor: "pointer",
                 opacity: isDragging ? 0.5 : 1,
                 borderColor: "info.main",
                 "&:hover": {
@@ -129,9 +134,10 @@ function DraggableConditionItem({ condition }: DraggableConditionItemProps) {
 
 interface DraggablePricingItemProps {
     definition: PricingDefinition;
+    onAdd?: (definitionId: string) => void;
 }
 
-function DraggablePricingItem({ definition }: DraggablePricingItemProps) {
+function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-pricing-${definition.id}`,
         data: { type: "pricing", definitionId: definition.id },
@@ -142,6 +148,7 @@ function DraggablePricingItem({ definition }: DraggablePricingItemProps) {
             ref={setNodeRef}
             {...attributes}
             {...listeners}
+            onClick={() => onAdd?.(definition.id)}
             variant="outlined"
             sx={{
                 display: "flex",
@@ -149,7 +156,7 @@ function DraggablePricingItem({ definition }: DraggablePricingItemProps) {
                 gap: 1,
                 px: 1.5,
                 py: 1,
-                cursor: "grab",
+                cursor: "pointer",
                 opacity: isDragging ? 0.5 : 1,
                 borderColor: "success.main",
                 "&:hover": {
@@ -174,9 +181,12 @@ function DraggablePricingItem({ definition }: DraggablePricingItemProps) {
 interface FieldPaletteProps {
     conditions?: FormCondition[];
     pricingDefinitions?: PricingDefinition[];
+    onAddField?: (type: FieldType) => void;
+    onAddConditionBlock?: (conditionId: string) => void;
+    onAddPricingField?: (definitionId: string) => void;
 }
 
-export function FieldPalette({ conditions = [], pricingDefinitions = [] }: FieldPaletteProps) {
+export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddField, onAddConditionBlock, onAddPricingField }: FieldPaletteProps) {
     const inputTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "input");
     const layoutTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "layout");
 
@@ -208,6 +218,7 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
                         label={meta.label}
                         icon={FIELD_TYPE_ICONS[meta.icon]}
                         compact
+                        onAdd={onAddField}
                     />
                 ))}
             </Box>
@@ -222,6 +233,7 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
                         type={type as FieldType}
                         label={meta.label}
                         icon={FIELD_TYPE_ICONS[meta.icon]}
+                        onAdd={onAddField}
                     />
                 ))}
             </Box>
@@ -236,6 +248,7 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
                             <DraggableConditionItem
                                 key={condition.id}
                                 condition={condition}
+                                onAdd={onAddConditionBlock}
                             />
                         ))}
                     </Box>
@@ -252,6 +265,7 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
                             <DraggablePricingItem
                                 key={def.id}
                                 definition={def}
+                                onAdd={onAddPricingField}
                             />
                         ))}
                     </Box>
@@ -271,7 +285,7 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [] }: Field
             >
                 <InfoOutlined sx={{ fontSize: 16, color: "info.main", mt: 0.25 }} />
                 <Typography variant="caption" color="text.secondary">
-                    Přetáhněte pole do formuláře. Kliknutím upravíte nastavení.
+                    Klikněte na pole pro přidání na konec, nebo přetáhněte na konkrétní místo.
                 </Typography>
             </Box>
         </Paper>

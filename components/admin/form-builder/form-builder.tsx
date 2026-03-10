@@ -136,6 +136,30 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         });
     }, [createField]);
 
+    const handleAddConditionBlock = useCallback((conditionId: string) => {
+        setElements((prev) => {
+            const newBlock: ConditionBlock = {
+                type: "condition",
+                id: crypto.randomUUID(),
+                conditionId,
+                children: [],
+            };
+            return [...prev, newBlock];
+        });
+    }, []);
+
+    const handleAddPricingField = useCallback((definitionId: string) => {
+        const def = pricingDefinitions.find((d) => d.id === definitionId);
+        setElements((prev) => {
+            const newField = createField("pricing_select", prev, definitionId);
+            if (def && "label" in newField) {
+                (newField as InputField).label = def.name || "Cenový výběr";
+            }
+            setEditingField(newField);
+            return [...prev, newField];
+        });
+    }, [createField, pricingDefinitions]);
+
     const handleEditField = useCallback((field: FormField) => {
         setEditingField(field);
     }, []);
@@ -779,7 +803,13 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                         {/* Right column: palette (desktop only) */}
                         {!isMobile && (
                             <Box sx={{ width: 220, flexShrink: 0 }}>
-                                <FieldPalette conditions={conditions} pricingDefinitions={pricingDefinitions} />
+                                <FieldPalette
+                                    conditions={conditions}
+                                    pricingDefinitions={pricingDefinitions}
+                                    onAddField={handleAddField}
+                                    onAddConditionBlock={handleAddConditionBlock}
+                                    onAddPricingField={handleAddPricingField}
+                                />
                             </Box>
                         )}
                     </Box>
