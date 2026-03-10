@@ -172,7 +172,7 @@ export async function submitDynamicRegistration(
 
         return {
             success: false,
-            message: "Prosím opravte chyby ve formuláři",
+            message: "Nejsou vyplněna všechna povinná pole",
             errors,
         };
     }
@@ -271,7 +271,7 @@ export async function submitDynamicRegistration(
         if (Object.keys(apErrors).length > 0) {
             return {
                 success: false,
-                message: "Prosím opravte chyby ve formuláři",
+                message: "Nejsou vyplněna všechna povinná pole",
                 errors: result.success ? undefined : undefined,
                 apErrors,
             };

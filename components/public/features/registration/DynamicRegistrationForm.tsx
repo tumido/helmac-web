@@ -80,12 +80,6 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
 
     return (
         <Paper sx={{ p: { xs: 3, md: 5 } }}>
-            {state?.message && !state.success && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    {state.message}
-                </Alert>
-            )}
-
             <Box
                 component="form"
                 action={previewMode ? undefined : formAction}
@@ -167,6 +161,11 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
                                 ? "Odeslat registraci (náhled)"
                                 : "Odeslat registraci"}
                     </Button>
+                    {state?.message && !state.success && (
+                        <Alert severity="error" sx={{ mt: 2 }}>
+                            {state.message}
+                        </Alert>
+                    )}
                 </Box>
             </Box>
 
