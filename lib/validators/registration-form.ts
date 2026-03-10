@@ -1,19 +1,18 @@
 import { z } from "zod";
 
-const conditionRuleSchema = z.discriminatedUnion("type", [
-    z.object({
-        type: z.literal("field_value"),
-        fieldId: z.string().min(1),
-        operator: z.enum(["equals", "not_equals"]),
-        value: z.string(),
-    }),
-    z.object({
-        type: z.literal("capacity"),
-        fieldId: z.string().min(1),
-        value: z.string().min(1),
-        maxCount: z.number().int().min(1),
-    }),
-]);
+const conditionRuleSchema = z.object({
+    type: z.literal("field_value"),
+    fieldId: z.string().min(1),
+    operator: z.enum(["equals", "not_equals"]),
+    value: z.string(),
+});
+
+const capacityLimitSchema = z.object({
+    id: z.string().min(1),
+    fieldId: z.string().min(1),
+    value: z.string().min(1),
+    maxCount: z.number().int().min(1),
+});
 
 const formConditionSchema = z.object({
     id: z.string().min(1),
@@ -74,9 +73,12 @@ const conditionBlockSchema = z.object({
 
 const formElementSchema = z.union([formFieldSchema, conditionBlockSchema]);
 
+export const saveCapacityLimitsSchema = z.array(capacityLimitSchema);
+
 export const saveRegistrationFormSchema = z.object({
     conditions: z.array(formConditionSchema),
     pricingDefinitions: z.array(pricingDefinitionSchema),
+    capacityLimits: z.array(capacityLimitSchema).default([]),
     fields: z.array(formElementSchema),
 }).superRefine((data, ctx) => {
     const { conditions, pricingDefinitions, fields } = data;
@@ -192,6 +194,19 @@ export const saveRegistrationFormSchema = z.object({
                     code: z.ZodIssueCode.custom,
                     message: `Možnost "${opt.name}" v cenové skupině "${def.name}" má nesprávný počet cen`,
                     path: ["pricingDefinitions"],
+                });
+            }
+        }
+    }
+
+    // Validate capacity limits reference existing field IDs
+    if (data.capacityLimits) {
+        for (const limit of data.capacityLimits) {
+            if (!allFieldIds.has(limit.fieldId)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Limit kapacity odkazuje na neexistující pole`,
+                    path: ["capacityLimits"],
                 });
             }
         }

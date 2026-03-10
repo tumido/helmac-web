@@ -109,26 +109,6 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
         }));
     };
 
-    const handleChangeRuleType = (conditionId: string, ruleIndex: number, newType: "field_value" | "capacity") => {
-        if (newType === "field_value") {
-            handleUpdateRule(conditionId, ruleIndex, {
-                type: "field_value",
-                fieldId: "",
-                operator: "equals",
-                value: "",
-                maxCount: undefined,
-            });
-        } else {
-            handleUpdateRule(conditionId, ruleIndex, {
-                type: "capacity",
-                fieldId: "",
-                operator: undefined,
-                value: "",
-                maxCount: 10,
-            });
-        }
-    };
-
     return (
         <Box>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
@@ -219,13 +199,6 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                                             <Typography
                                                 variant="overline"
                                                 color="text.secondary"
-                                                sx={{ minWidth: 140, fontSize: "0.65rem", letterSpacing: 1 }}
-                                            >
-                                                TYP
-                                            </Typography>
-                                            <Typography
-                                                variant="overline"
-                                                color="text.secondary"
                                                 sx={{ flex: 1, fontSize: "0.65rem", letterSpacing: 1 }}
                                             >
                                                 POLE
@@ -252,7 +225,6 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                                                 allFields={allFields}
                                                 pricingDefinitions={pricingDefinitions}
                                                 onUpdate={(updates) => handleUpdateRule(condition.id, ruleIdx, updates)}
-                                                onChangeType={(type) => handleChangeRuleType(condition.id, ruleIdx, type)}
                                                 onDelete={() => handleDeleteRule(condition.id, ruleIdx)}
                                                 canDelete={condition.rules.length > 1}
                                             />
@@ -353,12 +325,11 @@ interface RuleRowProps {
     allFields: FormField[];
     pricingDefinitions?: PricingDefinition[];
     onUpdate: (updates: Partial<ConditionRule>) => void;
-    onChangeType: (type: "field_value" | "capacity") => void;
     onDelete: () => void;
     canDelete: boolean;
 }
 
-function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onChangeType, onDelete, canDelete }: RuleRowProps) {
+function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onDelete, canDelete }: RuleRowProps) {
     const targetField = allFields.find((f) => f.id === rule.fieldId);
     const targetInput = targetField && isInputField(targetField) ? targetField : null;
 
@@ -376,18 +347,6 @@ function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, o
             }}
         >
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                    <InputLabel>Typ</InputLabel>
-                    <Select
-                        value={rule.type}
-                        onChange={(e) => onChangeType(e.target.value as "field_value" | "capacity")}
-                        label="Typ"
-                    >
-                        <MenuItem value="field_value">Hodnota pole</MenuItem>
-                        <MenuItem value="capacity">Kapacita</MenuItem>
-                    </Select>
-                </FormControl>
-
                 <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>Pole</InputLabel>
                     <Select
@@ -412,47 +371,25 @@ function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, o
                 )}
             </Box>
 
-            {rule.type === "field_value" && (
-                <Box sx={{ display: "flex", gap: 1 }}>
-                    <FormControl size="small" sx={{ minWidth: 130 }}>
-                        <InputLabel>Operátor</InputLabel>
-                        <Select
-                            value={rule.operator || "equals"}
-                            onChange={(e) => onUpdate({ operator: e.target.value as "equals" | "not_equals" })}
-                            label="Operátor"
-                        >
-                            <MenuItem value="equals">se rovná</MenuItem>
-                            <MenuItem value="not_equals">se nerovná</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FieldValuePicker
-                        targetField={targetInput}
-                        pricingDefinitions={pricingDefinitions}
-                        value={rule.value || ""}
-                        onChange={(value) => onUpdate({ value })}
-                    />
-                </Box>
-            )}
-
-            {rule.type === "capacity" && (
-                <Box sx={{ display: "flex", gap: 1 }}>
-                    <FieldValuePicker
-                        targetField={targetInput}
-                        pricingDefinitions={pricingDefinitions}
-                        value={rule.value || ""}
-                        onChange={(value) => onUpdate({ value })}
-                    />
-                    <TextField
-                        label="Max. počet"
-                        type="number"
-                        size="small"
-                        value={rule.maxCount ?? ""}
-                        onChange={(e) => onUpdate({ maxCount: parseInt(e.target.value) || 1 })}
-                        sx={{ width: 120 }}
-                        inputProps={{ min: 1 }}
-                    />
-                </Box>
-            )}
+            <Box sx={{ display: "flex", gap: 1 }}>
+                <FormControl size="small" sx={{ minWidth: 130 }}>
+                    <InputLabel>Operátor</InputLabel>
+                    <Select
+                        value={rule.operator || "equals"}
+                        onChange={(e) => onUpdate({ operator: e.target.value as "equals" | "not_equals" })}
+                        label="Operátor"
+                    >
+                        <MenuItem value="equals">se rovná</MenuItem>
+                        <MenuItem value="not_equals">se nerovná</MenuItem>
+                    </Select>
+                </FormControl>
+                <FieldValuePicker
+                    targetField={targetInput}
+                    pricingDefinitions={pricingDefinitions}
+                    value={rule.value || ""}
+                    onChange={(value) => onUpdate({ value })}
+                />
+            </Box>
         </Box>
     );
 }

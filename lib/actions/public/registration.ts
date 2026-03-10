@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { FormCondition, FormElement, FormField, InputField, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
+import type { FormCondition, FormElement, FormField, InputField, OptionCounts, AdditionalPersonData, CapacityLimit } from "@/lib/types/registration-form";
 import { isInputField, isConditionBlock, getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
@@ -24,27 +24,15 @@ function evaluateCondition(
     condition: FormCondition,
     rawData: Record<string, unknown>,
     allFields: FormField[],
-    optionCounts?: OptionCounts,
 ): boolean {
     for (const rule of condition.rules) {
-        if (rule.type === "field_value") {
-            if (!rule.fieldId || rule.operator === undefined) return false;
-            const targetField = allFields.find((f) => f.id === rule.fieldId);
-            if (!targetField || !isInputField(targetField)) return false;
+        if (!rule.fieldId || rule.operator === undefined) return false;
+        const targetField = allFields.find((f) => f.id === rule.fieldId);
+        if (!targetField || !isInputField(targetField)) return false;
 
-            const currentValue = String(rawData[targetField.name] ?? "");
-            if (rule.operator === "equals" && currentValue !== rule.value) return false;
-            if (rule.operator === "not_equals" && currentValue === rule.value) return false;
-        } else if (rule.type === "capacity") {
-            if (!rule.fieldId || !rule.value || rule.maxCount == null) return false;
-            const targetField = allFields.find((f) => f.id === rule.fieldId);
-            if (!targetField || !isInputField(targetField)) return false;
-
-            if (optionCounts) {
-                const currentCount = optionCounts[targetField.name]?.[rule.value] ?? 0;
-                if (currentCount >= rule.maxCount) return false;
-            }
-        }
+        const currentValue = String(rawData[targetField.name] ?? "");
+        if (rule.operator === "equals" && currentValue !== rule.value) return false;
+        if (rule.operator === "not_equals" && currentValue === rule.value) return false;
     }
     return true;
 }
@@ -57,7 +45,6 @@ function buildVisibleFieldIds(
     conditions: FormCondition[],
     rawData: Record<string, unknown>,
     allFields: FormField[],
-    optionCounts?: OptionCounts,
 ): Set<string> {
     const visibleFieldIds = new Set<string>();
     const conditionMap = new Map(conditions.map((c) => [c.id, c]));
@@ -67,7 +54,7 @@ function buildVisibleFieldIds(
             const condition = conditionMap.get(el.conditionId);
             if (!condition) continue;
 
-            const passes = evaluateCondition(condition, rawData, allFields, optionCounts);
+            const passes = evaluateCondition(condition, rawData, allFields);
             if (passes) {
                 for (const child of el.children) {
                     visibleFieldIds.add(child.id);
@@ -80,6 +67,44 @@ function buildVisibleFieldIds(
     }
 
     return visibleFieldIds;
+}
+
+/**
+ * Validate submitted values against capacity limits.
+ * Returns field-level error if any capacity is exceeded.
+ */
+function validateCapacityLimits(
+    capacityLimits: CapacityLimit[],
+    submissionData: Record<string, unknown>,
+    additionalPeople: AdditionalPersonData[],
+    allInputFields: InputField[],
+    optionCounts: OptionCounts,
+): { fieldName: string; error: string } | null {
+    for (const limit of capacityLimits) {
+        const field = allInputFields.find((f) => f.id === limit.fieldId);
+        if (!field) continue;
+
+        const currentCount = optionCounts[field.name]?.[limit.value] ?? 0;
+
+        // Count how many times this value appears in current submission
+        let submittedCount = 0;
+        if (String(submissionData[field.name] ?? "") === limit.value) {
+            submittedCount++;
+        }
+        for (const person of additionalPeople) {
+            if (String(person[field.name] ?? "") === limit.value) {
+                submittedCount++;
+            }
+        }
+
+        if (submittedCount > 0 && currentCount + submittedCount > limit.maxCount) {
+            return {
+                fieldName: field.name,
+                error: `Kapacita pro "${limit.value}" je již vyčerpána`,
+            };
+        }
+    }
+    return null;
 }
 
 export async function submitDynamicRegistration(
@@ -129,13 +154,11 @@ export async function submitDynamicRegistration(
         }
     }
 
-    // Evaluate conditions — check if any condition uses capacity rules
-    const hasCapacityRules = formDataStored.conditions.some(
-        (c) => c.rules.some((r) => r.type === "capacity")
-    );
+    // Fetch option counts if capacity limits exist
+    const hasCapacityLimits = formDataStored.capacityLimits.length > 0;
     let optionCounts: OptionCounts | undefined;
 
-    if (hasCapacityRules) {
+    if (hasCapacityLimits) {
         optionCounts = await getOptionCountsForYearFresh(activeYear.id);
     }
 
@@ -145,7 +168,6 @@ export async function submitDynamicRegistration(
         formDataStored.conditions,
         rawData,
         allFields,
-        optionCounts,
     );
 
     // Only validate visible input fields
@@ -226,7 +248,6 @@ export async function submitDynamicRegistration(
                 formDataStored.conditions,
                 mergedRaw,
                 allFields,
-                optionCounts,
             );
 
             // Get visible AP fields for this person
@@ -289,6 +310,26 @@ export async function submitDynamicRegistration(
     // Include additional people data if present
     if (parsedAP.length > 0) {
         submissionData.additionalPeople = parsedAP;
+    }
+
+    // Validate capacity limits
+    if (hasCapacityLimits && optionCounts) {
+        const capacityError = validateCapacityLimits(
+            formDataStored.capacityLimits,
+            submissionData,
+            parsedAP,
+            allInputFields,
+            optionCounts,
+        );
+        if (capacityError) {
+            return {
+                success: false,
+                message: capacityError.error,
+                errors: {
+                    [capacityError.fieldName]: [capacityError.error],
+                },
+            };
+        }
     }
 
     // Duplicate check: find email-type field

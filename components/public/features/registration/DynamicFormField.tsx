@@ -26,9 +26,10 @@ interface DynamicFormFieldProps {
     onChange: (name: string, value: string | number | boolean) => void;
     pricingDefinitions?: PricingDefinition[];
     namePrefix?: string; // Prefix for HTML name attributes (used by AP fields to avoid DOM conflicts)
+    disabledOptions?: Set<string>; // Option values that are at capacity
 }
 
-export function DynamicFormField({ field, value, error, onChange, pricingDefinitions, namePrefix }: DynamicFormFieldProps) {
+export function DynamicFormField({ field, value, error, onChange, pricingDefinitions, namePrefix, disabledOptions }: DynamicFormFieldProps) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -81,11 +82,14 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                         <MenuItem value="">
                             <em>Vyberte...</em>
                         </MenuItem>
-                        {(field.options || []).map((opt) => (
-                            <MenuItem key={opt} value={opt}>
-                                {opt}
-                            </MenuItem>
-                        ))}
+                        {(field.options || []).map((opt) => {
+                            const isDisabled = disabledOptions?.has(opt) ?? false;
+                            return (
+                                <MenuItem key={opt} value={opt} disabled={isDisabled}>
+                                    {opt}{isDisabled ? " (Kapacita vyčerpána)" : ""}
+                                </MenuItem>
+                            );
+                        })}
                     </Select>
                     {error && <FormHelperText>{error}</FormHelperText>}
                 </FormControl>
@@ -102,14 +106,18 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                         value={String(value)}
                         onChange={(e) => onChange(field.name, e.target.value)}
                     >
-                        {(field.options || []).map((opt) => (
-                            <FormControlLabel
-                                key={opt}
-                                value={opt}
-                                control={<Radio />}
-                                label={opt}
-                            />
-                        ))}
+                        {(field.options || []).map((opt) => {
+                            const isDisabled = disabledOptions?.has(opt) ?? false;
+                            return (
+                                <FormControlLabel
+                                    key={opt}
+                                    value={opt}
+                                    control={<Radio />}
+                                    label={isDisabled ? `${opt} (Kapacita vyčerpána)` : opt}
+                                    disabled={isDisabled}
+                                />
+                            );
+                        })}
                     </RadioGroup>
                     {error && <FormHelperText>{error}</FormHelperText>}
                 </FormControl>
@@ -189,25 +197,44 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                         {def.options.map((opt) => {
                             const isSelected = String(value) === opt.name;
+                            const isDisabled = disabledOptions?.has(opt.name) ?? false;
                             return (
                                 <Box
                                     key={opt.id}
-                                    onClick={() => onChange(field.name, opt.name)}
+                                    onClick={() => !isDisabled && onChange(field.name, opt.name)}
                                     sx={{
                                         p: 2,
                                         border: "2px solid",
-                                        borderColor: isSelected ? "primary.main" : "divider",
+                                        borderColor: isDisabled ? "action.disabled" : isSelected ? "primary.main" : "divider",
                                         borderRadius: 1,
-                                        backgroundColor: isSelected ? "primary.50" : "transparent",
-                                        cursor: "pointer",
-                                        "&:hover": {
+                                        backgroundColor: isDisabled ? "action.disabledBackground" : isSelected ? "primary.50" : "transparent",
+                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        opacity: isDisabled ? 0.6 : 1,
+                                        "&:hover": isDisabled ? {} : {
                                             borderColor: isSelected ? "primary.main" : "action.selected",
                                         },
                                     }}
                                 >
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {opt.name}
-                                    </Typography>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <Typography variant="body1" fontWeight={600}>
+                                            {opt.name}
+                                        </Typography>
+                                        {isDisabled && (
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    px: 1,
+                                                    py: 0.25,
+                                                    borderRadius: 1,
+                                                    backgroundColor: "error.main",
+                                                    color: "error.contrastText",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Kapacita vyčerpána
+                                            </Typography>
+                                        )}
+                                    </Box>
                                     {opt.description && (
                                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                             {opt.description}

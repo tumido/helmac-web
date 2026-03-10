@@ -28,6 +28,7 @@ export async function saveRegistrationForm(yearId: string, formData: Registratio
         const dataToStore = {
             conditions: validated.data.conditions,
             pricingDefinitions: validated.data.pricingDefinitions,
+            capacityLimits: validated.data.capacityLimits,
             fields: validated.data.fields,
         };
 

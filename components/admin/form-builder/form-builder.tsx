@@ -85,6 +85,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     elementsRef.current = elements;
     const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
     const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
+    const [capacityLimits] = useState(initialFormData.capacityLimits ?? []);
     const [builderTab, setBuilderTab] = useState<0 | 1 | 2>(0); // 0 = Formulář, 1 = Podmínky, 2 = Ceník
     const [typeSelectorOpen, setTypeSelectorOpen] = useState(false);
     const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -269,6 +270,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         const formData: RegistrationFormData = {
             conditions,
             pricingDefinitions,
+            capacityLimits,
             fields: elements,
         };
 
@@ -754,6 +756,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                         const formData: RegistrationFormData = {
                             conditions,
                             pricingDefinitions,
+                            capacityLimits,
                             fields: elements,
                         };
                         localStorage.setItem("form-preview-data", JSON.stringify(formData));

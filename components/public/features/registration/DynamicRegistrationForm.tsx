@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useActionState, type FormEvent } from "react";
 import { Box, Button, Alert, Paper, Snackbar } from "@mui/material";
 import type { RegistrationFormData, SubmissionData, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
-import { isInputField, getAllFields, getAllInputFields, getAPInputFields, hasAdditionalPeopleFields } from "@/lib/types/registration-form";
+import { isInputField, getAllFields, getAllInputFields, getAPInputFields, hasAdditionalPeopleFields, getDisabledOptionsForField } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
 import { useConditionalFields, evaluateAPVisibleFields } from "./useConditionalFields";
@@ -34,7 +34,7 @@ function buildInitialValues(formData: RegistrationFormData): SubmissionData {
 export function DynamicRegistrationForm({ formData, optionCounts, previewMode }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData));
     const [additionalPeople, setAdditionalPeople] = useState<AdditionalPersonData[]>([]);
-    const { visibleFields } = useConditionalFields(formData, values, optionCounts);
+    const { visibleFields } = useConditionalFields(formData, values);
     const [previewSnackbar, setPreviewSnackbar] = useState(false);
 
     const [state, formAction, isPending] = useActionState<RegistrationState | null, FormData>(
@@ -70,9 +70,9 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
         const apNames = getAPFieldNames(formData.fields);
         return additionalPeople.map((person) => {
             const merged = buildMergedDataForAP(values, person, apNames);
-            return evaluateAPVisibleFields(formData, merged, optionCounts);
+            return evaluateAPVisibleFields(formData, merged);
         });
-    }, [showAPSection, additionalPeople, values, formData, optionCounts]);
+    }, [showAPSection, additionalPeople, values, formData]);
 
     if (!previewMode && state?.success) {
         return <RegistrationSuccess message={state.message} />;
@@ -105,6 +105,9 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
                         if (!visibleFields.has(field.id)) return null;
 
                         const value = isInputField(field) ? (values[field.name] ?? "") : "";
+                        const disabledOpts = isInputField(field)
+                            ? getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts)
+                            : undefined;
 
                         return (
                             <DynamicFormField
@@ -114,6 +117,7 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
                                 error={isInputField(field) ? getFieldError(field.name) : undefined}
                                 onChange={handleChange}
                                 pricingDefinitions={formData.pricingDefinitions}
+                                disabledOptions={disabledOpts}
                             />
                         );
                     })}

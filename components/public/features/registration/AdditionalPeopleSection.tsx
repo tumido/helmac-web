@@ -16,7 +16,7 @@ import type {
     OptionCounts,
     AdditionalPersonData,
 } from "@/lib/types/registration-form";
-import { MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
+import { MAX_ADDITIONAL_PEOPLE, getDisabledOptionsForField } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { evaluateAPVisibleFields } from "./useConditionalFields";
 import { buildMergedDataForAP, getAPFieldNames } from "@/lib/utils/additional-people";
@@ -73,7 +73,7 @@ export function AdditionalPeopleSection({
 
             {people.map((person, personIndex) => {
                 const mergedData = buildMergedDataForAP(mainValues, person, apFieldNames);
-                const visibleFieldIds = evaluateAPVisibleFields(formData, mergedData, optionCounts);
+                const visibleFieldIds = evaluateAPVisibleFields(formData, mergedData);
                 const personErrors = errors?.[personIndex];
 
                 return (
@@ -100,6 +100,9 @@ export function AdditionalPeopleSection({
                                 if (!visibleFieldIds.has(field.id)) return null;
 
                                 const value = person[field.name] ?? (field.type === "checkbox" ? false : "");
+                                const disabledOpts = getDisabledOptionsForField(
+                                    field.id, field.name, formData.capacityLimits, optionCounts,
+                                );
 
                                 return (
                                     <DynamicFormField
@@ -110,6 +113,7 @@ export function AdditionalPeopleSection({
                                         onChange={(name, val) => handleFieldChange(personIndex, name, val)}
                                         pricingDefinitions={formData.pricingDefinitions}
                                         namePrefix={`ap_${personIndex}_`}
+                                        disabledOptions={disabledOpts}
                                     />
                                 );
                             })}

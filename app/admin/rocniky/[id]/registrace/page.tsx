@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSettings } from "@/components/admin/registration-settings";
+import { CapacityLimitsEditor } from "@/components/admin/capacity-limits-editor";
 import { LinkButton } from "@/components/ui/link-button";
+import { getRegistrationFormForYear, getOptionCountsForYear } from "@/lib/services";
+import { migrateFormData } from "@/lib/utils/form-migration";
+import { getAllInputFields } from "@/lib/types/registration-form";
 
 interface RegistracePageProps {
     params: Promise<{ id: string }>;
@@ -34,6 +38,20 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
         notFound();
     }
 
+    // Fetch form data for capacity limits editor
+    const registrationForm = await getRegistrationFormForYear(year.id);
+    const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
+
+    // Get all input fields that have options (select, radio, pricing_select)
+    const allInputFields = formData ? getAllInputFields(formData.fields).filter(
+        (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
+    ) : [];
+
+    // Compute option counts if there are capacity limits
+    const optionCounts = formData && formData.capacityLimits.length > 0
+        ? await getOptionCountsForYear(year.id)
+        : undefined;
+
     return (
         <Container maxWidth="md">
             <PageHeader
@@ -51,6 +69,19 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
                 registrationStartDate={year.registrationStartDate}
                 submissionCount={year._count.registrationSubmissions}
             />
+
+            {formData && allInputFields.length > 0 && (
+                <>
+                    <Divider sx={{ my: 3 }} />
+                    <CapacityLimitsEditor
+                        yearId={year.id}
+                        capacityLimits={formData.capacityLimits}
+                        allInputFields={allInputFields}
+                        pricingDefinitions={formData.pricingDefinitions}
+                        optionCounts={optionCounts}
+                    />
+                </>
+            )}
 
             <Divider sx={{ my: 3 }} />
 

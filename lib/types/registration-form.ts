@@ -66,11 +66,17 @@ export type FormField = InputField | HeadingField | DescriptionField;
 // --- Condition system (named condition blocks) ---
 
 export interface ConditionRule {
-    type: "field_value" | "capacity";
-    fieldId?: string;              // target field ID (shared by both types)
-    operator?: "equals" | "not_equals";  // field_value only
-    value?: string;                // field_value: compare value; capacity: option value to count
-    maxCount?: number;             // capacity only
+    type: "field_value";
+    fieldId?: string;
+    operator?: "equals" | "not_equals";
+    value?: string;
+}
+
+export interface CapacityLimit {
+    id: string;
+    fieldId: string;    // references InputField.id
+    value: string;      // option value to limit
+    maxCount: number;   // max registrations for this option
 }
 
 export interface FormCondition {
@@ -91,6 +97,7 @@ export type FormElement = FormField | ConditionBlock;
 export interface RegistrationFormData {
     conditions: FormCondition[];           // defined in "Podmínky" tab
     pricingDefinitions: PricingDefinition[]; // defined in "Ceník" tab
+    capacityLimits: CapacityLimit[];       // capacity limits for options
     fields: FormElement[];                 // form content, can contain ConditionBlocks
 }
 
@@ -140,6 +147,26 @@ export function hasAdditionalPeopleFields(elements: FormElement[]): boolean {
 
 // Aggregated option counts: fieldName -> optionValue -> count
 export type OptionCounts = Record<string, Record<string, number>>;
+
+/** Returns a Set of option values that are disabled (at capacity) for a given field */
+export function getDisabledOptionsForField(
+    fieldId: string,
+    fieldName: string,
+    capacityLimits: CapacityLimit[],
+    optionCounts?: OptionCounts,
+): Set<string> {
+    const disabled = new Set<string>();
+    if (!optionCounts) return disabled;
+    for (const limit of capacityLimits) {
+        if (limit.fieldId === fieldId) {
+            const currentCount = optionCounts[fieldName]?.[limit.value] ?? 0;
+            if (currentCount >= limit.maxCount) {
+                disabled.add(limit.value);
+            }
+        }
+    }
+    return disabled;
+}
 
 // Submission data shape
 export type SubmissionData = Record<string, string | number | boolean>;
