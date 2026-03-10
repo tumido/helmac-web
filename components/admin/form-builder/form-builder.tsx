@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
     Box,
     Button,
@@ -81,6 +81,8 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
     const [elements, setElements] = useState<FormElement[]>(initialFormData.fields);
+    const elementsRef = useRef(elements);
+    elementsRef.current = elements;
     const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
     const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
     const [builderTab, setBuilderTab] = useState<0 | 1 | 2>(0); // 0 = Formulář, 1 = Podmínky, 2 = Ceník
@@ -129,10 +131,10 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     }, []);
 
     const handleAddField = useCallback((type: FieldType) => {
-        const newField = createField(type, elements);
+        const newField = createField(type, elementsRef.current);
         setElements((prev) => [...prev, newField]);
         setEditingField(newField);
-    }, [createField, elements]);
+    }, [createField]);
 
     const handleAddConditionBlock = useCallback((conditionId: string) => {
         setElements((prev) => {
@@ -148,13 +150,13 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
     const handleAddPricingField = useCallback((definitionId: string) => {
         const def = pricingDefinitions.find((d) => d.id === definitionId);
-        const newField = createField("pricing_select", elements, definitionId);
+        const newField = createField("pricing_select", elementsRef.current, definitionId);
         if (def && "label" in newField) {
             (newField as InputField).label = def.name || "Cenový výběr";
         }
         setElements((prev) => [...prev, newField]);
         setEditingField(newField);
-    }, [createField, pricingDefinitions, elements]);
+    }, [createField, pricingDefinitions]);
 
     const handleEditField = useCallback((field: FormField) => {
         setEditingField(field);
@@ -199,12 +201,44 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     }, [conditions]);
 
     const handleCreateConditionFromOption = useCallback((fieldId: string, fieldLabel: string, optionValue: string) => {
+        const conditionId = crypto.randomUUID();
         const newCondition: FormCondition = {
-            id: crypto.randomUUID(),
+            id: conditionId,
             name: `${fieldLabel} je ${optionValue}`,
             rules: [{ type: "field_value", fieldId, operator: "equals", value: optionValue }],
         };
         setConditions((prev) => [...prev, newCondition]);
+
+        // Auto-insert a condition block below the source field
+        setElements((prev) => {
+            const newBlock: ConditionBlock = {
+                type: "condition",
+                id: crypto.randomUUID(),
+                conditionId,
+                children: [],
+            };
+
+            // Check root-level first
+            const rootIndex = prev.findIndex((el) => el.id === fieldId);
+            if (rootIndex !== -1) {
+                const updated = [...prev];
+                updated.splice(rootIndex + 1, 0, newBlock);
+                return updated;
+            }
+
+            // Field is nested inside a condition block — insert block after the parent
+            const parentIndex = prev.findIndex(
+                (el) => isConditionBlock(el) && el.children.some((c) => c.id === fieldId)
+            );
+            if (parentIndex !== -1) {
+                const updated = [...prev];
+                updated.splice(parentIndex + 1, 0, newBlock);
+                return updated;
+            }
+
+            // Fallback: append to end
+            return [...prev, newBlock];
+        });
     }, []);
 
     const handleToggleField = useCallback((fieldId: string, updates: Partial<InputField>) => {
@@ -423,7 +457,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         if (activeIdStr.startsWith("palette-pricing-")) {
             const definitionId = activeIdStr.replace("palette-pricing-", "");
             const def = pricingDefinitions.find((d) => d.id === definitionId);
-            const newField = createField("pricing_select", elements, definitionId);
+            const newField = createField("pricing_select", elementsRef.current, definitionId);
             if (def && "label" in newField) {
                 (newField as InputField).label = def.name || "Cenový výběr";
             }
@@ -478,7 +512,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
         // -- Palette field drop: create new field
         if (activeIdStr.startsWith("palette-")) {
             const type = activeIdStr.replace("palette-", "") as FieldType;
-            const newField = createField(type, elements);
+            const newField = createField(type, elementsRef.current);
 
             setElements((prev) => {
                 if (over) {
@@ -567,7 +601,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                 }
             });
         }
-    }, [createField, pricingDefinitions, elements]);
+    }, [createField, pricingDefinitions]);
 
     const handleDragCancel = useCallback(() => {
         setActiveId(null);
