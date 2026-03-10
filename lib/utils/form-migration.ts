@@ -6,8 +6,8 @@ import type { RegistrationFormData, CapacityLimit, FormCondition } from "@/lib/t
  * Also auto-migrates old capacity rules from conditions into capacityLimits.
  */
 export function migrateFormData(raw: unknown): RegistrationFormData {
-    if (!raw) return { conditions: [], pricingDefinitions: [], capacityLimits: [], fields: [] };
-    if (Array.isArray(raw)) return { conditions: [], pricingDefinitions: [], capacityLimits: [], fields: raw };
+    if (!raw) return { conditions: [], pricingDefinitions: [], capacityLimits: [], showOptionCounts: [], fields: [] };
+    if (Array.isArray(raw)) return { conditions: [], pricingDefinitions: [], capacityLimits: [], showOptionCounts: [], fields: raw };
     if (typeof raw === "object" && "conditions" in raw && "fields" in raw) {
         const data = raw as Record<string, unknown>;
         let conditions = (data.conditions ?? []) as FormCondition[];
@@ -53,8 +53,9 @@ export function migrateFormData(raw: unknown): RegistrationFormData {
             conditions,
             pricingDefinitions: (data.pricingDefinitions ?? []) as RegistrationFormData["pricingDefinitions"],
             capacityLimits,
+            showOptionCounts: (data.showOptionCounts ?? []) as string[],
             fields: (data.fields ?? []) as RegistrationFormData["fields"],
         };
     }
-    return { conditions: [], pricingDefinitions: [], capacityLimits: [], fields: [] };
+    return { conditions: [], pricingDefinitions: [], capacityLimits: [], showOptionCounts: [], fields: [] };
 }

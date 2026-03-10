@@ -83,7 +83,7 @@ export default async function RegistracePage() {
 
     const formData = migrateFormData(status.formFields);
 
-    // Only fetch counts if there are capacity limits
+    // Fetch counts if there are capacity limits
     const optionCounts = formData.capacityLimits.length > 0
         ? await getOptionCountsForYear(status.year!.id)
         : undefined;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
     Box,
     Button,
@@ -82,10 +82,13 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
 
     const [elements, setElements] = useState<FormElement[]>(initialFormData.fields);
     const elementsRef = useRef(elements);
-    elementsRef.current = elements;
+    useEffect(() => {
+        elementsRef.current = elements;
+    });
     const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
     const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
     const [capacityLimits] = useState(initialFormData.capacityLimits ?? []);
+    const [showOptionCounts] = useState(initialFormData.showOptionCounts ?? []);
     const [builderTab, setBuilderTab] = useState<0 | 1 | 2>(0); // 0 = Formulář, 1 = Podmínky, 2 = Ceník
     const [typeSelectorOpen, setTypeSelectorOpen] = useState(false);
     const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -271,6 +274,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
             conditions,
             pricingDefinitions,
             capacityLimits,
+            showOptionCounts,
             fields: elements,
         };
 
@@ -757,6 +761,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                             conditions,
                             pricingDefinitions,
                             capacityLimits,
+                            showOptionCounts,
                             fields: elements,
                         };
                         localStorage.setItem("form-preview-data", JSON.stringify(formData));

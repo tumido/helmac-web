@@ -75,10 +75,13 @@ const formElementSchema = z.union([formFieldSchema, conditionBlockSchema]);
 
 export const saveCapacityLimitsSchema = z.array(capacityLimitSchema);
 
+export const saveShowOptionCountsSchema = z.array(z.string().min(1));
+
 export const saveRegistrationFormSchema = z.object({
     conditions: z.array(formConditionSchema),
     pricingDefinitions: z.array(pricingDefinitionSchema),
     capacityLimits: z.array(capacityLimitSchema).default([]),
+    showOptionCounts: z.array(z.string()).default([]),
     fields: z.array(formElementSchema),
 }).superRefine((data, ctx) => {
     const { conditions, pricingDefinitions, fields } = data;

@@ -3,25 +3,24 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { saveCapacityLimitsSchema } from "@/lib/validators/registration-form";
+import { saveShowOptionCountsSchema } from "@/lib/validators/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import type { CapacityLimit } from "@/lib/types/registration-form";
 
-interface SaveCapacityLimitsResult {
+interface SaveShowOptionCountsResult {
     success?: boolean;
     error?: string;
 }
 
-export async function saveCapacityLimits(
+export async function saveShowOptionCounts(
     yearId: string,
-    capacityLimits: CapacityLimit[],
-): Promise<SaveCapacityLimitsResult> {
+    showOptionCounts: string[],
+): Promise<SaveShowOptionCountsResult> {
     await requireAdmin();
 
-    const validated = saveCapacityLimitsSchema.safeParse(capacityLimits);
+    const validated = saveShowOptionCountsSchema.safeParse(showOptionCounts);
     if (!validated.success) {
         const firstError = validated.error.issues[0]?.message;
-        return { error: firstError || "Neplatná data limitů kapacity" };
+        return { error: firstError || "Neplatná data" };
     }
 
     try {
@@ -38,8 +37,8 @@ export async function saveCapacityLimits(
         const dataToStore = {
             conditions: formData.conditions,
             pricingDefinitions: formData.pricingDefinitions,
-            capacityLimits: validated.data,
-            showOptionCounts: formData.showOptionCounts,
+            capacityLimits: formData.capacityLimits,
+            showOptionCounts: validated.data,
             fields: formData.fields,
         };
 
@@ -56,7 +55,7 @@ export async function saveCapacityLimits(
 
         return { success: true };
     } catch (error) {
-        console.error("Failed to save capacity limits:", error);
-        return { error: "Nepodařilo se uložit limity kapacity" };
+        console.error("Failed to save show option counts:", error);
+        return { error: "Nepodařilo se uložit nastavení zobrazení počtů" };
     }
 }

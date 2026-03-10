@@ -98,6 +98,7 @@ export interface RegistrationFormData {
     conditions: FormCondition[];           // defined in "Podmínky" tab
     pricingDefinitions: PricingDefinition[]; // defined in "Ceník" tab
     capacityLimits: CapacityLimit[];       // capacity limits for options
+    showOptionCounts: string[];            // field IDs whose option counts are shown publicly
     fields: FormElement[];                 // form content, can contain ConditionBlocks
 }
 
