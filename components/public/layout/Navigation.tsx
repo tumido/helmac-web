@@ -68,6 +68,7 @@ export function Navigation({ items }: NavigationProps) {
                                 "&:hover::after": {
                                     width: "60%",
                                 },
+                                whiteSpace: "nowrap",
                             }}
                         >
                             {item.label}
