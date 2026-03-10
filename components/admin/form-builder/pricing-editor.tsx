@@ -387,7 +387,6 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                                         onChange={(e) => handleUpdateOptionPrice(def.id, option.id, tierIdx, Number(e.target.value) || 0)}
                                                         size="small"
                                                         sx={{ width: 130 }}
-                                                        inputProps={{ min: 0 }}
                                                         InputProps={{
                                                             endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
                                                         }}
@@ -400,7 +399,6 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                                     onChange={(e) => handleUpdateOptionPrice(def.id, option.id, def.priceTiers.length, Number(e.target.value) || 0)}
                                                     size="small"
                                                     sx={{ width: 130 }}
-                                                    inputProps={{ min: 0 }}
                                                     InputProps={{
                                                         endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
                                                     }}

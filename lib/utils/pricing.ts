@@ -28,6 +28,9 @@ export function getCurrentPrice(priceTiers: string[], prices: number[], date?: D
  * Formats a price in Czech format, e.g. 1000 → "1 000 Kč".
  */
 export function formatPrice(price: number): string {
+    if (price < 0) {
+        return `Sleva ${Math.abs(price).toLocaleString("cs-CZ")} Kč`;
+    }
     return `${price.toLocaleString("cs-CZ")} Kč`;
 }
 

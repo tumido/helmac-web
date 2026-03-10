@@ -108,9 +108,11 @@ export function PriceSummary({
                             <Typography variant="body2">
                                 {line.label}: {line.optionName}
                             </Typography>
-                            <Typography variant="body2" fontWeight={500}>
-                                {formatPrice(line.price)}
-                            </Typography>
+                            {line.price !== 0 && (
+                                <Typography variant="body2" fontWeight={500}>
+                                    {formatPrice(line.price)}
+                                </Typography>
+                            )}
                         </Box>
                     ))}
                 </Box>
@@ -126,9 +128,11 @@ export function PriceSummary({
                             <Typography variant="body2">
                                 {line.label}: {line.optionName}
                             </Typography>
-                            <Typography variant="body2" fontWeight={500}>
-                                {formatPrice(line.price)}
-                            </Typography>
+                            {line.price !== 0 && (
+                                <Typography variant="body2" fontWeight={500}>
+                                    {formatPrice(line.price)}
+                                </Typography>
+                            )}
                         </Box>
                     ))}
                 </Box>

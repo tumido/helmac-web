@@ -213,32 +213,37 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                             {opt.description}
                                         </Typography>
                                     )}
-                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mt: 0.5 }}>
-                                        {def.priceTiers.map((tier, idx) => {
-                                            const isCurrent = idx === currentTier;
-                                            return (
+                                    {opt.prices.some((p: number) => p !== 0) && (
+                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mt: 0.5 }}>
+                                            {def.priceTiers.map((tier, idx) => {
+                                                if (opt.prices[idx] === 0) return null;
+                                                const isCurrent = idx === currentTier;
+                                                return (
+                                                    <Typography
+                                                        key={idx}
+                                                        variant="body2"
+                                                        sx={{
+                                                            fontWeight: isCurrent ? 700 : 400,
+                                                            color: isCurrent ? "primary.main" : "text.secondary",
+                                                        }}
+                                                    >
+                                                        {isCurrent && "► "}do {new Date(tier).toLocaleDateString("cs-CZ")}: {formatPrice(opt.prices[idx])}
+                                                    </Typography>
+                                                );
+                                            })}
+                                            {opt.prices[def.priceTiers.length] !== 0 && (
                                                 <Typography
-                                                    key={idx}
                                                     variant="body2"
                                                     sx={{
-                                                        fontWeight: isCurrent ? 700 : 400,
-                                                        color: isCurrent ? "primary.main" : "text.secondary",
+                                                        fontWeight: currentTier === def.priceTiers.length ? 700 : 400,
+                                                        color: currentTier === def.priceTiers.length ? "primary.main" : "text.secondary",
                                                     }}
                                                 >
-                                                    {isCurrent && "► "}do {new Date(tier).toLocaleDateString("cs-CZ")}: {formatPrice(opt.prices[idx])}
+                                                    {currentTier === def.priceTiers.length && "► "}{def.priceTiers.length > 0 ? "na místě: " : ""}{formatPrice(opt.prices[def.priceTiers.length])}
                                                 </Typography>
-                                            );
-                                        })}
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                fontWeight: currentTier === def.priceTiers.length ? 700 : 400,
-                                                color: currentTier === def.priceTiers.length ? "primary.main" : "text.secondary",
-                                            }}
-                                        >
-                                            {currentTier === def.priceTiers.length && "► "}na místě: {formatPrice(opt.prices[def.priceTiers.length])}
-                                        </Typography>
-                                    </Box>
+                                            )}
+                                        </Box>
+                                    )}
                                 </Box>
                             );
                         })}
