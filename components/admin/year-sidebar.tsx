@@ -20,6 +20,7 @@ import {
     AppRegistration,
     Description,
     People,
+    AccountBalance,
     Settings,
 } from "@mui/icons-material";
 import { ListItemLinkButton } from "@/components/ui/link-button";
@@ -70,6 +71,7 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
         { text: "Registrace", href: `${base}/registrace`, icon: AppRegistration, exact: true },
         { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
         { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true },
+        { text: "Banka", href: `${base}/registrace/banka`, icon: AccountBalance, indented: true },
     ];
 
     const dateRange = formatDateRange(yearData.startDate, yearData.endDate);

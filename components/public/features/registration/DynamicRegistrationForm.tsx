@@ -80,6 +80,7 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
                 message={state.message}
                 variableSymbol={state.variableSymbol}
                 totalPrice={state.totalPrice}
+                paymentData={state.paymentData}
             />
         );
     }

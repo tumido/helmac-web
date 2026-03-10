@@ -10,6 +10,15 @@ import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
+import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
+
+export interface PaymentData {
+    totalAmount: number;
+    variableSymbol: string;
+    bankAccount: string;
+    iban: string;
+    spaydString: string;
+}
 
 export interface RegistrationState {
     success: boolean;
@@ -19,6 +28,7 @@ export interface RegistrationState {
     registrationId?: string;
     variableSymbol?: string;
     totalPrice?: number;
+    paymentData?: PaymentData;
 }
 
 /**
@@ -121,6 +131,10 @@ export async function submitDynamicRegistration(
         select: {
             id: true,
             title: true,
+            year: true,
+            bankAccountPrefix: true,
+            bankAccountNumber: true,
+            bankAccountBankCode: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },
@@ -401,12 +415,41 @@ export async function submitDynamicRegistration(
             },
         });
 
+        // Build payment data if bank account is configured and there's a price
+        let paymentData: PaymentData | undefined;
+        if (totalPrice && totalPrice > 0 && activeYear.bankAccountNumber && activeYear.bankAccountBankCode) {
+            const iban = czechAccountToIBAN(
+                activeYear.bankAccountNumber,
+                activeYear.bankAccountBankCode,
+                activeYear.bankAccountPrefix ?? undefined,
+            );
+            if (iban) {
+                const spaydString = generateSPAYD({
+                    iban,
+                    amount: totalPrice,
+                    variableSymbol,
+                });
+                paymentData = {
+                    totalAmount: totalPrice,
+                    variableSymbol,
+                    bankAccount: formatCzechAccount(
+                        activeYear.bankAccountNumber,
+                        activeYear.bankAccountBankCode,
+                        activeYear.bankAccountPrefix ?? undefined,
+                    ),
+                    iban,
+                    spaydString,
+                };
+            }
+        }
+
         return {
             success: true,
             message: `Děkujeme za registraci na ${activeYear.title}!`,
             registrationId: submission.id,
             variableSymbol,
             totalPrice: totalPrice ?? undefined,
+            paymentData,
         };
     } catch (error) {
         console.error("Registration error:", error);
