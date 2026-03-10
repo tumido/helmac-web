@@ -1,7 +1,7 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { YearForm } from "@/components/forms/year-form";
 
 interface NastaveniPageProps {
@@ -18,16 +18,14 @@ export default async function NastaveniPage({ params }: NastaveniPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Nastavení" },
                 ]}
+                title="Nastavení ročníku"
             />
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h4">Nastavení ročníku</Typography>
-            </Box>
             <YearForm
                 mode="edit"
                 yearId={year.id}

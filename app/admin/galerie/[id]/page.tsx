@@ -15,7 +15,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { AlbumForm } from "@/components/forms/album-form";
 import { ImageGrid } from "@/components/admin/image-grid";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditAlbumPageProps {
     params: Promise<{ id: string }>;
@@ -53,24 +53,24 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Galerie", href: "/admin/galerie" },
                     { label: album.title },
                 ]}
+                title="Upravit album"
             />
             <Box sx={{ mb: 4 }}>
                 <Box
                     sx={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "space-between",
+                        justifyContent: "flex-end",
                         flexWrap: "wrap",
                         gap: 2,
                         mb: 1,
                     }}
                 >
-                    <Typography variant="h4">Upravit album</Typography>
                     <Button
                         href={`/galerie/${album.year.year}/${album.slug}`}
                         target="_blank"

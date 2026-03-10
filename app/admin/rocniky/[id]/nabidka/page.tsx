@@ -5,16 +5,13 @@ import {
     Card,
     CardContent,
 } from "@mui/material";
-import {
-    Add,
-    LocalOffer,
-} from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getOffersForYear } from "@/lib/services/offers";
 import { SortableOffers } from "@/components/admin/sortable-offers";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface NabidkaPageProps {
     params: Promise<{ id: string }>;
@@ -33,17 +30,14 @@ export default async function NabidkaPage({ params }: NabidkaPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Co nabízíme" },
                 ]}
+                title="Co nabízíme"
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <LocalOffer sx={{ fontSize: 32, color: "primary.main" }} />
-                <Typography variant="h4">Co nabízíme</Typography>
-            </Box>
 
             <Box
                 sx={{

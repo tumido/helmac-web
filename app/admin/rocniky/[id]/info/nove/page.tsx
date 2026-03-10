@@ -1,9 +1,8 @@
 import { Container, Typography, Box } from "@mui/material";
-import { InfoOutlined } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { InfoForm } from "@/components/forms/info-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface NewInfoPageProps {
     params: Promise<{ id: string }>;
@@ -19,26 +18,16 @@ export default async function NewInfoPage({ params }: NewInfoPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Info", href: `/admin/rocniky/${year.id}/info` },
                     { label: "Nova info sekce" },
                 ]}
+                title="Nova info sekce"
             />
             <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <InfoOutlined sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Nova info sekce</Typography>
-                </Box>
                 <Typography color="text.secondary">
                     {year.year} - {year.title}
                 </Typography>

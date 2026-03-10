@@ -2,7 +2,7 @@ import { Container, Typography, Box } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ImageForm } from "@/components/forms/image-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface AddImagePageProps {
     params: Promise<{ id: string }>;
@@ -25,15 +25,15 @@ export default async function AddImagePage({ params }: AddImagePageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Galerie", href: "/admin/galerie" },
                     { label: album.title, href: `/admin/galerie/${album.id}` },
                     { label: "Pridat obrazek" },
                 ]}
+                title="Pridat obrazek"
             />
             <Box sx={{ mb: 4 }}>
-                <Typography variant="h4">Pridat obrazek</Typography>
                 <Typography color="text.secondary">{album.title}</Typography>
             </Box>
 

@@ -11,7 +11,7 @@ import { Add, Edit, Archive, Star } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { YearActions } from "@/components/admin/year-actions";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { ListFilters } from "@/components/admin/list-filters";
 import { Prisma } from "@prisma/client";
 
@@ -52,16 +52,15 @@ export default async function YearsPage({ searchParams }: YearsPageProps) {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs items={[{ label: "Ročníky" }]} />
+            <PageHeader breadcrumbs={[{ label: "Ročníky" }]} title="Ročníky" />
             <Box
                 sx={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-end",
                     alignItems: "center",
                     mb: 4,
                 }}
             >
-                <Typography variant="h4">Ročníky</Typography>
                 <LinkButton
                     href="/admin/rocniky/novy"
                     variant="contained"

@@ -1,8 +1,8 @@
-import { Container, Typography, Box, Divider } from "@mui/material";
+import { Container, Box, Divider } from "@mui/material";
 import { Description, People } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSettings } from "@/components/admin/registration-settings";
 import { LinkButton } from "@/components/ui/link-button";
 
@@ -36,16 +36,14 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Registrace" },
                 ]}
+                title="Registrace"
             />
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h4">Registrace</Typography>
-            </Box>
 
             <RegistrationSettings
                 yearId={year.id}

@@ -7,13 +7,12 @@ import {
 } from "@mui/material";
 import {
     Add,
-    CalendarMonth,
 } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getProgramDayWithEvents } from "@/lib/services/program";
 import { ProgramDayForm } from "@/components/forms/program-day-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { SortableEvents } from "@/components/admin/sortable-events";
 
 interface EditDayPageProps {
@@ -39,26 +38,16 @@ export default async function EditDayPage({ params }: EditDayPageProps) {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${day.year.year}`, href: `/admin/rocniky/${day.year.id}` },
                     { label: "Program", href: `/admin/rocniky/${day.year.id}/program` },
                     { label: day.label },
                 ]}
+                title={day.label}
             />
             <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <CalendarMonth sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">{day.label}</Typography>
-                </Box>
                 <Typography color="text.secondary">
                     {formatDate(day.date)} | {day.year.year} - {day.year.title}
                 </Typography>

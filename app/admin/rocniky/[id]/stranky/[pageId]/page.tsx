@@ -3,7 +3,7 @@ import { Visibility, VisibilityOff, OpenInNew } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/forms/page-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditPageProps {
     params: Promise<{ id: string; pageId: string }>;
@@ -30,12 +30,13 @@ export default async function EditPagePage({ params }: EditPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${page.year.year}`, href: `/admin/rocniky/${page.year.id}` },
                     { label: page.title },
                 ]}
+                title="Upravit stranku"
             />
             <Box sx={{ mb: 4 }}>
                 <Box
@@ -48,17 +49,14 @@ export default async function EditPagePage({ params }: EditPageProps) {
                         mb: 1,
                     }}
                 >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Typography variant="h4">Upravit stranku</Typography>
-                        <Chip
-                            label={page.isPublished ? "Publikovano" : "Skryto"}
-                            size="small"
-                            color={page.isPublished ? "success" : "default"}
-                            icon={
-                                page.isPublished ? <Visibility /> : <VisibilityOff />
-                            }
-                        />
-                    </Box>
+                    <Chip
+                        label={page.isPublished ? "Publikovano" : "Skryto"}
+                        size="small"
+                        color={page.isPublished ? "success" : "default"}
+                        icon={
+                            page.isPublished ? <Visibility /> : <VisibilityOff />
+                        }
+                    />
                     <Button
                         href={`/${page.year.year}/${page.slug}`}
                         target="_blank"

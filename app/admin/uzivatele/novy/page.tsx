@@ -1,8 +1,8 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { redirect } from "next/navigation";
 import { requireSuperAdmin } from "@/lib/auth";
 import { UserForm } from "@/components/forms/user-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 export default async function NewUserPage() {
     // Check permissions
@@ -14,15 +14,13 @@ export default async function NewUserPage() {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Uzivatele", href: "/admin/uzivatele" },
                     { label: "Novy uzivatel" },
                 ]}
+                title="Novy uzivatel"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4">Novy uzivatel</Typography>
-            </Box>
 
             <UserForm mode="create" />
         </Container>

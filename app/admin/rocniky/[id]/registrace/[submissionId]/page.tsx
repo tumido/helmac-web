@@ -1,6 +1,6 @@
 import { Container, Typography, Grid, Paper } from "@mui/material";
 import { notFound } from "next/navigation";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
 import { getSubmissionById } from "@/lib/services/registration";
@@ -27,18 +27,15 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${submission.year.year} - ${submission.year.title}`, href: `/admin/rocniky/${yearId}` },
                     { label: "Registrace", href: `/admin/rocniky/${yearId}/registrace` },
                     { label: `Detail registrace` },
                 ]}
+                title="Detail registrace"
             />
-
-            <Typography variant="h4" sx={{ mb: 1 }}>
-                Detail registrace
-            </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Vytvořeno: {new Date(submission.createdAt).toLocaleString("cs-CZ")}
                 {submission.paidAt && ` • Zaplaceno: ${new Date(submission.paidAt).toLocaleString("cs-CZ")}`}

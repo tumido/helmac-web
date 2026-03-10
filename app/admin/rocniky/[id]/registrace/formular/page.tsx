@@ -1,7 +1,7 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { FormBuilder } from "@/components/admin/form-builder";
 import { migrateFormData } from "@/lib/utils/form-migration";
 
@@ -33,17 +33,15 @@ export default async function FormularPage({ params }: FormularPageProps) {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Registrace", href: `/admin/rocniky/${year.id}/registrace` },
                     { label: "Formulář" },
                 ]}
+                title="Registrační formulář"
             />
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h4">Registrační formulář</Typography>
-            </Box>
             <FormBuilder yearId={year.id} initialFormData={formData} />
         </Container>
     );

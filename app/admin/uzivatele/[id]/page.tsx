@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth, requireSuperAdmin } from "@/lib/auth";
 import { UserForm } from "@/components/forms/user-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditUserPageProps {
     params: Promise<{ id: string }>;
@@ -53,11 +53,12 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Uzivatele", href: "/admin/uzivatele" },
                     { label: user.name },
                 ]}
+                title="Upravit uzivatele"
             />
             <Box sx={{ mb: 4 }}>
                 <Box
@@ -68,7 +69,6 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
                         mb: 1,
                     }}
                 >
-                    <Typography variant="h4">Upravit uzivatele</Typography>
                     <Chip
                         label={user.role.replace("_", " ")}
                         color={roleColors[user.role]}

@@ -1,8 +1,8 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { AlbumForm } from "@/components/forms/album-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 async function getYears() {
     return db.year.findMany({
@@ -26,15 +26,13 @@ export default async function NewAlbumPage({ searchParams }: NewAlbumPageProps) 
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Galerie", href: "/admin/galerie" },
                     { label: "Nove album" },
                 ]}
+                title="Nove album"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4">Nove album</Typography>
-            </Box>
 
             <AlbumForm mode="create" years={years} defaultValues={yearId ? { yearId } : undefined} />
         </Container>

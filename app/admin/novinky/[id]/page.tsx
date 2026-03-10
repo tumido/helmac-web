@@ -3,7 +3,7 @@ import { OpenInNew } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditNewsPageProps {
     params: Promise<{ id: string }>;
@@ -38,24 +38,24 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Novinky", href: "/admin/novinky" },
                     { label: news.title },
                 ]}
+                title="Upravit novinku"
             />
             <Box sx={{ mb: 4 }}>
                 <Box
                     sx={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "space-between",
+                        justifyContent: "flex-end",
                         flexWrap: "wrap",
                         gap: 2,
                         mb: 1,
                     }}
                 >
-                    <Typography variant="h4">Upravit novinku</Typography>
                     <Button
                         href={`/${news.year.year}/novinky/${news.slug}`}
                         target="_blank"

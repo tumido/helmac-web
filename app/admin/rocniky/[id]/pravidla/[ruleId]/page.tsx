@@ -1,10 +1,9 @@
 import { Container, Typography, Box } from "@mui/material";
-import { Gavel } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getRuleById } from "@/lib/services/rules";
 import { RuleForm } from "@/components/forms/rule-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditRulePageProps {
     params: Promise<{ id: string; ruleId: string }>;
@@ -23,26 +22,16 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Pravidla", href: `/admin/rocniky/${year.id}/pravidla` },
                     { label: rule.title },
                 ]}
+                title="Upravit pravidlo"
             />
             <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <Gavel sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Upravit pravidlo</Typography>
-                </Box>
                 <Typography color="text.secondary">
                     {year.year} - {year.title}
                 </Typography>

@@ -1,13 +1,12 @@
 import { Container, Typography, Box, Chip } from "@mui/material";
 import {
-    Event,
     Visibility,
     VisibilityOff,
 } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { getProgramEvent, getAllTagsForYear } from "@/lib/services/program";
 import { ProgramEventForm } from "@/components/forms/program-event-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditEventPageProps {
     params: Promise<{ id: string; dayId: string; eventId: string }>;
@@ -26,14 +25,15 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
 
     return (
         <Container maxWidth="sm">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${event.day.year.year}`, href: `/admin/rocniky/${event.day.year.id}` },
                     { label: "Program", href: `/admin/rocniky/${event.day.year.id}/program` },
                     { label: event.day.label, href: `/admin/rocniky/${event.day.year.id}/program/${event.day.id}` },
                     { label: event.title },
                 ]}
+                title="Upravit udalost"
             />
             <Box sx={{ mb: 4 }}>
                 <Box
@@ -44,8 +44,6 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
                         mb: 1,
                     }}
                 >
-                    <Event sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Upravit udalost</Typography>
                     <Chip
                         label={event.isPublished ? "Publikovano" : "Skryto"}
                         size="small"

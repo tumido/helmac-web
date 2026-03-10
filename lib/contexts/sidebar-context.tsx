@@ -10,16 +10,30 @@ export interface SidebarYearData {
     endDate: string | null;
 }
 
+export interface BreadcrumbItem {
+    label: string;
+    href?: string;
+}
+
+interface PageHeaderData {
+    breadcrumbs: BreadcrumbItem[];
+    title: string;
+}
+
 interface SidebarContextValue {
     sidebarYear: SidebarYearData | null;
     setSidebarYear: (data: SidebarYearData) => void;
     clearSidebarYear: () => void;
+    pageHeader: PageHeaderData | null;
+    setPageHeader: (breadcrumbs: BreadcrumbItem[], title: string) => void;
+    clearPageHeader: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarContextProvider({ children }: { children: ReactNode }) {
     const [sidebarYear, setSidebarYearState] = useState<SidebarYearData | null>(null);
+    const [pageHeader, setPageHeaderState] = useState<PageHeaderData | null>(null);
 
     const setSidebarYear = useCallback((data: SidebarYearData) => {
         setSidebarYearState(data);
@@ -29,8 +43,19 @@ export function SidebarContextProvider({ children }: { children: ReactNode }) {
         setSidebarYearState(null);
     }, []);
 
+    const setPageHeader = useCallback((breadcrumbs: BreadcrumbItem[], title: string) => {
+        setPageHeaderState({ breadcrumbs, title });
+    }, []);
+
+    const clearPageHeader = useCallback(() => {
+        setPageHeaderState(null);
+    }, []);
+
     return (
-        <SidebarContext.Provider value={{ sidebarYear, setSidebarYear, clearSidebarYear }}>
+        <SidebarContext.Provider value={{
+            sidebarYear, setSidebarYear, clearSidebarYear,
+            pageHeader, setPageHeader, clearPageHeader,
+        }}>
             {children}
         </SidebarContext.Provider>
     );

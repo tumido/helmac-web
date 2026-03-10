@@ -20,7 +20,7 @@ import {
 } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
 
 interface EditYearPageProps {
@@ -99,15 +99,13 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year} - ${year.title}` },
                 ]}
+                title="Přehled"
             />
-            <Typography variant="h4" sx={{ mb: 3 }}>
-                Přehled
-            </Typography>
 
             {/* Registration status banner */}
             <Paper

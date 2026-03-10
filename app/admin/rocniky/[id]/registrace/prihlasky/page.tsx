@@ -1,8 +1,8 @@
-import { Container, Typography, Box, Chip } from "@mui/material";
+import { Container, Box, Chip } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
 import { LinkButton } from "@/components/ui/link-button";
 import { getAllFields } from "@/lib/types/registration-form";
@@ -55,18 +55,16 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Registrace", href: `/admin/rocniky/${year.id}/registrace` },
                     { label: "Přihlášky" },
                 ]}
+                title="Přihlášky"
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
-                <Typography variant="h4" sx={{ flex: 1 }}>
-                    Přihlášky
-                </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <Chip
                     label={`${year.registrationSubmissions.length} registrací`}
                     color="primary"

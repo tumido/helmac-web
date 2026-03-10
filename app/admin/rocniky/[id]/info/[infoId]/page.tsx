@@ -1,10 +1,9 @@
 import { Container, Typography, Box } from "@mui/material";
-import { InfoOutlined } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getInfoSectionById } from "@/lib/services/info";
 import { InfoForm } from "@/components/forms/info-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface EditInfoPageProps {
     params: Promise<{ id: string; infoId: string }>;
@@ -23,26 +22,16 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Info", href: `/admin/rocniky/${year.id}/info` },
                     { label: infoSection.title },
                 ]}
+                title="Upravit info sekci"
             />
             <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <InfoOutlined sx={{ fontSize: 32, color: "primary.main" }} />
-                    <Typography variant="h4">Upravit info sekci</Typography>
-                </Box>
                 <Typography color="text.secondary">
                     {year.year} - {year.title}
                 </Typography>

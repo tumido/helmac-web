@@ -2,7 +2,7 @@ import { Container, Typography, Box } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/forms/page-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface NewPageProps {
     params: Promise<{ id: string }>;
@@ -25,15 +25,15 @@ export default async function NewPagePage({ params }: NewPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Nova stranka" },
                 ]}
+                title="Nova stranka"
             />
             <Box sx={{ mb: 4 }}>
-                <Typography variant="h4">Nova stranka</Typography>
                 <Typography color="text.secondary">
                     Rocnik {year.year} - {year.title}
                 </Typography>

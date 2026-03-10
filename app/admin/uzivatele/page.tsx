@@ -1,6 +1,5 @@
 import {
     Container,
-    Typography,
     Box,
     Card,
     Table,
@@ -18,7 +17,7 @@ import { db } from "@/lib/db";
 import { auth, requireSuperAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UserActions } from "@/components/admin/user-actions";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 const roleLabels: Record<string, { label: string; color: "error" | "warning" | "info"; icon: React.ReactNode }> = {
     SUPER_ADMIN: {
@@ -67,16 +66,15 @@ export default async function UsersPage() {
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs items={[{ label: "Uživatelé" }]} />
+            <PageHeader breadcrumbs={[{ label: "Uživatelé" }]} title="Uživatelé" />
             <Box
                 sx={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-end",
                     alignItems: "center",
                     mb: 4,
                 }}
             >
-                <Typography variant="h4">Uživatelé</Typography>
                 <LinkButton
                     href="/admin/uzivatele/novy"
                     variant="contained"

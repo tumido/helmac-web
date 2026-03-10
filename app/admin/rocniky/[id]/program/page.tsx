@@ -7,14 +7,13 @@ import {
 } from "@mui/material";
 import {
     Add,
-    CalendarMonth,
 } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getProgramDaysForYear } from "@/lib/services/program";
 import { SortableDays } from "@/components/admin/sortable-days";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface ProgramPageProps {
     params: Promise<{ id: string }>;
@@ -33,17 +32,14 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Program" },
                 ]}
+                title="Program"
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <CalendarMonth sx={{ fontSize: 32, color: "primary.main" }} />
-                <Typography variant="h4">Program</Typography>
-            </Box>
 
             <Box
                 sx={{

@@ -5,16 +5,13 @@ import {
     Card,
     CardContent,
 } from "@mui/material";
-import {
-    Add,
-    InfoOutlined,
-} from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getInfoSectionsForYear } from "@/lib/services/info";
 import { SortableInfo } from "@/components/admin/sortable-info";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 interface InfoPageProps {
     params: Promise<{ id: string }>;
@@ -33,17 +30,14 @@ export default async function InfoPage({ params }: InfoPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Info" },
                 ]}
+                title="Info"
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <InfoOutlined sx={{ fontSize: 32, color: "primary.main" }} />
-                <Typography variant="h4">Info</Typography>
-            </Box>
 
             <Box
                 sx={{

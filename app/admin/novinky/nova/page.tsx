@@ -1,8 +1,8 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 
 async function getYears() {
     return db.year.findMany({
@@ -26,15 +26,13 @@ export default async function NewNewsPage({ searchParams }: NewNewsPageProps) {
 
     return (
         <Container maxWidth="md">
-            <AdminBreadcrumbs
-                items={[
+            <PageHeader
+                breadcrumbs={[
                     { label: "Novinky", href: "/admin/novinky" },
                     { label: "Nova novinka" },
                 ]}
+                title="Nova novinka"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4">Nova novinka</Typography>
-            </Box>
 
             <NewsForm mode="create" years={years} defaultValues={yearId ? { yearId } : undefined} />
         </Container>

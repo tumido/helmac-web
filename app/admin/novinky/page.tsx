@@ -8,7 +8,7 @@ import {
 import { Add } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
-import { AdminBreadcrumbs } from "@/components/admin/breadcrumbs";
+import { PageHeader } from "@/components/admin/page-header";
 import { ListFilters } from "@/components/admin/list-filters";
 import { SelectableNewsList } from "@/components/admin/selectable-news-list";
 import { Prisma } from "@prisma/client";
@@ -60,16 +60,15 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
 
     return (
         <Container maxWidth="lg">
-            <AdminBreadcrumbs items={[{ label: "Novinky" }]} />
+            <PageHeader breadcrumbs={[{ label: "Novinky" }]} title="Novinky" />
             <Box
                 sx={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-end",
                     alignItems: "center",
                     mb: 4,
                 }}
             >
-                <Typography variant="h4">Novinky</Typography>
                 {years.length > 0 && (
                     <LinkButton
                         href="/admin/novinky/nova"
