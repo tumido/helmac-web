@@ -6,16 +6,13 @@ import {
     CardContent,
     Button,
 } from "@mui/material";
-import {
-    Add,
-    OpenInNew,
-} from "@mui/icons-material";
-import { LinkButton } from "@/components/ui/link-button";
+import { OpenInNew } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { AlbumForm } from "@/components/forms/album-form";
 import { ImageGrid } from "@/components/admin/image-grid";
 import { PageHeader } from "@/components/admin/page-header";
+import { AlbumImageDropzone } from "@/components/admin/album-image-dropzone";
 
 interface YearEditAlbumPageProps {
     params: Promise<{ id: string; albumId: string }>;
@@ -97,7 +94,6 @@ export default async function YearEditAlbumPage({ params }: YearEditAlbumPagePro
                         albumId={album.id}
                         defaultValues={{
                             yearId: album.yearId,
-                            slug: album.slug,
                             title: album.title,
                             description: album.description,
                             coverImage: album.coverImage,
@@ -108,26 +104,11 @@ export default async function YearEditAlbumPage({ params }: YearEditAlbumPagePro
 
                 {/* Images */}
                 <Box>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 2,
-                        }}
-                    >
-                        <Typography variant="h6">
-                            Obrazky ({album.images.length})
-                        </Typography>
-                        <LinkButton
-                            href={`/admin/rocniky/${id}/galerie/${album.id}/pridat`}
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Add />}
-                        >
-                            Pridat obrazek
-                        </LinkButton>
-                    </Box>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Obrazky ({album.images.length})
+                    </Typography>
+
+                    <AlbumImageDropzone albumId={album.id} />
 
                     {album.images.length === 0 ? (
                         <Card>

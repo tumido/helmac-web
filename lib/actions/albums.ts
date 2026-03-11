@@ -10,10 +10,10 @@ import {
     createImageSchema,
     updateImageSchema,
 } from "@/lib/validators/album";
+import { generateSlug } from "@/lib/utils/slugify";
 
 export type AlbumActionState = {
     error?: {
-        slug?: string[];
         title?: string[];
         description?: string[];
         coverImage?: string[];
@@ -48,7 +48,6 @@ export async function createAlbum(
     }
 
     const rawData = {
-        slug: formData.get("slug"),
         title: formData.get("title"),
         description: formData.get("description") || undefined,
         coverImage: formData.get("coverImage") || undefined,
@@ -64,17 +63,22 @@ export async function createAlbum(
     const validatedRedirectTo = rawRedirectTo?.startsWith("/admin/") ? rawRedirectTo : "/admin/galerie";
 
     try {
-        const existing = await db.album.findUnique({
-            where: {
-                yearId_slug: {
-                    yearId,
-                    slug: validated.data.slug,
-                },
-            },
+        let slug = generateSlug(validated.data.title);
+
+        const existingSlugs = await db.album.findMany({
+            where: { yearId, slug: { startsWith: slug } },
+            select: { slug: true },
         });
 
-        if (existing) {
-            return { error: { slug: ["Album s tímto slugem již existuje"] } };
+        if (existingSlugs.length > 0) {
+            const slugSet = new Set(existingSlugs.map((a) => a.slug));
+            if (slugSet.has(slug)) {
+                let suffix = 2;
+                while (slugSet.has(`${slug}-${suffix}`)) {
+                    suffix++;
+                }
+                slug = `${slug}-${suffix}`;
+            }
         }
 
         const maxOrder = await db.album.aggregate({
@@ -85,7 +89,7 @@ export async function createAlbum(
         await db.album.create({
             data: {
                 yearId,
-                slug: validated.data.slug,
+                slug,
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
@@ -119,7 +123,6 @@ export async function updateAlbum(
     }
 
     const rawData = {
-        slug: formData.get("slug"),
         title: formData.get("title"),
         description: formData.get("description") || undefined,
         coverImage: formData.get("coverImage") || undefined,
@@ -138,25 +141,9 @@ export async function updateAlbum(
             return { error: { _form: ["Album nenalezeno"] } };
         }
 
-        if (validated.data.slug && validated.data.slug !== album.slug) {
-            const existing = await db.album.findUnique({
-                where: {
-                    yearId_slug: {
-                        yearId: album.yearId,
-                        slug: validated.data.slug,
-                    },
-                },
-            });
-
-            if (existing) {
-                return { error: { slug: ["Album s tímto slugem již existuje"] } };
-            }
-        }
-
         await db.album.update({
             where: { id: albumId },
             data: {
-                slug: validated.data.slug,
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
@@ -337,6 +324,48 @@ export async function deleteImage(imageId: string) {
     } catch (error) {
         console.error("Failed to delete image:", error);
         return { error: "Nepodařilo se smazat obrázek" };
+    }
+}
+
+export async function addImages(
+    albumId: string,
+    urls: string[]
+): Promise<{ success?: boolean; error?: string }> {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemáte oprávnění" };
+    }
+
+    if (urls.length === 0) {
+        return { error: "Žádné obrázky k přidání" };
+    }
+
+    try {
+        const maxOrder = await db.image.aggregate({
+            where: { albumId },
+            _max: { sortOrder: true },
+        });
+
+        const startOrder = (maxOrder._max.sortOrder ?? 0) + 1;
+
+        await db.$transaction(
+            urls.map((url, index) =>
+                db.image.create({
+                    data: {
+                        albumId,
+                        url,
+                        sortOrder: startOrder + index,
+                    },
+                })
+            )
+        );
+
+        revalidatePath(`/admin/galerie/${albumId}`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to add images:", error);
+        return { error: "Nepodařilo se přidat obrázky" };
     }
 }
 

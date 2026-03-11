@@ -1,14 +1,6 @@
 import { z } from "zod";
 
 export const createAlbumSchema = z.object({
-    slug: z
-        .string()
-        .min(1, "Slug je povinný")
-        .max(100, "Slug je příliš dlouhý")
-        .regex(
-            /^[a-z0-9-]+$/,
-            "Slug může obsahovat pouze malá písmena, čísla a pomlčky"
-        ),
     title: z
         .string()
         .min(1, "Název je povinný")

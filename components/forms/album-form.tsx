@@ -13,13 +13,11 @@ import {
     CardActions,
     MenuItem,
     Typography,
-    IconButton,
 } from "@mui/material";
-import { Save, Refresh } from "@mui/icons-material";
+import { Edit, Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createAlbum, updateAlbum, AlbumActionState } from "@/lib/actions/albums";
 import { ImageUploader } from "@/components/admin/image-uploader";
-import { generateSlug } from "@/lib/utils/slugify";
 
 interface AlbumFormProps {
     mode: "create" | "edit";
@@ -27,7 +25,6 @@ interface AlbumFormProps {
     albumId?: string;
     defaultValues?: {
         yearId?: string;
-        slug?: string;
         title?: string;
         description?: string | null;
         coverImage?: string | null;
@@ -61,9 +58,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/admin/galerie", redirectTo, hideYearSelect }: AlbumFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
     const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
-    const [title, setTitle] = useState(defaultValues?.title || "");
-    const [slug, setSlug] = useState(defaultValues?.slug || "");
-    const [slugManuallyEdited, setSlugManuallyEdited] = useState(mode === "edit");
+    const [editing, setEditing] = useState(mode === "create");
 
     const action =
         mode === "create"
@@ -122,67 +117,17 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                         </TextField>
                     )}
 
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gridTemplateColumns: {
-                                xs: "1fr",
-                                sm: "2fr 1fr",
-                            },
-                            gap: 3,
-                        }}
-                    >
-                        <TextField
-                            required
-                            fullWidth
-                            id="title"
-                            name="title"
-                            label="Název alba"
-                            value={title}
-                            onChange={(e) => {
-                                const newTitle = e.target.value;
-                                setTitle(newTitle);
-                                if (!slugManuallyEdited) {
-                                    setSlug(generateSlug(newTitle));
-                                }
-                            }}
-                            error={!!state?.error?.title}
-                            helperText={state?.error?.title?.[0]}
-                        />
-
-                        <TextField
-                            required
-                            fullWidth
-                            id="slug"
-                            name="slug"
-                            label="URL slug"
-                            value={slug}
-                            onChange={(e) => {
-                                setSlug(e.target.value);
-                                setSlugManuallyEdited(true);
-                            }}
-                            error={!!state?.error?.slug}
-                            helperText={
-                                state?.error?.slug?.[0] ||
-                                "Pouze malá písmena, čísla a pomlčky"
-                            }
-                            placeholder="např. fotky-z-akce"
-                            InputProps={{
-                                endAdornment: slugManuallyEdited && mode === "create" ? (
-                                    <IconButton
-                                        size="small"
-                                        title="Generovat z názvu"
-                                        onClick={() => {
-                                            setSlug(generateSlug(title));
-                                            setSlugManuallyEdited(false);
-                                        }}
-                                    >
-                                        <Refresh fontSize="small" />
-                                    </IconButton>
-                                ) : undefined,
-                            }}
-                        />
-                    </Box>
+                    <TextField
+                        required
+                        fullWidth
+                        id="title"
+                        name="title"
+                        label="Název alba"
+                        defaultValue={defaultValues?.title || ""}
+                        error={!!state?.error?.title}
+                        helperText={state?.error?.title?.[0]}
+                        disabled={!editing}
+                    />
 
                     <TextField
                         fullWidth
@@ -195,16 +140,35 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                         multiline
                         rows={3}
                         inputProps={{ maxLength: 1000 }}
+                        disabled={!editing}
                     />
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
                             Titulní obrázek (volitelné)
                         </Typography>
-                        <ImageUploader
-                            value={coverImage}
-                            onChange={setCoverImage}
-                        />
+                        {editing ? (
+                            <ImageUploader
+                                value={coverImage}
+                                onChange={setCoverImage}
+                            />
+                        ) : coverImage ? (
+                            <Box
+                                component="img"
+                                src={coverImage}
+                                alt="Titulní obrázek"
+                                sx={{
+                                    maxHeight: 250,
+                                    maxWidth: "100%",
+                                    objectFit: "contain",
+                                    borderRadius: 1,
+                                }}
+                            />
+                        ) : (
+                            <Typography color="text.secondary">
+                                Bez obrázku
+                            </Typography>
+                        )}
                         <input type="hidden" name="coverImage" value={coverImage} />
                         {state?.error?.coverImage && (
                             <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
@@ -216,10 +180,28 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
-                    <SubmitButton mode={mode} />
-                    <LinkButton href={cancelHref}>
-                        Zrušit
-                    </LinkButton>
+                    {editing ? (
+                        <>
+                            <SubmitButton mode={mode} />
+                            {mode === "edit" ? (
+                                <Button onClick={() => setEditing(false)}>
+                                    Zrušit úpravy
+                                </Button>
+                            ) : (
+                                <LinkButton href={cancelHref}>
+                                    Zrušit
+                                </LinkButton>
+                            )}
+                        </>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            startIcon={<Edit />}
+                            onClick={() => setEditing(true)}
+                        >
+                            Upravit
+                        </Button>
+                    )}
                 </CardActions>
             </Box>
         </Card>

@@ -17,6 +17,7 @@ interface ImageUploaderProps {
     onError?: (error: string) => void;
     maxSizeMB?: number;
     acceptedTypes?: string[];
+    disabled?: boolean;
 }
 
 const DEFAULT_MAX_SIZE_MB = 15;
@@ -28,6 +29,7 @@ export function ImageUploader({
     onError,
     maxSizeMB = DEFAULT_MAX_SIZE_MB,
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
+    disabled: externalDisabled = false,
 }: ImageUploaderProps) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export function ImageUploader({
             {} as Record<string, string[]>
         ),
         maxFiles: 1,
-        disabled: uploading,
+        disabled: uploading || externalDisabled,
     });
 
     // Cleanup blob URL on unmount or when preview changes
@@ -155,12 +157,12 @@ export function ImageUploader({
                     borderRadius: 2,
                     p: 3,
                     textAlign: "center",
-                    cursor: uploading ? "default" : "pointer",
+                    cursor: uploading || externalDisabled ? "default" : "pointer",
                     bgcolor: isDragActive ? "action.hover" : "transparent",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                        borderColor: uploading ? "grey.300" : "primary.main",
-                        bgcolor: uploading ? "transparent" : "action.hover",
+                        borderColor: uploading || externalDisabled ? "grey.300" : "primary.main",
+                        bgcolor: uploading || externalDisabled ? "transparent" : "action.hover",
                     },
                     position: "relative",
                     minHeight: 200,
@@ -199,25 +201,27 @@ export function ImageUploader({
                                 borderRadius: 1,
                             }}
                         />
-                        <IconButton
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemove();
-                            }}
-                            sx={{
-                                position: "absolute",
-                                top: -12,
-                                right: -12,
-                                bgcolor: "error.main",
-                                color: "white",
-                                "&:hover": {
-                                    bgcolor: "error.dark",
-                                },
-                            }}
-                            size="small"
-                        >
-                            <Delete fontSize="small" />
-                        </IconButton>
+                        {!externalDisabled && (
+                            <IconButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemove();
+                                }}
+                                sx={{
+                                    position: "absolute",
+                                    top: -12,
+                                    right: -12,
+                                    bgcolor: "error.main",
+                                    color: "white",
+                                    "&:hover": {
+                                        bgcolor: "error.dark",
+                                    },
+                                }}
+                                size="small"
+                            >
+                                <Delete fontSize="small" />
+                            </IconButton>
+                        )}
                     </Box>
                 ) : (
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
