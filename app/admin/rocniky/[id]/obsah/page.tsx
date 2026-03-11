@@ -11,6 +11,8 @@ import {
     Gavel,
     LocalOffer,
     InfoOutlined,
+    Newspaper,
+    PhotoLibrary,
     Add,
 } from "@mui/icons-material";
 import { notFound } from "next/navigation";
@@ -35,6 +37,8 @@ async function getYearContent(id: string) {
                     offers: true,
                     infoSections: true,
                     rules: true,
+                    news: true,
+                    albums: true,
                 },
             },
         },
@@ -129,6 +133,20 @@ export default async function ObsahPage({ params }: ObsahPageProps) {
                     href={`/admin/rocniky/${year.id}/pravidla`}
                     icon={<Gavel fontSize="large" />}
                 />
+                <StatCard
+                    label="Novinky"
+                    count={year._count.news}
+                    unit="novinek"
+                    href={`/admin/rocniky/${year.id}/novinky`}
+                    icon={<Newspaper fontSize="large" />}
+                />
+                <StatCard
+                    label="Galerie"
+                    count={year._count.albums}
+                    unit="alb"
+                    href={`/admin/rocniky/${year.id}/galerie`}
+                    icon={<PhotoLibrary fontSize="large" />}
+                />
             </Grid>
 
             {/* Quick actions */}
@@ -169,6 +187,22 @@ export default async function ObsahPage({ params }: ObsahPageProps) {
                             startIcon={<Add />}
                         >
                             Nové pravidlo
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/novinky/nova`}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Add />}
+                        >
+                            Nová novinka
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/galerie/nove`}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Add />}
+                        >
+                            Nové album
                         </LinkButton>
                     </Box>
                 </CardContent>

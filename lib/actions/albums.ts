@@ -60,6 +60,9 @@ export async function createAlbum(
         return { error: validated.error.flatten().fieldErrors };
     }
 
+    const rawRedirectTo = formData.get("redirectTo") as string | null;
+    const validatedRedirectTo = rawRedirectTo?.startsWith("/admin/") ? rawRedirectTo : "/admin/galerie";
+
     try {
         const existing = await db.album.findUnique({
             where: {
@@ -93,12 +96,15 @@ export async function createAlbum(
 
         revalidatePath("/admin/galerie");
         revalidatePath("/galerie");
+        if (validatedRedirectTo !== "/admin/galerie") {
+            revalidatePath(validatedRedirectTo);
+        }
     } catch (error) {
         console.error("Failed to create album:", error);
         return { error: { _form: ["Nepodařilo se vytvořit album"] } };
     }
 
-    redirect("/admin/galerie");
+    redirect(validatedRedirectTo);
 }
 
 export async function updateAlbum(

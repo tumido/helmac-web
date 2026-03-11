@@ -32,6 +32,9 @@ interface AlbumFormProps {
         description?: string | null;
         coverImage?: string | null;
     };
+    cancelHref?: string;
+    redirectTo?: string;
+    hideYearSelect?: boolean;
 }
 
 function SubmitButton({ mode }: { mode: "create" | "edit" }) {
@@ -55,7 +58,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
     );
 }
 
-export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProps) {
+export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/admin/galerie", redirectTo, hideYearSelect }: AlbumFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
     const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
     const [title, setTitle] = useState(defaultValues?.title || "");
@@ -93,7 +96,15 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
                         <Alert severity="success">Změny byly uloženy.</Alert>
                     )}
 
-                    {mode === "create" && (
+                    {redirectTo && (
+                        <input type="hidden" name="redirectTo" value={redirectTo} />
+                    )}
+
+                    {mode === "create" && hideYearSelect && (
+                        <input type="hidden" name="yearId" value={selectedYearId} />
+                    )}
+
+                    {mode === "create" && !hideYearSelect && (
                         <TextField
                             select
                             required
@@ -206,7 +217,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues }: AlbumFormProp
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <LinkButton href="/admin/galerie">
+                    <LinkButton href={cancelHref}>
                         Zrušit
                     </LinkButton>
                 </CardActions>

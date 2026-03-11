@@ -38,6 +38,8 @@ interface News {
 
 interface SelectableNewsListProps {
     news: News[];
+    editBasePath?: string;
+    showYear?: boolean;
 }
 
 function formatDate(date: Date | null): string {
@@ -45,7 +47,7 @@ function formatDate(date: Date | null): string {
     return new Intl.DateTimeFormat("cs-CZ").format(new Date(date));
 }
 
-export function SelectableNewsList({ news }: SelectableNewsListProps) {
+export function SelectableNewsList({ news, editBasePath = "/admin/novinky", showYear = true }: SelectableNewsListProps) {
     const router = useRouter();
     const toast = useToast();
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -156,20 +158,24 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
                                         mt: 0.5,
                                     }}
                                 >
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        {item.year.year} - {item.year.title}
-                                    </Typography>
+                                    {showYear && (
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            {item.year.year} - {item.year.title}
+                                        </Typography>
+                                    )}
                                     {item.publishedAt && (
                                         <>
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                            >
-                                                |
-                                            </Typography>
+                                            {showYear && (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                >
+                                                    |
+                                                </Typography>
+                                            )}
                                             <Typography
                                                 variant="body2"
                                                 color="text.secondary"
@@ -189,7 +195,7 @@ export function SelectableNewsList({ news }: SelectableNewsListProps) {
                             >
                                 <Tooltip title="Upravit novinku">
                                     <IconLinkButton
-                                        href={`/admin/novinky/${item.id}`}
+                                        href={`${editBasePath}/${item.id}`}
                                         size="small"
                                     >
                                         <Edit />

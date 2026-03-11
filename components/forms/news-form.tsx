@@ -34,6 +34,9 @@ interface NewsFormProps {
         content?: string;
         coverImage?: string | null;
     };
+    cancelHref?: string;
+    redirectTo?: string;
+    hideYearSelect?: boolean;
 }
 
 function SubmitButton({ mode }: { mode: "create" | "edit" }) {
@@ -57,7 +60,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
     );
 }
 
-export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) {
+export function NewsForm({ mode, years, newsId, defaultValues, cancelHref = "/admin/novinky", redirectTo, hideYearSelect }: NewsFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
     const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
     const [content, setContent] = useState(defaultValues?.content || "");
@@ -92,7 +95,15 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
                         <Alert severity="error">{state.error._form[0]}</Alert>
                     )}
 
-                    {mode === "create" && (
+                    {redirectTo && (
+                        <input type="hidden" name="redirectTo" value={redirectTo} />
+                    )}
+
+                    {mode === "create" && hideYearSelect && (
+                        <input type="hidden" name="yearId" value={selectedYearId} />
+                    )}
+
+                    {mode === "create" && !hideYearSelect && (
                         <TextField
                             select
                             required
@@ -224,7 +235,7 @@ export function NewsForm({ mode, years, newsId, defaultValues }: NewsFormProps) 
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <LinkButton href="/admin/novinky">
+                    <LinkButton href={cancelHref}>
                         Zrušit
                     </LinkButton>
                 </CardActions>

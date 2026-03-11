@@ -29,6 +29,7 @@ interface ImageFormProps {
         description?: string | null;
         altText?: string | null;
     };
+    cancelHref?: string;
 }
 
 function SubmitButton({ mode }: { mode: "create" | "edit" }) {
@@ -52,7 +53,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
     );
 }
 
-export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormProps) {
+export function ImageForm({ mode, albumId, imageId, defaultValues, cancelHref }: ImageFormProps) {
     const [imageUrl, setImageUrl] = useState(defaultValues?.url || "");
 
     const action =
@@ -155,7 +156,7 @@ export function ImageForm({ mode, albumId, imageId, defaultValues }: ImageFormPr
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <LinkButton href={`/admin/galerie/${albumId}`}>
+                    <LinkButton href={cancelHref || `/admin/galerie/${albumId}`}>
                         Zpět na album
                     </LinkButton>
                 </CardActions>

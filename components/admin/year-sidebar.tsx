@@ -18,6 +18,8 @@ import {
     Gavel,
     LocalOffer,
     InfoOutlined,
+    Newspaper,
+    PhotoLibrary,
     AppRegistration,
     Description,
     People,
@@ -72,6 +74,8 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
         { text: "Nabídky", href: `${base}/nabidka`, icon: LocalOffer, indented: true },
         { text: "Info", href: `${base}/info`, icon: InfoOutlined, indented: true },
         { text: "Pravidla", href: `${base}/pravidla`, icon: Gavel, indented: true },
+        { text: "Novinky", href: `${base}/novinky`, icon: Newspaper, indented: true },
+        { text: "Galerie", href: `${base}/galerie`, icon: PhotoLibrary, indented: true },
     ];
 
     const registrationItems = [

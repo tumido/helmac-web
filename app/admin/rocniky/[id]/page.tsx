@@ -1,17 +1,10 @@
 import {
     Container,
     Typography,
-    Box,
-    Card,
-    CardContent,
-    Grid,
     Paper,
     Chip,
 } from "@mui/material";
 import {
-    PhotoLibrary,
-    Newspaper,
-    Add,
     AppRegistration,
 } from "@mui/icons-material";
 import { notFound } from "next/navigation";
@@ -34,51 +27,10 @@ async function getYearOverview(id: string) {
             _count: {
                 select: {
                     registrationSubmissions: true,
-                    albums: true,
-                    news: true,
                 },
             },
         },
     });
-}
-
-interface StatCardProps {
-    label: string;
-    count: number;
-    unit: string;
-    href: string;
-    icon: React.ReactNode;
-}
-
-function StatCard({ label, count, unit, href, icon }: StatCardProps) {
-    return (
-        <Grid item xs={6} sm={4} md={3}>
-            <Card
-                sx={{
-                    height: "100%",
-                    transition: "box-shadow 0.2s",
-                    "&:hover": { boxShadow: 4 },
-                }}
-            >
-                <CardContent sx={{ textAlign: "center", py: 2 }}>
-                    <Box sx={{ color: "primary.main", mb: 1 }}>{icon}</Box>
-                    <Typography variant="h4" fontWeight="bold">
-                        {count}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {unit}
-                    </Typography>
-                    <LinkButton
-                        href={href}
-                        size="small"
-                        sx={{ mt: 1 }}
-                    >
-                        {label}
-                    </LinkButton>
-                </CardContent>
-            </Card>
-        </Grid>
-    );
 }
 
 export default async function EditYearPage({ params }: EditYearPageProps) {
@@ -129,51 +81,6 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                     Spravovat
                 </LinkButton>
             </Paper>
-
-            {/* Stats cards */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <StatCard
-                    label="Galerie"
-                    count={year._count.albums}
-                    unit="alb"
-                    href="/admin/galerie"
-                    icon={<PhotoLibrary fontSize="large" />}
-                />
-                <StatCard
-                    label="Novinky"
-                    count={year._count.news}
-                    unit="novinek"
-                    href="/admin/novinky"
-                    icon={<Newspaper fontSize="large" />}
-                />
-            </Grid>
-
-            {/* Quick actions */}
-            <Card>
-                <CardContent>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                        Rychlé akce
-                    </Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        <LinkButton
-                            href={`/admin/galerie/nove?yearId=${year.id}`}
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Add />}
-                        >
-                            Nová galerie
-                        </LinkButton>
-                        <LinkButton
-                            href={`/admin/novinky/nova?yearId=${year.id}`}
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Add />}
-                        >
-                            Nová novinka
-                        </LinkButton>
-                    </Box>
-                </CardContent>
-            </Card>
         </Container>
     );
 }

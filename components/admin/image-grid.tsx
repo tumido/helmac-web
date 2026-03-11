@@ -32,9 +32,10 @@ interface Image {
 interface ImageGridProps {
     images: Image[];
     albumId: string;
+    basePath?: string;
 }
 
-function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
+function ImageCard({ image, albumId, basePath }: { image: Image; albumId: string; basePath?: string }) {
     const router = useRouter();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
@@ -118,7 +119,7 @@ function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
                         <>
                             <Tooltip title="Upravit">
                                 <IconLinkButton
-                                    href={`/admin/galerie/${albumId}/obrazky/${image.id}`}
+                                    href={`${basePath || `/admin/galerie/${albumId}`}/obrazky/${image.id}`}
                                     sx={{ color: "white" }}
                                 >
                                     <Edit />
@@ -185,7 +186,7 @@ function ImageCard({ image, albumId }: { image: Image; albumId: string }) {
     );
 }
 
-export function ImageGrid({ images, albumId }: ImageGridProps) {
+export function ImageGrid({ images, albumId, basePath }: ImageGridProps) {
     return (
         <Box
             sx={{
@@ -199,7 +200,7 @@ export function ImageGrid({ images, albumId }: ImageGridProps) {
             }}
         >
             {images.map((image) => (
-                <ImageCard key={image.id} image={image} albumId={albumId} />
+                <ImageCard key={image.id} image={image} albumId={albumId} basePath={basePath} />
             ))}
         </Box>
     );

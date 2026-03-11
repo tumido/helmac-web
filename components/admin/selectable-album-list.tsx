@@ -41,9 +41,11 @@ interface Album {
 
 interface SelectableAlbumListProps {
     albums: Album[];
+    editBasePath?: string;
+    showYear?: boolean;
 }
 
-export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
+export function SelectableAlbumList({ albums, editBasePath = "/admin/galerie", showYear = true }: SelectableAlbumListProps) {
     const router = useRouter();
     const toast = useToast();
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -154,18 +156,22 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                                         mt: 0.5,
                                     }}
                                 >
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        {album.year.year} - {album.year.title}
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        |
-                                    </Typography>
+                                    {showYear && (
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            {album.year.year} - {album.year.title}
+                                        </Typography>
+                                    )}
+                                    {showYear && (
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            |
+                                        </Typography>
+                                    )}
                                     <Box
                                         sx={{
                                             display: "flex",
@@ -195,7 +201,7 @@ export function SelectableAlbumList({ albums }: SelectableAlbumListProps) {
                             >
                                 <Tooltip title="Upravit album">
                                     <IconLinkButton
-                                        href={`/admin/galerie/${album.id}`}
+                                        href={`${editBasePath}/${album.id}`}
                                         size="small"
                                     >
                                         <Edit />

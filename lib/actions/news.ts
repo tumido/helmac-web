@@ -49,6 +49,9 @@ export async function createNews(
         return { error: validated.error.flatten().fieldErrors };
     }
 
+    const rawRedirectTo = formData.get("redirectTo") as string | null;
+    const validatedRedirectTo = rawRedirectTo?.startsWith("/admin/") ? rawRedirectTo : "/admin/novinky";
+
     try {
         // Check if slug already exists for this year
         const existing = await db.news.findUnique({
@@ -80,12 +83,15 @@ export async function createNews(
 
         revalidatePath("/admin/novinky");
         revalidatePath(`/admin/rocniky/${yearId}`);
+        if (validatedRedirectTo !== "/admin/novinky") {
+            revalidatePath(validatedRedirectTo);
+        }
     } catch (error) {
         console.error("Failed to create news:", error);
         return { error: { _form: ["Nepodařilo se vytvořit novinku"] } };
     }
 
-    redirect("/admin/novinky");
+    redirect(validatedRedirectTo);
 }
 
 export async function updateNews(
@@ -112,6 +118,9 @@ export async function updateNews(
     if (!validated.success) {
         return { error: validated.error.flatten().fieldErrors };
     }
+
+    const rawRedirectTo = formData.get("redirectTo") as string | null;
+    const validatedRedirectTo = rawRedirectTo?.startsWith("/admin/") ? rawRedirectTo : "/admin/novinky";
 
     try {
         const news = await db.news.findUnique({ where: { id: newsId } });
@@ -151,12 +160,15 @@ export async function updateNews(
 
         revalidatePath("/admin/novinky");
         revalidatePath(`/admin/novinky/${newsId}`);
+        if (validatedRedirectTo !== "/admin/novinky") {
+            revalidatePath(validatedRedirectTo);
+        }
     } catch (error) {
         console.error("Failed to update news:", error);
         return { error: { _form: ["Nepodařilo se upravit novinku"] } };
     }
 
-    redirect("/admin/novinky");
+    redirect(validatedRedirectTo);
 }
 
 export async function deleteNews(newsId: string) {
