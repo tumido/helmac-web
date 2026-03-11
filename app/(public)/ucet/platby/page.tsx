@@ -12,7 +12,8 @@ import {
 } from "@mui/material";
 import { requirePublicAuth } from "@/lib/public-auth";
 import { getPublicUserPayments } from "@/lib/services/public-user";
-import { formatCzechAccount } from "@/lib/utils/spayd";
+import { formatCzechAccount, czechAccountToIBAN, generateSPAYD } from "@/lib/utils/spayd";
+import { PaymentQrDialog } from "@/components/public/features/account/payment-qr-dialog";
 
 export const metadata = {
     title: "Platby | Helmac",
@@ -48,17 +49,35 @@ export default async function PaymentsPage() {
                             <TableCell>VS</TableCell>
                             <TableCell>Účet</TableCell>
                             <TableCell>Stav</TableCell>
+                            <TableCell padding="checkbox" />
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {payments.map((payment) => {
-                            const bankAccount = payment.year.bankAccountNumber && payment.year.bankAccountBankCode
+                            const hasBankInfo = !!(payment.year.bankAccountNumber && payment.year.bankAccountBankCode);
+                            const bankAccount = hasBankInfo
                                 ? formatCzechAccount(
-                                    payment.year.bankAccountNumber,
-                                    payment.year.bankAccountBankCode,
+                                    payment.year.bankAccountNumber!,
+                                    payment.year.bankAccountBankCode!,
                                     payment.year.bankAccountPrefix ?? undefined,
                                 )
                                 : "–";
+
+                            let spaydString: string | null = null;
+                            if (!payment.isPaid && hasBankInfo && payment.variableSymbol && payment.totalPrice != null) {
+                                const iban = czechAccountToIBAN(
+                                    payment.year.bankAccountNumber!,
+                                    payment.year.bankAccountBankCode!,
+                                    payment.year.bankAccountPrefix ?? undefined,
+                                );
+                                if (iban) {
+                                    spaydString = generateSPAYD({
+                                        iban,
+                                        amount: payment.totalPrice,
+                                        variableSymbol: payment.variableSymbol,
+                                    });
+                                }
+                            }
 
                             return (
                                 <TableRow key={payment.id}>
@@ -85,6 +104,16 @@ export default async function PaymentsPage() {
                                             <Chip label="Zaplaceno" color="success" size="small" />
                                         ) : (
                                             <Chip label="Čeká na platbu" color="warning" size="small" />
+                                        )}
+                                    </TableCell>
+                                    <TableCell padding="checkbox">
+                                        {spaydString && (
+                                            <PaymentQrDialog
+                                                spaydString={spaydString}
+                                                amount={payment.totalPrice!}
+                                                bankAccount={bankAccount}
+                                                variableSymbol={payment.variableSymbol!}
+                                            />
                                         )}
                                     </TableCell>
                                 </TableRow>
