@@ -22,9 +22,6 @@ export default function AccountLayout({
                     sx={{
                         display: "flex",
                         gap: 3,
-                        mt: -4,
-                        position: "relative",
-                        zIndex: 1,
                         flexDirection: { xs: "column", md: "row" },
                     }}
                 >
