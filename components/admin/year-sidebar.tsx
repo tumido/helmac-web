@@ -45,18 +45,6 @@ interface YearSidebarProps {
     onClose: () => void;
 }
 
-function formatDateRange(startDate: string | null, endDate: string | null): string | null {
-    if (!startDate || !endDate) return null;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const startDay = start.getDate();
-    const startMonth = start.getMonth() + 1;
-    const endDay = end.getDate();
-    const endMonth = end.getMonth() + 1;
-    const endYear = end.getFullYear();
-    return `${startDay}.${startMonth}. – ${endDay}.${endMonth}.${endYear}`;
-}
-
 export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
     const pathname = usePathname();
     const base = `/admin/rocniky/${yearData.id}`;
@@ -90,8 +78,6 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
         { text: "Potvrzovací", href: `${base}/emaily/potvrzovaci`, icon: MarkEmailRead, indented: true },
     ];
 
-    const dateRange = formatDateRange(yearData.startDate, yearData.endDate);
-
     return (
         <Box>
             {/* Back link */}
@@ -108,19 +94,6 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
                     </ListItemLinkButton>
                 </ListItem>
             </List>
-            <Divider />
-
-            {/* Year header */}
-            <Box sx={{ px: 2, py: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight="bold" noWrap>
-                    Ročník {yearData.year} — {yearData.title}
-                </Typography>
-                {dateRange && (
-                    <Typography variant="body2" color="text.secondary">
-                        {dateRange}
-                    </Typography>
-                )}
-            </Box>
             <Divider />
 
             {/* Main navigation */}

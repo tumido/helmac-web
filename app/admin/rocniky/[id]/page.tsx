@@ -1,4 +1,5 @@
 import {
+    Box,
     Container,
     Typography,
     Paper,
@@ -16,6 +17,16 @@ interface EditYearPageProps {
     params: Promise<{ id: string }>;
 }
 
+function formatDateRange(startDate: Date | null, endDate: Date | null): string | null {
+    if (!startDate || !endDate) return null;
+    const startDay = startDate.getDate();
+    const startMonth = startDate.getMonth() + 1;
+    const endDay = endDate.getDate();
+    const endMonth = endDate.getMonth() + 1;
+    const endYear = endDate.getFullYear();
+    return `${startDay}.${startMonth}. – ${endDay}.${endMonth}.${endYear}`;
+}
+
 async function getYearOverview(id: string) {
     return db.year.findUnique({
         where: { id },
@@ -24,6 +35,8 @@ async function getYearOverview(id: string) {
             year: true,
             title: true,
             registrationOpen: true,
+            startDate: true,
+            endDate: true,
             _count: {
                 select: {
                     registrationSubmissions: true,
@@ -50,6 +63,17 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                 ]}
                 title="Přehled"
             />
+
+            <Box sx={{ mb: 3 }}>
+                <Typography variant="h5" fontWeight="bold">
+                    Ročník {year.year} — {year.title}
+                </Typography>
+                {formatDateRange(year.startDate, year.endDate) && (
+                    <Typography variant="body2" color="text.secondary">
+                        {formatDateRange(year.startDate, year.endDate)}
+                    </Typography>
+                )}
+            </Box>
 
             {/* Registration status banner */}
             <Paper
