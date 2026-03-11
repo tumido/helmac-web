@@ -16,6 +16,7 @@ import {
     Typography,
     TextField,
     InputAdornment,
+    TableSortLabel,
 } from "@mui/material";
 import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
 import { CheckCircle, Cancel, Email, Search } from "@mui/icons-material";
@@ -48,9 +49,23 @@ interface SubmissionsTableProps {
     eventStartDate?: Date | null;
 }
 
+type SortKey = string;
+type SortDirection = "asc" | "desc";
+
 export function SubmissionsTable({ submissions, fields, yearId, statusFilter, paidFilter, eventStartDate }: SubmissionsTableProps) {
     const router = useRouter();
     const [search, setSearch] = useState("");
+    const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+    const [sortDir, setSortDir] = useState<SortDirection>("desc");
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+        } else {
+            setSortKey(key);
+            setSortDir("asc");
+        }
+    };
 
     // Get first 4 input fields for column display
     const displayFields = fields
@@ -103,6 +118,37 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
         })
         : paidFiltered;
 
+    const sorted = [...filtered].sort((a, b) => {
+        const dir = sortDir === "asc" ? 1 : -1;
+
+        if (sortKey.startsWith("field:")) {
+            const fieldName = sortKey.slice(6);
+            const aVal = String((a.data as Record<string, unknown>)[fieldName] ?? "");
+            const bVal = String((b.data as Record<string, unknown>)[fieldName] ?? "");
+            return dir * aVal.localeCompare(bVal, "cs");
+        }
+
+        switch (sortKey) {
+            case "peopleCount": {
+                const aCount = 1 + getAdditionalPeople(a.data as Record<string, unknown>).length;
+                const bCount = 1 + getAdditionalPeople(b.data as Record<string, unknown>).length;
+                return dir * (aCount - bCount);
+            }
+            case "isPaid":
+                return dir * (Number(a.isPaid) - Number(b.isPaid));
+            case "totalPrice":
+                return dir * ((a.totalPrice ?? -Infinity) - (b.totalPrice ?? -Infinity));
+            case "variableSymbol":
+                return dir * (a.variableSymbol ?? "").localeCompare(b.variableSymbol ?? "", "cs");
+            case "emailSent":
+                return dir * (Number(a.emailSent) - Number(b.emailSent));
+            case "createdAt":
+                return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            default:
+                return 0;
+        }
+    });
+
     if (filtered.length === 0 && !search.trim()) {
         return (
             <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
@@ -137,20 +183,43 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
             <Table size="small">
                 <TableHead>
                     <TableRow>
-                        {displayFields.map((field) => (
-                            <TableCell key={field.id}>{field.label}</TableCell>
+                        {displayFields.map((field) => {
+                            const key = `field:${field.name}`;
+                            return (
+                                <TableCell key={field.id} sortDirection={sortKey === key ? sortDir : false}>
+                                    <TableSortLabel
+                                        active={sortKey === key}
+                                        direction={sortKey === key ? sortDir : "asc"}
+                                        onClick={() => handleSort(key)}
+                                    >
+                                        {field.label}
+                                    </TableSortLabel>
+                                </TableCell>
+                            );
+                        })}
+                        {([
+                            ["peopleCount", "Osoby"],
+                            ["isPaid", "Zaplaceno"],
+                            ["totalPrice", "Cena"],
+                            ["variableSymbol", "VS"],
+                            ["emailSent", "Email"],
+                            ["createdAt", "Datum"],
+                        ] as const).map(([key, label]) => (
+                            <TableCell key={key} sortDirection={sortKey === key ? sortDir : false}>
+                                <TableSortLabel
+                                    active={sortKey === key}
+                                    direction={sortKey === key ? sortDir : "asc"}
+                                    onClick={() => handleSort(key)}
+                                >
+                                    {label}
+                                </TableSortLabel>
+                            </TableCell>
                         ))}
-                        <TableCell>Osoby</TableCell>
-                        <TableCell>Zaplaceno</TableCell>
-                        <TableCell>Cena</TableCell>
-                        <TableCell>VS</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell>Datum</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {filtered.map((submission) => {
+                    {sorted.map((submission) => {
                         const data = submission.data as Record<string, unknown>;
                         const ap = getAdditionalPeople(data);
                         const hasAP = ap.length > 0;
