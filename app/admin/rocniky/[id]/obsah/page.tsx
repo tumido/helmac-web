@@ -5,37 +5,36 @@ import {
     Card,
     CardContent,
     Grid,
-    Paper,
-    Chip,
 } from "@mui/material";
 import {
-    PhotoLibrary,
-    Newspaper,
+    CalendarMonth,
+    Gavel,
+    LocalOffer,
+    InfoOutlined,
     Add,
-    AppRegistration,
 } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
 
-interface EditYearPageProps {
+interface ObsahPageProps {
     params: Promise<{ id: string }>;
 }
 
-async function getYearOverview(id: string) {
+async function getYearContent(id: string) {
     return db.year.findUnique({
         where: { id },
         select: {
             id: true,
             year: true,
             title: true,
-            registrationOpen: true,
             _count: {
                 select: {
-                    registrationSubmissions: true,
-                    albums: true,
-                    news: true,
+                    programDays: true,
+                    offers: true,
+                    infoSections: true,
+                    rules: true,
                 },
             },
         },
@@ -81,9 +80,9 @@ function StatCard({ label, count, unit, href, icon }: StatCardProps) {
     );
 }
 
-export default async function EditYearPage({ params }: EditYearPageProps) {
+export default async function ObsahPage({ params }: ObsahPageProps) {
     const { id } = await params;
-    const year = await getYearOverview(id);
+    const year = await getYearContent(id);
 
     if (!year) {
         notFound();
@@ -94,57 +93,41 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
-                    { label: `${year.year} - ${year.title}` },
+                    { label: `${year.year} - ${year.title}`, href: `/admin/rocniky/${year.id}` },
+                    { label: "Obsah" },
                 ]}
-                title="Přehled"
+                title="Obsah"
             />
-
-            {/* Registration status banner */}
-            <Paper
-                sx={{
-                    p: 2,
-                    mb: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    flexWrap: "wrap",
-                }}
-            >
-                <AppRegistration color={year.registrationOpen ? "success" : "disabled"} />
-                <Typography variant="body1" sx={{ flex: 1 }}>
-                    Registrace je{" "}
-                    <strong>{year.registrationOpen ? "otevřena" : "uzavřena"}</strong>
-                </Typography>
-                <Chip
-                    label={`${year._count.registrationSubmissions} přihlášek`}
-                    color="primary"
-                    variant="outlined"
-                    size="small"
-                />
-                <LinkButton
-                    href={`/admin/rocniky/${year.id}/registrace`}
-                    variant="outlined"
-                    size="small"
-                >
-                    Spravovat
-                </LinkButton>
-            </Paper>
 
             {/* Stats cards */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 <StatCard
-                    label="Galerie"
-                    count={year._count.albums}
-                    unit="alb"
-                    href="/admin/galerie"
-                    icon={<PhotoLibrary fontSize="large" />}
+                    label="Program"
+                    count={year._count.programDays}
+                    unit="dnů"
+                    href={`/admin/rocniky/${year.id}/program`}
+                    icon={<CalendarMonth fontSize="large" />}
                 />
                 <StatCard
-                    label="Novinky"
-                    count={year._count.news}
-                    unit="novinek"
-                    href="/admin/novinky"
-                    icon={<Newspaper fontSize="large" />}
+                    label="Nabídky"
+                    count={year._count.offers}
+                    unit="nabídek"
+                    href={`/admin/rocniky/${year.id}/nabidka`}
+                    icon={<LocalOffer fontSize="large" />}
+                />
+                <StatCard
+                    label="Info"
+                    count={year._count.infoSections}
+                    unit="sekcí"
+                    href={`/admin/rocniky/${year.id}/info`}
+                    icon={<InfoOutlined fontSize="large" />}
+                />
+                <StatCard
+                    label="Pravidla"
+                    count={year._count.rules}
+                    unit="pravidel"
+                    href={`/admin/rocniky/${year.id}/pravidla`}
+                    icon={<Gavel fontSize="large" />}
                 />
             </Grid>
 
@@ -156,20 +139,36 @@ export default async function EditYearPage({ params }: EditYearPageProps) {
                     </Typography>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                         <LinkButton
-                            href={`/admin/galerie/nove?yearId=${year.id}`}
+                            href={`/admin/rocniky/${year.id}/program/novy-den`}
                             variant="outlined"
                             size="small"
                             startIcon={<Add />}
                         >
-                            Nová galerie
+                            Nový den programu
                         </LinkButton>
                         <LinkButton
-                            href={`/admin/novinky/nova?yearId=${year.id}`}
+                            href={`/admin/rocniky/${year.id}/nabidka/nove`}
                             variant="outlined"
                             size="small"
                             startIcon={<Add />}
                         >
-                            Nová novinka
+                            Nová nabídka
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/info/nove`}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Add />}
+                        >
+                            Nová info sekce
+                        </LinkButton>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/pravidla/nove`}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Add />}
+                        >
+                            Nové pravidlo
                         </LinkButton>
                     </Box>
                 </CardContent>

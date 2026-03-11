@@ -6,7 +6,6 @@ import {
     Divider,
     List,
     ListItem,
-    ListItemButton,
     ListItemIcon,
     ListItemText,
     Typography,
@@ -68,6 +67,7 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
     ];
 
     const contentItems = [
+        { text: "Obsah", href: `${base}/obsah`, icon: Article, exact: true },
         { text: "Program", href: `${base}/program`, icon: CalendarMonth, indented: true },
         { text: "Nabídky", href: `${base}/nabidka`, icon: LocalOffer, indented: true },
         { text: "Info", href: `${base}/info`, icon: InfoOutlined, indented: true },
@@ -145,15 +145,11 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
 
             {/* Content section */}
             <List>
-                <ListItem disablePadding>
-                    <ListItemButton disabled sx={{ "&.Mui-disabled": { opacity: 1 } }}>
-                        <ListItemIcon><Article /></ListItemIcon>
-                        <ListItemText primary="Obsah" />
-                    </ListItemButton>
-                </ListItem>
                 {contentItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = isPrefixMatch(item.href);
+                    const isActive = item.exact
+                        ? isExactMatch(item.href)
+                        : isPrefixMatch(item.href);
                     return (
                         <ListItem key={item.href} disablePadding>
                             <ListItemLinkButton
