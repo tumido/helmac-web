@@ -10,10 +10,12 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Button,
     Chip,
     Tooltip,
     Typography,
 } from "@mui/material";
+import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
 import { CheckCircle, Cancel } from "@mui/icons-material";
 import type { FormField, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
@@ -22,21 +24,6 @@ import { isMinor } from "@/lib/utils/minor-detection";
 import { formatPrice } from "@/lib/utils/pricing";
 import { getAdditionalPeople } from "@/lib/utils/additional-people";
 
-const STATUS_COLORS: Record<RegistrationStatus, "default" | "success" | "warning" | "error" | "info"> = {
-    PENDING: "warning",
-    CONFIRMED: "success",
-    WAITLIST: "info",
-    CANCELLED: "default",
-    REJECTED: "error",
-};
-
-const STATUS_LABELS: Record<RegistrationStatus, string> = {
-    PENDING: "Čeká",
-    CONFIRMED: "Potvrzeno",
-    WAITLIST: "Čekací listina",
-    CANCELLED: "Zrušeno",
-    REJECTED: "Zamítnuto",
-};
 
 interface Submission {
     id: string;
@@ -92,11 +79,11 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                             <TableCell key={field.id}>{field.label}</TableCell>
                         ))}
                         <TableCell>Osoby</TableCell>
-                        <TableCell>Stav</TableCell>
                         <TableCell>Zaplaceno</TableCell>
                         <TableCell>Cena</TableCell>
                         <TableCell>VS</TableCell>
                         <TableCell>Datum</TableCell>
+                        <TableCell></TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -176,13 +163,6 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
-                                        <Chip
-                                            label={STATUS_LABELS[submission.status]}
-                                            color={STATUS_COLORS[submission.status]}
-                                            size="small"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
                                         {submission.isPaid ? (
                                             <CheckCircle fontSize="small" color="success" />
                                         ) : (
@@ -203,6 +183,19 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                                         <Typography variant="body2" noWrap>
                                             {new Date(submission.createdAt).toLocaleDateString("cs-CZ")}
                                         </Typography>
+                                    </TableCell>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        {!submission.isPaid && (
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={async () => {
+                                                    await toggleSubmissionPayment(submission.id, true);
+                                                }}
+                                            >
+                                                Zaplatit
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                                 {ap.map((person, apIndex) => {
@@ -250,7 +243,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                                                     ) : null}
                                                 </TableCell>
                                             ))}
-                                            {/* Empty cells for Osoby, Stav, Zaplaceno, Cena, VS, Datum */}
+                                            {/* Empty cells for Osoby, Zaplaceno, Cena, VS, Datum, Akce */}
                                             <TableCell />
                                             <TableCell />
                                             <TableCell />
