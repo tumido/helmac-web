@@ -22,6 +22,7 @@ interface RegistrationSettingsProps {
     registrationOpen: boolean;
     registrationStartDate: Date | null;
     submissionCount: number;
+    totalPeopleCount: number;
 }
 
 export function RegistrationSettings({
@@ -29,6 +30,7 @@ export function RegistrationSettings({
     registrationOpen,
     registrationStartDate,
     submissionCount,
+    totalPeopleCount,
 }: RegistrationSettingsProps) {
     const [isOpen, setIsOpen] = useState(registrationOpen);
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -118,9 +120,12 @@ export function RegistrationSettings({
                 />
             </Box>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                 <Typography variant="body1">
                     Registrací: <strong>{submissionCount}</strong>
+                </Typography>
+                <Typography variant="body1">
+                    Registrovaných osob: <strong>{totalPeopleCount}</strong>
                 </Typography>
             </Box>
 

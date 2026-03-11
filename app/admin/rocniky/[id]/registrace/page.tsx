@@ -39,6 +39,17 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
         notFound();
     }
 
+    // Count total registered people (main registrants + additional people)
+    const submissions = await db.registrationSubmission.findMany({
+        where: { yearId: year.id, status: { notIn: ["CANCELLED", "REJECTED"] } },
+        select: { data: true },
+    });
+    const totalPeopleCount = submissions.reduce((sum, sub) => {
+        const data = sub.data as Record<string, unknown>;
+        const ap = Array.isArray(data.additionalPeople) ? data.additionalPeople.length : 0;
+        return sum + 1 + ap;
+    }, 0);
+
     // Fetch form data for capacity limits editor
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
@@ -69,6 +80,7 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
                 registrationOpen={year.registrationOpen}
                 registrationStartDate={year.registrationStartDate}
                 submissionCount={year._count.registrationSubmissions}
+                totalPeopleCount={totalPeopleCount}
             />
 
             {formData && allInputFields.length > 0 && (
