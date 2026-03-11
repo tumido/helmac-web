@@ -10,7 +10,7 @@ import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface PrihlaskyPageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ status?: string }>;
+    searchParams: Promise<{ status?: string; paid?: string }>;
 }
 
 async function getYearWithSubmissions(yearId: string) {
@@ -42,7 +42,7 @@ async function getYearWithSubmissions(yearId: string) {
 
 export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyPageProps) {
     const { id } = await params;
-    const { status } = await searchParams;
+    const { status, paid } = await searchParams;
     const year = await getYearWithSubmissions(id);
 
     if (!year || !year.registrationForm) {
@@ -55,9 +55,14 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
         ["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"].includes(status)
         ? (status as "PENDING" | "CONFIRMED" | "WAITLIST" | "CANCELLED" | "REJECTED")
         : null;
+    const paidFilter = paid === "true" ? true : paid === "false" ? false : null;
+
+    const basePath = `/admin/rocniky/${id}/registrace/prihlasky`;
+    const statusParam = statusFilter ? `status=${statusFilter}` : "";
+    const paidParam = paid === "true" || paid === "false" ? `paid=${paid}` : "";
 
     return (
-        <Container maxWidth="lg">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -84,34 +89,64 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
                 <LinkButton
-                    href={`/admin/rocniky/${id}/registrace/prihlasky`}
+                    href={`${basePath}${paidParam ? `?${paidParam}` : ""}`}
                     variant={!statusFilter ? "contained" : "outlined"}
                     size="small"
                 >
                     Vše
                 </LinkButton>
-                {(["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"] as const).map((s) => (
-                    <LinkButton
-                        key={s}
-                        href={`/admin/rocniky/${id}/registrace/prihlasky?status=${s}`}
-                        variant={statusFilter === s ? "contained" : "outlined"}
-                        size="small"
-                    >
-                        {{
-                            PENDING: "Čeká",
-                            CONFIRMED: "Potvrzeno",
-                            WAITLIST: "Čekací listina",
-                            CANCELLED: "Zrušeno",
-                            REJECTED: "Zamítnuto",
-                        }[s]}
-                    </LinkButton>
-                ))}
+                {(["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"] as const).map((s) => {
+                    const params = [
+                        `status=${s}`,
+                        ...(paidParam ? [paidParam] : []),
+                    ].join("&");
+                    return (
+                        <LinkButton
+                            key={s}
+                            href={`${basePath}?${params}`}
+                            variant={statusFilter === s ? "contained" : "outlined"}
+                            size="small"
+                        >
+                            {{
+                                PENDING: "Čeká",
+                                CONFIRMED: "Potvrzeno",
+                                WAITLIST: "Čekací listina",
+                                CANCELLED: "Zrušeno",
+                                REJECTED: "Zamítnuto",
+                            }[s]}
+                        </LinkButton>
+                    );
+                })}
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                <LinkButton
+                    href={`${basePath}${statusParam ? `?${statusParam}` : ""}`}
+                    variant={paidFilter === null ? "contained" : "outlined"}
+                    size="small"
+                >
+                    Vše
+                </LinkButton>
+                <LinkButton
+                    href={`${basePath}?${[statusParam, "paid=true"].filter(Boolean).join("&")}`}
+                    variant={paidFilter === true ? "contained" : "outlined"}
+                    size="small"
+                >
+                    Zaplaceno
+                </LinkButton>
+                <LinkButton
+                    href={`${basePath}?${[statusParam, "paid=false"].filter(Boolean).join("&")}`}
+                    variant={paidFilter === false ? "contained" : "outlined"}
+                    size="small"
+                >
+                    Nezaplaceno
+                </LinkButton>
             </Box>
             <SubmissionsTable
                 submissions={year.registrationSubmissions}
                 fields={fields}
                 yearId={year.id}
                 statusFilter={statusFilter}
+                paidFilter={paidFilter}
                 eventStartDate={year.startDate}
             />
         </Container>

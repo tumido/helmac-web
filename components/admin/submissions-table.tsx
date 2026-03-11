@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     Table,
@@ -14,9 +14,11 @@ import {
     Chip,
     Tooltip,
     Typography,
+    TextField,
+    InputAdornment,
 } from "@mui/material";
 import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
-import { CheckCircle, Cancel, Email } from "@mui/icons-material";
+import { CheckCircle, Cancel, Email, Search } from "@mui/icons-material";
 import type { FormField, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import type { RegistrationStatus } from "@prisma/client";
@@ -42,11 +44,13 @@ interface SubmissionsTableProps {
     fields: FormField[];
     yearId: string;
     statusFilter: RegistrationStatus | null;
+    paidFilter: boolean | null;
     eventStartDate?: Date | null;
 }
 
-export function SubmissionsTable({ submissions, fields, yearId, statusFilter, eventStartDate }: SubmissionsTableProps) {
+export function SubmissionsTable({ submissions, fields, yearId, statusFilter, paidFilter, eventStartDate }: SubmissionsTableProps) {
     const router = useRouter();
+    const [search, setSearch] = useState("");
 
     // Get first 4 input fields for column display
     const displayFields = fields
@@ -59,11 +63,47 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
     const apBirthDateFields = birthDateFields.filter((f) => f.includeForAdditionalPeople);
     const refDate = eventStartDate ? new Date(eventStartDate) : undefined;
 
-    const filtered = statusFilter
+    const statusFiltered = statusFilter
         ? submissions.filter((s) => s.status === statusFilter)
         : submissions;
 
-    if (filtered.length === 0) {
+    const paidFiltered = paidFilter !== null
+        ? statusFiltered.filter((s) => s.isPaid === paidFilter)
+        : statusFiltered;
+
+    const filtered = search.trim()
+        ? paidFiltered.filter((s) => {
+            const term = search.trim().toLowerCase();
+            const data = s.data as Record<string, unknown>;
+
+            // Search main form data values
+            for (const val of Object.values(data)) {
+                if (val != null && String(val).toLowerCase().includes(term)) {
+                    return true;
+                }
+            }
+
+            // Search additional people data
+            const ap = getAdditionalPeople(data);
+            for (const person of ap) {
+                const personData = person as Record<string, unknown>;
+                for (const val of Object.values(personData)) {
+                    if (val != null && String(val).toLowerCase().includes(term)) {
+                        return true;
+                    }
+                }
+            }
+
+            // Search variable symbol
+            if (s.variableSymbol && s.variableSymbol.toLowerCase().includes(term)) {
+                return true;
+            }
+
+            return false;
+        })
+        : paidFiltered;
+
+    if (filtered.length === 0 && !search.trim()) {
         return (
             <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
                 {statusFilter ? "Žádné registrace s tímto stavem" : "Zatím žádné registrace"}
@@ -72,6 +112,27 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
     }
 
     return (
+        <>
+        <TextField
+            size="small"
+            placeholder="Hledat..."
+            fullWidth
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{ mb: 2 }}
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <Search />
+                    </InputAdornment>
+                ),
+            }}
+        />
+        {filtered.length === 0 ? (
+            <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+                Žádné výsledky
+            </Typography>
+        ) : (
         <TableContainer component={Paper}>
             <Table size="small">
                 <TableHead>
@@ -267,5 +328,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                 </TableBody>
             </Table>
         </TableContainer>
+        )}
+        </>
     );
 }
