@@ -123,7 +123,7 @@ export async function GET(
                     "", // Status empty for AP rows
                     "", // Paid empty for AP rows
                     "", // Price empty for AP rows
-                    "", // VS empty for AP rows
+                    sub.variableSymbol ?? "", // Same VS as main person
                     "", // Date empty for AP rows
                 ]);
             });
