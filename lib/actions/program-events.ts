@@ -146,16 +146,16 @@ export async function updateProgramEvent(
         return { error: validated.error.flatten().fieldErrors };
     }
 
+    const event = await db.programEvent.findUnique({
+        where: { id: eventId },
+        include: { day: { select: { yearId: true } } },
+    });
+
+    if (!event) {
+        return { error: { _form: ["Událost nenalezena"] } };
+    }
+
     try {
-        const event = await db.programEvent.findUnique({
-            where: { id: eventId },
-            include: { day: { select: { yearId: true } } },
-        });
-
-        if (!event) {
-            return { error: { _form: ["Událost nenalezena"] } };
-        }
-
         await db.programEvent.update({
             where: { id: eventId },
             data: {
@@ -181,7 +181,7 @@ export async function updateProgramEvent(
         return { error: { _form: ["Nepodařilo se upravit událost"] } };
     }
 
-    return { success: true };
+    redirect(`/admin/rocniky/${event.day.yearId}/program/${event.dayId}`);
 }
 
 export async function updateProgramEventStory(
