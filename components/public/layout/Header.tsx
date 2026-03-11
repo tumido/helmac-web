@@ -10,13 +10,15 @@ import {
     Box,
     Container,
     useScrollTrigger,
+    Tooltip,
 } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
-import { Menu as MenuIcon } from "@mui/icons-material";
+import { Menu as MenuIcon, AccountCircle, PersonOutline } from "@mui/icons-material";
 import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/public/ui";
 import { NavSubtabs } from "@/lib/services/navigation";
+import type { PublicUserInfo } from "./ThemeWrapper";
 
 const baseNavItems: { label: string; href: string; subtabKey?: keyof NavSubtabs }[] = [
     { label: "Program", href: "/program", subtabKey: "program" },
@@ -31,9 +33,10 @@ const baseNavItems: { label: string; href: string; subtabKey?: keyof NavSubtabs 
 interface HeaderProps {
     navSubtabs?: NavSubtabs;
     registrationOpen?: boolean;
+    publicUser?: PublicUserInfo | null;
 }
 
-export function Header({ navSubtabs, registrationOpen }: HeaderProps) {
+export function Header({ navSubtabs, registrationOpen, publicUser }: HeaderProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const trigger = useScrollTrigger({
@@ -101,6 +104,27 @@ export function Header({ navSubtabs, registrationOpen }: HeaderProps) {
 
                         <Box sx={{ display: { xs: "flex", lg: "none" }, alignItems: "center", gap: 1 }}>
                             <ThemeToggle size="small" />
+                            {publicUser ? (
+                                <Tooltip title="Můj účet">
+                                    <IconButton
+                                        component={Link}
+                                        href="/ucet"
+                                        sx={{ color: "primary.main" }}
+                                    >
+                                        <AccountCircle />
+                                    </IconButton>
+                                </Tooltip>
+                            ) : (
+                                <Tooltip title="Přihlásit se">
+                                    <IconButton
+                                        component={Link}
+                                        href="/prihlaseni"
+                                        color="inherit"
+                                    >
+                                        <PersonOutline />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
                             <IconButton
                                 color="inherit"
                                 aria-label="otevřít menu"
@@ -126,6 +150,27 @@ export function Header({ navSubtabs, registrationOpen }: HeaderProps) {
                                     Registrace
                                 </LinkButton>
                             )}
+                            {publicUser ? (
+                                <Tooltip title="Můj účet">
+                                    <IconButton
+                                        component={Link}
+                                        href="/ucet"
+                                        sx={{ color: "primary.main" }}
+                                    >
+                                        <AccountCircle />
+                                    </IconButton>
+                                </Tooltip>
+                            ) : (
+                                <Tooltip title="Přihlásit se">
+                                    <IconButton
+                                        component={Link}
+                                        href="/prihlaseni"
+                                        color="inherit"
+                                    >
+                                        <PersonOutline />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
                         </Box>
                     </Toolbar>
                 </Container>
@@ -136,6 +181,7 @@ export function Header({ navSubtabs, registrationOpen }: HeaderProps) {
                 onClose={handleDrawerToggle}
                 items={navItems}
                 registrationOpen={registrationOpen}
+                publicUser={publicUser}
             />
         </>
     );

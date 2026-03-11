@@ -1,4 +1,4 @@
-import type { InputField, PricingDefinition } from "@/lib/types/registration-form";
+import type { InputField, PricingDefinition, PricingSummaryData } from "@/lib/types/registration-form";
 
 /**
  * Returns the index of the currently applicable price tier.
@@ -52,4 +52,27 @@ export function getFieldOptionValues(
         return def ? def.options.map((o) => o.name) : [];
     }
     return [];
+}
+
+/**
+ * Returns the currently applicable price from a stored PricingSummaryData.
+ * Walks the tiers by date (same logic as getCurrentTierIndex) but operates
+ * on the pre-computed summary stored in the DB.
+ */
+export function getApplicablePriceFromSummary(
+    summary: PricingSummaryData,
+): { totalPrice: number; applicableTierIndex: number } {
+    const now = new Date();
+    for (let i = 0; i < summary.tiers.length; i++) {
+        const tier = summary.tiers[i];
+        if (tier.tierDate && now <= new Date(tier.tierDate)) {
+            return { totalPrice: tier.totalPrice, applicableTierIndex: i };
+        }
+    }
+    // Past all deadlines — use last tier (fallback)
+    const last = summary.tiers[summary.tiers.length - 1];
+    return {
+        totalPrice: last?.totalPrice ?? 0,
+        applicableTierIndex: summary.tiers.length - 1,
+    };
 }

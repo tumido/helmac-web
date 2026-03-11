@@ -10,17 +10,20 @@ import {
     Typography,
     Divider,
 } from "@mui/material";
+import { AccountCircle, PersonOutline } from "@mui/icons-material";
 import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
 import { NavItem } from "./Navigation";
+import type { PublicUserInfo } from "./ThemeWrapper";
 
 interface MobileMenuProps {
     open: boolean;
     onClose: () => void;
     items: NavItem[];
     registrationOpen?: boolean;
+    publicUser?: PublicUserInfo | null;
 }
 
-export function MobileMenu({ open, onClose, items, registrationOpen }: MobileMenuProps) {
+export function MobileMenu({ open, onClose, items, registrationOpen, publicUser }: MobileMenuProps) {
     const pathname = usePathname();
 
     return (
@@ -123,6 +126,31 @@ export function MobileMenu({ open, onClose, items, registrationOpen }: MobileMen
                             Registrace
                         </LinkButton>
                     </>
+                )}
+
+                <Divider sx={{ my: 2 }} />
+
+                {publicUser ? (
+                    <LinkButton
+                        href="/ucet"
+                        variant="outlined"
+                        fullWidth
+                        onClick={onClose}
+                        startIcon={<AccountCircle />}
+                        sx={{ color: "primary.main", borderColor: "primary.main" }}
+                    >
+                        Můj účet
+                    </LinkButton>
+                ) : (
+                    <LinkButton
+                        href="/prihlaseni"
+                        variant="outlined"
+                        fullWidth
+                        onClick={onClose}
+                        startIcon={<PersonOutline />}
+                    >
+                        Přihlásit se
+                    </LinkButton>
                 )}
             </Box>
         </Drawer>

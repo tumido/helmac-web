@@ -317,6 +317,50 @@ model AuditLog {
 }
 
 // ============================================
+// PUBLIC USERS - Self-service accounts
+// ============================================
+
+model PublicUser {
+    id              String    @id @default(cuid())
+    email           String    @unique
+    passwordHash    String
+    emailVerified   Boolean   @default(false)
+    emailVerifiedAt DateTime?
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
+
+    verificationTokens  EmailVerificationToken[]
+    passwordResetTokens PasswordResetToken[]
+    registrations       RegistrationSubmission[]
+
+    @@map("public_users")
+}
+
+model EmailVerificationToken {
+    id        String     @id @default(cuid())
+    token     String     @unique
+    userId    String
+    user      PublicUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+    expiresAt DateTime
+    usedAt    DateTime?
+    createdAt DateTime   @default(now())
+
+    @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+    id        String     @id @default(cuid())
+    token     String     @unique
+    userId    String
+    user      PublicUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+    expiresAt DateTime
+    usedAt    DateTime?
+    createdAt DateTime   @default(now())
+
+    @@map("password_reset_tokens")
+}
+
+// ============================================
 // REGISTRATION - Dynamic form-based registration
 // ============================================
 
@@ -339,6 +383,8 @@ model RegistrationSubmission {
     year            Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
     formId          String
     form            RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+    publicUserId    String?
+    publicUser      PublicUser? @relation(fields: [publicUserId], references: [id], onDelete: SetNull)
     data            Json     // { [fieldName]: value }
     status          RegistrationStatus @default(PENDING)
     isPaid          Boolean  @default(false)

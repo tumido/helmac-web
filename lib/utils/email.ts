@@ -103,6 +103,96 @@ export async function generateQRPaymentImage(params: {
 }
 
 /**
+ * Send a verification email to a public user.
+ */
+export async function sendVerificationEmail(opts: {
+    to: string;
+    verificationUrl: string;
+}): Promise<boolean> {
+    try {
+        const transporter = getTransporter();
+        const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+        if (!from) {
+            console.error("SMTP_FROM or SMTP_USER not configured");
+            return false;
+        }
+
+        const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+<h2>Ověření emailu</h2>
+<p>Děkujeme za registraci. Pro ověření vašeho emailu klikněte na odkaz níže:</p>
+<p><a href="${opts.verificationUrl}" style="display: inline-block; background-color: #c8a951; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Ověřit email</a></p>
+<p>Pokud odkaz nefunguje, zkopírujte do prohlížeče tuto adresu:</p>
+<p style="word-break: break-all;">${opts.verificationUrl}</p>
+<p style="color: #666; font-size: 0.875rem;">Odkaz je platný 24 hodin. Pokud jste se neregistrovali, tento email ignorujte.</p>
+</body>
+</html>`;
+
+        const textBody = `Ověření emailu\n\nDěkujeme za registraci. Pro ověření vašeho emailu navštivte tento odkaz:\n\n${opts.verificationUrl}\n\nOdkaz je platný 24 hodin. Pokud jste se neregistrovali, tento email ignorujte.`;
+
+        await transporter.sendMail({
+            from,
+            to: opts.to,
+            subject: "Ověření emailu – HELMAC",
+            text: textBody,
+            html: htmlBody,
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Failed to send verification email:", error);
+        return false;
+    }
+}
+
+/**
+ * Send a password reset email to a public user.
+ */
+export async function sendPasswordResetEmail(opts: {
+    to: string;
+    resetUrl: string;
+}): Promise<boolean> {
+    try {
+        const transporter = getTransporter();
+        const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+        if (!from) {
+            console.error("SMTP_FROM or SMTP_USER not configured");
+            return false;
+        }
+
+        const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+<h2>Obnovení hesla</h2>
+<p>Obdrželi jsme žádost o obnovení hesla k vašemu účtu. Klikněte na odkaz níže:</p>
+<p><a href="${opts.resetUrl}" style="display: inline-block; background-color: #c8a951; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Nastavit nové heslo</a></p>
+<p>Pokud odkaz nefunguje, zkopírujte do prohlížeče tuto adresu:</p>
+<p style="word-break: break-all;">${opts.resetUrl}</p>
+<p style="color: #666; font-size: 0.875rem;">Odkaz je platný 1 hodinu. Pokud jste o obnovení hesla nežádali, tento email ignorujte.</p>
+</body>
+</html>`;
+
+        const textBody = `Obnovení hesla\n\nObdrželi jsme žádost o obnovení hesla. Navštivte tento odkaz:\n\n${opts.resetUrl}\n\nOdkaz je platný 1 hodinu. Pokud jste o obnovení hesla nežádali, tento email ignorujte.`;
+
+        await transporter.sendMail({
+            from,
+            to: opts.to,
+            subject: "Obnovení hesla – HELMAC",
+            text: textBody,
+            html: htmlBody,
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Failed to send password reset email:", error);
+        return false;
+    }
+}
+
+/**
  * Send a confirmation email. Returns true on success, false on failure.
  */
 export async function sendConfirmationEmail(opts: {

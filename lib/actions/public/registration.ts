@@ -12,6 +12,7 @@ import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage } from "@/lib/utils/email";
+import { getPublicSession } from "@/lib/public-auth";
 
 export interface PaymentData {
     totalAmount: number;
@@ -406,6 +407,10 @@ export async function submitDynamicRegistration(
     const variableSymbol = await generateUniqueVariableSymbol();
     const totalPrice = pricingSummary?.totalPrice ?? null;
 
+    // Check for logged-in public user
+    const publicSession = await getPublicSession();
+    const publicUserId = publicSession?.sub ?? null;
+
     // Create submission
     try {
         const submission = await db.registrationSubmission.create({
@@ -417,6 +422,7 @@ export async function submitDynamicRegistration(
                 pricingSummary: pricingSummary as unknown as Prisma.InputJsonValue ?? undefined,
                 variableSymbol,
                 totalPrice,
+                publicUserId,
             },
         });
 

@@ -26,6 +26,7 @@ import {
     Newspaper,
     PhotoLibrary,
     People,
+    PersonOutline,
     Logout,
 } from "@mui/icons-material";
 import { useSidebarContext } from "@/lib/contexts/sidebar-context";
@@ -49,6 +50,7 @@ const staticMenuItems: MenuItemType[] = [
     { text: "Ročníky", href: "/admin/rocniky", icon: CalendarMonth },
     { text: "Novinky", href: "/admin/novinky", icon: Newspaper },
     { text: "Galerie", href: "/admin/galerie", icon: PhotoLibrary },
+    { text: "Účastníci", href: "/admin/ucastnici", icon: PersonOutline, roles: ["SUPER_ADMIN", "ADMIN"] },
     { divider: true },
     {
         text: "Uživatelé",
