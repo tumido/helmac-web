@@ -18,6 +18,7 @@ import {
 import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { getCurrentTierIndex, formatPrice } from "@/lib/utils/pricing";
+import { formatDate } from "@/lib/utils/date";
 
 interface DynamicFormFieldProps {
     field: FormField;
@@ -254,7 +255,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                                             color: isCurrent ? "primary.main" : "text.secondary",
                                                         }}
                                                     >
-                                                        {isCurrent && "► "}do {new Date(tier).toLocaleDateString("cs-CZ")}: {formatPrice(opt.prices[idx])}
+                                                        {isCurrent && "► "}do {formatDate(tier)}: {formatPrice(opt.prices[idx])}
                                                     </Typography>
                                                 );
                                             })}

@@ -28,6 +28,7 @@ import {
 } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatPrice } from "@/lib/utils/pricing";
+import { formatDate } from "@/lib/utils/date";
 
 const statusLabels: Record<string, { label: string; color: "default" | "success" | "warning" | "error" | "info" }> = {
     PENDING: { label: "Čeká na potvrzení", color: "warning" },
@@ -60,16 +61,12 @@ interface RegistrationHistoryTableProps {
     registrations: SerializedRegistration[];
 }
 
-function formatDate(isoString: string): string {
-    return new Date(isoString).toLocaleDateString("cs-CZ");
-}
-
 function formatDateValue(value: string | number | boolean): string {
     if (typeof value !== "string") return String(value);
     // Try to parse as date
-    const date = new Date(value);
-    if (!isNaN(date.getTime()) && value.includes("-")) {
-        return date.toLocaleDateString("cs-CZ");
+    if (value.includes("-")) {
+        const formatted = formatDate(value);
+        if (formatted !== "—") return formatted;
     }
     return value;
 }
@@ -203,7 +200,7 @@ function RegistrationDetailDialog({
                                         {pricingSummary.tiers.map((tier, idx) => {
                                             const isApplicable = idx === pricingSummary.applicableTierIndex;
                                             const label = tier.tierDate
-                                                ? `Do ${new Date(tier.tierDate).toLocaleDateString("cs-CZ")}`
+                                                ? `Do ${formatDate(tier.tierDate)}`
                                                 : "Na místě";
 
                                             return (

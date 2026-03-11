@@ -26,6 +26,7 @@ import type { RegistrationStatus } from "@prisma/client";
 import { isMinor } from "@/lib/utils/minor-detection";
 import { formatPrice } from "@/lib/utils/pricing";
 import { getAdditionalPeople } from "@/lib/utils/additional-people";
+import { formatDate } from "@/lib/utils/date";
 
 
 interface Submission {
@@ -318,7 +319,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                                     </TableCell>
                                     <TableCell>
                                         <Typography variant="body2" noWrap>
-                                            {new Date(submission.createdAt).toLocaleDateString("cs-CZ")}
+                                            {formatDate(submission.createdAt)}
                                         </Typography>
                                     </TableCell>
                                     <TableCell onClick={(e) => e.stopPropagation()}>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { getRegistrationStatus } from "@/lib/services";
+import { formatDate } from "@/lib/utils/date";
 
 export async function RegistrationCTA() {
     const status = await getRegistrationStatus();
@@ -29,7 +30,7 @@ export async function RegistrationCTA() {
                             fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                         }}
                     >
-                        Registrace se otevře {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
+                        Registrace se otevře {formatDate(status.registrationStartDate)}
                     </Typography>
                     <Typography
                         variant="body1"

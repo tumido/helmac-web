@@ -12,6 +12,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { YearActions } from "@/components/admin/year-actions";
 import { PageHeader } from "@/components/admin/page-header";
+import { formatDate } from "@/lib/utils/date";
 import { ListFilters } from "@/components/admin/list-filters";
 import { Prisma } from "@prisma/client";
 
@@ -191,14 +192,10 @@ export default async function YearsPage({ searchParams }: YearsPageProps) {
                                         color="text.secondary"
                                     >
                                         {year.startDate &&
-                                            new Date(
-                                                year.startDate
-                                            ).toLocaleDateString("cs-CZ")}
+                                            formatDate(year.startDate)}
                                         {year.startDate && year.endDate && " - "}
                                         {year.endDate &&
-                                            new Date(
-                                                year.endDate
-                                            ).toLocaleDateString("cs-CZ")}
+                                            formatDate(year.endDate)}
                                     </Typography>
                                 )}
                             </CardContent>

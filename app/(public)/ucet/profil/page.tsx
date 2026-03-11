@@ -4,6 +4,7 @@ import { requirePublicAuth } from "@/lib/public-auth";
 import { getPublicUserProfile } from "@/lib/services/public-user";
 import { ChangePasswordForm } from "@/components/forms/change-password-form";
 import { LogoutButton } from "@/components/public/features/account/logout-button";
+import { formatDate } from "@/lib/utils/date";
 
 export const metadata = {
     title: "Profil | Helmac",
@@ -44,7 +45,7 @@ export default async function ProfilePage() {
                         Účet vytvořen
                     </Typography>
                     <Typography sx={{ mt: 0.5 }}>
-                        {profile.createdAt.toLocaleDateString("cs-CZ")}
+                        {formatDate(profile.createdAt)}
                     </Typography>
                 </Box>
             </Paper>

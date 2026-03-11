@@ -3,6 +3,7 @@
 import { Box, Typography, Chip } from "@mui/material";
 import type { PricingSummaryData } from "@/lib/types/registration-form";
 import { formatPrice } from "@/lib/utils/pricing";
+import { formatDate } from "@/lib/utils/date";
 
 interface SubmissionPricingSummaryProps {
     pricingSummary: PricingSummaryData | null;
@@ -51,7 +52,7 @@ export function SubmissionPricingSummary({
                         {pricingSummary.tiers.map((tier, idx) => {
                             const isApplicable = idx === pricingSummary.applicableTierIndex;
                             const label = tier.tierDate
-                                ? `Do ${new Date(tier.tierDate).toLocaleDateString("cs-CZ")}`
+                                ? `Do ${formatDate(tier.tierDate)}`
                                 : "Na místě";
 
                             return (

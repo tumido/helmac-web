@@ -3,6 +3,7 @@ import { Container, Grid, Typography, Box } from "@mui/material";
 import { CalendarMonth } from "@mui/icons-material";
 import { PageHeader, Card } from "@/components/public/ui";
 import { getArchivedYears, getActiveYear } from "@/lib/services";
+import { formatDate } from "@/lib/utils/date";
 
 export const metadata = {
     title: "Archiv | Helmac",
@@ -34,11 +35,7 @@ export default async function ArchivPage() {
                         {years.map((year) => {
                             const dateRange =
                                 year.startDate && year.endDate
-                                    ? `${new Date(
-                                          year.startDate
-                                      ).toLocaleDateString("cs-CZ")} - ${new Date(
-                                          year.endDate
-                                      ).toLocaleDateString("cs-CZ")}`
+                                    ? `${formatDate(year.startDate)} - ${formatDate(year.endDate)}`
                                     : null;
 
                             return (

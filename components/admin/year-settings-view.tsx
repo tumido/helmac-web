@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { Edit } from "@mui/icons-material";
 import { YearForm } from "@/components/forms/year-form";
+import { formatDate } from "@/lib/utils/date";
 
 interface YearSettingsViewProps {
     yearId: string;
@@ -23,12 +24,6 @@ interface YearSettingsViewProps {
         headerPhoto?: string | null;
         heroPhoto?: string | null;
     };
-}
-
-function formatDate(date: Date | null | undefined): string {
-    if (!date) return "—";
-    const d = new Date(date);
-    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 }
 
 export function YearSettingsView({ yearId, defaultValues }: YearSettingsViewProps) {

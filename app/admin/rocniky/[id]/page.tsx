@@ -12,19 +12,10 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
+import { formatDateRange } from "@/lib/utils/date";
 
 interface EditYearPageProps {
     params: Promise<{ id: string }>;
-}
-
-function formatDateRange(startDate: Date | null, endDate: Date | null): string | null {
-    if (!startDate || !endDate) return null;
-    const startDay = startDate.getDate();
-    const startMonth = startDate.getMonth() + 1;
-    const endDay = endDate.getDate();
-    const endMonth = endDate.getMonth() + 1;
-    const endYear = endDate.getFullYear();
-    return `${startDay}.${startMonth}. – ${endDay}.${endMonth}.${endYear}`;
 }
 
 async function getYearOverview(id: string) {

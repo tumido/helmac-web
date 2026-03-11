@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
+import { formatDate } from "@/lib/utils/date";
 
 async function getPublicUsers() {
     return db.publicUser.findMany({
@@ -83,7 +84,7 @@ export default async function PublicUsersPage() {
                                         </TableCell>
                                         <TableCell>{user._count.registrations}</TableCell>
                                         <TableCell>
-                                            {new Date(user.createdAt).toLocaleDateString("cs-CZ")}
+                                            {formatDate(user.createdAt)}
                                         </TableCell>
                                     </TableRow>
                                 ))

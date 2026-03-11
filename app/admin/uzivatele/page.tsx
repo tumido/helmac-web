@@ -18,6 +18,7 @@ import { auth, requireSuperAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UserActions } from "@/components/admin/user-actions";
 import { PageHeader } from "@/components/admin/page-header";
+import { formatDate } from "@/lib/utils/date";
 
 const roleLabels: Record<string, { label: string; color: "error" | "warning" | "info"; icon: React.ReactNode }> = {
     SUPER_ADMIN: {
@@ -140,9 +141,7 @@ export default async function UsersPage() {
                                         </TableCell>
                                         <TableCell>{user._count.createdNews}</TableCell>
                                         <TableCell>
-                                            {new Date(user.createdAt).toLocaleDateString(
-                                                "cs-CZ"
-                                            )}
+                                            {formatDate(user.createdAt)}
                                         </TableCell>
                                         <TableCell align="right">
                                             <Box

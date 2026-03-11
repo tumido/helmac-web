@@ -25,6 +25,7 @@ import {
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/link-button";
+import { formatDate } from "@/lib/utils/date";
 
 async function getStats() {
     const [yearsCount, pagesCount, newsCount, albumsCount, imagesCount] = await Promise.all([
@@ -128,7 +129,7 @@ function formatRelativeTime(date: Date): string {
     if (minutes < 60) return `pred ${minutes} min`;
     if (hours < 24) return `pred ${hours} hod`;
     if (days < 7) return `pred ${days} dny`;
-    return date.toLocaleDateString("cs-CZ");
+    return formatDate(date);
 }
 
 function getActivityIcon(type: "news" | "page" | "album") {

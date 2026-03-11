@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/public/ui";
 import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
 import { getRegistrationStatus, getActiveYear, getOptionCountsForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { formatDate } from "@/lib/utils/date";
 
 export const metadata = {
     title: "Registrace | Helmac",
@@ -35,7 +36,7 @@ export default async function RegistracePage() {
                         {status.registrationStartDate ? (
                             <>
                                 <Typography variant="h5" gutterBottom>
-                                    Registrace se otevře {new Date(status.registrationStartDate).toLocaleDateString("cs-CZ")}
+                                    Registrace se otevře {formatDate(status.registrationStartDate)}
                                 </Typography>
                                 <Typography color="text.secondary">
                                     Sledujte novinky, ať nepromeškáte začátek registrací.
