@@ -31,6 +31,7 @@ interface YearFormProps {
         headerPhoto?: string | null;
         heroPhoto?: string | null;
     };
+    onCancel?: () => void;
 }
 
 function SubmitButton({ mode }: { mode: "create" | "edit" }) {
@@ -60,7 +61,7 @@ function formatDateForInput(date: Date | null | undefined): string {
     return d.toISOString().split("T")[0];
 }
 
-export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
+export function YearForm({ mode, yearId, defaultValues, onCancel }: YearFormProps) {
     const action =
         mode === "create"
             ? createYear
@@ -215,9 +216,13 @@ export function YearForm({ mode, yearId, defaultValues }: YearFormProps) {
 
                 <CardActions sx={{ px: 2, pb: 2 }}>
                     <SubmitButton mode={mode} />
-                    <LinkButton href="/admin/rocniky">
-                        Zrušit
-                    </LinkButton>
+                    {onCancel ? (
+                        <Button onClick={onCancel}>Zrušit</Button>
+                    ) : (
+                        <LinkButton href="/admin/rocniky">
+                            Zrušit
+                        </LinkButton>
+                    )}
                 </CardActions>
             </Box>
         </Card>

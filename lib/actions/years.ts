@@ -137,13 +137,14 @@ export async function updateYear(
 
         revalidatePath("/admin/rocniky");
         revalidatePath(`/admin/rocniky/${yearId}`);
+        revalidatePath(`/admin/rocniky/${yearId}/nastaveni`);
         revalidatePath("/");
     } catch (error) {
         console.error("Failed to update year:", error);
         return { error: { _form: ["Nepodařilo se upravit ročník"] } };
     }
 
-    redirect("/admin/rocniky");
+    redirect(`/admin/rocniky/${yearId}/nastaveni`);
 }
 
 export async function setActiveYear(yearId: string) {

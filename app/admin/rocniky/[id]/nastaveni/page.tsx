@@ -2,7 +2,7 @@ import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { PageHeader } from "@/components/admin/page-header";
-import { YearForm } from "@/components/forms/year-form";
+import { YearSettingsView } from "@/components/admin/year-settings-view";
 
 interface NastaveniPageProps {
     params: Promise<{ id: string }>;
@@ -26,8 +26,7 @@ export default async function NastaveniPage({ params }: NastaveniPageProps) {
                 ]}
                 title="Nastavení ročníku"
             />
-            <YearForm
-                mode="edit"
+            <YearSettingsView
                 yearId={year.id}
                 defaultValues={{
                     year: year.year,
