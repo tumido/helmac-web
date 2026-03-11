@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { publicRegisterSchema, publicLoginSchema } from "@/lib/validators/public-user";
 import { setPublicSession, clearPublicSession, getPublicSession } from "@/lib/public-auth";
 import { sendVerificationEmail } from "@/lib/utils/email";
+import { getBaseUrl } from "@/lib/utils/url";
 
 export interface AuthActionState {
     success: boolean;
@@ -78,8 +79,7 @@ export async function publicRegister(
     await linkExistingRegistrations(user.id, email);
 
     // Send verification email (non-blocking)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const verificationUrl = `${baseUrl}/overeni-emailu?token=${token}`;
+    const verificationUrl = `${getBaseUrl()}/overeni-emailu?token=${token}`;
     sendVerificationEmail({ to: email, verificationUrl }).catch((err) => {
         console.error("Failed to send verification email:", err);
     });
@@ -181,8 +181,7 @@ export async function resendVerification(): Promise<AuthActionState> {
         },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const verificationUrl = `${baseUrl}/overeni-emailu?token=${token}`;
+    const verificationUrl = `${getBaseUrl()}/overeni-emailu?token=${token}`;
 
     const sent = await sendVerificationEmail({ to: user.email, verificationUrl });
     if (!sent) {

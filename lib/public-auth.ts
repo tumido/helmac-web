@@ -7,11 +7,7 @@ import {
 } from "./public-auth.config";
 
 function getPublicJWTSecret(): Uint8Array {
-    const secret = process.env.PUBLIC_JWT_SECRET;
-    if (!secret) {
-        throw new Error("PUBLIC_JWT_SECRET is not set");
-    }
-    return new TextEncoder().encode(secret);
+    return new TextEncoder().encode(process.env.PUBLIC_JWT_SECRET!);
 }
 
 /**

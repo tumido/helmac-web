@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { redirect } from "next/navigation";
 import { requestPasswordResetSchema, resetPasswordSchema } from "@/lib/validators/public-user";
 import { sendPasswordResetEmail } from "@/lib/utils/email";
+import { getBaseUrl } from "@/lib/utils/url";
 
 export interface PasswordResetActionState {
     success: boolean;
@@ -48,8 +49,7 @@ export async function requestPasswordReset(
             },
         });
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-        const resetUrl = `${baseUrl}/obnoveni-hesla?token=${token}`;
+        const resetUrl = `${getBaseUrl()}/obnoveni-hesla?token=${token}`;
 
         sendPasswordResetEmail({ to: user.email, resetUrl }).catch((err) => {
             console.error("Failed to send password reset email:", err);
