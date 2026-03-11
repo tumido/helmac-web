@@ -5,6 +5,7 @@ import { Edit, Delete, AddCircleOutline, People } from "@mui/icons-material";
 import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
+import type { FieldExternalUsage } from "@/lib/utils/condition-validation";
 
 interface FieldListItemProps {
     field: FormField;
@@ -14,9 +15,10 @@ interface FieldListItemProps {
     usedInCondition?: boolean;
     pricingDefinitions?: PricingDefinition[];
     onCreateCondition?: (fieldId: string, fieldLabel: string, optionValue: string) => void;
+    externalUsages?: FieldExternalUsage[];
 }
 
-export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCondition, pricingDefinitions, onCreateCondition }: FieldListItemProps) {
+export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCondition, pricingDefinitions, onCreateCondition, externalUsages }: FieldListItemProps) {
     const meta = FIELD_TYPE_META[field.type];
     const isInput = isInputField(field);
 
@@ -63,6 +65,16 @@ export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCo
                             sx={{ fontSize: "0.7rem", height: 20 }}
                         />
                     )}
+                    {externalUsages?.map((usage) => (
+                        <Chip
+                            key={usage.label}
+                            label={usage.label}
+                            size="small"
+                            variant="outlined"
+                            color={usage.color}
+                            sx={{ fontSize: "0.7rem", height: 20 }}
+                        />
+                    ))}
                 </Box>
                 {isInput && (field.type === "select" || field.type === "radio") && field.options && field.options.length > 0 && (
                     <Box sx={{ mt: 0.5 }}>

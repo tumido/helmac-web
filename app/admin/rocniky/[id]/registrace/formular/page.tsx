@@ -16,9 +16,24 @@ async function getYearWithForm(yearId: string) {
             id: true,
             year: true,
             title: true,
+            confirmationEmailSubject: true,
+            confirmationEmailBody: true,
             registrationForm: { select: { id: true, fields: true } },
         },
     });
+}
+
+function extractEmailFieldNames(subject: string | null, body: string | null): string[] {
+    const names = new Set<string>();
+    const regex = /\{(\w+)\}/g;
+    for (const text of [subject, body]) {
+        if (!text) continue;
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            names.add(match[1]);
+        }
+    }
+    return Array.from(names);
 }
 
 export default async function FormularPage({ params }: FormularPageProps) {
@@ -30,6 +45,10 @@ export default async function FormularPage({ params }: FormularPageProps) {
     }
 
     const formData = migrateFormData(year.registrationForm?.fields);
+    const emailFieldNames = extractEmailFieldNames(
+        year.confirmationEmailSubject,
+        year.confirmationEmailBody,
+    );
 
     return (
         <Container maxWidth="lg">
@@ -42,7 +61,7 @@ export default async function FormularPage({ params }: FormularPageProps) {
                 ]}
                 title="Registrační formulář"
             />
-            <FormBuilder yearId={year.id} initialFormData={formData} />
+            <FormBuilder yearId={year.id} initialFormData={formData} emailFieldNames={emailFieldNames} />
         </Container>
     );
 }

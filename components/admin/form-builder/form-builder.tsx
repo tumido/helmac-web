@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
     Box,
     Button,
@@ -55,7 +55,9 @@ import {
     getConditionsUsingField,
     getBrokenOptionRemovals,
     getFieldIdsUsedInConditions,
+    getFieldExternalUsages,
 } from "@/lib/utils/condition-validation";
+import type { FieldExternalUsage } from "@/lib/utils/condition-validation";
 import type {
     FormField,
     FormElement,
@@ -74,9 +76,10 @@ import { getFieldOptionValues } from "@/lib/utils/pricing";
 interface FormBuilderProps {
     yearId: string;
     initialFormData: RegistrationFormData;
+    emailFieldNames?: string[];
 }
 
-export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
+export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: FormBuilderProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -108,6 +111,26 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     );
 
     const allFields = getAllFields(elements);
+    const emailFieldNamesSet = useMemo(() => new Set(emailFieldNames), [emailFieldNames]);
+
+    const fieldExternalUsagesMap = useMemo(() => {
+        const map = new Map<string, FieldExternalUsage[]>();
+        for (const field of allFields) {
+            if (isInputField(field)) {
+                const usages = getFieldExternalUsages(
+                    field.id,
+                    field.name,
+                    capacityLimits,
+                    showOptionCounts,
+                    emailFieldNamesSet,
+                );
+                if (usages.length > 0) {
+                    map.set(field.id, usages);
+                }
+            }
+        }
+        return map;
+    }, [allFields, capacityLimits, showOptionCounts, emailFieldNamesSet]);
 
     const createField = useCallback((type: FieldType, currentElements: FormElement[], pricingId?: string): FormField => {
         const id = crypto.randomUUID();
@@ -192,17 +215,39 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
     }, [editingField, conditions, pricingDefinitions]);
 
     const handleDeleteField = useCallback((fieldId: string) => {
-        const usages = getConditionsUsingField(fieldId, conditions);
-        if (usages.length > 0) {
+        const details: string[] = [];
+
+        // Check condition usages
+        const conditionUsages = getConditionsUsingField(fieldId, conditions);
+        if (conditionUsages.length > 0) {
+            details.push(...conditionUsages.map((u) => `Podmínka: „${u.conditionName}"`));
+        }
+
+        // Check external usages (email, limits, stats)
+        const field = findFieldById(elementsRef.current, fieldId);
+        if (field && isInputField(field)) {
+            const externalUsages = getFieldExternalUsages(
+                fieldId,
+                field.name,
+                capacityLimits,
+                showOptionCounts,
+                emailFieldNamesSet,
+            );
+            for (const usage of externalUsages) {
+                details.push(usage.label);
+            }
+        }
+
+        if (details.length > 0) {
             setDeletionBlock({
                 title: "Nelze smazat pole",
-                message: "Pole je používáno v podmínkách:",
-                details: usages.map((u) => u.conditionName),
+                message: "Pole je používáno v:",
+                details,
             });
             return;
         }
         setElements((prev) => removeFieldFromElements(prev, fieldId));
-    }, [conditions]);
+    }, [conditions, capacityLimits, showOptionCounts, emailFieldNamesSet]);
 
     const handleCreateConditionFromOption = useCallback((fieldId: string, fieldLabel: string, optionValue: string) => {
         const conditionId = crypto.randomUUID();
@@ -817,6 +862,7 @@ export function FormBuilder({ yearId, initialFormData }: FormBuilderProps) {
                                 onDeleteBlock={handleDeleteBlock}
                                 onToggleField={handleToggleField}
                                 onCreateCondition={handleCreateConditionFromOption}
+                                fieldExternalUsages={fieldExternalUsagesMap}
                             />
 
                             <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
@@ -947,9 +993,10 @@ interface FormDropZoneProps {
     onDeleteBlock: (blockId: string) => void;
     onToggleField?: (fieldId: string, updates: Partial<InputField>) => void;
     onCreateCondition?: (fieldId: string, fieldLabel: string, optionValue: string) => void;
+    fieldExternalUsages?: Map<string, FieldExternalUsage[]>;
 }
 
-function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, onDeleteField, onDeleteBlock, onToggleField, onCreateCondition }: FormDropZoneProps) {
+function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, onDeleteField, onDeleteBlock, onToggleField, onCreateCondition, fieldExternalUsages }: FormDropZoneProps) {
     const usedFieldIds = getFieldIdsUsedInConditions(conditions);
 
     const { setNodeRef, isOver } = useDroppable({
@@ -1002,6 +1049,7 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                                         usedFieldIds={usedFieldIds}
                                         pricingDefinitions={pricingDefinitions}
                                         onCreateCondition={onCreateCondition}
+                                        fieldExternalUsages={fieldExternalUsages}
                                     />
                                 </SortableFieldItem>
                             );
@@ -1017,6 +1065,7 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                                     usedInCondition={usedFieldIds.has(el.id)}
                                     pricingDefinitions={pricingDefinitions}
                                     onCreateCondition={onCreateCondition}
+                                    externalUsages={fieldExternalUsages?.get(el.id)}
                                 />
                             </SortableFieldItem>
                         );

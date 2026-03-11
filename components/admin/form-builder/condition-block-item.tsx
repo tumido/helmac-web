@@ -10,6 +10,7 @@ import {
 import { SortableFieldItem } from "./sortable-field-item";
 import { FieldListItem } from "./field-list-item";
 import type { ConditionBlock, FormCondition, FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
+import type { FieldExternalUsage } from "@/lib/utils/condition-validation";
 
 interface ConditionBlockItemProps {
     block: ConditionBlock;
@@ -21,6 +22,7 @@ interface ConditionBlockItemProps {
     usedFieldIds?: Set<string>;
     pricingDefinitions?: PricingDefinition[];
     onCreateCondition?: (fieldId: string, fieldLabel: string, optionValue: string) => void;
+    fieldExternalUsages?: Map<string, FieldExternalUsage[]>;
 }
 
 export function ConditionBlockItem({
@@ -33,6 +35,7 @@ export function ConditionBlockItem({
     usedFieldIds,
     pricingDefinitions,
     onCreateCondition,
+    fieldExternalUsages,
 }: ConditionBlockItemProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: `container-${block.id}`,
@@ -113,6 +116,7 @@ export function ConditionBlockItem({
                                     usedInCondition={usedFieldIds?.has(child.id)}
                                     pricingDefinitions={pricingDefinitions}
                                     onCreateCondition={onCreateCondition}
+                                    externalUsages={fieldExternalUsages?.get(child.id)}
                                 />
                             </SortableFieldItem>
                         ))

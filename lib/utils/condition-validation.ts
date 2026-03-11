@@ -1,5 +1,35 @@
-import type { FormCondition, FormElement, ConditionBlock } from "@/lib/types/registration-form";
+import type { FormCondition, FormElement, ConditionBlock, CapacityLimit } from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
+
+export interface FieldExternalUsage {
+    label: string;   // "Email", "Limit", "Statistiky"
+    color: "warning" | "secondary" | "success";
+}
+
+/** Returns external usages (email, capacity limit, stats) for a given field */
+export function getFieldExternalUsages(
+    fieldId: string,
+    fieldName: string,
+    capacityLimits: CapacityLimit[],
+    showOptionCounts: string[],
+    emailFieldNames: Set<string>,
+): FieldExternalUsage[] {
+    const usages: FieldExternalUsage[] = [];
+
+    if (emailFieldNames.has(fieldName)) {
+        usages.push({ label: "Email", color: "warning" });
+    }
+
+    if (capacityLimits.some((l) => l.fieldId === fieldId)) {
+        usages.push({ label: "Limit", color: "secondary" });
+    }
+
+    if (showOptionCounts.includes(fieldId)) {
+        usages.push({ label: "Statistiky", color: "success" });
+    }
+
+    return usages;
+}
 
 export interface ConditionUsageInfo {
     conditionId: string;
