@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
 import { SubmissionPricingSummary } from "@/components/admin/submission-pricing-summary";
+import { ResendEmailButton } from "@/components/admin/resend-email-button";
 import { getSubmissionById } from "@/lib/services/registration";
 import { getAllFields, getAPInputFields } from "@/lib/types/registration-form";
 import type { PricingSummaryData } from "@/lib/types/registration-form";
@@ -67,6 +68,16 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                             pricingSummary={submission.pricingSummary as PricingSummaryData | null}
                             variableSymbol={submission.variableSymbol}
                             totalPrice={submission.totalPrice}
+                        />
+                    </Paper>
+                    <Paper sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Potvrzovací email
+                        </Typography>
+                        <ResendEmailButton
+                            submissionId={submissionId}
+                            emailSent={submission.emailSent}
+                            emailSentAt={submission.emailSentAt}
                         />
                     </Paper>
                     <Paper sx={{ p: 3 }}>

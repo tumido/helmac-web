@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { createYearSchema, updateYearSchema, updateBankAccountSchema } from "@/lib/validators/year";
+import { createYearSchema, updateYearSchema, updateBankAccountSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
 
 export type YearActionState = {
     error?: {
@@ -334,6 +334,77 @@ export async function updateBankAccount(yearId: string, formData: FormData) {
     } catch (error) {
         console.error("Failed to update bank account:", error);
         return { error: "Nepodařilo se uložit bankovní údaje" };
+    }
+}
+
+export async function updateEmailTemplate(yearId: string, formData: FormData) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemáte oprávnění" };
+    }
+
+    const rawData = {
+        confirmationEmailSubject: formData.get("confirmationEmailSubject") || "",
+        confirmationEmailBody: formData.get("confirmationEmailBody") || "",
+        confirmationEmailBcc: formData.get("confirmationEmailBcc") || null,
+    };
+
+    const validated = updateEmailTemplateSchema.safeParse(rawData);
+    if (!validated.success) {
+        return { error: validated.error.flatten().fieldErrors };
+    }
+
+    try {
+        await db.year.update({
+            where: { id: yearId },
+            data: {
+                confirmationEmailSubject: validated.data.confirmationEmailSubject,
+                confirmationEmailBody: validated.data.confirmationEmailBody,
+                confirmationEmailBcc: validated.data.confirmationEmailBcc,
+            },
+        });
+
+        revalidatePath(`/admin/rocniky/${yearId}/emaily`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update email template:", error);
+        return { error: "Nepodařilo se uložit šablonu emailu" };
+    }
+}
+
+export async function toggleConfirmationEmail(yearId: string, enabled: boolean) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemáte oprávnění" };
+    }
+
+    try {
+        if (enabled) {
+            const year = await db.year.findUnique({
+                where: { id: yearId },
+                select: {
+                    confirmationEmailSubject: true,
+                    confirmationEmailBody: true,
+                },
+            });
+
+            if (!year?.confirmationEmailSubject || !year?.confirmationEmailBody) {
+                return { error: "Nejdříve nastavte předmět a text emailu" };
+            }
+        }
+
+        await db.year.update({
+            where: { id: yearId },
+            data: { confirmationEmailEnabled: enabled },
+        });
+
+        revalidatePath(`/admin/rocniky/${yearId}/emaily`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle confirmation email:", error);
+        return { error: "Nepodařilo se změnit stav potvrzovacího emailu" };
     }
 }
 

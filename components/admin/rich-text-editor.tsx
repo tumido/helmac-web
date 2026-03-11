@@ -32,7 +32,7 @@ import {
     FormatColorText,
     FormatColorReset,
 } from "@mui/icons-material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type MutableRefObject } from "react";
 
 const COLOR_PALETTE = [
     { label: "Cervena", value: "#E53935" },
@@ -46,11 +46,14 @@ const COLOR_PALETTE = [
     { label: "Cerna", value: "#212121" },
 ];
 
+export type { Editor } from "@tiptap/react";
+
 interface RichTextEditorProps {
     value: string;
     onChange: (html: string) => void;
     placeholder?: string;
     minHeight?: number;
+    editorRef?: MutableRefObject<Editor | null>;
 }
 
 function MenuBar({ editor }: { editor: Editor | null }) {
@@ -334,6 +337,7 @@ export function RichTextEditor({
     onChange,
     placeholder = "Zacnete psat...",
     minHeight = 300,
+    editorRef,
 }: RichTextEditorProps) {
     const editor = useEditor({
         extensions: [
@@ -367,6 +371,11 @@ export function RichTextEditor({
             },
         },
     });
+
+    // Expose editor instance via ref
+    useEffect(() => {
+        if (editorRef) editorRef.current = editor;
+    }, [editor, editorRef]);
 
     // Sync external value changes
     useEffect(() => {

@@ -21,6 +21,8 @@ import {
     Description,
     People,
     AccountBalance,
+    Email,
+    MarkEmailRead,
     Settings,
 } from "@mui/icons-material";
 import { ListItemLinkButton } from "@/components/ui/link-button";
@@ -72,6 +74,11 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
         { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
         { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true },
         { text: "Banka", href: `${base}/registrace/banka`, icon: AccountBalance, indented: true },
+    ];
+
+    const emailItems = [
+        { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },
+        { text: "Potvrzovací", href: `${base}/emaily/potvrzovaci`, icon: MarkEmailRead, indented: true },
     ];
 
     const dateRange = formatDateRange(yearData.startDate, yearData.endDate);
@@ -134,6 +141,33 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
             {/* Registration section */}
             <List>
                 {registrationItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.exact
+                        ? isExactMatch(item.href)
+                        : isPrefixMatch(item.href);
+                    return (
+                        <ListItem key={item.href} disablePadding>
+                            <ListItemLinkButton
+                                href={item.href}
+                                selected={isActive}
+                                onClick={onClose}
+                                sx={{
+                                    ...selectedSx,
+                                    ...(item.indented ? { pl: 4 } : {}),
+                                }}
+                            >
+                                <ListItemIcon><Icon /></ListItemIcon>
+                                <ListItemText primary={item.text} />
+                            </ListItemLinkButton>
+                        </ListItem>
+                    );
+                })}
+            </List>
+            <Divider sx={{ mx: 2 }} />
+
+            {/* Email section */}
+            <List>
+                {emailItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = item.exact
                         ? isExactMatch(item.href)

@@ -11,6 +11,7 @@ import { getAPFieldNames } from "@/lib/utils/additional-people";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
+import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage } from "@/lib/utils/email";
 
 export interface PaymentData {
     totalAmount: number;
@@ -135,6 +136,10 @@ export async function submitDynamicRegistration(
             bankAccountPrefix: true,
             bankAccountNumber: true,
             bankAccountBankCode: true,
+            confirmationEmailEnabled: true,
+            confirmationEmailSubject: true,
+            confirmationEmailBody: true,
+            confirmationEmailBcc: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },
@@ -440,6 +445,68 @@ export async function submitDynamicRegistration(
                     iban,
                     spaydString,
                 };
+            }
+        }
+
+        // Send confirmation email if enabled (non-blocking)
+        if (
+            activeYear.confirmationEmailEnabled &&
+            activeYear.confirmationEmailSubject &&
+            activeYear.confirmationEmailBody
+        ) {
+            try {
+                const emailField = allInputFields.find((f) => f.type === "email");
+                const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+
+                if (recipientEmail) {
+                    const bankAccount = activeYear.bankAccountNumber && activeYear.bankAccountBankCode
+                        ? formatCzechAccount(
+                            activeYear.bankAccountNumber,
+                            activeYear.bankAccountBankCode,
+                            activeYear.bankAccountPrefix ?? undefined,
+                        )
+                        : null;
+
+                    const placeholders = buildPlaceholders({
+                        submissionData,
+                        variableSymbol,
+                        totalPrice,
+                        bankAccount,
+                        yearNumber: activeYear.year,
+                        yearTitle: activeYear.title,
+                    });
+
+                    const emailSubject = replacePlaceholders(activeYear.confirmationEmailSubject, placeholders);
+                    const emailBody = replacePlaceholders(activeYear.confirmationEmailBody, placeholders);
+
+                    // Generate QR payment image if payment data is available
+                    let qrImageBuffer: Buffer | null = null;
+                    if (paymentData) {
+                        qrImageBuffer = await generateQRPaymentImage({
+                            iban: paymentData.iban,
+                            amount: paymentData.totalAmount,
+                            variableSymbol: paymentData.variableSymbol,
+                        });
+                    }
+
+                    const sent = await sendConfirmationEmail({
+                        to: recipientEmail,
+                        subject: emailSubject,
+                        body: emailBody,
+                        bcc: activeYear.confirmationEmailBcc ?? undefined,
+                        qrImageBuffer: qrImageBuffer ?? undefined,
+                    });
+
+                    if (sent) {
+                        await db.registrationSubmission.update({
+                            where: { id: submission.id },
+                            data: { emailSent: true, emailSentAt: new Date() },
+                        });
+                    }
+                }
+            } catch (emailError) {
+                console.error("Failed to send confirmation email:", emailError);
+                // Email failure does NOT block registration
             }
         }
 

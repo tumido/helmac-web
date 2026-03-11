@@ -54,10 +54,12 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
 
-    // Get all input fields that have options (select, radio, pricing_select)
-    const allInputFields = formData ? getAllInputFields(formData.fields).filter(
-        (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
-    ) : [];
+    // Fields with options for capacity limits
+    const allInputFields = formData
+        ? getAllInputFields(formData.fields).filter(
+            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
+        )
+        : [];
 
     // Compute option counts if there are any option fields
     const optionCounts = formData && allInputFields.length > 0

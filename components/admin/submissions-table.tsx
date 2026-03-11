@@ -16,7 +16,7 @@ import {
     Typography,
 } from "@mui/material";
 import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
-import { CheckCircle, Cancel } from "@mui/icons-material";
+import { CheckCircle, Cancel, Email } from "@mui/icons-material";
 import type { FormField, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import type { RegistrationStatus } from "@prisma/client";
@@ -33,6 +33,7 @@ interface Submission {
     paidAt: Date | null;
     totalPrice: number | null;
     variableSymbol: string | null;
+    emailSent: boolean;
     createdAt: Date;
 }
 
@@ -82,6 +83,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                         <TableCell>Zaplaceno</TableCell>
                         <TableCell>Cena</TableCell>
                         <TableCell>VS</TableCell>
+                        <TableCell>Email</TableCell>
                         <TableCell>Datum</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
@@ -180,6 +182,11 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
+                                        <Tooltip title={submission.emailSent ? "Email odeslán" : "Email neodeslán"}>
+                                            <Email fontSize="small" color={submission.emailSent ? "success" : "disabled"} />
+                                        </Tooltip>
+                                    </TableCell>
+                                    <TableCell>
                                         <Typography variant="body2" noWrap>
                                             {new Date(submission.createdAt).toLocaleDateString("cs-CZ")}
                                         </Typography>
@@ -243,7 +250,8 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, ev
                                                     ) : null}
                                                 </TableCell>
                                             ))}
-                                            {/* Empty cells for Osoby, Zaplaceno, Cena, VS, Datum, Akce */}
+                                            {/* Empty cells for Osoby, Zaplaceno, Cena, VS, Email, Datum, Akce */}
+                                            <TableCell />
                                             <TableCell />
                                             <TableCell />
                                             <TableCell />

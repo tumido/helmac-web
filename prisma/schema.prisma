@@ -68,6 +68,11 @@ model Year {
   registrationOpen      Boolean   @default(false)
   registrationStartDate DateTime?
 
+  confirmationEmailEnabled  Boolean  @default(false)
+  confirmationEmailSubject  String?
+  confirmationEmailBody     String?  @db.Text
+  confirmationEmailBcc      String?
+
   bankAccountPrefix   String?
   bankAccountNumber   String?
   bankAccountBankCode String?
@@ -341,6 +346,8 @@ model RegistrationSubmission {
     pricingSummary  Json?    // { tiers: [{tierDate, totalPrice}], applicableTierIndex, totalPrice }
     variableSymbol  String?  @unique // 10-digit random numeric string
     totalPrice      Int?     // applicable total at submission time (CZK)
+    emailSent       Boolean  @default(false)
+    emailSentAt     DateTime?
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 

@@ -5,6 +5,10 @@ import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import type { RegistrationStatus } from "@prisma/client";
+import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage } from "@/lib/utils/email";
+import { formatCzechAccount, czechAccountToIBAN } from "@/lib/utils/spayd";
+import { getAllInputFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 
 interface ActionResult {
     success?: boolean;
@@ -74,6 +78,123 @@ export async function updateSubmissionData(
     } catch (error) {
         console.error("Failed to update submission data:", error);
         return { error: "Nepodařilo se aktualizovat data registrace" };
+    }
+}
+
+export async function resendConfirmationEmail(submissionId: string): Promise<ActionResult> {
+    await requireAdmin();
+
+    try {
+        const submission = await db.registrationSubmission.findUnique({
+            where: { id: submissionId },
+            select: {
+                id: true,
+                data: true,
+                variableSymbol: true,
+                totalPrice: true,
+                yearId: true,
+                form: { select: { fields: true } },
+                year: {
+                    select: {
+                        year: true,
+                        title: true,
+                        bankAccountPrefix: true,
+                        bankAccountNumber: true,
+                        bankAccountBankCode: true,
+                        confirmationEmailEnabled: true,
+                        confirmationEmailSubject: true,
+                        confirmationEmailBody: true,
+                        confirmationEmailBcc: true,
+                    },
+                },
+            },
+        });
+
+        if (!submission) {
+            return { error: "Registrace nebyla nalezena" };
+        }
+
+        if (!submission.year.confirmationEmailSubject || !submission.year.confirmationEmailBody) {
+            return { error: "Šablona emailu není nastavena" };
+        }
+
+        const formData = migrateFormData(submission.form.fields);
+        const allInputFields = getAllInputFields(formData.fields);
+        const submissionData = submission.data as Record<string, unknown>;
+
+        // Find email field
+        const emailField = allInputFields.find((f) => f.type === "email");
+        const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+
+        if (!recipientEmail) {
+            return { error: "Registrace neobsahuje emailovou adresu" };
+        }
+
+        const bankAccount = submission.year.bankAccountNumber && submission.year.bankAccountBankCode
+            ? formatCzechAccount(
+                submission.year.bankAccountNumber,
+                submission.year.bankAccountBankCode,
+                submission.year.bankAccountPrefix ?? undefined,
+            )
+            : null;
+
+        const placeholders = buildPlaceholders({
+            submissionData,
+            variableSymbol: submission.variableSymbol,
+            totalPrice: submission.totalPrice,
+            bankAccount,
+            yearNumber: submission.year.year,
+            yearTitle: submission.year.title,
+        });
+
+        const subject = replacePlaceholders(submission.year.confirmationEmailSubject, placeholders);
+        const body = replacePlaceholders(submission.year.confirmationEmailBody, placeholders);
+
+        // Generate QR payment image if payment data is available
+        let qrImageBuffer: Buffer | null = null;
+        if (
+            submission.totalPrice &&
+            submission.totalPrice > 0 &&
+            submission.variableSymbol &&
+            submission.year.bankAccountNumber &&
+            submission.year.bankAccountBankCode
+        ) {
+            const iban = czechAccountToIBAN(
+                submission.year.bankAccountNumber,
+                submission.year.bankAccountBankCode,
+                submission.year.bankAccountPrefix ?? undefined,
+            );
+            if (iban) {
+                qrImageBuffer = await generateQRPaymentImage({
+                    iban,
+                    amount: submission.totalPrice,
+                    variableSymbol: submission.variableSymbol,
+                });
+            }
+        }
+
+        const sent = await sendConfirmationEmail({
+            to: recipientEmail,
+            subject,
+            body,
+            bcc: submission.year.confirmationEmailBcc ?? undefined,
+            qrImageBuffer: qrImageBuffer ?? undefined,
+        });
+
+        if (sent) {
+            await db.registrationSubmission.update({
+                where: { id: submissionId },
+                data: { emailSent: true, emailSentAt: new Date() },
+            });
+
+            revalidatePath(`/admin/rocniky/${submission.yearId}/registrace/${submissionId}`);
+            return { success: true };
+        } else {
+            return { error: "Nepodařilo se odeslat email" };
+        }
+    } catch (error) {
+        console.error("Failed to resend confirmation email:", error);
+        return { error: "Nepodařilo se odeslat email" };
     }
 }
 

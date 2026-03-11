@@ -59,3 +59,20 @@ export const updateBankAccountSchema = z.object({
         }
     }
 });
+
+export const updateEmailTemplateSchema = z.object({
+    confirmationEmailSubject: z
+        .string()
+        .min(1, "Předmět je povinný")
+        .max(200, "Předmět je příliš dlouhý"),
+    confirmationEmailBody: z
+        .string()
+        .min(1, "Text emailu je povinný")
+        .max(50000, "Text emailu je příliš dlouhý"),
+    confirmationEmailBcc: z
+        .string()
+        .email("Neplatný email pro BCC")
+        .optional()
+        .nullable()
+        .transform((v) => v || null),
+});

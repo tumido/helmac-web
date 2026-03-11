@@ -86,6 +86,8 @@ export const getSubmissionById = cache(async (id: string) => {
             pricingSummary: true,
             variableSymbol: true,
             totalPrice: true,
+            emailSent: true,
+            emailSentAt: true,
             createdAt: true,
             updatedAt: true,
             form: {
