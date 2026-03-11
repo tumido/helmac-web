@@ -6,12 +6,14 @@ import {
     Divider,
     List,
     ListItem,
+    ListItemButton,
     ListItemIcon,
     ListItemText,
     Typography,
 } from "@mui/material";
 import {
     ArrowBack,
+    Article,
     BarChart,
     CalendarMonth,
     Gavel,
@@ -63,10 +65,13 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
 
     const mainItems = [
         { text: "Přehled", href: base, icon: BarChart, exact: true },
-        { text: "Program", href: `${base}/program`, icon: CalendarMonth },
-        { text: "Pravidla", href: `${base}/pravidla`, icon: Gavel },
-        { text: "Nabídky", href: `${base}/nabidka`, icon: LocalOffer },
-        { text: "Info", href: `${base}/info`, icon: InfoOutlined },
+    ];
+
+    const contentItems = [
+        { text: "Program", href: `${base}/program`, icon: CalendarMonth, indented: true },
+        { text: "Nabídky", href: `${base}/nabidka`, icon: LocalOffer, indented: true },
+        { text: "Info", href: `${base}/info`, icon: InfoOutlined, indented: true },
+        { text: "Pravidla", href: `${base}/pravidla`, icon: Gavel, indented: true },
     ];
 
     const registrationItems = [
@@ -128,6 +133,37 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
                                 selected={isActive}
                                 onClick={onClose}
                                 sx={selectedSx}
+                            >
+                                <ListItemIcon><Icon /></ListItemIcon>
+                                <ListItemText primary={item.text} />
+                            </ListItemLinkButton>
+                        </ListItem>
+                    );
+                })}
+            </List>
+            <Divider sx={{ mx: 2 }} />
+
+            {/* Content section */}
+            <List>
+                <ListItem disablePadding>
+                    <ListItemButton disabled sx={{ "&.Mui-disabled": { opacity: 1 } }}>
+                        <ListItemIcon><Article /></ListItemIcon>
+                        <ListItemText primary="Obsah" />
+                    </ListItemButton>
+                </ListItem>
+                {contentItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isPrefixMatch(item.href);
+                    return (
+                        <ListItem key={item.href} disablePadding>
+                            <ListItemLinkButton
+                                href={item.href}
+                                selected={isActive}
+                                onClick={onClose}
+                                sx={{
+                                    ...selectedSx,
+                                    ...(item.indented ? { pl: 4 } : {}),
+                                }}
                             >
                                 <ListItemIcon><Icon /></ListItemIcon>
                                 <ListItemText primary={item.text} />
