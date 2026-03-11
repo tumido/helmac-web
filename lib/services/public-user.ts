@@ -79,6 +79,11 @@ export async function getPublicUserRegistrations(userId: string) {
                     title: true,
                 },
             },
+            form: {
+                select: {
+                    fields: true,
+                },
+            },
         },
     });
 
