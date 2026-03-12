@@ -105,10 +105,6 @@ export function InfoStatsEditor({
 
     const isDirty = JSON.stringify(config) !== JSON.stringify(saved);
 
-    const getOptionFieldById = (fieldId: string) => {
-        return optionFields.find((f) => f.id === fieldId);
-    };
-
     const getFieldLabel = (fieldId: string) => {
         return optionFields.find((f) => f.id === fieldId)?.label
             ?? allInputFields.find((f) => f.id === fieldId)?.label
@@ -241,15 +237,118 @@ export function InfoStatsEditor({
                         )}
 
                         {config.stats.map((stat) => {
-                            const resolvedFields = stat.fieldIds
-                                .map((fid) => getOptionFieldById(fid))
-                                .filter((f): f is InputField => !!f);
+                            if (editingStat && !isNewStat && editingStat.id === stat.id) {
+                                return (
+                                    <Card key={stat.id} variant="outlined" sx={{ borderColor: "primary.main" }}>
+                                        <CardContent>
+                                            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                                                Upravit statistiku
+                                            </Typography>
+
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                                <FormControl size="small" fullWidth required>
+                                                    <InputLabel>Sledovaná pole</InputLabel>
+                                                    <Select
+                                                        multiple
+                                                        value={editingStat.fieldIds}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setEditingStat((prev) => prev ? {
+                                                                ...prev,
+                                                                fieldIds: typeof value === "string" ? value.split(",") : value,
+                                                            } : prev);
+                                                        }}
+                                                        label="Sledovaná pole"
+                                                        renderValue={(selected) =>
+                                                            selected.map((fid) => getFieldLabel(fid)).join(", ")
+                                                        }
+                                                    >
+                                                        {optionFields.map((field) => (
+                                                            <MenuItem key={field.id} value={field.id}>
+                                                                <Checkbox checked={editingStat.fieldIds.includes(field.id)} />
+                                                                <ListItemText primary={field.label} />
+                                                            </MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+
+                                                <TextField
+                                                    size="small"
+                                                    label="Vlastní název (nepovinné)"
+                                                    value={editingStat.name ?? ""}
+                                                    onChange={(e) => setEditingStat((prev) => prev ? { ...prev, name: e.target.value || undefined } : prev)}
+                                                    placeholder={editingStat.fieldIds.length > 0 ? editingStat.fieldIds.map((fid) => getFieldLabel(fid)).join(" / ") : ""}
+                                                    fullWidth
+                                                />
+
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            checked={editingStat.showPeople}
+                                                            onChange={(e) => setEditingStat((prev) => prev ? {
+                                                                ...prev,
+                                                                showPeople: e.target.checked,
+                                                                personFieldId: e.target.checked ? prev.personFieldId : undefined,
+                                                            } : prev)}
+                                                        />
+                                                    }
+                                                    label="Zobrazit seznam osob"
+                                                />
+
+                                                {editingStat.showPeople && (
+                                                    <FormControl size="small" fullWidth required>
+                                                        <InputLabel>Pole pro jméno osoby</InputLabel>
+                                                        <Select
+                                                            value={editingStat.personFieldId ?? ""}
+                                                            onChange={(e) => setEditingStat((prev) => prev ? {
+                                                                ...prev,
+                                                                personFieldId: e.target.value || undefined,
+                                                            } : prev)}
+                                                            label="Pole pro jméno osoby"
+                                                        >
+                                                            <MenuItem value="">
+                                                                <em>Nevybráno</em>
+                                                            </MenuItem>
+                                                            {allInputFields.map((field) => (
+                                                                <MenuItem key={field.id} value={field.id}>
+                                                                    {field.label}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                )}
+
+                                                <Box sx={{ display: "flex", gap: 1 }}>
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        startIcon={<Check />}
+                                                        onClick={handleConfirmEdit}
+                                                        disabled={editingStat.fieldIds.length === 0 || (editingStat.showPeople && !editingStat.personFieldId)}
+                                                    >
+                                                        Potvrdit
+                                                    </Button>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        startIcon={<Close />}
+                                                        onClick={handleCancelEdit}
+                                                    >
+                                                        Zrušit
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            }
+
                             const displayName = stat.name?.trim() || stat.fieldIds.map((fid) => getFieldLabel(fid)).join(" / ");
 
                             return (
                                 <Card key={stat.id} variant="outlined">
                                     <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                             <Typography variant="subtitle2">
                                                 {displayName}
                                             </Typography>
@@ -270,24 +369,12 @@ export function InfoStatsEditor({
                                                 </IconButton>
                                             </Box>
                                         </Box>
-                                        {resolvedFields.length > 0 ? (
-                                            <OptionCountsList fields={resolvedFields} optionCounts={optionCounts} />
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Pole nebylo nalezeno
-                                            </Typography>
-                                        )}
-                                        {stat.showPeople && stat.personFieldId && (
-                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                                Zobrazení osob: {getFieldLabel(stat.personFieldId)}
-                                            </Typography>
-                                        )}
                                     </CardContent>
                                 </Card>
                             );
                         })}
 
-                        {editingStat && (
+                        {editingStat && isNewStat && (
                             <Card variant="outlined" sx={{ borderColor: "primary.main" }}>
                                 <CardContent>
                                     <Typography variant="subtitle2" sx={{ mb: 2 }}>
