@@ -78,11 +78,13 @@ export async function publicRegister(
     // Link existing registrations by email
     await linkExistingRegistrations(user.id, email);
 
-    // Send verification email (non-blocking)
+    // Send verification email
     const verificationUrl = `${getBaseUrl()}/overeni-emailu?token=${token}`;
-    sendVerificationEmail({ to: email, verificationUrl }).catch((err) => {
+    try {
+        await sendVerificationEmail({ to: email, verificationUrl });
+    } catch (err) {
         console.error("Failed to send verification email:", err);
-    });
+    }
 
     // Set session immediately (unverified)
     await setPublicSession({

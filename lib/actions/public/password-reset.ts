@@ -51,9 +51,11 @@ export async function requestPasswordReset(
 
         const resetUrl = `${getBaseUrl()}/obnoveni-hesla?token=${token}`;
 
-        sendPasswordResetEmail({ to: user.email, resetUrl }).catch((err) => {
+        try {
+            await sendPasswordResetEmail({ to: user.email, resetUrl });
+        } catch (err) {
             console.error("Failed to send password reset email:", err);
-        });
+        }
     }
 
     return {
