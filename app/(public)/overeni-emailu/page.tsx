@@ -1,13 +1,29 @@
 import { Container, Paper } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { EmailVerificationContent } from "./email-verification-content";
+import { getPublicSession, clearPublicSession } from "@/lib/public-auth";
 
 export const metadata = {
     title: "Ověření emailu | Helmac",
     description: "Ověřte svůj email pro aktivaci účtu",
 };
 
-export default function OvereniEmailuPage() {
+export default async function OvereniEmailuPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ token?: string; pending?: string }>;
+}) {
+    const params = await searchParams;
+
+    // On reload (no token, no pending), clear any unverified session
+    // so the user can navigate to /prihlaseni and authenticate again
+    if (!params.token && !params.pending) {
+        const session = await getPublicSession();
+        if (session && !session.emailVerified) {
+            await clearPublicSession();
+        }
+    }
+
     return (
         <>
             <PageHeader
