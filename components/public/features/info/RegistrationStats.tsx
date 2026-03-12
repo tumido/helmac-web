@@ -48,7 +48,7 @@ export function RegistrationStats({ stats, fieldsMap, optionCounts, optionPeople
                     : undefined;
 
                 return (
-                    <Grid item xs={12} sm={6} key={stat.id}>
+                    <Grid item xs={12} key={stat.id}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Typography variant="h6" sx={{ mb: 2, fontSize: "1.1rem" }}>
