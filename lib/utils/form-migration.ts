@@ -70,7 +70,7 @@ export function migrateFormData(raw: unknown): RegistrationFormData {
                 const showPeople = oldShowPeopleFieldIds.includes(fieldId);
                 return {
                     id: crypto.randomUUID(),
-                    fieldId,
+                    fieldIds: [fieldId],
                     showPeople,
                     personFieldId: showPeople ? oldPersonFieldId : undefined,
                 };
@@ -80,6 +80,18 @@ export function migrateFormData(raw: unknown): RegistrationFormData {
                 enabled: infoStatsConfig.enabled ?? false,
                 stats,
             } as InfoStatsConfig;
+        }
+
+        // Migrate stats with singular fieldId to fieldIds array
+        if (infoStatsConfig && "stats" in infoStatsConfig && Array.isArray(infoStatsConfig.stats)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            infoStatsConfig.stats = infoStatsConfig.stats.map((stat: any) => {
+                if (stat.fieldId && !stat.fieldIds) {
+                    const { fieldId, ...rest } = stat;
+                    return { ...rest, fieldIds: [fieldId] };
+                }
+                return stat;
+            });
         }
 
         return {

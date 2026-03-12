@@ -7,10 +7,12 @@ import {
     Button,
     Card,
     CardContent,
+    Checkbox,
     FormControl,
     FormControlLabel,
     IconButton,
     InputLabel,
+    ListItemText,
     MenuItem,
     Select,
     Switch,
@@ -34,34 +36,42 @@ const defaultConfig: InfoStatsConfig = {
     stats: [],
 };
 
-function OptionCountsList({ field, optionCounts }: { field: InputField; optionCounts?: OptionCounts }) {
-    const options = field.options && field.options.length > 0
-        ? field.options
-        : optionCounts?.[field.name] ? Object.keys(optionCounts[field.name]) : [];
-
-    if (options.length === 0) return null;
+function OptionCountsList({ fields, optionCounts }: { fields: InputField[]; optionCounts?: OptionCounts }) {
+    if (fields.length === 0) return null;
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
-            {options.map((option) => {
-                const count = optionCounts?.[field.name]?.[option] ?? 0;
+            {fields.map((field) => {
+                const options = field.options && field.options.length > 0
+                    ? field.options
+                    : optionCounts?.[field.name] ? Object.keys(optionCounts[field.name]) : [];
+
+                if (options.length === 0) return null;
+
                 return (
-                    <Box
-                        key={option}
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            px: 1,
-                            py: 0.25,
-                        }}
-                    >
-                        <Typography variant="body2" color="text.secondary">
-                            {option}
-                        </Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                            {count}&times;
-                        </Typography>
+                    <Box key={field.id}>
+                        {options.map((option) => {
+                            const count = optionCounts?.[field.name]?.[option] ?? 0;
+                            return (
+                                <Box
+                                    key={option}
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        px: 1,
+                                        py: 0.25,
+                                    }}
+                                >
+                                    <Typography variant="body2" color="text.secondary">
+                                        {option}
+                                    </Typography>
+                                    <Typography variant="body2" fontWeight="medium">
+                                        {count}&times;
+                                    </Typography>
+                                </Box>
+                            );
+                        })}
                     </Box>
                 );
             })}
@@ -72,7 +82,7 @@ function OptionCountsList({ field, optionCounts }: { field: InputField; optionCo
 function createNewStat(): InfoStatItem {
     return {
         id: crypto.randomUUID(),
-        fieldId: "",
+        fieldIds: [],
         showPeople: false,
     };
 }
@@ -151,7 +161,7 @@ export function InfoStatsEditor({
     };
 
     const handleConfirmEdit = () => {
-        if (!editingStat || !editingStat.fieldId) return;
+        if (!editingStat || editingStat.fieldIds.length === 0) return;
 
         setConfig((prev) => {
             if (isNewStat) {
@@ -231,8 +241,10 @@ export function InfoStatsEditor({
                         )}
 
                         {config.stats.map((stat) => {
-                            const field = getOptionFieldById(stat.fieldId);
-                            const displayName = stat.name?.trim() || getFieldLabel(stat.fieldId);
+                            const resolvedFields = stat.fieldIds
+                                .map((fid) => getOptionFieldById(fid))
+                                .filter((f): f is InputField => !!f);
+                            const displayName = stat.name?.trim() || stat.fieldIds.map((fid) => getFieldLabel(fid)).join(" / ");
 
                             return (
                                 <Card key={stat.id} variant="outlined">
@@ -258,8 +270,8 @@ export function InfoStatsEditor({
                                                 </IconButton>
                                             </Box>
                                         </Box>
-                                        {field ? (
-                                            <OptionCountsList field={field} optionCounts={optionCounts} />
+                                        {resolvedFields.length > 0 ? (
+                                            <OptionCountsList fields={resolvedFields} optionCounts={optionCounts} />
                                         ) : (
                                             <Typography variant="body2" color="text.secondary">
                                                 Pole nebylo nalezeno
@@ -284,19 +296,26 @@ export function InfoStatsEditor({
 
                                     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                         <FormControl size="small" fullWidth required>
-                                            <InputLabel>Sledované pole</InputLabel>
+                                            <InputLabel>Sledovaná pole</InputLabel>
                                             <Select
-                                                value={editingStat.fieldId}
-                                                onChange={(e) => setEditingStat((prev) => prev ? { ...prev, fieldId: e.target.value } : prev)}
-                                                label="Sledované pole"
+                                                multiple
+                                                value={editingStat.fieldIds}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setEditingStat((prev) => prev ? {
+                                                        ...prev,
+                                                        fieldIds: typeof value === "string" ? value.split(",") : value,
+                                                    } : prev);
+                                                }}
+                                                label="Sledovaná pole"
+                                                renderValue={(selected) =>
+                                                    selected.map((fid) => getFieldLabel(fid)).join(", ")
+                                                }
                                             >
                                                 {optionFields.map((field) => (
-                                                    <MenuItem
-                                                        key={field.id}
-                                                        value={field.id}
-                                                        disabled={config.stats.some((s) => s.fieldId === field.id && s.id !== editingStat.id)}
-                                                    >
-                                                        {field.label}
+                                                    <MenuItem key={field.id} value={field.id}>
+                                                        <Checkbox checked={editingStat.fieldIds.includes(field.id)} />
+                                                        <ListItemText primary={field.label} />
                                                     </MenuItem>
                                                 ))}
                                             </Select>
@@ -307,7 +326,7 @@ export function InfoStatsEditor({
                                             label="Vlastní název (nepovinné)"
                                             value={editingStat.name ?? ""}
                                             onChange={(e) => setEditingStat((prev) => prev ? { ...prev, name: e.target.value || undefined } : prev)}
-                                            placeholder={editingStat.fieldId ? getFieldLabel(editingStat.fieldId) : ""}
+                                            placeholder={editingStat.fieldIds.length > 0 ? editingStat.fieldIds.map((fid) => getFieldLabel(fid)).join(" / ") : ""}
                                             fullWidth
                                         />
 
@@ -354,7 +373,7 @@ export function InfoStatsEditor({
                                                 variant="contained"
                                                 startIcon={<Check />}
                                                 onClick={handleConfirmEdit}
-                                                disabled={!editingStat.fieldId || (editingStat.showPeople && !editingStat.personFieldId)}
+                                                disabled={editingStat.fieldIds.length === 0 || (editingStat.showPeople && !editingStat.personFieldId)}
                                             >
                                                 {isNewStat ? "Přidat" : "Potvrdit"}
                                             </Button>

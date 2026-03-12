@@ -79,7 +79,7 @@ export const saveShowOptionCountsSchema = z.array(z.string().min(1));
 
 const infoStatItemSchema = z.object({
     id: z.string().min(1),
-    fieldId: z.string().min(1),
+    fieldIds: z.array(z.string().min(1)).min(1, "Statistika musí mít alespoň jedno pole"),
     name: z.string().optional(),
     showPeople: z.boolean(),
     personFieldId: z.string().min(1).optional(),

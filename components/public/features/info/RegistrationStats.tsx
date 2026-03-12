@@ -5,7 +5,6 @@ import {
     Card,
     CardContent,
     Chip,
-    Grid,
     Typography,
 } from "@mui/material";
 import type { InfoStatItem, InputField, OptionCounts, OptionPeople, CapacityLimit } from "@/lib/types/registration-form";
@@ -34,33 +33,47 @@ export function RegistrationStats({ stats, fieldsMap, optionCounts, optionPeople
     }
 
     return (
-        <Grid container spacing={3}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {stats.map((stat) => {
-                const field = fieldsMap[stat.fieldId];
-                if (!field) return null;
+                const resolvedFields = stat.fieldIds
+                    .map((fid) => fieldsMap[fid])
+                    .filter((f): f is InputField => !!f);
 
-                const options = getFieldOptions(field, optionCounts);
-                if (options.length === 0) return null;
+                if (resolvedFields.length === 0) return null;
 
-                const displayName = stat.name?.trim() || field.label;
-                const people = stat.showPeople && stat.personFieldId
-                    ? optionPeopleMap[stat.personFieldId]?.[field.name]
-                    : undefined;
+                const displayName = stat.name?.trim() || resolvedFields.map((f) => f.label).join(" / ");
 
                 return (
-                    <Grid item xs={12} key={stat.id}>
-                        <Card variant="outlined">
-                            <CardContent>
-                                <Typography variant="h6" sx={{ mb: 2, fontSize: "1.1rem" }}>
-                                    {displayName}
-                                </Typography>
-                                <Grid container spacing={2}>
-                                    {options.map((option) => {
+                    <Card
+                        variant="outlined"
+                        key={stat.id}
+                        sx={{
+                            minWidth: "100%",
+                            maxWidth: "90vw",
+                            position: "relative",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                        }}
+                    >
+                        <CardContent>
+                            <Typography variant="h6" sx={{ mb: 2, fontSize: "1.1rem" }}>
+                                {displayName}
+                            </Typography>
+                            <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 8, rowGap: 2 }}>
+                                {resolvedFields.map((field) => {
+                                    const options = getFieldOptions(field, optionCounts);
+                                    if (options.length === 0) return null;
+
+                                    const people = stat.showPeople && stat.personFieldId
+                                        ? optionPeopleMap[stat.personFieldId]?.[field.name]
+                                        : undefined;
+
+                                    return options.map((option) => {
                                         const count = optionCounts[field.name]?.[option] ?? 0;
                                         const personList = people?.[option] ?? [];
 
                                         return (
-                                            <Grid item xs={12} sm={6} key={option}>
+                                            <Box key={`${field.id}-${option}`}>
                                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: stat.showPeople && personList.length > 0 ? 0.5 : 0 }}>
                                                     <Chip
                                                         label={(() => {
@@ -73,7 +86,7 @@ export function RegistrationStats({ stats, fieldsMap, optionCounts, optionPeople
                                                         color="primary"
                                                         variant="outlined"
                                                     />
-                                                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                                                    <Typography variant="body2">
                                                         {option}
                                                     </Typography>
                                                 </Box>
@@ -91,15 +104,15 @@ export function RegistrationStats({ stats, fieldsMap, optionCounts, optionPeople
                                                         ))}
                                                     </Box>
                                                 )}
-                                            </Grid>
+                                            </Box>
                                         );
-                                    })}
-                                </Grid>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+                                    });
+                                })}
+                            </Box>
+                        </CardContent>
+                    </Card>
                 );
             })}
-        </Grid>
+        </Box>
     );
 }

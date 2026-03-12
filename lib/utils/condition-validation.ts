@@ -29,7 +29,7 @@ export function getFieldExternalUsages(
         usages.push({ label: "Statistiky", color: "success" });
     }
 
-    if (infoStatsConfig?.stats.some((s) => s.fieldId === fieldId || s.personFieldId === fieldId)) {
+    if (infoStatsConfig?.stats.some((s) => s.fieldIds.includes(fieldId) || s.personFieldId === fieldId)) {
         usages.push({ label: "Info statistiky", color: "info" });
     }
 

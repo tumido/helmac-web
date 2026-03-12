@@ -32,7 +32,7 @@ export default async function InfoPage() {
                     allInputFields.map((f) => [f.id, f]),
                 );
 
-                const validStats = config.stats.filter((s) => allInputFieldsMap.has(s.fieldId));
+                const validStats = config.stats.filter((s) => s.fieldIds.some((fid) => allInputFieldsMap.has(fid)));
 
                 if (validStats.length > 0) {
                     const optionCounts = await getOptionCountsForYear(activeYear.id);
@@ -57,8 +57,10 @@ export default async function InfoPage() {
                     // Build a plain fieldsMap record for the client component
                     const fieldsMap: Record<string, InputField> = {};
                     for (const stat of validStats) {
-                        const field = allInputFieldsMap.get(stat.fieldId);
-                        if (field) fieldsMap[stat.fieldId] = field;
+                        for (const fid of stat.fieldIds) {
+                            const field = allInputFieldsMap.get(fid);
+                            if (field) fieldsMap[fid] = field;
+                        }
                     }
 
                     statsContent = (
