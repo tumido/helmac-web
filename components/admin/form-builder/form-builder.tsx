@@ -92,6 +92,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
     const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
     const [capacityLimits] = useState(initialFormData.capacityLimits ?? []);
     const [showOptionCounts] = useState(initialFormData.showOptionCounts ?? []);
+    const [infoStatsConfig] = useState(initialFormData.infoStatsConfig);
     const [builderTab, setBuilderTab] = useState<0 | 1 | 2>(0); // 0 = Formulář, 1 = Podmínky, 2 = Ceník
     const [typeSelectorOpen, setTypeSelectorOpen] = useState(false);
     const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -123,6 +124,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                     capacityLimits,
                     showOptionCounts,
                     emailFieldNamesSet,
+                    infoStatsConfig,
                 );
                 if (usages.length > 0) {
                     map.set(field.id, usages);
@@ -130,7 +132,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             }
         }
         return map;
-    }, [allFields, capacityLimits, showOptionCounts, emailFieldNamesSet]);
+    }, [allFields, capacityLimits, showOptionCounts, emailFieldNamesSet, infoStatsConfig]);
 
     const createField = useCallback((type: FieldType, currentElements: FormElement[], pricingId?: string): FormField => {
         const id = crypto.randomUUID();
@@ -232,6 +234,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                 capacityLimits,
                 showOptionCounts,
                 emailFieldNamesSet,
+                infoStatsConfig,
             );
             for (const usage of externalUsages) {
                 details.push(usage.label);
@@ -247,7 +250,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             return;
         }
         setElements((prev) => removeFieldFromElements(prev, fieldId));
-    }, [conditions, capacityLimits, showOptionCounts, emailFieldNamesSet]);
+    }, [conditions, capacityLimits, showOptionCounts, emailFieldNamesSet, infoStatsConfig]);
 
     const handleCreateConditionFromOption = useCallback((fieldId: string, fieldLabel: string, optionValue: string) => {
         const conditionId = crypto.randomUUID();
@@ -320,6 +323,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             pricingDefinitions,
             capacityLimits,
             showOptionCounts,
+            infoStatsConfig,
             fields: elements,
         };
 
@@ -807,6 +811,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                             pricingDefinitions,
                             capacityLimits,
                             showOptionCounts,
+                            infoStatsConfig,
                             fields: elements,
                         };
                         localStorage.setItem("form-preview-data", JSON.stringify(formData));

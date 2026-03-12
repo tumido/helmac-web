@@ -30,6 +30,7 @@ export async function saveRegistrationForm(yearId: string, formData: Registratio
             pricingDefinitions: validated.data.pricingDefinitions,
             capacityLimits: validated.data.capacityLimits,
             showOptionCounts: validated.data.showOptionCounts,
+            infoStatsConfig: formData.infoStatsConfig,
             fields: validated.data.fields,
         };
 

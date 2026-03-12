@@ -1,4 +1,4 @@
-import type { RegistrationFormData, CapacityLimit, FormCondition } from "@/lib/types/registration-form";
+import type { RegistrationFormData, CapacityLimit, FormCondition, InfoStatsConfig } from "@/lib/types/registration-form";
 
 /**
  * Migrates raw form data from the database to the new RegistrationFormData format.
@@ -54,6 +54,7 @@ export function migrateFormData(raw: unknown): RegistrationFormData {
             pricingDefinitions: (data.pricingDefinitions ?? []) as RegistrationFormData["pricingDefinitions"],
             capacityLimits,
             showOptionCounts: (data.showOptionCounts ?? []) as string[],
+            infoStatsConfig: (data.infoStatsConfig as InfoStatsConfig | undefined) ?? undefined,
             fields: (data.fields ?? []) as RegistrationFormData["fields"],
         };
     }

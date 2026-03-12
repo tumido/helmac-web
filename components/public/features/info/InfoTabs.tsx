@@ -3,13 +3,19 @@
 import { Box, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
 import { InfoItem } from "./info.types";
 
+export interface ExtraTab {
+    id: string;
+    title: string;
+}
+
 interface InfoTabsProps {
     infoSections: InfoItem[];
     selectedInfoId: string;
     onInfoChange: (infoId: string) => void;
+    extraTabs?: ExtraTab[];
 }
 
-export function InfoTabs({ infoSections, selectedInfoId, onInfoChange }: InfoTabsProps) {
+export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs }: InfoTabsProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -55,6 +61,13 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange }: InfoTab
                         key={info.id}
                         label={info.title}
                         value={info.id}
+                    />
+                ))}
+                {extraTabs?.map((tab) => (
+                    <Tab
+                        key={tab.id}
+                        label={tab.title}
+                        value={tab.id}
                     />
                 ))}
             </Tabs>

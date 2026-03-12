@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { OptionCounts } from "@/lib/types/registration-form";
+import type { OptionCounts, OptionPeople } from "@/lib/types/registration-form";
 
 export const getRegistrationStatus = cache(async () => {
     const activeYear = await db.year.findFirst({
@@ -125,6 +125,50 @@ function countValues(counts: OptionCounts, data: Record<string, unknown>): void 
         counts[name][str] = (counts[name][str] || 0) + 1;
     }
 }
+
+export const getOptionPeopleForYear = cache(async (yearId: string, personFieldName: string): Promise<OptionPeople> => {
+    const submissions = await db.registrationSubmission.findMany({
+        where: {
+            yearId,
+            status: { notIn: ["CANCELLED", "REJECTED"] },
+        },
+        select: { data: true },
+    });
+
+    const people: OptionPeople = {};
+
+    function collectPeople(data: Record<string, unknown>, personLabel: string): void {
+        for (const [name, val] of Object.entries(data)) {
+            if (name === "additionalPeople") continue;
+            const str = String(val ?? "");
+            if (!str || str === "false") continue;
+            if (!people[name]) people[name] = {};
+            if (!people[name][str]) people[name][str] = [];
+            people[name][str].push(personLabel);
+        }
+    }
+
+    for (const sub of submissions) {
+        const data = sub.data as Record<string, unknown>;
+        const mainLabel = String(data[personFieldName] ?? "");
+        if (mainLabel) {
+            collectPeople(data, mainLabel);
+        }
+        const ap = data.additionalPeople;
+        if (Array.isArray(ap)) {
+            for (const person of ap) {
+                if (person && typeof person === "object") {
+                    const personData = person as Record<string, unknown>;
+                    const apLabel = String(personData[personFieldName] ?? "") || mainLabel;
+                    if (apLabel) {
+                        collectPeople(personData, apLabel);
+                    }
+                }
+            }
+        }
+    }
+    return people;
+});
 
 async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
     const submissions = await db.registrationSubmission.findMany({

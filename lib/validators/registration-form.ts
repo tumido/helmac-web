@@ -77,6 +77,13 @@ export const saveCapacityLimitsSchema = z.array(capacityLimitSchema);
 
 export const saveShowOptionCountsSchema = z.array(z.string().min(1));
 
+export const saveInfoStatsConfigSchema = z.object({
+    enabled: z.boolean(),
+    fieldIds: z.array(z.string().min(1)),
+    personFieldId: z.string().min(1).optional(),
+    showPeople: z.boolean(),
+});
+
 export const saveRegistrationFormSchema = z.object({
     conditions: z.array(formConditionSchema),
     pricingDefinitions: z.array(pricingDefinitionSchema),

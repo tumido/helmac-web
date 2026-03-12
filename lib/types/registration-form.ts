@@ -99,6 +99,7 @@ export interface RegistrationFormData {
     pricingDefinitions: PricingDefinition[]; // defined in "Ceník" tab
     capacityLimits: CapacityLimit[];       // capacity limits for options
     showOptionCounts: string[];            // field IDs whose option counts are shown publicly
+    infoStatsConfig?: InfoStatsConfig;     // info page statistics configuration
     fields: FormElement[];                 // form content, can contain ConditionBlocks
 }
 
@@ -148,6 +149,17 @@ export function hasAdditionalPeopleFields(elements: FormElement[]): boolean {
 
 // Aggregated option counts: fieldName -> optionValue -> count
 export type OptionCounts = Record<string, Record<string, number>>;
+
+// Aggregated option people: fieldName -> optionValue -> person labels
+export type OptionPeople = Record<string, Record<string, string[]>>;
+
+// Info stats config for public info page
+export interface InfoStatsConfig {
+    enabled: boolean;
+    fieldIds: string[];         // field IDs to track (select/radio/pricing_select)
+    personFieldId?: string;     // field to use as person label
+    showPeople: boolean;        // whether to list people under each option
+}
 
 /** Returns a Set of option values that are disabled (at capacity) for a given field */
 export function getDisabledOptionsForField(

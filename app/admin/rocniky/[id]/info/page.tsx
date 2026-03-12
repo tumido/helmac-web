@@ -4,14 +4,19 @@ import {
     Box,
     Card,
     CardContent,
+    Divider,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getInfoSectionsForYear } from "@/lib/services/info";
+import { getRegistrationFormForYear, getOptionCountsForYear } from "@/lib/services/registration";
+import { migrateFormData } from "@/lib/utils/form-migration";
+import { getAllInputFields } from "@/lib/types/registration-form";
 import { SortableInfo } from "@/components/admin/sortable-info";
 import { PageHeader } from "@/components/admin/page-header";
+import { InfoStatsEditor } from "@/components/admin/info-stats-editor";
 
 interface InfoPageProps {
     params: Promise<{ id: string }>;
@@ -19,13 +24,34 @@ interface InfoPageProps {
 
 export default async function InfoPage({ params }: InfoPageProps) {
     const { id } = await params;
-    const [year, infoSections] = await Promise.all([
+    const [year, infoSections, registrationForm] = await Promise.all([
         getYearById(id),
         getInfoSectionsForYear(id),
+        getRegistrationFormForYear(id),
     ]);
 
     if (!year) {
         notFound();
+    }
+
+    let infoStatsEditor = null;
+    if (registrationForm) {
+        const formData = migrateFormData(registrationForm.fields);
+        const allInputFields = getAllInputFields(formData.fields);
+        const optionFields = allInputFields.filter(
+            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
+        );
+        const optionCounts = await getOptionCountsForYear(id);
+
+        infoStatsEditor = (
+            <InfoStatsEditor
+                yearId={id}
+                infoStatsConfig={formData.infoStatsConfig}
+                allInputFields={allInputFields}
+                optionFields={optionFields}
+                optionCounts={optionCounts}
+            />
+        );
     }
 
     return (
@@ -68,6 +94,13 @@ export default async function InfoPage({ params }: InfoPageProps) {
                 </Card>
             ) : (
                 <SortableInfo yearId={year.id} infoSections={infoSections} />
+            )}
+
+            {infoStatsEditor && (
+                <>
+                    <Divider sx={{ my: 4 }} />
+                    {infoStatsEditor}
+                </>
             )}
         </Container>
     );

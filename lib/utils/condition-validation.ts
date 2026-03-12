@@ -1,18 +1,19 @@
-import type { FormCondition, FormElement, ConditionBlock, CapacityLimit } from "@/lib/types/registration-form";
+import type { FormCondition, FormElement, ConditionBlock, CapacityLimit, InfoStatsConfig } from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
 
 export interface FieldExternalUsage {
-    label: string;   // "Email", "Limit", "Statistiky"
-    color: "warning" | "secondary" | "success";
+    label: string;   // "Email", "Limit", "Statistiky", "Info statistiky"
+    color: "warning" | "secondary" | "success" | "info";
 }
 
-/** Returns external usages (email, capacity limit, stats) for a given field */
+/** Returns external usages (email, capacity limit, stats, info stats) for a given field */
 export function getFieldExternalUsages(
     fieldId: string,
     fieldName: string,
     capacityLimits: CapacityLimit[],
     showOptionCounts: string[],
     emailFieldNames: Set<string>,
+    infoStatsConfig?: InfoStatsConfig,
 ): FieldExternalUsage[] {
     const usages: FieldExternalUsage[] = [];
 
@@ -26,6 +27,10 @@ export function getFieldExternalUsages(
 
     if (showOptionCounts.includes(fieldId)) {
         usages.push({ label: "Statistiky", color: "success" });
+    }
+
+    if (infoStatsConfig?.fieldIds.includes(fieldId) || infoStatsConfig?.personFieldId === fieldId) {
+        usages.push({ label: "Info statistiky", color: "info" });
     }
 
     return usages;
