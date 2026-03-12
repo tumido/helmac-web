@@ -28,6 +28,12 @@ export function EmailVerificationContent() {
         });
     }, [token]);
 
+    useEffect(() => {
+        if (pending) {
+            window.history.replaceState(null, "", "/overeni-emailu");
+        }
+    }, [pending]);
+
     const handleResend = () => {
         startResendTransition(async () => {
             const result = await resendVerification();
