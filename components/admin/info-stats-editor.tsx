@@ -19,7 +19,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { Add, Check, Close, Delete, Edit, Save } from "@mui/icons-material";
+import { Add, Check, Close, Delete, Edit } from "@mui/icons-material";
 import type { InfoStatsConfig, InfoStatItem, InputField, OptionCounts } from "@/lib/types/registration-form";
 import { saveInfoStatsConfig } from "@/lib/actions/info-stats";
 
@@ -95,15 +95,11 @@ export function InfoStatsEditor({
     optionCounts,
 }: InfoStatsEditorProps) {
     const [config, setConfig] = useState<InfoStatsConfig>(initialConfig ?? defaultConfig);
-    const [saved, setSaved] = useState<InfoStatsConfig>(initialConfig ?? defaultConfig);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
 
     const [editingStat, setEditingStat] = useState<InfoStatItem | null>(null);
     const [isNewStat, setIsNewStat] = useState(false);
-
-    const isDirty = JSON.stringify(config) !== JSON.stringify(saved);
 
     const getFieldLabel = (fieldId: string) => {
         return optionFields.find((f) => f.id === fieldId)?.label
@@ -111,28 +107,15 @@ export function InfoStatsEditor({
             ?? "(neznámé pole)";
     };
 
-    const handleSave = async () => {
+    const autoSave = async (newConfig: InfoStatsConfig) => {
+        setConfig(newConfig);
         setSaving(true);
         setError(null);
-        setSuccess(false);
-
-        const result = await saveInfoStatsConfig(yearId, config);
-
+        const result = await saveInfoStatsConfig(yearId, newConfig);
         if (result.error) {
             setError(result.error);
-        } else {
-            setSaved(config);
-            setSuccess(true);
-            setTimeout(() => setSuccess(false), 3000);
         }
         setSaving(false);
-    };
-
-    const handleCancel = () => {
-        setConfig(saved);
-        setEditingStat(null);
-        setIsNewStat(false);
-        setError(null);
     };
 
     const handleAddStat = () => {
@@ -146,30 +129,32 @@ export function InfoStatsEditor({
     };
 
     const handleDeleteStat = (statId: string) => {
-        setConfig((prev) => ({
-            ...prev,
-            stats: prev.stats.filter((s) => s.id !== statId),
-        }));
+        const newConfig = {
+            ...config,
+            stats: config.stats.filter((s) => s.id !== statId),
+        };
         if (editingStat?.id === statId) {
             setEditingStat(null);
             setIsNewStat(false);
         }
+        autoSave(newConfig);
     };
 
     const handleConfirmEdit = () => {
         if (!editingStat || editingStat.fieldIds.length === 0) return;
 
-        setConfig((prev) => {
-            if (isNewStat) {
-                return { ...prev, stats: [...prev.stats, editingStat] };
-            }
-            return {
-                ...prev,
-                stats: prev.stats.map((s) => s.id === editingStat.id ? editingStat : s),
+        let newConfig: InfoStatsConfig;
+        if (isNewStat) {
+            newConfig = { ...config, stats: [...config.stats, editingStat] };
+        } else {
+            newConfig = {
+                ...config,
+                stats: config.stats.map((s) => s.id === editingStat.id ? editingStat : s),
             };
-        });
+        }
         setEditingStat(null);
         setIsNewStat(false);
+        autoSave(newConfig);
     };
 
     const handleCancelEdit = () => {
@@ -179,30 +164,21 @@ export function InfoStatsEditor({
 
     return (
         <Box>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6">
                     Statistiky na info stránce
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                    {isDirty && (
-                        <Button
-                            variant="outlined"
-                            onClick={handleCancel}
-                            size="small"
-                        >
-                            Zrušit
-                        </Button>
-                    )}
+                {config.enabled && !editingStat && (
                     <Button
-                        variant="contained"
-                        startIcon={<Save />}
-                        onClick={handleSave}
-                        disabled={saving || !isDirty}
+                        variant="outlined"
                         size="small"
+                        startIcon={<Add />}
+                        onClick={handleAddStat}
+                        disabled={saving}
                     >
-                        {saving ? "Ukládám..." : "Uložit"}
+                        Přidat statistiku
                     </Button>
-                </Box>
+                )}
             </Box>
 
             {error && (
@@ -211,18 +187,20 @@ export function InfoStatsEditor({
                 </Alert>
             )}
 
-            {success && (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                    Nastavení bylo uloženo
-                </Alert>
-            )}
-
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <FormControlLabel
                     control={
                         <Switch
                             checked={config.enabled}
-                            onChange={(e) => setConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                            disabled={saving}
+                            onChange={(e) => {
+                                const enabled = e.target.checked;
+                                if (!enabled) {
+                                    setEditingStat(null);
+                                    setIsNewStat(false);
+                                }
+                                autoSave({ ...config, enabled });
+                            }}
                         />
                     }
                     label="Zobrazit statistiky jako záložku na info stránce"
@@ -324,7 +302,7 @@ export function InfoStatsEditor({
                                                         variant="contained"
                                                         startIcon={<Check />}
                                                         onClick={handleConfirmEdit}
-                                                        disabled={editingStat.fieldIds.length === 0 || (editingStat.showPeople && !editingStat.personFieldId)}
+                                                        disabled={editingStat.fieldIds.length === 0 || (editingStat.showPeople && !editingStat.personFieldId) || saving}
                                                     >
                                                         Potvrdit
                                                     </Button>
@@ -356,14 +334,14 @@ export function InfoStatsEditor({
                                                 <IconButton
                                                     size="small"
                                                     onClick={() => handleEditStat(stat)}
-                                                    disabled={editingStat !== null}
+                                                    disabled={editingStat !== null || saving}
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
                                                 <IconButton
                                                     size="small"
                                                     onClick={() => handleDeleteStat(stat.id)}
-                                                    disabled={editingStat !== null}
+                                                    disabled={editingStat !== null || saving}
                                                 >
                                                     <Delete fontSize="small" />
                                                 </IconButton>
@@ -460,7 +438,7 @@ export function InfoStatsEditor({
                                                 variant="contained"
                                                 startIcon={<Check />}
                                                 onClick={handleConfirmEdit}
-                                                disabled={editingStat.fieldIds.length === 0 || (editingStat.showPeople && !editingStat.personFieldId)}
+                                                disabled={editingStat.fieldIds.length === 0 || (editingStat.showPeople && !editingStat.personFieldId) || saving}
                                             >
                                                 {isNewStat ? "Přidat" : "Potvrdit"}
                                             </Button>
@@ -478,16 +456,6 @@ export function InfoStatsEditor({
                             </Card>
                         )}
 
-                        {!editingStat && (
-                            <Button
-                                variant="outlined"
-                                startIcon={<Add />}
-                                onClick={handleAddStat}
-                                sx={{ alignSelf: "flex-start" }}
-                            >
-                                Přidat statistiku
-                            </Button>
-                        )}
                     </>
                 )}
             </Box>
