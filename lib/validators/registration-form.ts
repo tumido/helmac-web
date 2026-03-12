@@ -77,11 +77,20 @@ export const saveCapacityLimitsSchema = z.array(capacityLimitSchema);
 
 export const saveShowOptionCountsSchema = z.array(z.string().min(1));
 
+const infoStatItemSchema = z.object({
+    id: z.string().min(1),
+    fieldId: z.string().min(1),
+    name: z.string().optional(),
+    showPeople: z.boolean(),
+    personFieldId: z.string().min(1).optional(),
+}).refine(
+    (data) => !data.showPeople || !!data.personFieldId,
+    { message: "Pole pro jméno osoby je povinné při zobrazení osob", path: ["personFieldId"] },
+);
+
 export const saveInfoStatsConfigSchema = z.object({
     enabled: z.boolean(),
-    fieldIds: z.array(z.string().min(1)),
-    personFieldId: z.string().min(1).optional(),
-    showPeople: z.boolean(),
+    stats: z.array(infoStatItemSchema),
 });
 
 export const saveRegistrationFormSchema = z.object({

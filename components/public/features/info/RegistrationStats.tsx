@@ -8,13 +8,14 @@ import {
     Grid,
     Typography,
 } from "@mui/material";
-import type { InputField, OptionCounts, OptionPeople } from "@/lib/types/registration-form";
+import type { InfoStatItem, InputField, OptionCounts, OptionPeople, CapacityLimit } from "@/lib/types/registration-form";
 
 interface RegistrationStatsProps {
-    fields: InputField[];
+    stats: InfoStatItem[];
+    fieldsMap: Record<string, InputField>;
     optionCounts: OptionCounts;
-    optionPeople?: OptionPeople;
-    showPeople: boolean;
+    optionPeopleMap: Record<string, OptionPeople>;
+    capacityLimits?: CapacityLimit[];
 }
 
 function getFieldOptions(field: InputField, optionCounts: OptionCounts): string[] {
@@ -27,45 +28,58 @@ function getFieldOptions(field: InputField, optionCounts: OptionCounts): string[
     return [];
 }
 
-export function RegistrationStats({ fields, optionCounts, optionPeople, showPeople }: RegistrationStatsProps) {
-    if (fields.length === 0) {
+export function RegistrationStats({ stats, fieldsMap, optionCounts, optionPeopleMap, capacityLimits }: RegistrationStatsProps) {
+    if (stats.length === 0) {
         return null;
     }
 
     return (
         <Grid container spacing={3}>
-            {fields.map((field) => {
+            {stats.map((stat) => {
+                const field = fieldsMap[stat.fieldId];
+                if (!field) return null;
+
                 const options = getFieldOptions(field, optionCounts);
                 if (options.length === 0) return null;
 
+                const displayName = stat.name?.trim() || field.label;
+                const people = stat.showPeople && stat.personFieldId
+                    ? optionPeopleMap[stat.personFieldId]?.[field.name]
+                    : undefined;
+
                 return (
-                    <Grid item xs={12} sm={6} key={field.id}>
+                    <Grid item xs={12} sm={6} key={stat.id}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Typography variant="h6" sx={{ mb: 2, fontSize: "1.1rem" }}>
-                                    {field.label}
+                                    {displayName}
                                 </Typography>
                                 <Grid container spacing={2}>
                                     {options.map((option) => {
                                         const count = optionCounts[field.name]?.[option] ?? 0;
-                                        const people = optionPeople?.[field.name]?.[option] ?? [];
+                                        const personList = people?.[option] ?? [];
 
                                         return (
                                             <Grid item xs={12} sm={6} key={option}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: showPeople && people.length > 0 ? 0.5 : 0 }}>
-                                                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                                                        {option}
-                                                    </Typography>
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: stat.showPeople && personList.length > 0 ? 0.5 : 0 }}>
                                                     <Chip
-                                                        label={count}
+                                                        label={(() => {
+                                                            const limit = capacityLimits?.find(
+                                                                (cl) => cl.fieldId === field.id && cl.value === option,
+                                                            );
+                                                            return limit ? `${count}/${limit.maxCount}` : count;
+                                                        })()}
                                                         size="small"
                                                         color="primary"
                                                         variant="outlined"
                                                     />
+                                                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                                                        {option}
+                                                    </Typography>
                                                 </Box>
-                                                {showPeople && people.length > 0 && (
+                                                {stat.showPeople && personList.length > 0 && (
                                                     <Box sx={{ pl: 1, mt: 0.5 }}>
-                                                        {people.map((person, idx) => (
+                                                        {personList.map((person, idx) => (
                                                             <Typography
                                                                 key={idx}
                                                                 variant="caption"

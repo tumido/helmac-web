@@ -1,4 +1,4 @@
-import type { RegistrationFormData, CapacityLimit, FormCondition, InfoStatsConfig } from "@/lib/types/registration-form";
+import type { RegistrationFormData, CapacityLimit, FormCondition, InfoStatsConfig, InfoStatItem } from "@/lib/types/registration-form";
 
 /**
  * Migrates raw form data from the database to the new RegistrationFormData format.
@@ -49,12 +49,45 @@ export function migrateFormData(raw: unknown): RegistrationFormData {
             }
         }
 
+        // Migrate old showPeople boolean to showPeopleFieldIds array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let infoStatsConfig = (data.infoStatsConfig as any | undefined) ?? undefined;
+        if (infoStatsConfig && "showPeople" in infoStatsConfig && !("showPeopleFieldIds" in infoStatsConfig)) {
+            const { showPeople, ...rest } = infoStatsConfig;
+            infoStatsConfig = {
+                ...rest,
+                showPeopleFieldIds: showPeople ? (rest.fieldIds ?? []) : [],
+            };
+        }
+
+        // Migrate old fieldIds format to new stats array format
+        if (infoStatsConfig && "fieldIds" in infoStatsConfig && !("stats" in infoStatsConfig)) {
+            const oldFieldIds: string[] = infoStatsConfig.fieldIds ?? [];
+            const oldShowPeopleFieldIds: string[] = infoStatsConfig.showPeopleFieldIds ?? [];
+            const oldPersonFieldId: string | undefined = infoStatsConfig.personFieldId;
+
+            const stats: InfoStatItem[] = oldFieldIds.map((fieldId: string) => {
+                const showPeople = oldShowPeopleFieldIds.includes(fieldId);
+                return {
+                    id: crypto.randomUUID(),
+                    fieldId,
+                    showPeople,
+                    personFieldId: showPeople ? oldPersonFieldId : undefined,
+                };
+            });
+
+            infoStatsConfig = {
+                enabled: infoStatsConfig.enabled ?? false,
+                stats,
+            } as InfoStatsConfig;
+        }
+
         return {
             conditions,
             pricingDefinitions: (data.pricingDefinitions ?? []) as RegistrationFormData["pricingDefinitions"],
             capacityLimits,
             showOptionCounts: (data.showOptionCounts ?? []) as string[],
-            infoStatsConfig: (data.infoStatsConfig as InfoStatsConfig | undefined) ?? undefined,
+            infoStatsConfig,
             fields: (data.fields ?? []) as RegistrationFormData["fields"],
         };
     }

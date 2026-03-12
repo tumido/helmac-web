@@ -7,17 +7,18 @@ import {
     Button,
     Card,
     CardContent,
-    Checkbox,
     FormControl,
     FormControlLabel,
+    IconButton,
     InputLabel,
     MenuItem,
     Select,
     Switch,
+    TextField,
     Typography,
 } from "@mui/material";
-import { Edit, Save } from "@mui/icons-material";
-import type { InfoStatsConfig, InputField, OptionCounts } from "@/lib/types/registration-form";
+import { Add, Check, Close, Delete, Edit, Save } from "@mui/icons-material";
+import type { InfoStatsConfig, InfoStatItem, InputField, OptionCounts } from "@/lib/types/registration-form";
 import { saveInfoStatsConfig } from "@/lib/actions/info-stats";
 
 interface InfoStatsEditorProps {
@@ -30,8 +31,7 @@ interface InfoStatsEditorProps {
 
 const defaultConfig: InfoStatsConfig = {
     enabled: false,
-    fieldIds: [],
-    showPeople: false,
+    stats: [],
 };
 
 function OptionCountsList({ field, optionCounts }: { field: InputField; optionCounts?: OptionCounts }) {
@@ -69,6 +69,14 @@ function OptionCountsList({ field, optionCounts }: { field: InputField; optionCo
     );
 }
 
+function createNewStat(): InfoStatItem {
+    return {
+        id: crypto.randomUUID(),
+        fieldId: "",
+        showPeople: false,
+    };
+}
+
 export function InfoStatsEditor({
     yearId,
     infoStatsConfig: initialConfig,
@@ -78,18 +86,23 @@ export function InfoStatsEditor({
 }: InfoStatsEditorProps) {
     const [config, setConfig] = useState<InfoStatsConfig>(initialConfig ?? defaultConfig);
     const [saved, setSaved] = useState<InfoStatsConfig>(initialConfig ?? defaultConfig);
-    const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    const handleToggleField = (fieldId: string) => {
-        setConfig((prev) => ({
-            ...prev,
-            fieldIds: prev.fieldIds.includes(fieldId)
-                ? prev.fieldIds.filter((id) => id !== fieldId)
-                : [...prev.fieldIds, fieldId],
-        }));
+    const [editingStat, setEditingStat] = useState<InfoStatItem | null>(null);
+    const [isNewStat, setIsNewStat] = useState(false);
+
+    const isDirty = JSON.stringify(config) !== JSON.stringify(saved);
+
+    const getOptionFieldById = (fieldId: string) => {
+        return optionFields.find((f) => f.id === fieldId);
+    };
+
+    const getFieldLabel = (fieldId: string) => {
+        return optionFields.find((f) => f.id === fieldId)?.label
+            ?? allInputFields.find((f) => f.id === fieldId)?.label
+            ?? "(neznámé pole)";
     };
 
     const handleSave = async () => {
@@ -103,7 +116,6 @@ export function InfoStatsEditor({
             setError(result.error);
         } else {
             setSaved(config);
-            setEditing(false);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -112,83 +124,53 @@ export function InfoStatsEditor({
 
     const handleCancel = () => {
         setConfig(saved);
-        setEditing(false);
+        setEditingStat(null);
+        setIsNewStat(false);
         setError(null);
     };
 
-    const getFieldById = (fieldId: string) => {
-        return optionFields.find((f) => f.id === fieldId);
+    const handleAddStat = () => {
+        setEditingStat(createNewStat());
+        setIsNewStat(true);
     };
 
-    const getFieldLabel = (fieldId: string) => {
-        return optionFields.find((f) => f.id === fieldId)?.label ?? "(neznámé pole)";
+    const handleEditStat = (stat: InfoStatItem) => {
+        setEditingStat({ ...stat });
+        setIsNewStat(false);
     };
 
-    // --- Read-only view ---
-    if (!editing) {
-        return (
-            <Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                    <Typography variant="h6">
-                        Statistiky na info stránce
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        startIcon={<Edit />}
-                        onClick={() => setEditing(true)}
-                        size="small"
-                    >
-                        Upravit
-                    </Button>
-                </Box>
+    const handleDeleteStat = (statId: string) => {
+        setConfig((prev) => ({
+            ...prev,
+            stats: prev.stats.filter((s) => s.id !== statId),
+        }));
+        if (editingStat?.id === statId) {
+            setEditingStat(null);
+            setIsNewStat(false);
+        }
+    };
 
-                {success && (
-                    <Alert severity="success" sx={{ mb: 2 }}>
-                        Nastavení bylo uloženo
-                    </Alert>
-                )}
+    const handleConfirmEdit = () => {
+        if (!editingStat || !editingStat.fieldId) return;
 
-                {!saved.enabled ? (
-                    <Typography color="text.secondary" sx={{ py: 1 }}>
-                        Statistiky na info stránce jsou vypnuty.
-                    </Typography>
-                ) : saved.fieldIds.length === 0 ? (
-                    <Typography color="text.secondary" sx={{ py: 1 }}>
-                        Statistiky jsou zapnuty, ale žádná pole nejsou vybrána.
-                    </Typography>
-                ) : (
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        {saved.fieldIds.map((fieldId) => {
-                            const field = getFieldById(fieldId);
-                            return (
-                                <Card key={fieldId} variant="outlined">
-                                    <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                            {getFieldLabel(fieldId)}
-                                        </Typography>
-                                        {field ? (
-                                            <OptionCountsList field={field} optionCounts={optionCounts} />
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Pole nebylo nalezeno
-                                            </Typography>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                        {saved.showPeople && saved.personFieldId && (
-                            <Typography variant="body2" color="text.secondary">
-                                Zobrazení osob: {allInputFields.find((f) => f.id === saved.personFieldId)?.label ?? "(neznámé pole)"}
-                            </Typography>
-                        )}
-                    </Box>
-                )}
-            </Box>
-        );
-    }
+        setConfig((prev) => {
+            if (isNewStat) {
+                return { ...prev, stats: [...prev.stats, editingStat] };
+            }
+            return {
+                ...prev,
+                stats: prev.stats.map((s) => s.id === editingStat.id ? editingStat : s),
+            };
+        });
+        setEditingStat(null);
+        setIsNewStat(false);
+    };
 
-    // --- Edit mode ---
+    const handleCancelEdit = () => {
+        setEditingStat(null);
+        setIsNewStat(false);
+    };
+
     return (
         <Box>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
@@ -196,18 +178,20 @@ export function InfoStatsEditor({
                     Statistiky na info stránce
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
-                    <Button
-                        variant="outlined"
-                        onClick={handleCancel}
-                        size="small"
-                    >
-                        Zrušit
-                    </Button>
+                    {isDirty && (
+                        <Button
+                            variant="outlined"
+                            onClick={handleCancel}
+                            size="small"
+                        >
+                            Zrušit
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         startIcon={<Save />}
                         onClick={handleSave}
-                        disabled={saving}
+                        disabled={saving || !isDirty}
                         size="small"
                     >
                         {saving ? "Ukládám..." : "Uložit"}
@@ -218,6 +202,12 @@ export function InfoStatsEditor({
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
                     {error}
+                </Alert>
+            )}
+
+            {success && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                    Nastavení bylo uloženo
                 </Alert>
             )}
 
@@ -234,71 +224,163 @@ export function InfoStatsEditor({
 
                 {config.enabled && (
                     <>
-                        <Typography variant="subtitle2">
-                            Sledovaná pole
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5 }}>
-                            Vyberte pole, jejichž počty se zobrazí ve statistikách.
-                        </Typography>
-
-                        {optionFields.length === 0 ? (
-                            <Alert severity="info">
-                                Formulář neobsahuje žádná pole s možnostmi (výběr, přepínač, cenový výběr).
-                            </Alert>
-                        ) : (
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                                {optionFields.map((field) => (
-                                    <Box key={field.id}>
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={config.fieldIds.includes(field.id)}
-                                                    onChange={() => handleToggleField(field.id)}
-                                                />
-                                            }
-                                            label={field.label}
-                                        />
-                                        {config.fieldIds.includes(field.id) && (
-                                            <Box sx={{ ml: 4, mb: 1 }}>
-                                                <OptionCountsList field={field} optionCounts={optionCounts} />
-                                            </Box>
-                                        )}
-                                    </Box>
-                                ))}
-                            </Box>
+                        {config.stats.length === 0 && !editingStat && (
+                            <Typography color="text.secondary" sx={{ py: 1 }}>
+                                Zatím nejsou přidány žádné statistiky.
+                            </Typography>
                         )}
 
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={config.showPeople}
-                                    onChange={(e) => setConfig((prev) => ({ ...prev, showPeople: e.target.checked }))}
-                                />
-                            }
-                            label="Zobrazit seznam osob u každé možnosti"
-                        />
+                        {config.stats.map((stat) => {
+                            const field = getOptionFieldById(stat.fieldId);
+                            const displayName = stat.name?.trim() || getFieldLabel(stat.fieldId);
 
-                        {config.showPeople && (
-                            <FormControl size="small" sx={{ maxWidth: 300 }}>
-                                <InputLabel>Pole pro jméno osoby</InputLabel>
-                                <Select
-                                    value={config.personFieldId ?? ""}
-                                    onChange={(e) => setConfig((prev) => ({
-                                        ...prev,
-                                        personFieldId: e.target.value || undefined,
-                                    }))}
-                                    label="Pole pro jméno osoby"
-                                >
-                                    <MenuItem value="">
-                                        <em>Nevybráno</em>
-                                    </MenuItem>
-                                    {allInputFields.map((field) => (
-                                        <MenuItem key={field.id} value={field.id}>
-                                            {field.label}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            return (
+                                <Card key={stat.id} variant="outlined">
+                                    <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                                            <Typography variant="subtitle2">
+                                                {displayName}
+                                            </Typography>
+                                            <Box>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleEditStat(stat)}
+                                                    disabled={editingStat !== null}
+                                                >
+                                                    <Edit fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleDeleteStat(stat.id)}
+                                                    disabled={editingStat !== null}
+                                                >
+                                                    <Delete fontSize="small" />
+                                                </IconButton>
+                                            </Box>
+                                        </Box>
+                                        {field ? (
+                                            <OptionCountsList field={field} optionCounts={optionCounts} />
+                                        ) : (
+                                            <Typography variant="body2" color="text.secondary">
+                                                Pole nebylo nalezeno
+                                            </Typography>
+                                        )}
+                                        {stat.showPeople && stat.personFieldId && (
+                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                                Zobrazení osob: {getFieldLabel(stat.personFieldId)}
+                                            </Typography>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+
+                        {editingStat && (
+                            <Card variant="outlined" sx={{ borderColor: "primary.main" }}>
+                                <CardContent>
+                                    <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                                        {isNewStat ? "Nová statistika" : "Upravit statistiku"}
+                                    </Typography>
+
+                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                        <FormControl size="small" fullWidth required>
+                                            <InputLabel>Sledované pole</InputLabel>
+                                            <Select
+                                                value={editingStat.fieldId}
+                                                onChange={(e) => setEditingStat((prev) => prev ? { ...prev, fieldId: e.target.value } : prev)}
+                                                label="Sledované pole"
+                                            >
+                                                {optionFields.map((field) => (
+                                                    <MenuItem
+                                                        key={field.id}
+                                                        value={field.id}
+                                                        disabled={config.stats.some((s) => s.fieldId === field.id && s.id !== editingStat.id)}
+                                                    >
+                                                        {field.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+
+                                        <TextField
+                                            size="small"
+                                            label="Vlastní název (nepovinné)"
+                                            value={editingStat.name ?? ""}
+                                            onChange={(e) => setEditingStat((prev) => prev ? { ...prev, name: e.target.value || undefined } : prev)}
+                                            placeholder={editingStat.fieldId ? getFieldLabel(editingStat.fieldId) : ""}
+                                            fullWidth
+                                        />
+
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    checked={editingStat.showPeople}
+                                                    onChange={(e) => setEditingStat((prev) => prev ? {
+                                                        ...prev,
+                                                        showPeople: e.target.checked,
+                                                        personFieldId: e.target.checked ? prev.personFieldId : undefined,
+                                                    } : prev)}
+                                                />
+                                            }
+                                            label="Zobrazit seznam osob"
+                                        />
+
+                                        {editingStat.showPeople && (
+                                            <FormControl size="small" fullWidth required>
+                                                <InputLabel>Pole pro jméno osoby</InputLabel>
+                                                <Select
+                                                    value={editingStat.personFieldId ?? ""}
+                                                    onChange={(e) => setEditingStat((prev) => prev ? {
+                                                        ...prev,
+                                                        personFieldId: e.target.value || undefined,
+                                                    } : prev)}
+                                                    label="Pole pro jméno osoby"
+                                                >
+                                                    <MenuItem value="">
+                                                        <em>Nevybráno</em>
+                                                    </MenuItem>
+                                                    {allInputFields.map((field) => (
+                                                        <MenuItem key={field.id} value={field.id}>
+                                                            {field.label}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        )}
+
+                                        <Box sx={{ display: "flex", gap: 1 }}>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                startIcon={<Check />}
+                                                onClick={handleConfirmEdit}
+                                                disabled={!editingStat.fieldId || (editingStat.showPeople && !editingStat.personFieldId)}
+                                            >
+                                                {isNewStat ? "Přidat" : "Potvrdit"}
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                startIcon={<Close />}
+                                                onClick={handleCancelEdit}
+                                            >
+                                                Zrušit
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {!editingStat && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<Add />}
+                                onClick={handleAddStat}
+                                sx={{ alignSelf: "flex-start" }}
+                            >
+                                Přidat statistiku
+                            </Button>
                         )}
                     </>
                 )}

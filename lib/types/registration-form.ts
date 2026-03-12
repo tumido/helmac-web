@@ -153,12 +153,19 @@ export type OptionCounts = Record<string, Record<string, number>>;
 // Aggregated option people: fieldName -> optionValue -> person labels
 export type OptionPeople = Record<string, Record<string, string[]>>;
 
+// Single stat instance for info page
+export interface InfoStatItem {
+    id: string;              // crypto.randomUUID()
+    fieldId: string;         // single option field (select/radio/pricing_select)
+    name?: string;           // optional display name; overrides field.label on public page
+    showPeople: boolean;     // per-stat toggle
+    personFieldId?: string;  // per-stat person field (only when showPeople=true)
+}
+
 // Info stats config for public info page
 export interface InfoStatsConfig {
     enabled: boolean;
-    fieldIds: string[];         // field IDs to track (select/radio/pricing_select)
-    personFieldId?: string;     // field to use as person label
-    showPeople: boolean;        // whether to list people under each option
+    stats: InfoStatItem[];   // independent stat instances
 }
 
 /** Returns a Set of option values that are disabled (at capacity) for a given field */

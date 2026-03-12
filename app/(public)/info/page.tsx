@@ -5,6 +5,7 @@ import { InfoContent, RegistrationStats } from "@/components/public/features/inf
 import { getInfoSectionsForActiveYear, getActiveYear, getOptionCountsForYear, getRegistrationFormForYear, getOptionPeopleForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields } from "@/lib/types/registration-form";
+import type { InputField, OptionPeople } from "@/lib/types/registration-form";
 
 export const metadata = {
     title: "Info | Helmac",
@@ -25,27 +26,48 @@ export default async function InfoPage() {
             const formData = migrateFormData(registrationForm.fields);
             const config = formData.infoStatsConfig;
 
-            if (config?.enabled && config.fieldIds.length > 0) {
+            if (config?.enabled && config.stats.length > 0) {
                 const allInputFields = getAllInputFields(formData.fields);
-                const trackedFields = allInputFields.filter((f) => config.fieldIds.includes(f.id));
+                const allInputFieldsMap = new Map<string, InputField>(
+                    allInputFields.map((f) => [f.id, f]),
+                );
 
-                if (trackedFields.length > 0) {
+                const validStats = config.stats.filter((s) => allInputFieldsMap.has(s.fieldId));
+
+                if (validStats.length > 0) {
                     const optionCounts = await getOptionCountsForYear(activeYear.id);
 
-                    let optionPeople;
-                    if (config.showPeople && config.personFieldId) {
-                        const personField = allInputFields.find((f) => f.id === config.personFieldId);
-                        if (personField) {
-                            optionPeople = await getOptionPeopleForYear(activeYear.id, personField.name);
+                    // Collect unique personFieldIds from stats with showPeople=true
+                    const uniquePersonFieldIds = new Set<string>();
+                    for (const stat of validStats) {
+                        if (stat.showPeople && stat.personFieldId) {
+                            uniquePersonFieldIds.add(stat.personFieldId);
                         }
+                    }
+
+                    // Fetch optionPeople for each unique person field
+                    const optionPeopleMap: Record<string, OptionPeople> = {};
+                    for (const personFieldId of uniquePersonFieldIds) {
+                        const personField = allInputFieldsMap.get(personFieldId);
+                        if (personField) {
+                            optionPeopleMap[personFieldId] = await getOptionPeopleForYear(activeYear.id, personField.name);
+                        }
+                    }
+
+                    // Build a plain fieldsMap record for the client component
+                    const fieldsMap: Record<string, InputField> = {};
+                    for (const stat of validStats) {
+                        const field = allInputFieldsMap.get(stat.fieldId);
+                        if (field) fieldsMap[stat.fieldId] = field;
                     }
 
                     statsContent = (
                         <RegistrationStats
-                            fields={trackedFields}
+                            stats={validStats}
+                            fieldsMap={fieldsMap}
                             optionCounts={optionCounts}
-                            optionPeople={optionPeople}
-                            showPeople={config.showPeople}
+                            optionPeopleMap={optionPeopleMap}
+                            capacityLimits={formData.capacityLimits}
                         />
                     );
                 }
