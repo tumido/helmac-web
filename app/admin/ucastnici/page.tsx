@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
+import { PublicUserActions } from "@/components/admin/public-user-actions";
 import { formatDate } from "@/lib/utils/date";
 
 async function getPublicUsers() {
@@ -56,12 +57,13 @@ export default async function PublicUsersPage() {
                                 <TableCell>Ověřen</TableCell>
                                 <TableCell>Registrací</TableCell>
                                 <TableCell>Vytvořen</TableCell>
+                                <TableCell>Akce</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {users.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} align="center">
+                                    <TableCell colSpan={5} align="center">
                                         <Typography
                                             variant="body2"
                                             color="text.secondary"
@@ -85,6 +87,13 @@ export default async function PublicUsersPage() {
                                         <TableCell>{user._count.registrations}</TableCell>
                                         <TableCell>
                                             {formatDate(user.createdAt)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <PublicUserActions
+                                                userId={user.id}
+                                                userEmail={user.email}
+                                                registrationCount={user._count.registrations}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))
