@@ -1,4 +1,6 @@
-import { Container, Typography, Grid, Paper } from "@mui/material";
+import { Container, Typography, Grid, Paper, Box, IconButton } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
+import NextLink from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionActions } from "@/components/admin/submission-actions";
@@ -36,14 +38,22 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                     { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${submission.year.year} - ${submission.year.title}`, href: `/admin/rocniky/${yearId}` },
                     { label: "Registrace", href: `/admin/rocniky/${yearId}/registrace` },
-                    { label: `Detail registrace` },
+                    { label: "Přihlášky", href: `/admin/rocniky/${yearId}/registrace/prihlasky` },
+                    { label: "Detail registrace" },
                 ]}
                 title="Detail registrace"
             />
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Vytvořeno: {new Date(submission.createdAt).toLocaleString("cs-CZ")}
-                {submission.paidAt && ` • Zaplaceno: ${new Date(submission.paidAt).toLocaleString("cs-CZ")}`}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                <NextLink href={`/admin/rocniky/${yearId}/registrace/prihlasky`} passHref legacyBehavior>
+                    <IconButton size="small" sx={{ mr: 1 }}>
+                        <ArrowBack />
+                    </IconButton>
+                </NextLink>
+                <Typography variant="body2" color="text.secondary">
+                    Vytvořeno: {new Date(submission.createdAt).toLocaleString("cs-CZ")}
+                    {submission.paidAt && ` • Zaplaceno: ${new Date(submission.paidAt).toLocaleString("cs-CZ")}`}
+                </Typography>
+            </Box>
 
             <Grid container spacing={3}>
                 <Grid item xs={12} md={8}>
