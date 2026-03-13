@@ -14,11 +14,24 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
+import { ListFilters } from "@/components/admin/list-filters";
 import { PublicUserActions } from "@/components/admin/public-user-actions";
 import { formatDate } from "@/lib/utils/date";
+import { Prisma } from "@prisma/client";
 
-async function getPublicUsers() {
+interface PageProps {
+    searchParams: Promise<{ q?: string }>;
+}
+
+async function getPublicUsers(filters: { q?: string }) {
+    const where: Prisma.PublicUserWhereInput = {};
+
+    if (filters.q) {
+        where.email = { contains: filters.q, mode: "insensitive" };
+    }
+
     return db.publicUser.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         select: {
             id: true,
@@ -32,14 +45,15 @@ async function getPublicUsers() {
     });
 }
 
-export default async function PublicUsersPage() {
+export default async function PublicUsersPage({ searchParams }: PageProps) {
     try {
         await requireAdmin();
     } catch {
         redirect("/admin");
     }
 
-    const users = await getPublicUsers();
+    const params = await searchParams;
+    const users = await getPublicUsers(params);
 
     return (
         <Container maxWidth="lg">
@@ -47,6 +61,8 @@ export default async function PublicUsersPage() {
                 breadcrumbs={[{ label: "Účastníci" }]}
                 title="Účastníci"
             />
+
+            <ListFilters searchPlaceholder="Hledat účastníky..." />
 
             <Card>
                 <TableContainer>
@@ -69,7 +85,9 @@ export default async function PublicUsersPage() {
                                             color="text.secondary"
                                             sx={{ py: 4 }}
                                         >
-                                            Zatím žádní účastníci
+                                            {params.q
+                                                ? "Žádní účastníci neodpovídají filtru."
+                                                : "Zatím žádní účastníci"}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
