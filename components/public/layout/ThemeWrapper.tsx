@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import { publicTheme, publicLightTheme } from "@/styles/theme";
 import { ThemeModeProvider, useThemeMode } from "@/contexts/ThemeContext";
 import { Header } from "./Header";
+import { CookieConsent } from "@/components/public/ui/CookieConsent";
 import { NavSubtabs } from "@/lib/services/navigation";
 
 export interface PublicUserInfo {
@@ -40,7 +41,7 @@ function ThemedContent({ children, navSubtabs, registrationOpen, publicUser }: T
                 <Box component="main" sx={{ flex: 1 }}>
                     {children}
                 </Box>
-
+                <CookieConsent />
             </Box>
         </ThemeProvider>
     );
