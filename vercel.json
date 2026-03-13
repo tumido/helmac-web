@@ -1,4 +1,10 @@
 {
     "installCommand": "npm install && npm rebuild argon2",
-    "buildCommand": "prisma migrate deploy && next build"
+    "buildCommand": "prisma migrate deploy && next build",
+    "crons": [
+        {
+            "path": "/api/cron/update-prices",
+            "schedule": "0 2 * * *"
+        }
+    ]
 }
