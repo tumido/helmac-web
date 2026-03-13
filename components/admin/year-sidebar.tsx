@@ -26,6 +26,7 @@ import {
     AccountBalance,
     Email,
     MarkEmailRead,
+    PriceChange,
     Settings,
 } from "@mui/icons-material";
 import { ListItemLinkButton } from "@/components/ui/link-button";
@@ -76,6 +77,7 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
     const emailItems = [
         { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },
         { text: "Potvrzovací", href: `${base}/emaily/potvrzovaci`, icon: MarkEmailRead, indented: true },
+        { text: "Změna ceny", href: `${base}/emaily/zmena-ceny`, icon: PriceChange, indented: true },
     ];
 
     return (

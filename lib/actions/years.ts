@@ -409,6 +409,77 @@ export async function toggleConfirmationEmail(yearId: string, enabled: boolean) 
     }
 }
 
+export async function updatePriceChangeEmailTemplate(yearId: string, formData: FormData) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemáte oprávnění" };
+    }
+
+    const rawData = {
+        confirmationEmailSubject: formData.get("confirmationEmailSubject") || "",
+        confirmationEmailBody: formData.get("confirmationEmailBody") || "",
+        confirmationEmailBcc: formData.get("confirmationEmailBcc") || null,
+    };
+
+    const validated = updateEmailTemplateSchema.safeParse(rawData);
+    if (!validated.success) {
+        return { error: validated.error.flatten().fieldErrors };
+    }
+
+    try {
+        await db.year.update({
+            where: { id: yearId },
+            data: {
+                priceChangeEmailSubject: validated.data.confirmationEmailSubject,
+                priceChangeEmailBody: validated.data.confirmationEmailBody,
+                priceChangeEmailBcc: validated.data.confirmationEmailBcc,
+            },
+        });
+
+        revalidatePath(`/admin/rocniky/${yearId}/emaily`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update price change email template:", error);
+        return { error: "Nepodařilo se uložit šablonu emailu" };
+    }
+}
+
+export async function togglePriceChangeEmail(yearId: string, enabled: boolean) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemáte oprávnění" };
+    }
+
+    try {
+        if (enabled) {
+            const year = await db.year.findUnique({
+                where: { id: yearId },
+                select: {
+                    priceChangeEmailSubject: true,
+                    priceChangeEmailBody: true,
+                },
+            });
+
+            if (!year?.priceChangeEmailSubject || !year?.priceChangeEmailBody) {
+                return { error: "Nejdříve nastavte předmět a text emailu" };
+            }
+        }
+
+        await db.year.update({
+            where: { id: yearId },
+            data: { priceChangeEmailEnabled: enabled },
+        });
+
+        revalidatePath(`/admin/rocniky/${yearId}/emaily`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle price change email:", error);
+        return { error: "Nepodařilo se změnit stav emailu při změně ceny" };
+    }
+}
+
 async function createDefaultPages(yearId: string) {
     const defaultPages = [
         { slug: "uvod", title: "Úvod", sortOrder: 0 },

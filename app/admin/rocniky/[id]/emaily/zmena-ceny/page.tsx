@@ -1,0 +1,76 @@
+import { Container } from "@mui/material";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { PageHeader } from "@/components/admin/page-header";
+import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
+import { updatePriceChangeEmailTemplate } from "@/lib/actions/years";
+import { getRegistrationFormForYear } from "@/lib/services";
+import { migrateFormData } from "@/lib/utils/form-migration";
+import { getAllInputFields } from "@/lib/types/registration-form";
+
+interface ZmenaCenyPageProps {
+    params: Promise<{ id: string }>;
+}
+
+async function getYearPriceChangeEmailTemplate(yearId: string) {
+    return db.year.findUnique({
+        where: { id: yearId },
+        select: {
+            id: true,
+            year: true,
+            title: true,
+            priceChangeEmailSubject: true,
+            priceChangeEmailBody: true,
+            priceChangeEmailBcc: true,
+        },
+    });
+}
+
+export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
+    const { id } = await params;
+    const year = await getYearPriceChangeEmailTemplate(id);
+
+    if (!year) {
+        notFound();
+    }
+
+    // Build available placeholders from form fields
+    const registrationForm = await getRegistrationFormForYear(year.id);
+    const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
+    const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
+
+    const availablePlaceholders = [
+        ...allFormInputFields.map((f) => ({ key: f.name, label: f.label })),
+        { key: "variabilniSymbol", label: "Variabilní symbol" },
+        { key: "celkovaCena", label: "Celková cena (nová)" },
+        { key: "staraCena", label: "Původní cena" },
+        { key: "novaCena", label: "Nová cena" },
+        { key: "cisloUctu", label: "Číslo účtu" },
+        { key: "rok", label: "Rok" },
+        { key: "nazevRocniku", label: "Název ročníku" },
+        { key: "qrPlatba", label: "QR platba" },
+    ];
+
+    return (
+        <Container maxWidth="md">
+            <PageHeader
+                breadcrumbs={[
+                    { label: "Ročníky", href: "/admin/rocniky" },
+                    { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
+                    { label: "Emaily", href: `/admin/rocniky/${year.id}/emaily` },
+                    { label: "Změna ceny" },
+                ]}
+                title="Email při změně ceny"
+            />
+
+            <EmailTemplateEditor
+                yearId={year.id}
+                confirmationEmailSubject={year.priceChangeEmailSubject}
+                confirmationEmailBody={year.priceChangeEmailBody}
+                confirmationEmailBcc={year.priceChangeEmailBcc}
+                availablePlaceholders={availablePlaceholders}
+                saveAction={updatePriceChangeEmailTemplate}
+            />
+        </Container>
+    );
+}

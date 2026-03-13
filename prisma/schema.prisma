@@ -73,6 +73,11 @@ model Year {
   confirmationEmailBody     String?  @db.Text
   confirmationEmailBcc      String?
 
+  priceChangeEmailEnabled  Boolean  @default(false)
+  priceChangeEmailSubject  String?
+  priceChangeEmailBody     String?  @db.Text
+  priceChangeEmailBcc      String?
+
   bankAccountPrefix   String?
   bankAccountNumber   String?
   bankAccountBankCode String?

@@ -15,12 +15,15 @@ import { Edit, Save, Close } from "@mui/icons-material";
 import { updateEmailTemplate } from "@/lib/actions/years";
 import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor";
 
+type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
+
 interface EmailTemplateEditorProps {
     yearId: string;
     confirmationEmailSubject: string | null;
     confirmationEmailBody: string | null;
     confirmationEmailBcc: string | null;
     availablePlaceholders: { key: string; label: string }[];
+    saveAction?: SaveAction;
 }
 
 export function EmailTemplateEditor({
@@ -29,6 +32,7 @@ export function EmailTemplateEditor({
     confirmationEmailBody: initialBody,
     confirmationEmailBcc: initialBcc,
     availablePlaceholders,
+    saveAction = updateEmailTemplate,
 }: EmailTemplateEditorProps) {
     const [editing, setEditing] = useState(false);
     const [savedSubject, setSavedSubject] = useState(initialSubject ?? "");
@@ -78,7 +82,7 @@ export function EmailTemplateEditor({
         formData.set("confirmationEmailBody", body);
         formData.set("confirmationEmailBcc", bcc);
 
-        const result = await updateEmailTemplate(yearId, formData);
+        const result = await saveAction(yearId, formData);
 
         if (result && "error" in result && result.error) {
             if (typeof result.error === "string") {

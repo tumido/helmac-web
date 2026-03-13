@@ -4,13 +4,23 @@ import { useState, useTransition } from "react";
 import { Alert, Box, FormControlLabel, Switch } from "@mui/material";
 import { toggleConfirmationEmail } from "@/lib/actions/years";
 
+type ToggleAction = (yearId: string, enabled: boolean) => Promise<{ success?: boolean; error?: string }>;
+
 interface EmailToggleProps {
     yearId: string;
     initialEnabled: boolean;
     hasTemplate: boolean;
+    toggleAction?: ToggleAction;
+    label?: string;
 }
 
-export function EmailToggle({ yearId, initialEnabled, hasTemplate }: EmailToggleProps) {
+export function EmailToggle({
+    yearId,
+    initialEnabled,
+    hasTemplate,
+    toggleAction = toggleConfirmationEmail,
+    label = "Odesílat potvrzovací email po registraci",
+}: EmailToggleProps) {
     const [enabled, setEnabled] = useState(initialEnabled);
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
@@ -18,7 +28,7 @@ export function EmailToggle({ yearId, initialEnabled, hasTemplate }: EmailToggle
     const handleToggle = (checked: boolean) => {
         setError(null);
         startTransition(async () => {
-            const result = await toggleConfirmationEmail(yearId, checked);
+            const result = await toggleAction(yearId, checked);
             if (result && "error" in result && result.error) {
                 setError(typeof result.error === "string" ? result.error : "Nepodařilo se změnit stav");
             } else {
@@ -37,7 +47,7 @@ export function EmailToggle({ yearId, initialEnabled, hasTemplate }: EmailToggle
                         disabled={isPending}
                     />
                 }
-                label="Odesílat potvrzovací email po registraci"
+                label={label}
             />
             {error && (
                 <Alert severity="error" sx={{ mt: 1 }}>

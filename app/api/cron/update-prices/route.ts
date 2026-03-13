@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
-import type { PricingSummaryData } from "@/lib/types/registration-form";
+import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail } from "@/lib/utils/email";
+import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
+import { migrateFormData } from "@/lib/utils/form-migration";
+import { getAllInputFields } from "@/lib/types/registration-form";
+import type { InputField, PricingSummaryData } from "@/lib/types/registration-form";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +27,52 @@ export async function GET(request: NextRequest) {
             id: true,
             totalPrice: true,
             pricingSummary: true,
+            yearId: true,
+            formId: true,
+            data: true,
+            variableSymbol: true,
+            year: {
+                select: {
+                    year: true,
+                    title: true,
+                    priceChangeEmailEnabled: true,
+                    priceChangeEmailSubject: true,
+                    priceChangeEmailBody: true,
+                    priceChangeEmailBcc: true,
+                    bankAccountPrefix: true,
+                    bankAccountNumber: true,
+                    bankAccountBankCode: true,
+                },
+            },
         },
     });
 
     let updated = 0;
     let skipped = 0;
+    let emailsSent = 0;
     const errors: string[] = [];
+    const emailErrors: string[] = [];
+
+    // Cache form fields per formId to avoid repeated DB lookups
+    const formFieldsCache = new Map<string, InputField[]>();
+
+    async function getFormInputFields(formId: string): Promise<InputField[]> {
+        if (formFieldsCache.has(formId)) {
+            return formFieldsCache.get(formId)!;
+        }
+        const form = await db.registrationForm.findUnique({
+            where: { id: formId },
+            select: { fields: true },
+        });
+        if (!form) {
+            formFieldsCache.set(formId, []);
+            return [];
+        }
+        const formData = migrateFormData(form.fields);
+        const fields = getAllInputFields(formData.fields);
+        formFieldsCache.set(formId, fields);
+        return fields;
+    }
 
     for (const submission of submissions) {
         try {
@@ -39,6 +83,8 @@ export async function GET(request: NextRequest) {
                 skipped++;
                 continue;
             }
+
+            const oldPrice = submission.totalPrice;
 
             await db.registrationSubmission.update({
                 where: { id: submission.id },
@@ -52,6 +98,80 @@ export async function GET(request: NextRequest) {
                 },
             });
             updated++;
+
+            // Send price change email if enabled
+            const { year } = submission;
+            if (
+                year.priceChangeEmailEnabled &&
+                year.priceChangeEmailSubject &&
+                year.priceChangeEmailBody
+            ) {
+                try {
+                    const inputFields = await getFormInputFields(submission.formId);
+                    const emailField = inputFields.find((f) => f.type === "email");
+                    const submissionData = submission.data as Record<string, unknown>;
+                    const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+
+                    if (recipientEmail) {
+                        const bankAccount = year.bankAccountNumber && year.bankAccountBankCode
+                            ? formatCzechAccount(
+                                year.bankAccountNumber,
+                                year.bankAccountBankCode,
+                                year.bankAccountPrefix ?? undefined,
+                            )
+                            : null;
+
+                        const placeholders = buildPlaceholders({
+                            submissionData,
+                            variableSymbol: submission.variableSymbol,
+                            totalPrice,
+                            bankAccount,
+                            yearNumber: year.year,
+                            yearTitle: year.title,
+                        });
+
+                        // Add price change specific placeholders
+                        placeholders.staraCena = oldPrice != null ? `${oldPrice} Kč` : "";
+                        placeholders.novaCena = `${totalPrice} Kč`;
+
+                        const emailSubject = replacePlaceholders(year.priceChangeEmailSubject, placeholders);
+                        const emailBody = replacePlaceholders(year.priceChangeEmailBody, placeholders);
+
+                        // Generate QR payment image if bank account is configured
+                        let qrImageBuffer: Buffer | null = null;
+                        if (year.bankAccountNumber && year.bankAccountBankCode && totalPrice > 0) {
+                            const iban = czechAccountToIBAN(
+                                year.bankAccountNumber,
+                                year.bankAccountBankCode,
+                                year.bankAccountPrefix ?? undefined,
+                            );
+                            if (iban) {
+                                qrImageBuffer = await generateQRPaymentImage({
+                                    iban,
+                                    amount: totalPrice,
+                                    variableSymbol: submission.variableSymbol ?? undefined,
+                                });
+                            }
+                        }
+
+                        const sent = await sendConfirmationEmail({
+                            to: recipientEmail,
+                            subject: emailSubject,
+                            body: emailBody,
+                            bcc: year.priceChangeEmailBcc ?? undefined,
+                            qrImageBuffer: qrImageBuffer ?? undefined,
+                        });
+
+                        if (sent) {
+                            emailsSent++;
+                        } else {
+                            emailErrors.push(`${submission.id}: Email send failed`);
+                        }
+                    }
+                } catch (emailError) {
+                    emailErrors.push(`${submission.id}: ${emailError instanceof Error ? emailError.message : "Unknown email error"}`);
+                }
+            }
         } catch (error) {
             errors.push(`${submission.id}: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
@@ -62,7 +182,9 @@ export async function GET(request: NextRequest) {
         processed: submissions.length,
         updated,
         skipped,
+        emailsSent,
         errors,
+        emailErrors,
         timestamp: new Date().toISOString(),
     });
 }
