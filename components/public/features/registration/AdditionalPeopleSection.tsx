@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
     Box,
     Button,
@@ -41,6 +41,51 @@ export function AdditionalPeopleSection({
     errors,
 }: AdditionalPeopleSectionProps) {
     const apFieldNames = getAPFieldNames(formData.fields);
+
+    // Auto-select single enabled option for pricing_select, select, and radio fields
+    useEffect(() => {
+        if (people.length === 0) return;
+
+        let hasUpdates = false;
+        const updatedPeople = people.map((person) => {
+            const mergedData = buildMergedDataForAP(mainValues, person, apFieldNames);
+            const visibleFieldIds = evaluateAPVisibleFields(formData, mergedData);
+            let personUpdated = false;
+            const newPerson = { ...person };
+
+            for (const field of apFields) {
+                if (!visibleFieldIds.has(field.id)) continue;
+                const currentValue = person[field.name];
+                if (currentValue !== "" && currentValue !== undefined) continue;
+
+                if (field.type === "pricing_select" && field.pricingId) {
+                    const def = formData.pricingDefinitions.find(d => d.id === field.pricingId);
+                    if (!def) continue;
+                    const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
+                    const enabledOptions = def.options.filter(o => !disabledOpts.has(o.name));
+                    if (enabledOptions.length === 1) {
+                        newPerson[field.name] = enabledOptions[0].name;
+                        personUpdated = true;
+                    }
+                } else if (field.type === "select" || field.type === "radio") {
+                    if (!field.options || field.options.length === 0) continue;
+                    const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
+                    const enabledOptions = field.options.filter(o => !disabledOpts.has(o));
+                    if (enabledOptions.length === 1) {
+                        newPerson[field.name] = enabledOptions[0];
+                        personUpdated = true;
+                    }
+                }
+            }
+
+            if (personUpdated) hasUpdates = true;
+            return personUpdated ? newPerson : person;
+        });
+
+        if (hasUpdates) {
+            onPeopleChange(updatedPeople);
+        }
+    }, [people, apFields, mainValues, formData, optionCounts, apFieldNames, onPeopleChange]);
 
     const handleAddPerson = useCallback(() => {
         if (people.length >= MAX_ADDITIONAL_PEOPLE) return;

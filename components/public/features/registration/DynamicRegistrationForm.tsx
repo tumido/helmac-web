@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useActionState, type FormEvent } from "react";
+import { useState, useCallback, useMemo, useEffect, useActionState, type FormEvent } from "react";
 import { Box, Button, Alert, Paper, Snackbar } from "@mui/material";
 import type { RegistrationFormData, SubmissionData, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
 import { isInputField, getAllFields, getAllInputFields, getAPInputFields, hasAdditionalPeopleFields, getDisabledOptionsForField } from "@/lib/types/registration-form";
@@ -57,6 +57,47 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
         e.preventDefault();
         setPreviewSnackbar(true);
     }, []);
+
+    // Auto-select single enabled option for pricing_select, select, and radio fields
+    useEffect(() => {
+        const inputFields = getAllInputFields(formData.fields);
+        const updates: Record<string, string> = {};
+
+        for (const field of inputFields) {
+            if (!visibleFields.has(field.id)) continue;
+
+            if (field.type === "pricing_select" && field.pricingId) {
+                const def = formData.pricingDefinitions.find(d => d.id === field.pricingId);
+                if (!def) continue;
+                const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
+                const enabledOptions = def.options.filter(o => !disabledOpts.has(o.name));
+                if (enabledOptions.length === 1) {
+                    updates[field.name] = enabledOptions[0].name;
+                }
+            } else if (field.type === "select" || field.type === "radio") {
+                if (!field.options || field.options.length === 0) continue;
+                const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
+                const enabledOptions = field.options.filter(o => !disabledOpts.has(o));
+                if (enabledOptions.length === 1) {
+                    updates[field.name] = enabledOptions[0];
+                }
+            }
+        }
+
+        if (Object.keys(updates).length > 0) {
+            setValues(prev => {
+                const next = { ...prev };
+                let changed = false;
+                for (const [name, value] of Object.entries(updates)) {
+                    if (prev[name] === "" || prev[name] === undefined) {
+                        next[name] = value;
+                        changed = true;
+                    }
+                }
+                return changed ? next : prev;
+            });
+        }
+    }, [visibleFields, formData, optionCounts]);
 
     // Flatten all fields for rendering (preserving order from elements)
     const allFields = getAllFields(formData.fields);
