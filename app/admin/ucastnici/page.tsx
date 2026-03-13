@@ -10,6 +10,7 @@ import {
     Chip,
     Typography,
 } from "@mui/material";
+import { Box } from "@mui/material";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -40,6 +41,12 @@ async function getPublicUsers(filters: { q?: string }) {
             createdAt: true,
             _count: {
                 select: { registrations: true },
+            },
+            registrations: {
+                select: {
+                    year: { select: { year: true } },
+                },
+                orderBy: { year: { year: "asc" } },
             },
         },
     });
@@ -102,7 +109,17 @@ export default async function PublicUsersPage({ searchParams }: PageProps) {
                                                 size="small"
                                             />
                                         </TableCell>
-                                        <TableCell>{user._count.registrations}</TableCell>
+                                        <TableCell>
+                                            {user.registrations.length > 0 ? (
+                                                <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                                    {[...new Set(user.registrations.map((r) => r.year.year))].map((year) => (
+                                                        <Chip key={year} label={year} size="small" variant="outlined" />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                "—"
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             {formatDate(user.createdAt)}
                                         </TableCell>
