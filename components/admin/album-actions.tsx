@@ -73,8 +73,7 @@ export function AlbumActions({ albumId }: AlbumActionsProps) {
                 <DialogTitle>Smazat album?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat toto album? Tato akce je nevratná a
-                        smaže všechny obrázky v albu.
+                        Opravdu chcete smazat toto album? Tato akce je nevratná.
                     </DialogContentText>
                     {error && (
                         <DialogContentText color="error" sx={{ mt: 2 }}>

@@ -16,7 +16,6 @@ import {
     Article,
     Newspaper,
     PhotoLibrary,
-    Image as ImageIcon,
     Add,
     Edit,
     Schedule,
@@ -28,15 +27,14 @@ import { LinkButton } from "@/components/ui/link-button";
 import { formatDate } from "@/lib/utils/date";
 
 async function getStats() {
-    const [yearsCount, pagesCount, newsCount, albumsCount, imagesCount] = await Promise.all([
+    const [yearsCount, pagesCount, newsCount, albumsCount] = await Promise.all([
         db.year.count(),
         db.page.count(),
         db.news.count(),
         db.album.count(),
-        db.image.count(),
     ]);
 
-    return { yearsCount, pagesCount, newsCount, albumsCount, imagesCount };
+    return { yearsCount, pagesCount, newsCount, albumsCount };
 }
 
 async function getRecentActivity() {
@@ -186,12 +184,6 @@ export default async function AdminDashboardPage() {
             value: stats.albumsCount,
             icon: PhotoLibrary,
             color: "#7b1fa2",
-        },
-        {
-            title: "Obrázky",
-            value: stats.imagesCount,
-            icon: ImageIcon,
-            color: "#00838f",
         },
     ];
 

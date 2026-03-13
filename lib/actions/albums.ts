@@ -7,8 +7,6 @@ import { requireAdmin } from "@/lib/auth";
 import {
     createAlbumSchema,
     updateAlbumSchema,
-    createImageSchema,
-    updateImageSchema,
 } from "@/lib/validators/album";
 import { generateSlug } from "@/lib/utils/slugify";
 
@@ -17,18 +15,7 @@ export type AlbumActionState = {
         title?: string[];
         description?: string[];
         coverImage?: string[];
-        _form?: string[];
-    };
-    success?: boolean;
-} | null;
-
-export type ImageActionState = {
-    error?: {
-        url?: string[];
-        thumbnailUrl?: string[];
-        title?: string[];
-        description?: string[];
-        altText?: string[];
+        externalUrl?: string[];
         _form?: string[];
     };
     success?: boolean;
@@ -51,6 +38,7 @@ export async function createAlbum(
         title: formData.get("title"),
         description: formData.get("description") || undefined,
         coverImage: formData.get("coverImage") || undefined,
+        externalUrl: formData.get("externalUrl"),
     };
 
     const validated = createAlbumSchema.safeParse(rawData);
@@ -93,6 +81,7 @@ export async function createAlbum(
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
+                externalUrl: validated.data.externalUrl,
                 isPublished: true,
                 sortOrder: validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
             },
@@ -126,6 +115,7 @@ export async function updateAlbum(
         title: formData.get("title"),
         description: formData.get("description") || undefined,
         coverImage: formData.get("coverImage") || undefined,
+        externalUrl: formData.get("externalUrl"),
     };
 
     const validated = updateAlbumSchema.safeParse(rawData);
@@ -147,6 +137,7 @@ export async function updateAlbum(
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
+                externalUrl: validated.data.externalUrl,
                 isPublished: true,
             },
         });
@@ -202,197 +193,5 @@ export async function bulkDeleteAlbums(albumIds: string[]) {
     } catch (error) {
         console.error("Failed to bulk delete albums:", error);
         return { error: "Nepodařilo se smazat alba" };
-    }
-}
-
-// Image CRUD
-
-export async function addImage(
-    albumId: string,
-    prevState: ImageActionState,
-    formData: FormData
-): Promise<ImageActionState> {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: { _form: ["Nemáte oprávnění"] } };
-    }
-
-    const rawData = {
-        url: formData.get("url"),
-        thumbnailUrl: formData.get("thumbnailUrl") || undefined,
-        title: formData.get("title") || undefined,
-        description: formData.get("description") || undefined,
-        altText: formData.get("altText") || undefined,
-        width: formData.get("width") || undefined,
-        height: formData.get("height") || undefined,
-    };
-
-    const validated = createImageSchema.safeParse(rawData);
-
-    if (!validated.success) {
-        return { error: validated.error.flatten().fieldErrors };
-    }
-
-    try {
-        const maxOrder = await db.image.aggregate({
-            where: { albumId },
-            _max: { sortOrder: true },
-        });
-
-        await db.image.create({
-            data: {
-                albumId,
-                url: validated.data.url,
-                thumbnailUrl: validated.data.thumbnailUrl || null,
-                title: validated.data.title,
-                description: validated.data.description,
-                altText: validated.data.altText,
-                width: validated.data.width,
-                height: validated.data.height,
-                sortOrder: validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
-            },
-        });
-
-        revalidatePath(`/admin/galerie/${albumId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to add image:", error);
-        return { error: { _form: ["Nepodařilo se přidat obrázek"] } };
-    }
-}
-
-export async function updateImage(
-    imageId: string,
-    prevState: ImageActionState,
-    formData: FormData
-): Promise<ImageActionState> {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: { _form: ["Nemáte oprávnění"] } };
-    }
-
-    const rawData = {
-        url: formData.get("url"),
-        thumbnailUrl: formData.get("thumbnailUrl") || undefined,
-        title: formData.get("title") || undefined,
-        description: formData.get("description") || undefined,
-        altText: formData.get("altText") || undefined,
-    };
-
-    const validated = updateImageSchema.safeParse(rawData);
-
-    if (!validated.success) {
-        return { error: validated.error.flatten().fieldErrors };
-    }
-
-    try {
-        const image = await db.image.update({
-            where: { id: imageId },
-            data: {
-                url: validated.data.url,
-                thumbnailUrl: validated.data.thumbnailUrl || null,
-                title: validated.data.title,
-                description: validated.data.description,
-                altText: validated.data.altText,
-            },
-        });
-
-        revalidatePath(`/admin/galerie/${image.albumId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to update image:", error);
-        return { error: { _form: ["Nepodařilo se upravit obrázek"] } };
-    }
-}
-
-export async function deleteImage(imageId: string) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    try {
-        const image = await db.image.delete({
-            where: { id: imageId },
-        });
-
-        revalidatePath(`/admin/galerie/${image.albumId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to delete image:", error);
-        return { error: "Nepodařilo se smazat obrázek" };
-    }
-}
-
-export async function addImages(
-    albumId: string,
-    urls: string[]
-): Promise<{ success?: boolean; error?: string }> {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    if (urls.length === 0) {
-        return { error: "Žádné obrázky k přidání" };
-    }
-
-    try {
-        const maxOrder = await db.image.aggregate({
-            where: { albumId },
-            _max: { sortOrder: true },
-        });
-
-        const startOrder = (maxOrder._max.sortOrder ?? 0) + 1;
-
-        await db.$transaction(
-            urls.map((url, index) =>
-                db.image.create({
-                    data: {
-                        albumId,
-                        url,
-                        sortOrder: startOrder + index,
-                    },
-                })
-            )
-        );
-
-        revalidatePath(`/admin/galerie/${albumId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to add images:", error);
-        return { error: "Nepodařilo se přidat obrázky" };
-    }
-}
-
-export async function reorderImages(
-    albumId: string,
-    imageIds: string[]
-): Promise<{ success?: boolean; error?: string }> {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    try {
-        await db.$transaction(
-            imageIds.map((id, index) =>
-                db.image.update({
-                    where: { id },
-                    data: { sortOrder: index },
-                })
-            )
-        );
-
-        revalidatePath(`/admin/galerie/${albumId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to reorder images:", error);
-        return { error: "Nepodařilo se změnit pořadí obrázků" };
     }
 }

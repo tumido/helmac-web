@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { Typography, Box } from "@mui/material";
-import { PhotoLibrary } from "@mui/icons-material";
+import { OpenInNew } from "@mui/icons-material";
 import { Card } from "@/components/public/ui";
 import { AlbumPreview } from "./gallery.types";
 
@@ -10,8 +9,10 @@ interface AlbumCardProps {
 
 export function AlbumCard({ album }: AlbumCardProps) {
     return (
-        <Link
-            href={`/galerie/${album.year.year}/${album.slug}`}
+        <a
+            href={album.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{ textDecoration: "none", color: "inherit" }}
         >
             <Card
@@ -62,12 +63,12 @@ export function AlbumCard({ album }: AlbumCardProps) {
                         color: "text.secondary",
                     }}
                 >
-                    <PhotoLibrary fontSize="small" />
+                    <OpenInNew fontSize="small" />
                     <Typography variant="caption">
-                        {album._count.images} fotografii
+                        Otevřít galerii
                     </Typography>
                 </Box>
             </Card>
-        </Link>
+        </a>
     );
 }

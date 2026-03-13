@@ -43,9 +43,6 @@ async function getAlbums(yearId: string, filters: { q?: string }) {
             year: {
                 select: { year: true, title: true },
             },
-            _count: {
-                select: { images: true },
-            },
         },
     });
 }

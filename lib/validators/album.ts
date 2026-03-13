@@ -13,38 +13,15 @@ export const createAlbumSchema = z.object({
             "Neplatná URL obrázku"
         )
         .optional(),
+    externalUrl: z
+        .string()
+        .min(1, "Odkaz je povinný")
+        .url("Neplatná URL adresa"),
     isPublished: z.coerce.boolean().optional(),
     sortOrder: z.coerce.number().int().min(0).optional(),
 });
 
 export const updateAlbumSchema = createAlbumSchema.partial();
 
-export const createImageSchema = z.object({
-    url: z
-        .string()
-        .min(1, "URL obrázku je povinná")
-        .refine(
-            (val) => val.startsWith("/") || val.startsWith("http"),
-            "Neplatná URL obrázku"
-        ),
-    thumbnailUrl: z
-        .string()
-        .refine(
-            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
-            "Neplatná URL náhledu"
-        )
-        .optional(),
-    title: z.string().max(200, "Název je příliš dlouhý").optional(),
-    description: z.string().max(1000, "Popis je příliš dlouhý").optional(),
-    altText: z.string().max(200, "Alt text je příliš dlouhý").optional(),
-    width: z.coerce.number().int().positive().optional(),
-    height: z.coerce.number().int().positive().optional(),
-    sortOrder: z.coerce.number().int().min(0).optional(),
-});
-
-export const updateImageSchema = createImageSchema.partial();
-
 export type CreateAlbumInput = z.infer<typeof createAlbumSchema>;
 export type UpdateAlbumInput = z.infer<typeof updateAlbumSchema>;
-export type CreateImageInput = z.infer<typeof createImageSchema>;
-export type UpdateImageInput = z.infer<typeof updateImageSchema>;

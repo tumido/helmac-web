@@ -262,6 +262,7 @@ model Album {
   slug        String
   description String?
   coverImage  String?
+  externalUrl String
 
   sortOrder   Int         @default(0)
   isPublished Boolean     @default(false)
@@ -269,34 +270,8 @@ model Album {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  images      Image[]
-
   @@unique([yearId, slug])
   @@map("albums")
-}
-
-model Image {
-  id           String      @id @default(cuid())
-  albumId      String
-  album        Album       @relation(fields: [albumId], references: [id], onDelete: Cascade)
-
-  url          String
-  thumbnailUrl String?
-
-  title        String?
-  description  String?
-  altText      String?
-
-  width        Int?
-  height       Int?
-  sizeBytes    Int?
-  mimeType     String?
-
-  sortOrder    Int         @default(0)
-
-  createdAt    DateTime    @default(now())
-
-  @@map("images")
 }
 
 // ============================================

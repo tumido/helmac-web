@@ -86,7 +86,7 @@ export const getYearByNumber = cache(async (yearNumber: number) => {
                     slug: true,
                     title: true,
                     coverImage: true,
-                    _count: { select: { images: true } },
+                    externalUrl: true,
                 },
             },
             news: {

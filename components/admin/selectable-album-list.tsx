@@ -18,7 +18,6 @@ import {
 } from "@mui/material";
 import {
     Edit,
-    PhotoLibrary,
 } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { AlbumActions } from "@/components/admin/album-actions";
@@ -30,9 +29,6 @@ interface Album {
     id: string;
     slug: string;
     title: string;
-    _count: {
-        images: number;
-    };
     year: {
         year: number;
         title: string;
@@ -164,32 +160,6 @@ export function SelectableAlbumList({ albums, editBasePath = "/admin/galerie", s
                                             {album.year.year} - {album.year.title}
                                         </Typography>
                                     )}
-                                    {showYear && (
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            |
-                                        </Typography>
-                                    )}
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 0.5,
-                                        }}
-                                    >
-                                        <PhotoLibrary
-                                            fontSize="small"
-                                            sx={{ color: "text.secondary" }}
-                                        />
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            {album._count.images} obrázků
-                                        </Typography>
-                                    </Box>
                                 </Box>
                             </Box>
                             <Box
@@ -225,7 +195,6 @@ export function SelectableAlbumList({ albums, editBasePath = "/admin/galerie", s
                 <DialogContent>
                     <DialogContentText>
                         Opravdu chcete smazat {selected.size} vybraných alb?
-                        Budou smazány i všechny obrázky v těchto albech.
                         Tato akce je nevratná.
                     </DialogContentText>
                 </DialogContent>

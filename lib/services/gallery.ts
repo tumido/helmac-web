@@ -7,35 +7,9 @@ const albumPreviewSelect = {
     title: true,
     description: true,
     coverImage: true,
+    externalUrl: true,
     year: {
         select: { year: true },
-    },
-    _count: {
-        select: { images: true },
-    },
-} as const;
-
-const albumDetailSelect = {
-    id: true,
-    slug: true,
-    title: true,
-    description: true,
-    coverImage: true,
-    year: {
-        select: { year: true },
-    },
-    images: {
-        orderBy: { sortOrder: "asc" as const },
-        select: {
-            id: true,
-            url: true,
-            thumbnailUrl: true,
-            title: true,
-            description: true,
-            altText: true,
-            width: true,
-            height: true,
-        },
     },
 } as const;
 
@@ -75,32 +49,6 @@ export const getPublishedAlbums = cache(async (yearId: string) => {
         select: albumPreviewSelect,
     });
 });
-
-export const getAlbumByYearAndSlug = cache(
-    async (yearNumber: number, slug: string) => {
-        return db.album.findFirst({
-            where: {
-                slug,
-                isPublished: true,
-                year: { year: yearNumber },
-            },
-            select: albumDetailSelect,
-        });
-    }
-);
-
-export const getAlbumWithImages = cache(
-    async (yearId: string, slug: string) => {
-        return db.album.findFirst({
-            where: {
-                yearId,
-                slug,
-                isPublished: true,
-            },
-            select: albumDetailSelect,
-        });
-    }
-);
 
 export const getLatestAlbumsForActiveYear = cache(
     async (limit: number = 4) => {

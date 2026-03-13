@@ -28,6 +28,7 @@ interface AlbumFormProps {
         title?: string;
         description?: string | null;
         coverImage?: string | null;
+        externalUrl?: string;
     };
     cancelHref?: string;
     redirectTo?: string;
@@ -140,6 +141,19 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                         multiline
                         rows={3}
                         inputProps={{ maxLength: 1000 }}
+                        disabled={!editing}
+                    />
+
+                    <TextField
+                        required
+                        fullWidth
+                        id="externalUrl"
+                        name="externalUrl"
+                        label="Externí odkaz (URL)"
+                        placeholder="https://"
+                        defaultValue={defaultValues?.externalUrl || ""}
+                        error={!!state?.error?.externalUrl}
+                        helperText={state?.error?.externalUrl?.[0] || "Odkaz na externí galerii (např. Google Photos, Rajče apod.)"}
                         disabled={!editing}
                     />
 
