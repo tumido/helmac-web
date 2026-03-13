@@ -5,6 +5,7 @@ import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
 import { SubmissionPricingSummary } from "@/components/admin/submission-pricing-summary";
 import { ResendEmailButton } from "@/components/admin/resend-email-button";
+import { AdminNoteDetail } from "@/components/admin/admin-note-detail";
 import { getSubmissionById } from "@/lib/services/registration";
 import { getAllFields, getAPInputFields } from "@/lib/types/registration-form";
 import type { PricingSummaryData } from "@/lib/types/registration-form";
@@ -78,6 +79,15 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                             submissionId={submissionId}
                             emailSent={submission.emailSent}
                             emailSentAt={submission.emailSentAt}
+                        />
+                    </Paper>
+                    <Paper sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Poznámka admina
+                        </Typography>
+                        <AdminNoteDetail
+                            submissionId={submissionId}
+                            adminNote={submission.adminNote}
                         />
                     </Paper>
                     <Paper sx={{ p: 3 }}>

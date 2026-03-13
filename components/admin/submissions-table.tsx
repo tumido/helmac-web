@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
 import { CheckCircle, Cancel, Email, Search } from "@mui/icons-material";
+import { AdminNoteButton } from "@/components/admin/admin-note-button";
 import type { FormField, InputField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import type { RegistrationStatus } from "@prisma/client";
@@ -38,6 +39,7 @@ interface Submission {
     totalPrice: number | null;
     variableSymbol: string | null;
     emailSent: boolean;
+    adminNote: string | null;
     createdAt: Date;
 }
 
@@ -143,6 +145,8 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                 return dir * (a.variableSymbol ?? "").localeCompare(b.variableSymbol ?? "", "cs");
             case "emailSent":
                 return dir * (Number(a.emailSent) - Number(b.emailSent));
+            case "adminNote":
+                return dir * (Number(!!a.adminNote) - Number(!!b.adminNote));
             case "createdAt":
                 return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             default:
@@ -204,6 +208,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                             ["totalPrice", "Cena"],
                             ["variableSymbol", "VS"],
                             ["emailSent", "Email"],
+                            ["adminNote", "Poznámka"],
                             ["createdAt", "Datum"],
                         ] as const).map(([key, label]) => (
                             <TableCell key={key} sortDirection={sortKey === key ? sortDir : false}>
@@ -317,6 +322,12 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                                             <Email fontSize="small" color={submission.emailSent ? "success" : "disabled"} />
                                         </Tooltip>
                                     </TableCell>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <AdminNoteButton
+                                            submissionId={submission.id}
+                                            adminNote={submission.adminNote}
+                                        />
+                                    </TableCell>
                                     <TableCell>
                                         <Typography variant="body2" noWrap>
                                             {formatDate(submission.createdAt)}
@@ -381,7 +392,8 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                                                     ) : null}
                                                 </TableCell>
                                             ))}
-                                            {/* Empty cells for Osoby, Zaplaceno, Cena, VS, Email, Datum, Akce */}
+                                            {/* Empty cells for Osoby, Zaplaceno, Cena, VS, Email, Poznámka, Datum, Akce */}
+                                            <TableCell />
                                             <TableCell />
                                             <TableCell />
                                             <TableCell />

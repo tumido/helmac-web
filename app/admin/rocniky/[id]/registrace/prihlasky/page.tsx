@@ -33,6 +33,7 @@ async function getYearWithSubmissions(yearId: string) {
                     totalPrice: true,
                     variableSymbol: true,
                     emailSent: true,
+                    adminNote: true,
                     createdAt: true,
                 },
             },

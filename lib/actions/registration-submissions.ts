@@ -198,6 +198,27 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
     }
 }
 
+export async function updateAdminNote(
+    submissionId: string,
+    adminNote: string
+): Promise<ActionResult> {
+    await requireAdmin();
+
+    try {
+        const submission = await db.registrationSubmission.update({
+            where: { id: submissionId },
+            data: { adminNote: adminNote || null },
+            select: { yearId: true },
+        });
+
+        revalidatePath(`/admin/rocniky/${submission.yearId}/registrace`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update admin note:", error);
+        return { error: "Nepodařilo se uložit poznámku" };
+    }
+}
+
 export async function deleteSubmission(submissionId: string): Promise<ActionResult> {
     await requireAdmin();
 
