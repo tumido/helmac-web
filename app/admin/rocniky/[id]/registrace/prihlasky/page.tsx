@@ -1,4 +1,4 @@
-import { Container, Box, Chip } from "@mui/material";
+import { Container, Box, Chip, Alert } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -46,8 +46,33 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
     const { status, paid } = await searchParams;
     const year = await getYearWithSubmissions(id);
 
-    if (!year || !year.registrationForm) {
+    if (!year) {
         notFound();
+    }
+
+    if (!year.registrationForm) {
+        return (
+            <Container maxWidth="xl">
+                <PageHeader
+                    breadcrumbs={[
+                        { label: "Ročníky", href: "/admin/rocniky" },
+                        { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
+                        { label: "Registrace", href: `/admin/rocniky/${year.id}/registrace` },
+                        { label: "Přihlášky" },
+                    ]}
+                    title="Přihlášky"
+                />
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    Pro zobrazení přihlášek je nutné nejprve vytvořit registrační formulář.
+                </Alert>
+                <LinkButton
+                    href={`/admin/rocniky/${id}/registrace/formular`}
+                    variant="contained"
+                >
+                    Vytvořit formulář
+                </LinkButton>
+            </Container>
+        );
     }
 
     const formData = migrateFormData(year.registrationForm.fields);
