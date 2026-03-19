@@ -11,7 +11,6 @@ import { NavSubtabs } from "@/lib/services/navigation";
 
 export interface PublicUserInfo {
     email: string;
-    emailVerified: boolean;
 }
 
 interface ThemedContentProps {

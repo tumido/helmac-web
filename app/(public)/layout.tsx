@@ -15,7 +15,7 @@ export default async function PublicLayout({
     ]);
 
     const publicUser = publicSession
-        ? { email: publicSession.email, emailVerified: publicSession.emailVerified }
+        ? { email: publicSession.email }
         : null;
 
     return (

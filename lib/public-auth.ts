@@ -16,7 +16,6 @@ function getPublicJWTSecret(): Uint8Array {
 export async function signPublicJWT(payload: {
     sub: string;
     email: string;
-    emailVerified: boolean;
 }): Promise<string> {
     return new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
@@ -31,12 +30,10 @@ export async function signPublicJWT(payload: {
 export async function setPublicSession(user: {
     id: string;
     email: string;
-    emailVerified: boolean;
 }): Promise<void> {
     const token = await signPublicJWT({
         sub: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
     });
 
     const cookieStore = await cookies();

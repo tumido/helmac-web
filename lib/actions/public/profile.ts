@@ -34,7 +34,7 @@ export async function changePassword(
 
     const user = await db.publicUser.findUnique({
         where: { id: session.sub },
-        select: { id: true, email: true, emailVerified: true, passwordHash: true },
+        select: { id: true, email: true, passwordHash: true },
     });
 
     if (!user) {
@@ -60,7 +60,6 @@ export async function changePassword(
     await setPublicSession({
         id: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
     });
 
     return { success: true, message: "Heslo bylo úspěšně změněno" };

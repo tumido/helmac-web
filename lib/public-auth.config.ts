@@ -9,7 +9,6 @@ export const PUBLIC_SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
 export interface PublicJWTPayload {
     sub: string;
     email: string;
-    emailVerified: boolean;
     iat: number;
     exp: number;
 }

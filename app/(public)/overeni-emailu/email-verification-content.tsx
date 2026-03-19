@@ -7,7 +7,11 @@ import { CheckCircleOutline, ErrorOutline, MailOutline } from "@mui/icons-materi
 import { verifyEmail } from "@/lib/actions/public/verify-email";
 import { resendVerification } from "@/lib/actions/public/auth";
 
-export function EmailVerificationContent() {
+interface EmailVerificationContentProps {
+    email?: string;
+}
+
+export function EmailVerificationContent({ email }: EmailVerificationContentProps) {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
     const pending = searchParams.get("pending");
@@ -35,8 +39,9 @@ export function EmailVerificationContent() {
     }, [pending]);
 
     const handleResend = () => {
+        if (!email) return;
         startResendTransition(async () => {
-            const result = await resendVerification();
+            const result = await resendVerification(email);
             setResendMessage(result.message);
         });
     };

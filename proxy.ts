@@ -49,13 +49,6 @@ export default async function proxy(request: NextRequest) {
             return response;
         }
 
-        // Redirect unverified users to verification page
-        if (!payload.emailVerified) {
-            return NextResponse.redirect(
-                new URL("/overeni-emailu?pending=true", request.url),
-            );
-        }
-
         return NextResponse.next();
     }
 

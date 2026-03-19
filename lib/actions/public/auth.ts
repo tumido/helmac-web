@@ -5,7 +5,7 @@ import argon2 from "argon2";
 import crypto from "crypto";
 import { redirect } from "next/navigation";
 import { publicRegisterSchema, publicLoginSchema } from "@/lib/validators/public-user";
-import { setPublicSession, clearPublicSession, getPublicSession } from "@/lib/public-auth";
+import { setPublicSession, clearPublicSession } from "@/lib/public-auth";
 import { sendVerificationEmail } from "@/lib/utils/email";
 import { getBaseUrl } from "@/lib/utils/url";
 
@@ -89,14 +89,7 @@ export async function publicRegister(
         console.error("Failed to send verification email:", err);
     }
 
-    // Set session immediately (unverified)
-    await setPublicSession({
-        id: user.id,
-        email: user.email,
-        emailVerified: false,
-    });
-
-    redirect("/overeni-emailu?pending=true");
+    redirect(`/overeni-emailu?pending=true&email=${encodeURIComponent(email)}`);
 }
 
 export async function publicLogin(
@@ -139,15 +132,14 @@ export async function publicLogin(
         };
     }
 
+    if (!user.emailVerified) {
+        redirect(`/overeni-emailu?pending=true&email=${encodeURIComponent(user.email)}`);
+    }
+
     await setPublicSession({
         id: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
     });
-
-    if (!user.emailVerified) {
-        redirect("/overeni-emailu?pending=true");
-    }
 
     redirect("/ucet");
 }
@@ -157,14 +149,13 @@ export async function publicLogout(): Promise<void> {
     redirect("/");
 }
 
-export async function resendVerification(): Promise<AuthActionState> {
-    const session = await getPublicSession();
-    if (!session) {
-        return { success: false, message: "Nejste přihlášeni" };
+export async function resendVerification(email: string): Promise<AuthActionState> {
+    if (!email) {
+        return { success: false, message: "Email nebyl zadán" };
     }
 
     const user = await db.publicUser.findUnique({
-        where: { id: session.sub },
+        where: { email: email.toLowerCase() },
         select: { id: true, email: true, emailVerified: true },
     });
 

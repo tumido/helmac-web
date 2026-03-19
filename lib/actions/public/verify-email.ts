@@ -45,11 +45,10 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResult> {
         }),
     ]);
 
-    // Refresh session with verified status
+    // Set session cookie now that email is verified
     await setPublicSession({
         id: verificationToken.user.id,
         email: verificationToken.user.email,
-        emailVerified: true,
     });
 
     return { success: true, message: "Email byl úspěšně ověřen" };
