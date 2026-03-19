@@ -28,6 +28,8 @@ import {
     People,
     PersonOutline,
     Logout,
+    Settings,
+    PrivacyTip,
 } from "@mui/icons-material";
 import { useSidebarContext } from "@/lib/contexts/sidebar-context";
 import { YearSidebar } from "./year-sidebar";
@@ -37,6 +39,7 @@ interface MenuItem {
     href: string;
     icon: React.ComponentType;
     roles?: string[];
+    indented?: boolean;
 }
 
 interface MenuDivider {
@@ -58,6 +61,9 @@ const staticMenuItems: MenuItemType[] = [
         icon: People,
         roles: ["SUPER_ADMIN"],
     },
+    { divider: true },
+    { text: "Nastavení", href: "/admin/nastaveni", icon: Settings },
+    { text: "GDPR", href: "/admin/nastaveni/gdpr", icon: PrivacyTip, indented: true },
 ];
 
 const selectedSx = {
@@ -195,7 +201,7 @@ export function AdminDrawer({
                                 href={item.href}
                                 selected={isActive}
                                 onClick={onClose}
-                                sx={selectedSx}
+                                sx={{ ...(item.indented && { pl: 4 }), ...selectedSx }}
                             >
                                 <ListItemIcon>
                                     <Icon />

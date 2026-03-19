@@ -52,6 +52,7 @@ export function PublicRegisterForm() {
                 type="email"
                 autoComplete="email"
                 autoFocus
+                defaultValue={state?.email ?? ""}
                 error={!!state?.errors?.email}
                 helperText={state?.errors?.email?.[0]}
             />

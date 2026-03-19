@@ -13,6 +13,7 @@ export interface AuthActionState {
     success: boolean;
     message: string;
     errors?: Record<string, string[]>;
+    email?: string;
 }
 
 export async function publicRegister(
@@ -31,6 +32,7 @@ export async function publicRegister(
             success: false,
             message: "Opravte chyby ve formuláři",
             errors: validated.error.flatten().fieldErrors as Record<string, string[]>,
+            email: rawData.email as string,
         };
     }
 
@@ -47,6 +49,7 @@ export async function publicRegister(
             success: false,
             message: "Účet s tímto emailem již existuje",
             errors: { email: ["Účet s tímto emailem již existuje"] },
+            email,
         };
     }
 
