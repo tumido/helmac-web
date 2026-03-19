@@ -2,6 +2,7 @@ import { Container, Box, Chip, Alert } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
 import { LinkButton } from "@/components/ui/link-button";
@@ -42,6 +43,7 @@ async function getYearWithSubmissions(yearId: string) {
 }
 
 export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyPageProps) {
+    await requireAdmin();
     const { id } = await params;
     const { status, paid } = await searchParams;
     const year = await getYearWithSubmissions(id);

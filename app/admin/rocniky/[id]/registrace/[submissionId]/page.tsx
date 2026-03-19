@@ -2,6 +2,7 @@ import { Container, Typography, Grid, Paper, Box, IconButton } from "@mui/materi
 import { ArrowBack } from "@mui/icons-material";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
+import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
@@ -18,6 +19,7 @@ interface SubmissionDetailPageProps {
 }
 
 export default async function SubmissionDetailPage({ params }: SubmissionDetailPageProps) {
+    await requireAdmin();
     const { id: yearId, submissionId } = await params;
     const submission = await getSubmissionById(submissionId);
 

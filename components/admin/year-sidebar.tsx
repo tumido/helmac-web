@@ -44,9 +44,10 @@ const selectedSx = {
 interface YearSidebarProps {
     yearData: SidebarYearData;
     onClose: () => void;
+    userRole?: string;
 }
 
-export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
+export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
     const pathname = usePathname();
     const base = `/admin/rocniky/${yearData.id}`;
 
@@ -68,11 +69,11 @@ export function YearSidebar({ yearData, onClose }: YearSidebarProps) {
     ];
 
     const registrationItems = [
-        { text: "Registrace", href: `${base}/registrace`, icon: AppRegistration, exact: true },
+        { text: "Registrace", href: `${base}/registrace`, icon: AppRegistration, exact: true, roles: ["SUPER_ADMIN", "ADMIN"] },
         { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
-        { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true },
-        { text: "Banka", href: `${base}/registrace/banka`, icon: AccountBalance, indented: true },
-    ];
+        { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
+        { text: "Banka", href: `${base}/registrace/banka`, icon: AccountBalance, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
+    ].filter((item) => !item.roles || (userRole && item.roles.includes(userRole)));
 
     const emailItems = [
         { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },

@@ -2,6 +2,7 @@ import { Container, Box, Divider } from "@mui/material";
 import { Description, People } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSettings } from "@/components/admin/registration-settings";
 import { CapacityLimitsEditor } from "@/components/admin/capacity-limits-editor";
@@ -32,6 +33,7 @@ async function getYearRegistration(yearId: string) {
 }
 
 export default async function RegistracePage({ params }: RegistracePageProps) {
+    await requireAdmin();
     const { id } = await params;
     const year = await getYearRegistration(id);
 

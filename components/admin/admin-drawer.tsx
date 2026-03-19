@@ -248,7 +248,7 @@ export function AdminDrawer({
     );
 
     const sidebarContent = sidebarYear
-        ? <YearSidebar yearData={sidebarYear} onClose={onClose} />
+        ? <YearSidebar yearData={sidebarYear} onClose={onClose} userRole={userRole} />
         : defaultDrawerContent;
 
     const drawerContent = (

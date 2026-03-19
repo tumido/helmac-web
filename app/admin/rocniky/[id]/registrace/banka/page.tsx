@@ -1,6 +1,7 @@
 import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { BankAccountSettings } from "@/components/admin/bank-account-settings";
 
@@ -23,6 +24,7 @@ async function getYearBankAccount(yearId: string) {
 }
 
 export default async function BankaPage({ params }: BankaPageProps) {
+    await requireAdmin();
     const { id } = await params;
     const year = await getYearBankAccount(id);
 
