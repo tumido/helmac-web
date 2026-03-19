@@ -2,32 +2,81 @@ import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 import QRCode from "qrcode";
 import { generateSPAYD } from "@/lib/utils/spayd";
+import { db } from "@/lib/db";
+import { decrypt } from "@/lib/utils/encryption";
 
-// Singleton transporter (same globalThis pattern as lib/db.ts)
+// Cache transporters by account ID
 const globalForMailer = globalThis as unknown as {
-    mailer: Transporter | undefined;
+    mailerCache: Map<string, { transporter: Transporter; from: string }> | undefined;
 };
 
-function getTransporter(): Transporter {
-    if (globalForMailer.mailer) {
-        return globalForMailer.mailer;
+function getMailerCache(): Map<string, { transporter: Transporter; from: string }> {
+    if (!globalForMailer.mailerCache) {
+        globalForMailer.mailerCache = new Map();
+    }
+    return globalForMailer.mailerCache;
+}
+
+/**
+ * Get a nodemailer transporter for a specific email account.
+ * If accountId is null/undefined, uses the main account.
+ * Returns { transporter, from } where from is the sender email address.
+ */
+export async function getTransporterForAccount(
+    accountId?: string | null,
+): Promise<{ transporter: Transporter; from: string }> {
+    const cache = getMailerCache();
+
+    // Try cache first
+    const cacheKey = accountId || "__main__";
+    const cached = cache.get(cacheKey);
+    if (cached) {
+        return cached;
     }
 
+    // Fetch account from DB
+    const account = accountId
+        ? await db.emailAccount.findUnique({ where: { id: accountId } })
+        : await db.emailAccount.findFirst({ where: { isMain: true } });
+
+    if (!account) {
+        throw new Error(
+            accountId
+                ? `Email account ${accountId} not found`
+                : "No main email account configured. Please add one in admin settings.",
+        );
+    }
+
+    const password = decrypt(account.encryptedPassword);
+
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT),
+        host: "smtp.seznam.cz",
+        port: 465,
         secure: true,
         auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
+            user: account.email,
+            pass: password,
         },
     });
 
+    const result = { transporter, from: account.email };
+
     if (process.env.NODE_ENV !== "production") {
-        globalForMailer.mailer = transporter;
+        cache.set(cacheKey, result);
     }
 
-    return transporter;
+    return result;
+}
+
+/**
+ * Invalidate cached transporters (call after account updates).
+ */
+export function invalidateTransporterCache() {
+    const cache = getMailerCache();
+    for (const entry of cache.values()) {
+        entry.transporter.close();
+    }
+    cache.clear();
 }
 
 /**
@@ -103,19 +152,14 @@ export async function generateQRPaymentImage(params: {
 }
 
 /**
- * Send a verification email to a public user.
+ * Send a verification email to a public user. Always uses the main account.
  */
 export async function sendVerificationEmail(opts: {
     to: string;
     verificationUrl: string;
 }): Promise<boolean> {
     try {
-        const transporter = getTransporter();
-        const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-        if (!from) {
-            console.error("SMTP_FROM or SMTP_USER not configured");
-            return false;
-        }
+        const { transporter, from } = await getTransporterForAccount();
 
         const htmlBody = `<!DOCTYPE html>
 <html>
@@ -148,19 +192,14 @@ export async function sendVerificationEmail(opts: {
 }
 
 /**
- * Send a password reset email to a public user.
+ * Send a password reset email to a public user. Always uses the main account.
  */
 export async function sendPasswordResetEmail(opts: {
     to: string;
     resetUrl: string;
 }): Promise<boolean> {
     try {
-        const transporter = getTransporter();
-        const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-        if (!from) {
-            console.error("SMTP_FROM or SMTP_USER not configured");
-            return false;
-        }
+        const { transporter, from } = await getTransporterForAccount();
 
         const htmlBody = `<!DOCTYPE html>
 <html>
@@ -194,6 +233,7 @@ export async function sendPasswordResetEmail(opts: {
 
 /**
  * Send a confirmation email. Returns true on success, false on failure.
+ * Uses the specified accountId, or falls back to the main account.
  */
 export async function sendConfirmationEmail(opts: {
     to: string;
@@ -201,15 +241,10 @@ export async function sendConfirmationEmail(opts: {
     body: string;
     bcc?: string;
     qrImageBuffer?: Buffer;
+    accountId?: string | null;
 }): Promise<boolean> {
     try {
-        const transporter = getTransporter();
-        const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-
-        if (!from) {
-            console.error("SMTP_FROM or SMTP_USER not configured");
-            return false;
-        }
+        const { transporter, from } = await getTransporterForAccount(opts.accountId);
 
         // Plain text: strip HTML tags and decode entities for text-only fallback
         const textBody = opts.body

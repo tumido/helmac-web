@@ -105,6 +105,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                         confirmationEmailSubject: true,
                         confirmationEmailBody: true,
                         confirmationEmailBcc: true,
+                        confirmationEmailAccountId: true,
                     },
                 },
             },
@@ -179,6 +180,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             body,
             bcc: submission.year.confirmationEmailBcc ?? undefined,
             qrImageBuffer: qrImageBuffer ?? undefined,
+            accountId: submission.year.confirmationEmailAccountId,
         });
 
         if (sent) {

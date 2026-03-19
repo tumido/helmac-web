@@ -141,6 +141,7 @@ export async function submitDynamicRegistration(
             confirmationEmailSubject: true,
             confirmationEmailBody: true,
             confirmationEmailBcc: true,
+            confirmationEmailAccountId: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },
@@ -501,6 +502,7 @@ export async function submitDynamicRegistration(
                         body: emailBody,
                         bcc: activeYear.confirmationEmailBcc ?? undefined,
                         qrImageBuffer: qrImageBuffer ?? undefined,
+                        accountId: activeYear.confirmationEmailAccountId,
                     });
 
                     if (sent) {

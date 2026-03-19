@@ -349,6 +349,7 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
         confirmationEmailSubject: formData.get("confirmationEmailSubject") || "",
         confirmationEmailBody: formData.get("confirmationEmailBody") || "",
         confirmationEmailBcc: formData.get("confirmationEmailBcc") || null,
+        emailAccountId: formData.get("emailAccountId") || null,
     };
 
     const validated = updateEmailTemplateSchema.safeParse(rawData);
@@ -363,6 +364,7 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
                 confirmationEmailSubject: validated.data.confirmationEmailSubject,
                 confirmationEmailBody: validated.data.confirmationEmailBody,
                 confirmationEmailBcc: validated.data.confirmationEmailBcc,
+                confirmationEmailAccountId: validated.data.emailAccountId,
             },
         });
 
@@ -420,6 +422,7 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
         confirmationEmailSubject: formData.get("confirmationEmailSubject") || "",
         confirmationEmailBody: formData.get("confirmationEmailBody") || "",
         confirmationEmailBcc: formData.get("confirmationEmailBcc") || null,
+        emailAccountId: formData.get("emailAccountId") || null,
     };
 
     const validated = updateEmailTemplateSchema.safeParse(rawData);
@@ -434,6 +437,7 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
                 priceChangeEmailSubject: validated.data.confirmationEmailSubject,
                 priceChangeEmailBody: validated.data.confirmationEmailBody,
                 priceChangeEmailBcc: validated.data.confirmationEmailBcc,
+                priceChangeEmailAccountId: validated.data.emailAccountId,
             },
         });
 

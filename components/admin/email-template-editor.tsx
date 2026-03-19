@@ -8,6 +8,10 @@ import {
     Card,
     CardContent,
     Chip,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
     TextField,
     Typography,
 } from "@mui/material";
@@ -17,6 +21,13 @@ import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor
 
 type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
 
+interface EmailAccountOption {
+    id: string;
+    email: string;
+    label: string | null;
+    isMain: boolean;
+}
+
 interface EmailTemplateEditorProps {
     yearId: string;
     confirmationEmailSubject: string | null;
@@ -24,6 +35,8 @@ interface EmailTemplateEditorProps {
     confirmationEmailBcc: string | null;
     availablePlaceholders: { key: string; label: string }[];
     saveAction?: SaveAction;
+    emailAccounts?: EmailAccountOption[];
+    selectedEmailAccountId?: string | null;
 }
 
 export function EmailTemplateEditor({
@@ -33,14 +46,18 @@ export function EmailTemplateEditor({
     confirmationEmailBcc: initialBcc,
     availablePlaceholders,
     saveAction = updateEmailTemplate,
+    emailAccounts = [],
+    selectedEmailAccountId: initialEmailAccountId,
 }: EmailTemplateEditorProps) {
     const [editing, setEditing] = useState(false);
     const [savedSubject, setSavedSubject] = useState(initialSubject ?? "");
     const [savedBody, setSavedBody] = useState(initialBody ?? "");
     const [savedBcc, setSavedBcc] = useState(initialBcc ?? "");
+    const [savedEmailAccountId, setSavedEmailAccountId] = useState(initialEmailAccountId ?? "");
     const [subject, setSubject] = useState(initialSubject ?? "");
     const [body, setBody] = useState(initialBody ?? "");
     const [bcc, setBcc] = useState(initialBcc ?? "");
+    const [emailAccountId, setEmailAccountId] = useState(initialEmailAccountId ?? "");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -66,6 +83,7 @@ export function EmailTemplateEditor({
         setSubject(savedSubject);
         setBody(savedBody);
         setBcc(savedBcc);
+        setEmailAccountId(savedEmailAccountId);
         setError(null);
         setFieldErrors({});
         setEditing(false);
@@ -81,6 +99,9 @@ export function EmailTemplateEditor({
         formData.set("confirmationEmailSubject", subject);
         formData.set("confirmationEmailBody", body);
         formData.set("confirmationEmailBcc", bcc);
+        if (emailAccountId) {
+            formData.set("emailAccountId", emailAccountId);
+        }
 
         const result = await saveAction(yearId, formData);
 
@@ -94,6 +115,7 @@ export function EmailTemplateEditor({
             setSavedSubject(subject);
             setSavedBody(body);
             setSavedBcc(bcc);
+            setSavedEmailAccountId(emailAccountId);
             setSuccess(true);
             setEditing(false);
             setTimeout(() => setSuccess(false), 3000);
@@ -155,6 +177,24 @@ export function EmailTemplateEditor({
                                     <Typography sx={{ mb: 2 }}>
                                         {savedBcc || "—"}
                                     </Typography>
+
+                                    {emailAccounts.length > 0 && (
+                                        <>
+                                            <Typography variant="subtitle2" color="text.secondary">
+                                                Odesílatel
+                                            </Typography>
+                                            <Typography sx={{ mb: 2 }}>
+                                                {(() => {
+                                                    if (savedEmailAccountId) {
+                                                        const acc = emailAccounts.find((a) => a.id === savedEmailAccountId);
+                                                        if (acc) return `${acc.email}${acc.label ? ` – ${acc.label}` : ""}`;
+                                                    }
+                                                    const mainAcc = emailAccounts.find((a) => a.isMain);
+                                                    return mainAcc ? `${mainAcc.email} (hlavní)` : "Hlavní účet";
+                                                })()}
+                                            </Typography>
+                                        </>
+                                    )}
                                 </Box>
                             )}
 
@@ -175,6 +215,26 @@ export function EmailTemplateEditor({
                     ) : (
                         // Edit mode
                         <Box>
+                            {emailAccounts.length > 0 && (
+                                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                                    <InputLabel>Odesílat z</InputLabel>
+                                    <Select
+                                        value={emailAccountId}
+                                        label="Odesílat z"
+                                        onChange={(e) => setEmailAccountId(e.target.value)}
+                                    >
+                                        <MenuItem value="">
+                                            <em>Hlavní účet (výchozí)</em>
+                                        </MenuItem>
+                                        {emailAccounts.map((acc) => (
+                                            <MenuItem key={acc.id} value={acc.id}>
+                                                {acc.email}{acc.label ? ` – ${acc.label}` : ""}{acc.isMain ? " (hlavní)" : ""}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            )}
+
                             <TextField
                                 label="Předmět emailu"
                                 value={subject}

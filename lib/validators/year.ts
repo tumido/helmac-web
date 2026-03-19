@@ -75,4 +75,10 @@ export const updateEmailTemplateSchema = z.object({
         .optional()
         .nullable()
         .transform((v) => v || null),
+    emailAccountId: z
+        .string()
+        .cuid()
+        .optional()
+        .nullable()
+        .transform((v) => v || null),
 });

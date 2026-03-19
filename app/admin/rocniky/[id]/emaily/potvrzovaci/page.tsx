@@ -21,13 +21,20 @@ async function getYearEmailTemplate(yearId: string) {
             confirmationEmailSubject: true,
             confirmationEmailBody: true,
             confirmationEmailBcc: true,
+            confirmationEmailAccountId: true,
         },
     });
 }
 
 export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps) {
     const { id } = await params;
-    const year = await getYearEmailTemplate(id);
+    const [year, emailAccounts] = await Promise.all([
+        getYearEmailTemplate(id),
+        db.emailAccount.findMany({
+            select: { id: true, email: true, label: true, isMain: true },
+            orderBy: [{ isMain: "desc" }, { email: "asc" }],
+        }),
+    ]);
 
     if (!year) {
         notFound();
@@ -66,6 +73,8 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
                 confirmationEmailBody={year.confirmationEmailBody}
                 confirmationEmailBcc={year.confirmationEmailBcc}
                 availablePlaceholders={availablePlaceholders}
+                emailAccounts={emailAccounts}
+                selectedEmailAccountId={year.confirmationEmailAccountId}
             />
         </Container>
     );

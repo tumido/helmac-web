@@ -48,6 +48,26 @@ enum Role {
 }
 
 // ============================================
+// EMAIL ACCOUNTS - SMTP email accounts
+// ============================================
+
+model EmailAccount {
+    id                String   @id @default(cuid())
+    email             String   @unique
+    encryptedPassword String
+    isMain            Boolean  @default(false)
+    label             String?
+
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+
+    confirmationYears Year[] @relation("ConfirmationEmail")
+    priceChangeYears  Year[] @relation("PriceChangeEmail")
+
+    @@map("email_accounts")
+}
+
+// ============================================
 // YEARS - Main organizational unit
 // ============================================
 
@@ -72,11 +92,15 @@ model Year {
   confirmationEmailSubject  String?
   confirmationEmailBody     String?  @db.Text
   confirmationEmailBcc      String?
+  confirmationEmailAccountId  String?
+  confirmationEmailAccount    EmailAccount? @relation("ConfirmationEmail", fields: [confirmationEmailAccountId], references: [id], onDelete: SetNull)
 
   priceChangeEmailEnabled  Boolean  @default(false)
   priceChangeEmailSubject  String?
   priceChangeEmailBody     String?  @db.Text
   priceChangeEmailBcc      String?
+  priceChangeEmailAccountId  String?
+  priceChangeEmailAccount    EmailAccount? @relation("PriceChangeEmail", fields: [priceChangeEmailAccountId], references: [id], onDelete: SetNull)
 
   bankAccountPrefix   String?
   bankAccountNumber   String?

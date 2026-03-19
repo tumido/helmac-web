@@ -21,11 +21,34 @@ async function getYearEmailStatus(yearId: string) {
             confirmationEmailEnabled: true,
             confirmationEmailSubject: true,
             confirmationEmailBody: true,
+            confirmationEmailAccountId: true,
+            confirmationEmailAccount: {
+                select: { email: true, label: true },
+            },
             priceChangeEmailEnabled: true,
             priceChangeEmailSubject: true,
             priceChangeEmailBody: true,
+            priceChangeEmailAccountId: true,
+            priceChangeEmailAccount: {
+                select: { email: true, label: true },
+            },
         },
     });
+}
+
+function SenderInfo({ account }: { account: { email: string; label: string | null } | null }) {
+    if (account) {
+        return (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Odesílatel: {account.email}{account.label ? ` (${account.label})` : ""}
+            </Typography>
+        );
+    }
+    return (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Odesílatel: Hlavní emailový účet
+        </Typography>
+    );
 }
 
 export default async function EmailyPage({ params }: EmailyPageProps) {
@@ -68,6 +91,10 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                         </Typography>
                     )}
 
+                    {hasConfirmationTemplate && (
+                        <SenderInfo account={year.confirmationEmailAccount} />
+                    )}
+
                     <Box sx={{ mt: 2 }}>
                         <LinkButton
                             href={`/admin/rocniky/${year.id}/emaily/potvrzovaci`}
@@ -98,6 +125,10 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
                             Šablona emailu zatím není nastavena.
                         </Typography>
+                    )}
+
+                    {hasPriceChangeTemplate && (
+                        <SenderInfo account={year.priceChangeEmailAccount} />
                     )}
 
                     <Box sx={{ mt: 2 }}>

@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
                     priceChangeEmailSubject: true,
                     priceChangeEmailBody: true,
                     priceChangeEmailBcc: true,
+                    priceChangeEmailAccountId: true,
                     bankAccountPrefix: true,
                     bankAccountNumber: true,
                     bankAccountBankCode: true,
@@ -160,6 +161,7 @@ export async function GET(request: NextRequest) {
                             body: emailBody,
                             bcc: year.priceChangeEmailBcc ?? undefined,
                             qrImageBuffer: qrImageBuffer ?? undefined,
+                            accountId: year.priceChangeEmailAccountId,
                         });
 
                         if (sent) {

@@ -22,13 +22,20 @@ async function getYearPriceChangeEmailTemplate(yearId: string) {
             priceChangeEmailSubject: true,
             priceChangeEmailBody: true,
             priceChangeEmailBcc: true,
+            priceChangeEmailAccountId: true,
         },
     });
 }
 
 export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
     const { id } = await params;
-    const year = await getYearPriceChangeEmailTemplate(id);
+    const [year, emailAccounts] = await Promise.all([
+        getYearPriceChangeEmailTemplate(id),
+        db.emailAccount.findMany({
+            select: { id: true, email: true, label: true, isMain: true },
+            orderBy: [{ isMain: "desc" }, { email: "asc" }],
+        }),
+    ]);
 
     if (!year) {
         notFound();
@@ -70,6 +77,8 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
                 confirmationEmailBcc={year.priceChangeEmailBcc}
                 availablePlaceholders={availablePlaceholders}
                 saveAction={updatePriceChangeEmailTemplate}
+                emailAccounts={emailAccounts}
+                selectedEmailAccountId={year.priceChangeEmailAccountId}
             />
         </Container>
     );

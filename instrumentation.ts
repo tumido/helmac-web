@@ -3,10 +3,7 @@ export async function register() {
         { name: "DATABASE_URL", description: "PostgreSQL connection string (e.g. postgresql://user:pass@host:5432/db)" },
         { name: "NEXTAUTH_SECRET", description: "Random secret for Auth.js session signing (generate with: openssl rand -base64 32)" },
         { name: "PUBLIC_JWT_SECRET", description: "Random secret for public user JWT tokens (generate with: openssl rand -base64 32)" },
-        { name: "SMTP_HOST", description: "SMTP server hostname (e.g. smtp.seznam.cz)" },
-        { name: "SMTP_PORT", description: "SMTP server port (e.g. 465)" },
-        { name: "SMTP_USER", description: "SMTP authentication username/email" },
-        { name: "SMTP_PASS", description: "SMTP authentication password" },
+        { name: "ENCRYPTION_KEY", description: "64-character hex string for AES-256 encryption (generate with: openssl rand -hex 32)" },
     ];
 
     const missing = required.filter((v) => !process.env[v.name]);
