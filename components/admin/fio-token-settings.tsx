@@ -12,7 +12,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { Save, Delete, Sync } from "@mui/icons-material";
+import { Save, Delete, Sync, Edit } from "@mui/icons-material";
 import {
     saveGlobalFioToken,
     removeGlobalFioToken,
@@ -35,6 +35,7 @@ export function FioTokenSettings({
     const [hasToken, setHasToken] = useState(initialHasToken);
     const [syncEnabled, setSyncEnabled] = useState(initialSyncEnabled);
     const [lastSyncAt, setLastSyncAt] = useState(initialLastSyncAt);
+    const [isEditing, setIsEditing] = useState(false);
     const [token, setToken] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -122,90 +123,150 @@ export function FioTokenSettings({
     return (
         <Card variant="outlined" sx={{ mt: 3 }}>
             <CardContent>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                    Fio Banka — automatické párování plateb
-                </Typography>
-
-                {/* Token input */}
-                {!hasToken ? (
-                    <Box sx={{ mb: 2 }}>
-                        <TextField
-                            label="Fio API token"
-                            value={token}
-                            onChange={(e) => setToken(e.target.value)}
-                            fullWidth
-                            size="small"
-                            type="password"
-                            placeholder="64znakový API token z Fio internetbanking"
-                            error={!!fieldErrors.fioToken}
-                            helperText={fieldErrors.fioToken?.[0]}
-                            sx={{ mb: 1 }}
-                        />
-                        <Button
-                            variant="contained"
-                            startIcon={<Save />}
-                            onClick={handleSaveToken}
-                            disabled={isSaving || !token}
-                            size="small"
-                        >
-                            {isSaving ? "Ukládání..." : "Uložit token"}
-                        </Button>
-                    </Box>
-                ) : (
-                    <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            Fio API token je nastaven.
-                        </Typography>
+                {/* Header row with title + edit/done button */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                    <Typography variant="h6">
+                        Fio Banka — automatické párování plateb
+                    </Typography>
+                    {!isEditing ? (
                         <Button
                             variant="outlined"
-                            color="error"
-                            startIcon={<Delete />}
-                            onClick={handleRemoveToken}
-                            disabled={isRemoving}
+                            startIcon={<Edit />}
+                            onClick={() => setIsEditing(true)}
                             size="small"
                         >
-                            {isRemoving ? "Odebírání..." : "Odebrat token"}
+                            Upravit
                         </Button>
-                    </Box>
-                )}
+                    ) : (
+                        <Button
+                            variant="outlined"
+                            onClick={() => setIsEditing(false)}
+                            size="small"
+                        >
+                            Hotovo
+                        </Button>
+                    )}
+                </Box>
 
-                {/* Sync toggle */}
-                {hasToken && (
-                    <Box sx={{ mb: 2 }}>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={syncEnabled}
-                                    onChange={(e) => handleToggleSync(e.target.checked)}
-                                    disabled={isToggling}
+                {!isEditing ? (
+                    <>
+                        {/* Read-only display */}
+                        <Box
+                            sx={{
+                                px: 2,
+                                py: 1,
+                                borderRadius: 1,
+                                backgroundColor: "action.hover",
+                                mb: 2,
+                            }}
+                        >
+                            <Typography variant="body2">
+                                {hasToken
+                                    ? "Fio API token je nastaven."
+                                    : "Fio API token není nastaven."}
+                            </Typography>
+                            {hasToken && (
+                                <Typography variant="body2">
+                                    Automatická synchronizace: {syncEnabled ? "zapnuto" : "vypnuto"}
+                                </Typography>
+                            )}
+                            {hasToken && lastSyncAt && (
+                                <Typography variant="body2">
+                                    Poslední synchronizace: {new Date(lastSyncAt).toLocaleString("cs-CZ")}
+                                </Typography>
+                            )}
+                        </Box>
+
+                        {/* Manual sync button — always visible outside edit mode when token is set */}
+                        {hasToken && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<Sync />}
+                                onClick={handleManualSync}
+                                disabled={isSyncing}
+                                size="small"
+                            >
+                                {isSyncing ? "Synchronizuji..." : "Synchronizovat nyní"}
+                            </Button>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        {/* Edit mode — interactive controls */}
+                        {!hasToken ? (
+                            <Box sx={{ mb: 2 }}>
+                                <TextField
+                                    label="Fio API token"
+                                    value={token}
+                                    onChange={(e) => setToken(e.target.value)}
+                                    fullWidth
+                                    size="small"
+                                    type="password"
+                                    placeholder="64znakový API token z Fio internetbanking"
+                                    error={!!fieldErrors.fioToken}
+                                    helperText={fieldErrors.fioToken?.[0]}
+                                    sx={{ mb: 1 }}
                                 />
-                            }
-                            label="Automatická synchronizace (každých 10 minut)"
-                        />
-                    </Box>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Save />}
+                                    onClick={handleSaveToken}
+                                    disabled={isSaving || !token}
+                                    size="small"
+                                >
+                                    {isSaving ? "Ukládání..." : "Uložit token"}
+                                </Button>
+                            </Box>
+                        ) : (
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                    Fio API token je nastaven.
+                                </Typography>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<Delete />}
+                                    onClick={handleRemoveToken}
+                                    disabled={isRemoving}
+                                    size="small"
+                                >
+                                    {isRemoving ? "Odebírání..." : "Odebrat token"}
+                                </Button>
+                            </Box>
+                        )}
+
+                        {/* Sync toggle */}
+                        {hasToken && (
+                            <Box sx={{ mb: 2 }}>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={syncEnabled}
+                                            onChange={(e) => handleToggleSync(e.target.checked)}
+                                            disabled={isToggling}
+                                        />
+                                    }
+                                    label="Automatická synchronizace (každých 10 minut)"
+                                />
+                            </Box>
+                        )}
+
+                        {/* Manual sync button — also available in edit mode */}
+                        {hasToken && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<Sync />}
+                                onClick={handleManualSync}
+                                disabled={isSyncing}
+                                size="small"
+                            >
+                                {isSyncing ? "Synchronizuji..." : "Synchronizovat nyní"}
+                            </Button>
+                        )}
+                    </>
                 )}
 
-                {/* Last sync info */}
-                {hasToken && lastSyncAt && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Poslední synchronizace: {new Date(lastSyncAt).toLocaleString("cs-CZ")}
-                    </Typography>
-                )}
-
-                {/* Manual sync button */}
-                {hasToken && (
-                    <Button
-                        variant="outlined"
-                        startIcon={<Sync />}
-                        onClick={handleManualSync}
-                        disabled={isSyncing}
-                        size="small"
-                    >
-                        {isSyncing ? "Synchronizuji..." : "Synchronizovat nyní"}
-                    </Button>
-                )}
-
-                {/* Status messages */}
+                {/* Status messages — always visible */}
                 {error && (
                     <Alert severity="error" sx={{ mt: 2 }}>
                         {error}
@@ -217,7 +278,7 @@ export function FioTokenSettings({
                     </Alert>
                 )}
 
-                {/* Sync result */}
+                {/* Sync result — always visible */}
                 {syncResult && (
                     <Alert severity="info" sx={{ mt: 2 }}>
                         <Typography variant="body2">
