@@ -13,6 +13,7 @@ import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage } from "@/lib/utils/email";
 import { getPublicSession } from "@/lib/public-auth";
+import { getGlobalBankAccount } from "@/lib/services/bank-account";
 
 export interface PaymentData {
     totalAmount: number;
@@ -134,9 +135,6 @@ export async function submitDynamicRegistration(
             id: true,
             title: true,
             year: true,
-            bankAccountPrefix: true,
-            bankAccountNumber: true,
-            bankAccountBankCode: true,
             confirmationEmailEnabled: true,
             confirmationEmailSubject: true,
             confirmationEmailBody: true,
@@ -439,12 +437,13 @@ export async function submitDynamicRegistration(
         });
 
         // Build payment data if bank account is configured and there's a price
+        const globalBank = await getGlobalBankAccount();
         let paymentData: PaymentData | undefined;
-        if (totalPrice && totalPrice > 0 && activeYear.bankAccountNumber && activeYear.bankAccountBankCode) {
+        if (totalPrice && totalPrice > 0 && globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode) {
             const iban = czechAccountToIBAN(
-                activeYear.bankAccountNumber,
-                activeYear.bankAccountBankCode,
-                activeYear.bankAccountPrefix ?? undefined,
+                globalBank.bankAccountNumber,
+                globalBank.bankAccountBankCode,
+                globalBank.bankAccountPrefix ?? undefined,
             );
             if (iban) {
                 const spaydString = generateSPAYD({
@@ -456,9 +455,9 @@ export async function submitDynamicRegistration(
                     totalAmount: totalPrice,
                     variableSymbol,
                     bankAccount: formatCzechAccount(
-                        activeYear.bankAccountNumber,
-                        activeYear.bankAccountBankCode,
-                        activeYear.bankAccountPrefix ?? undefined,
+                        globalBank.bankAccountNumber,
+                        globalBank.bankAccountBankCode,
+                        globalBank.bankAccountPrefix ?? undefined,
                     ),
                     iban,
                     spaydString,
@@ -477,11 +476,11 @@ export async function submitDynamicRegistration(
                 const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
 
                 if (recipientEmail) {
-                    const bankAccount = activeYear.bankAccountNumber && activeYear.bankAccountBankCode
+                    const bankAccount = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
                         ? formatCzechAccount(
-                            activeYear.bankAccountNumber,
-                            activeYear.bankAccountBankCode,
-                            activeYear.bankAccountPrefix ?? undefined,
+                            globalBank.bankAccountNumber,
+                            globalBank.bankAccountBankCode,
+                            globalBank.bankAccountPrefix ?? undefined,
                         )
                         : null;
 

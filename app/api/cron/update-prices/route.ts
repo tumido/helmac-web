@@ -6,6 +6,7 @@ import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendCon
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields } from "@/lib/types/registration-form";
+import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { InputField, PricingSummaryData } from "@/lib/types/registration-form";
 
 export const dynamic = "force-dynamic";
@@ -40,13 +41,12 @@ export async function GET(request: NextRequest) {
                     priceChangeEmailBody: true,
                     priceChangeEmailBcc: true,
                     priceChangeEmailAccountId: true,
-                    bankAccountPrefix: true,
-                    bankAccountNumber: true,
-                    bankAccountBankCode: true,
                 },
             },
         },
     });
+
+    const globalBank = await getGlobalBankAccount();
 
     let updated = 0;
     let skipped = 0;
@@ -114,11 +114,11 @@ export async function GET(request: NextRequest) {
                     const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
 
                     if (recipientEmail) {
-                        const bankAccount = year.bankAccountNumber && year.bankAccountBankCode
+                        const bankAccountFormatted = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
                             ? formatCzechAccount(
-                                year.bankAccountNumber,
-                                year.bankAccountBankCode,
-                                year.bankAccountPrefix ?? undefined,
+                                globalBank.bankAccountNumber,
+                                globalBank.bankAccountBankCode,
+                                globalBank.bankAccountPrefix ?? undefined,
                             )
                             : null;
 
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
                             submissionData,
                             variableSymbol: submission.variableSymbol,
                             totalPrice,
-                            bankAccount,
+                            bankAccount: bankAccountFormatted,
                             yearNumber: year.year,
                             yearTitle: year.title,
                         });
@@ -140,11 +140,11 @@ export async function GET(request: NextRequest) {
 
                         // Generate QR payment image if bank account is configured
                         let qrImageBuffer: Buffer | null = null;
-                        if (year.bankAccountNumber && year.bankAccountBankCode && totalPrice > 0) {
+                        if (globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode && totalPrice > 0) {
                             const iban = czechAccountToIBAN(
-                                year.bankAccountNumber,
-                                year.bankAccountBankCode,
-                                year.bankAccountPrefix ?? undefined,
+                                globalBank.bankAccountNumber,
+                                globalBank.bankAccountBankCode,
+                                globalBank.bankAccountPrefix ?? undefined,
                             );
                             if (iban) {
                                 qrImageBuffer = await generateQRPaymentImage({

@@ -9,17 +9,15 @@ import {
     Typography,
 } from "@mui/material";
 import { Edit, Save } from "@mui/icons-material";
-import { updateBankAccount } from "@/lib/actions/years";
+import { updateGlobalBankAccount } from "@/lib/actions/bank-account";
 
 interface BankAccountSettingsProps {
-    yearId: string;
     bankAccountPrefix: string | null;
     bankAccountNumber: string | null;
     bankAccountBankCode: string | null;
 }
 
 export function BankAccountSettings({
-    yearId,
     bankAccountPrefix,
     bankAccountNumber,
     bankAccountBankCode,
@@ -40,7 +38,7 @@ export function BankAccountSettings({
         fd.set("bankAccountPrefix", bankPrefix);
         fd.set("bankAccountNumber", bankNumber);
         fd.set("bankAccountBankCode", bankCode);
-        const result = await updateBankAccount(yearId, fd);
+        const result = await updateGlobalBankAccount(fd);
         if (result.error) {
             setError(typeof result.error === "string" ? result.error : Object.values(result.error).flat().join(", "));
         } else {

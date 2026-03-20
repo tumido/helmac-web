@@ -14,22 +14,20 @@ import {
 } from "@mui/material";
 import { Save, Delete, Sync } from "@mui/icons-material";
 import {
-    saveFioToken,
-    removeFioToken,
-    toggleFioSync,
-    triggerManualSync,
-} from "@/lib/actions/bank-sync";
+    saveGlobalFioToken,
+    removeGlobalFioToken,
+    toggleGlobalFioSync,
+    triggerGlobalManualSync,
+} from "@/lib/actions/bank-account";
 import type { MatchResult } from "@/lib/utils/payment-matching";
 
 interface FioTokenSettingsProps {
-    yearId: string;
     hasToken: boolean;
     syncEnabled: boolean;
     lastSyncAt: string | null;
 }
 
 export function FioTokenSettings({
-    yearId,
     hasToken: initialHasToken,
     syncEnabled: initialSyncEnabled,
     lastSyncAt: initialLastSyncAt,
@@ -55,7 +53,7 @@ export function FioTokenSettings({
         startSaving(async () => {
             const formData = new FormData();
             formData.set("fioToken", token);
-            const result = await saveFioToken(yearId, formData);
+            const result = await saveGlobalFioToken(formData);
 
             if (result && "error" in result && result.error) {
                 if (typeof result.error === "string") {
@@ -77,7 +75,7 @@ export function FioTokenSettings({
         setSuccess(null);
 
         startRemoving(async () => {
-            const result = await removeFioToken(yearId);
+            const result = await removeGlobalFioToken();
             if (result && "error" in result && result.error) {
                 setError(typeof result.error === "string" ? result.error : "Chyba");
             } else {
@@ -94,7 +92,7 @@ export function FioTokenSettings({
         setSuccess(null);
 
         startToggling(async () => {
-            const result = await toggleFioSync(yearId, checked);
+            const result = await toggleGlobalFioSync(checked);
             if (result && "error" in result && result.error) {
                 setError(typeof result.error === "string" ? result.error : "Chyba");
             } else {
@@ -109,7 +107,7 @@ export function FioTokenSettings({
         setSyncResult(null);
 
         startSyncing(async () => {
-            const result = await triggerManualSync(yearId);
+            const result = await triggerGlobalManualSync();
             if (result && "error" in result && result.error) {
                 setError(typeof result.error === "string" ? result.error : "Chyba");
             } else if (result && "result" in result && result.result) {

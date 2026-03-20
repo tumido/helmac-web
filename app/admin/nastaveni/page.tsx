@@ -1,5 +1,5 @@
 import { Container, Card, CardContent, Typography, Box } from "@mui/material";
-import { Email, PrivacyTip } from "@mui/icons-material";
+import { AccountBalance, Email, PrivacyTip } from "@mui/icons-material";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
 import { requireAdmin } from "@/lib/auth";
@@ -33,7 +33,7 @@ export default async function NastaveniPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card sx={{ mb: 2 }}>
                 <CardContent>
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -46,6 +46,25 @@ export default async function NastaveniPage() {
                             </Box>
                         </Box>
                         <LinkButton href="/admin/nastaveni/emaily" variant="outlined">
+                            Spravovat
+                        </LinkButton>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <AccountBalance color="action" />
+                            <Box>
+                                <Typography variant="h6">Banka</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Bankovní účet a Fio API synchronizace
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <LinkButton href="/admin/nastaveni/banka" variant="outlined">
                             Spravovat
                         </LinkButton>
                     </Box>

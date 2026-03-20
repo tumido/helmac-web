@@ -4,6 +4,7 @@ import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail } from "@
 import { formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields } from "@/lib/types/registration-form";
+import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { ParsedBankTransaction } from "@/lib/utils/fio-api";
 
 export interface MatchResult {
@@ -21,7 +22,6 @@ export interface MatchResult {
 }
 
 export async function processTransactions(
-    yearId: string,
     transactions: ParsedBankTransaction[],
 ): Promise<MatchResult> {
     const result: MatchResult = {
@@ -38,68 +38,48 @@ export async function processTransactions(
         errors: [],
     };
 
-    // Fetch year config for email sending
-    const year = await db.year.findUnique({
-        where: { id: yearId },
-        select: {
-            id: true,
-            year: true,
-            title: true,
-            paymentEmailEnabled: true,
-            paymentEmailSubject: true,
-            paymentEmailBody: true,
-            paymentEmailBcc: true,
-            paymentEmailAccountId: true,
-            bankAccountPrefix: true,
-            bankAccountNumber: true,
-            bankAccountBankCode: true,
-        },
-    });
+    // Fetch global bank account for email placeholders
+    const bankAccount = await getGlobalBankAccount();
 
-    if (!year) {
-        result.errors.push("Year not found");
-        return result;
-    }
+    // Cache form fields per formId for email placeholders
+    const formFieldsCache = new Map<string, { name: string; label: string; type: string }[]>();
 
-    // Cache form fields for email placeholders
-    let formInputFields: { name: string; label: string; type: string }[] | null = null;
-
-    async function getFormFields() {
-        if (formInputFields !== null) return formInputFields;
-        const form = await db.registrationForm.findFirst({
-            where: { yearId },
+    async function getFormFields(formId: string) {
+        if (formFieldsCache.has(formId)) return formFieldsCache.get(formId)!;
+        const form = await db.registrationForm.findUnique({
+            where: { id: formId },
             select: { fields: true },
         });
         if (!form) {
-            formInputFields = [];
-            return formInputFields;
+            formFieldsCache.set(formId, []);
+            return [];
         }
         const formData = migrateFormData(form.fields);
-        formInputFields = getAllInputFields(formData.fields);
-        return formInputFields;
+        const fields = getAllInputFields(formData.fields);
+        formFieldsCache.set(formId, fields);
+        return fields;
     }
 
     for (const tx of transactions) {
         try {
             // 1. Skip outgoing transactions
             if (tx.amount <= 0) {
-                await createBankTransaction(yearId, tx, BankTransactionMatchStatus.OUTGOING);
+                await createBankTransaction(null, tx, BankTransactionMatchStatus.OUTGOING);
                 result.outgoing++;
                 continue;
             }
 
             // 2. No variable symbol
             if (!tx.variableSymbol) {
-                await createBankTransaction(yearId, tx, BankTransactionMatchStatus.NO_VARIABLE_SYMBOL);
+                await createBankTransaction(null, tx, BankTransactionMatchStatus.NO_VARIABLE_SYMBOL);
                 result.noVs++;
                 continue;
             }
 
-            // 3. Lookup submission by VS
+            // 3. Lookup submission by VS (cross-year, VS is @unique)
             const submission = await db.registrationSubmission.findFirst({
                 where: {
                     variableSymbol: tx.variableSymbol,
-                    yearId,
                 },
                 select: {
                     id: true,
@@ -108,19 +88,32 @@ export async function processTransactions(
                     data: true,
                     formId: true,
                     adminNote: true,
+                    yearId: true,
+                    year: {
+                        select: {
+                            id: true,
+                            year: true,
+                            title: true,
+                            paymentEmailEnabled: true,
+                            paymentEmailSubject: true,
+                            paymentEmailBody: true,
+                            paymentEmailBcc: true,
+                            paymentEmailAccountId: true,
+                        },
+                    },
                 },
             });
 
             // 4. Unknown VS
             if (!submission) {
-                await createBankTransaction(yearId, tx, BankTransactionMatchStatus.UNKNOWN_VS);
+                await createBankTransaction(null, tx, BankTransactionMatchStatus.UNKNOWN_VS);
                 result.unknownVs++;
                 continue;
             }
 
             // 5. Already paid
             if (submission.isPaid) {
-                await createBankTransaction(yearId, tx, BankTransactionMatchStatus.ALREADY_PAID, submission.id);
+                await createBankTransaction(submission.yearId, tx, BankTransactionMatchStatus.ALREADY_PAID, submission.id);
                 result.alreadyPaid++;
                 continue;
             }
@@ -139,7 +132,7 @@ export async function processTransactions(
                     data: { adminNote: updatedNote },
                 });
 
-                await createBankTransaction(yearId, tx, BankTransactionMatchStatus.PARTIAL_PAYMENT, submission.id);
+                await createBankTransaction(submission.yearId, tx, BankTransactionMatchStatus.PARTIAL_PAYMENT, submission.id);
                 result.partial++;
                 continue;
             }
@@ -157,7 +150,7 @@ export async function processTransactions(
                 },
             });
 
-            await createBankTransaction(yearId, tx, matchStatus, submission.id);
+            await createBankTransaction(submission.yearId, tx, matchStatus, submission.id);
 
             if (matchStatus === BankTransactionMatchStatus.OVERPAYMENT) {
                 result.overpayment++;
@@ -166,23 +159,24 @@ export async function processTransactions(
             }
 
             // 8. Send payment confirmation email
+            const { year } = submission;
             if (
                 year.paymentEmailEnabled &&
                 year.paymentEmailSubject &&
                 year.paymentEmailBody
             ) {
                 try {
-                    const fields = await getFormFields();
+                    const fields = await getFormFields(submission.formId);
                     const emailField = fields.find((f) => f.type === "email");
                     const submissionData = submission.data as Record<string, unknown>;
                     const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
 
                     if (recipientEmail) {
-                        const bankAccount = year.bankAccountNumber && year.bankAccountBankCode
+                        const bankAccountFormatted = bankAccount?.bankAccountNumber && bankAccount?.bankAccountBankCode
                             ? formatCzechAccount(
-                                year.bankAccountNumber,
-                                year.bankAccountBankCode,
-                                year.bankAccountPrefix ?? undefined,
+                                bankAccount.bankAccountNumber,
+                                bankAccount.bankAccountBankCode,
+                                bankAccount.bankAccountPrefix ?? undefined,
                             )
                             : null;
 
@@ -190,7 +184,7 @@ export async function processTransactions(
                             submissionData,
                             variableSymbol: tx.variableSymbol,
                             totalPrice,
-                            bankAccount,
+                            bankAccount: bankAccountFormatted,
                             yearNumber: year.year,
                             yearTitle: year.title,
                         });
@@ -237,7 +231,7 @@ export async function processTransactions(
 }
 
 async function createBankTransaction(
-    yearId: string,
+    yearId: string | null,
     tx: ParsedBankTransaction,
     matchStatus: BankTransactionMatchStatus,
     submissionId?: string,

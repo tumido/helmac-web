@@ -14,6 +14,7 @@ import { requirePublicAuth } from "@/lib/public-auth";
 import { getPublicUserPayments } from "@/lib/services/public-user";
 import { formatCzechAccount, czechAccountToIBAN, generateSPAYD } from "@/lib/utils/spayd";
 import { PaymentQrDialog } from "@/components/public/features/account/payment-qr-dialog";
+import { getGlobalBankAccount } from "@/lib/services/bank-account";
 
 export const metadata = {
     title: "Platby | Helmac",
@@ -21,7 +22,19 @@ export const metadata = {
 
 export default async function PaymentsPage() {
     const session = await requirePublicAuth();
-    const payments = await getPublicUserPayments(session.sub);
+    const [payments, globalBank] = await Promise.all([
+        getPublicUserPayments(session.sub),
+        getGlobalBankAccount(),
+    ]);
+
+    const hasBankInfo = !!(globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode);
+    const bankAccountFormatted = hasBankInfo
+        ? formatCzechAccount(
+            globalBank!.bankAccountNumber!,
+            globalBank!.bankAccountBankCode!,
+            globalBank!.bankAccountPrefix ?? undefined,
+        )
+        : "–";
 
     if (payments.length === 0) {
         return (
@@ -54,21 +67,12 @@ export default async function PaymentsPage() {
                     </TableHead>
                     <TableBody>
                         {payments.map((payment) => {
-                            const hasBankInfo = !!(payment.year.bankAccountNumber && payment.year.bankAccountBankCode);
-                            const bankAccount = hasBankInfo
-                                ? formatCzechAccount(
-                                    payment.year.bankAccountNumber!,
-                                    payment.year.bankAccountBankCode!,
-                                    payment.year.bankAccountPrefix ?? undefined,
-                                )
-                                : "–";
-
                             let spaydString: string | null = null;
                             if (!payment.isPaid && hasBankInfo && payment.variableSymbol && payment.totalPrice != null) {
                                 const iban = czechAccountToIBAN(
-                                    payment.year.bankAccountNumber!,
-                                    payment.year.bankAccountBankCode!,
-                                    payment.year.bankAccountPrefix ?? undefined,
+                                    globalBank!.bankAccountNumber!,
+                                    globalBank!.bankAccountBankCode!,
+                                    globalBank!.bankAccountPrefix ?? undefined,
                                 );
                                 if (iban) {
                                     spaydString = generateSPAYD({
@@ -96,7 +100,7 @@ export default async function PaymentsPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-                                            {bankAccount}
+                                            {bankAccountFormatted}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
@@ -111,7 +115,7 @@ export default async function PaymentsPage() {
                                             <PaymentQrDialog
                                                 spaydString={spaydString}
                                                 amount={payment.totalPrice!}
-                                                bankAccount={bankAccount}
+                                                bankAccount={bankAccountFormatted}
                                                 variableSymbol={payment.variableSymbol!}
                                             />
                                         )}

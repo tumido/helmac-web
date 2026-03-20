@@ -9,6 +9,7 @@ import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generate
 import { formatCzechAccount, czechAccountToIBAN } from "@/lib/utils/spayd";
 import { getAllInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { getGlobalBankAccount } from "@/lib/services/bank-account";
 
 interface ActionResult {
     success?: boolean;
@@ -98,9 +99,6 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                     select: {
                         year: true,
                         title: true,
-                        bankAccountPrefix: true,
-                        bankAccountNumber: true,
-                        bankAccountBankCode: true,
                         confirmationEmailEnabled: true,
                         confirmationEmailSubject: true,
                         confirmationEmailBody: true,
@@ -131,11 +129,12 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             return { error: "Registrace neobsahuje emailovou adresu" };
         }
 
-        const bankAccount = submission.year.bankAccountNumber && submission.year.bankAccountBankCode
+        const globalBank = await getGlobalBankAccount();
+        const bankAccount = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
             ? formatCzechAccount(
-                submission.year.bankAccountNumber,
-                submission.year.bankAccountBankCode,
-                submission.year.bankAccountPrefix ?? undefined,
+                globalBank.bankAccountNumber,
+                globalBank.bankAccountBankCode,
+                globalBank.bankAccountPrefix ?? undefined,
             )
             : null;
 
@@ -157,13 +156,13 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             submission.totalPrice &&
             submission.totalPrice > 0 &&
             submission.variableSymbol &&
-            submission.year.bankAccountNumber &&
-            submission.year.bankAccountBankCode
+            globalBank?.bankAccountNumber &&
+            globalBank?.bankAccountBankCode
         ) {
             const iban = czechAccountToIBAN(
-                submission.year.bankAccountNumber,
-                submission.year.bankAccountBankCode,
-                submission.year.bankAccountPrefix ?? undefined,
+                globalBank.bankAccountNumber,
+                globalBank.bankAccountBankCode,
+                globalBank.bankAccountPrefix ?? undefined,
             );
             if (iban) {
                 qrImageBuffer = await generateQRPaymentImage({

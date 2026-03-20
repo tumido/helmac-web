@@ -23,7 +23,6 @@ import {
     AppRegistration,
     Description,
     People,
-    AccountBalance,
     Receipt,
     Email,
     MarkEmailRead,
@@ -74,7 +73,6 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
         { text: "Registrace", href: `${base}/registrace`, icon: AppRegistration, exact: true, roles: ["SUPER_ADMIN", "ADMIN"] },
         { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
         { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
-        { text: "Banka", href: `${base}/registrace/banka`, icon: AccountBalance, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
         { text: "Transakce", href: `${base}/registrace/transakce`, icon: Receipt, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
     ].filter((item) => !item.roles || (userRole && item.roles.includes(userRole)));
 

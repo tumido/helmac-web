@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { createYearSchema, updateYearSchema, updateBankAccountSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
+import { createYearSchema, updateYearSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
 
 export type YearActionState = {
     error?: {
@@ -298,43 +298,6 @@ export async function updateRegistrationStartDate(yearId: string, date: string |
     } catch (error) {
         console.error("Failed to update registration start date:", error);
         return { error: "Nepodařilo se uložit datum otevření registrace" };
-    }
-}
-
-export async function updateBankAccount(yearId: string, formData: FormData) {
-    try {
-        await requireAdmin();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    const rawData = {
-        bankAccountPrefix: formData.get("bankAccountPrefix") || null,
-        bankAccountNumber: formData.get("bankAccountNumber") || null,
-        bankAccountBankCode: formData.get("bankAccountBankCode") || null,
-    };
-
-    const validated = updateBankAccountSchema.safeParse(rawData);
-    if (!validated.success) {
-        return { error: validated.error.flatten().fieldErrors };
-    }
-
-    try {
-        await db.year.update({
-            where: { id: yearId },
-            data: {
-                bankAccountPrefix: validated.data.bankAccountPrefix,
-                bankAccountNumber: validated.data.bankAccountNumber,
-                bankAccountBankCode: validated.data.bankAccountBankCode,
-            },
-        });
-
-        revalidatePath(`/admin/rocniky/${yearId}/registrace`);
-        revalidatePath("/registrace");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to update bank account:", error);
-        return { error: "Nepodařilo se uložit bankovní údaje" };
     }
 }
 

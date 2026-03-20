@@ -7,10 +7,6 @@ import { processTransactions, type MatchResult } from "@/lib/utils/payment-match
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function GET(request: NextRequest) {
     // Authenticate via CRON_SECRET
     const authHeader = request.headers.get("authorization");
@@ -18,67 +14,45 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const years = await db.year.findMany({
+    const bankAccount = await db.bankAccount.findFirst({
         where: {
             fioSyncEnabled: true,
             encryptedFioToken: { not: null },
         },
-        select: {
-            id: true,
-            year: true,
-            encryptedFioToken: true,
-        },
     });
 
-    const results: { yearId: string; year: number; result?: MatchResult; error?: string }[] = [];
+    if (!bankAccount?.encryptedFioToken) {
+        return NextResponse.json({
+            success: true,
+            message: "No bank account with sync enabled",
+            timestamp: new Date().toISOString(),
+        });
+    }
 
-    for (let i = 0; i < years.length; i++) {
-        const yearRecord = years[i];
+    let result: MatchResult | undefined;
+    let error: string | undefined;
 
-        try {
-            const token = decrypt(yearRecord.encryptedFioToken!);
-            const transactions = await fetchLastTransactions(token);
-            const matchResult = await processTransactions(yearRecord.id, transactions);
+    try {
+        const token = decrypt(bankAccount.encryptedFioToken);
+        const transactions = await fetchLastTransactions(token);
+        result = await processTransactions(transactions);
 
-            await db.year.update({
-                where: { id: yearRecord.id },
-                data: { lastFioSyncAt: new Date() },
-            });
-
-            results.push({
-                yearId: yearRecord.id,
-                year: yearRecord.year,
-                result: matchResult,
-            });
-        } catch (error) {
-            const message = error instanceof FioRateLimitError
-                ? "Rate limit — skipping remaining years"
-                : error instanceof Error
-                    ? error.message
-                    : "Unknown error";
-
-            results.push({
-                yearId: yearRecord.id,
-                year: yearRecord.year,
-                error: message,
-            });
-
-            // Stop processing remaining years on rate limit
-            if (error instanceof FioRateLimitError) {
-                break;
-            }
-        }
-
-        // Wait 31 seconds between API calls to respect rate limit
-        if (i < years.length - 1) {
-            await sleep(31000);
-        }
+        await db.bankAccount.update({
+            where: { id: bankAccount.id },
+            data: { lastFioSyncAt: new Date() },
+        });
+    } catch (err) {
+        error = err instanceof FioRateLimitError
+            ? "Rate limit"
+            : err instanceof Error
+                ? err.message
+                : "Unknown error";
     }
 
     return NextResponse.json({
-        success: true,
-        yearsProcessed: results.length,
-        results,
+        success: !error,
+        result,
+        error,
         timestamp: new Date().toISOString(),
     });
 }

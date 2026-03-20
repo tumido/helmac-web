@@ -112,9 +112,6 @@ export async function getPublicUserPayments(userId: string) {
                 select: {
                     year: true,
                     title: true,
-                    bankAccountPrefix: true,
-                    bankAccountNumber: true,
-                    bankAccountBankCode: true,
                 },
             },
         },

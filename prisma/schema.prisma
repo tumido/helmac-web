@@ -69,6 +69,24 @@ model EmailAccount {
 }
 
 // ============================================
+// BANK ACCOUNTS - Global bank configuration
+// ============================================
+
+model BankAccount {
+    id                  String    @id @default(cuid())
+    bankAccountPrefix   String?
+    bankAccountNumber   String?
+    bankAccountBankCode String?
+    encryptedFioToken   String?
+    fioSyncEnabled      Boolean   @default(false)
+    lastFioSyncAt       DateTime?
+    createdAt           DateTime  @default(now())
+    updatedAt           DateTime  @updatedAt
+
+    @@map("bank_accounts")
+}
+
+// ============================================
 // YEARS - Main organizational unit
 // ============================================
 
@@ -102,14 +120,6 @@ model Year {
   priceChangeEmailBcc      String?
   priceChangeEmailAccountId  String?
   priceChangeEmailAccount    EmailAccount? @relation("PriceChangeEmail", fields: [priceChangeEmailAccountId], references: [id], onDelete: SetNull)
-
-  bankAccountPrefix   String?
-  bankAccountNumber   String?
-  bankAccountBankCode String?
-
-  encryptedFioToken       String?
-  lastFioSyncAt           DateTime?
-  fioSyncEnabled          Boolean   @default(false)
 
   paymentEmailEnabled     Boolean   @default(false)
   paymentEmailSubject     String?
@@ -428,8 +438,8 @@ model RegistrationSubmission {
 
 model BankTransaction {
     id                 String   @id @default(cuid())
-    yearId             String
-    year               Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+    yearId             String?
+    year               Year?    @relation(fields: [yearId], references: [id], onDelete: SetNull)
     fioTransactionId   String   @unique
     date               DateTime
     amount             Float

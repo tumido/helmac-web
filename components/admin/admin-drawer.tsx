@@ -31,6 +31,7 @@ import {
     Settings,
     PrivacyTip,
     Email,
+    AccountBalance,
 } from "@mui/icons-material";
 import { useSidebarContext } from "@/lib/contexts/sidebar-context";
 import { YearSidebar } from "./year-sidebar";
@@ -66,6 +67,7 @@ const staticMenuItems: MenuItemType[] = [
     { text: "Nastavení", href: "/admin/nastaveni", icon: Settings },
     { text: "GDPR", href: "/admin/nastaveni/gdpr", icon: PrivacyTip, indented: true },
     { text: "Emailové účty", href: "/admin/nastaveni/emaily", icon: Email, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
+    { text: "Banka", href: "/admin/nastaveni/banka", icon: AccountBalance, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
 ];
 
 const selectedSx = {
