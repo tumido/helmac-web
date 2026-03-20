@@ -4,27 +4,19 @@ import {
     Card,
     CardContent,
     Box,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemIcon,
-    Chip,
-    Divider,
 } from "@mui/material";
 import {
     CalendarMonth,
     Article,
     Newspaper,
     PhotoLibrary,
-    Add,
+    CheckCircle,
+    Warning,
     Edit,
-    Schedule,
-    VisibilityOff,
 } from "@mui/icons-material";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/link-button";
-import { formatDate } from "@/lib/utils/date";
 
 async function getStats() {
     const [yearsCount, pagesCount, newsCount, albumsCount] = await Promise.all([
@@ -37,127 +29,33 @@ async function getStats() {
     return { yearsCount, pagesCount, newsCount, albumsCount };
 }
 
-async function getRecentActivity() {
-    const [recentNews, recentPages, recentAlbums] = await Promise.all([
-        db.news.findMany({
-            orderBy: { updatedAt: "desc" },
-            take: 5,
-            select: {
-                id: true,
-                title: true,
-                updatedAt: true,
-                year: { select: { id: true } },
-            },
-        }),
-        db.page.findMany({
-            orderBy: { updatedAt: "desc" },
-            take: 5,
-            select: {
-                id: true,
-                title: true,
-                updatedAt: true,
-                year: { select: { id: true } },
-            },
-        }),
-        db.album.findMany({
-            orderBy: { updatedAt: "desc" },
-            take: 5,
-            select: {
-                id: true,
-                title: true,
-                updatedAt: true,
-            },
+async function getSetupStatus() {
+    const [mainEmail, bankAccount] = await Promise.all([
+        db.emailAccount.findFirst({ where: { isMain: true }, select: { id: true } }),
+        db.bankAccount.findFirst({
+            select: { bankAccountNumber: true, fioSyncEnabled: true },
         }),
     ]);
 
-    const activities = [
-        ...recentNews.map((n) => ({
-            id: n.id,
-            title: n.title,
-            type: "news" as const,
-            updatedAt: n.updatedAt,
-            href: `/admin/novinky/${n.id}`,
-        })),
-        ...recentPages.map((p) => ({
-            id: p.id,
-            title: p.title,
-            type: "page" as const,
-            updatedAt: p.updatedAt,
-            href: `/admin/rocniky/${p.year.id}/stranky/${p.id}`,
-        })),
-        ...recentAlbums.map((a) => ({
-            id: a.id,
-            title: a.title,
-            type: "album" as const,
-            updatedAt: a.updatedAt,
-            href: `/admin/galerie/${a.id}`,
-        })),
-    ];
-
-    return activities
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-        .slice(0, 8);
-}
-
-async function getPendingItems() {
-    const unpublishedPages = await db.page.findMany({
-        where: { isPublished: false },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: {
-            id: true,
-            title: true,
-            year: { select: { id: true, year: true } },
-        },
-    });
-
     return {
-        pages: unpublishedPages,
+        hasMainEmail: !!mainEmail,
+        hasBankAccount: !!bankAccount?.bankAccountNumber,
+        hasFioSync: !!bankAccount?.fioSyncEnabled,
     };
-}
-
-function formatRelativeTime(date: Date): string {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return "právě teď";
-    if (minutes < 60) return `pred ${minutes} min`;
-    if (hours < 24) return `pred ${hours} hod`;
-    if (days < 7) return `pred ${days} dny`;
-    return formatDate(date);
-}
-
-function getActivityIcon(type: "news" | "page" | "album") {
-    switch (type) {
-        case "news":
-            return <Newspaper fontSize="small" />;
-        case "page":
-            return <Article fontSize="small" />;
-        case "album":
-            return <PhotoLibrary fontSize="small" />;
-    }
-}
-
-function getActivityLabel(type: "news" | "page" | "album") {
-    switch (type) {
-        case "news":
-            return "Novinka";
-        case "page":
-            return "Stránka";
-        case "album":
-            return "Album";
-    }
 }
 
 export default async function AdminDashboardPage() {
     const session = await auth();
-    const [stats, activities, pending] = await Promise.all([
+    const isAdminOrAbove =
+        session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
+
+    const [stats, activeYear, setupStatus] = await Promise.all([
         getStats(),
-        getRecentActivity(),
-        getPendingItems(),
+        db.year.findFirst({
+            where: { isActive: true, isArchived: false },
+            select: { id: true, year: true, title: true },
+        }),
+        isAdminOrAbove ? getSetupStatus() : null,
     ]);
 
     const statCards = [
@@ -187,13 +85,25 @@ export default async function AdminDashboardPage() {
         },
     ];
 
-    const quickActions = [
-        { label: "Nová novinka", href: "/admin/novinky/nova", icon: Add },
-        { label: "Nové album", href: "/admin/galerie/nove", icon: Add },
-        { label: "Nový ročník", href: "/admin/rocniky/novy", icon: Add },
-    ];
-
-    const totalPending = pending.pages.length;
+    const setupChecks = setupStatus
+        ? [
+              {
+                  label: "Hlavní emailový účet",
+                  ok: setupStatus.hasMainEmail,
+                  href: "/admin/nastaveni/emaily",
+              },
+              {
+                  label: "Bankovní účet",
+                  ok: setupStatus.hasBankAccount,
+                  href: "/admin/nastaveni/banka",
+              },
+              {
+                  label: "Fio synchronizace",
+                  ok: setupStatus.hasFioSync,
+                  href: "/admin/nastaveni/banka",
+              },
+          ]
+        : null;
 
     return (
         <Container maxWidth="lg">
@@ -260,188 +170,84 @@ export default async function AdminDashboardPage() {
                 })}
             </Box>
 
-            {/* Main Content Grid */}
-            <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
-                    gap: 3,
-                }}
-            >
-                {/* Recent Activity */}
-                <Card>
+            {/* Setup Status (ADMIN / SUPER_ADMIN only) */}
+            {setupChecks && (
+                <Card sx={{ mb: 3 }}>
                     <CardContent>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                mb: 2,
-                            }}
-                        >
-                            <Schedule color="action" />
-                            <Typography variant="h6">
-                                Poslední aktivita
-                            </Typography>
-                        </Box>
-                        {activities.length === 0 ? (
-                            <Typography color="text.secondary">
-                                Žádná nedávná aktivita.
-                            </Typography>
-                        ) : (
-                            <List disablePadding>
-                                {activities.map((activity, index) => (
-                                    <Box key={`${activity.type}-${activity.id}`}>
-                                        {index > 0 && <Divider />}
-                                        <ListItem
-                                            disablePadding
-                                            sx={{ py: 1 }}
-                                            secondaryAction={
-                                                <LinkButton
-                                                    href={activity.href}
-                                                    size="small"
-                                                    startIcon={<Edit />}
-                                                >
-                                                    Upravit
-                                                </LinkButton>
-                                            }
-                                        >
-                                            <ListItemIcon sx={{ minWidth: 36 }}>
-                                                {getActivityIcon(activity.type)}
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary={activity.title}
-                                                secondary={
-                                                    <Box
-                                                        component="span"
-                                                        sx={{
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            gap: 1,
-                                                        }}
-                                                    >
-                                                        <Chip
-                                                            label={getActivityLabel(activity.type)}
-                                                            size="small"
-                                                            variant="outlined"
-                                                            sx={{ height: 20, fontSize: "0.7rem" }}
-                                                        />
-                                                        {formatRelativeTime(activity.updatedAt)}
-                                                    </Box>
-                                                }
-                                                primaryTypographyProps={{
-                                                    noWrap: true,
-                                                    sx: { maxWidth: "70%" },
-                                                }}
-                                            />
-                                        </ListItem>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Stav nastavení
+                        </Typography>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                            {setupChecks.map((check) => (
+                                <Box
+                                    key={check.label}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                    }}
+                                >
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        {check.ok ? (
+                                            <CheckCircle color="success" fontSize="small" />
+                                        ) : (
+                                            <Warning color="warning" fontSize="small" />
+                                        )}
+                                        <Typography variant="body2">
+                                            {check.label}
+                                        </Typography>
                                     </Box>
-                                ))}
-                            </List>
-                        )}
+                                    {!check.ok && (
+                                        <LinkButton
+                                            href={check.href}
+                                            size="small"
+                                            variant="text"
+                                        >
+                                            Nastavit
+                                        </LinkButton>
+                                    )}
+                                </Box>
+                            ))}
+                        </Box>
                     </CardContent>
                 </Card>
+            )}
 
-                {/* Right Column */}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                    {/* Quick Actions */}
-                    <Card>
-                        <CardContent>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    mb: 2,
-                                }}
+            {/* Active Year */}
+            <Card>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Aktuální ročník
+                    </Typography>
+                    {activeYear ? (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <Typography variant="body1">
+                                {activeYear.title || `Ročník ${activeYear.year}`}
+                            </Typography>
+                            <LinkButton
+                                href={`/admin/rocniky/${activeYear.id}`}
+                                variant="contained"
+                                startIcon={<Edit />}
                             >
-                                <Add color="action" />
-                                <Typography variant="h6">
-                                    Rychlé akce
-                                </Typography>
-                            </Box>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: 1.5,
-                                }}
+                                Upravit ročník
+                            </LinkButton>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Žádný aktivní ročník
+                            </Typography>
+                            <LinkButton
+                                href="/admin/rocniky"
+                                variant="outlined"
+                                size="small"
                             >
-                                {quickActions.map((action) => (
-                                    <LinkButton
-                                        key={action.href}
-                                        href={action.href}
-                                        variant="outlined"
-                                        startIcon={<action.icon />}
-                                    >
-                                        {action.label}
-                                    </LinkButton>
-                                ))}
-                            </Box>
-                        </CardContent>
-                    </Card>
-
-                    {/* Pending Items */}
-                    <Card>
-                        <CardContent>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    mb: 2,
-                                }}
-                            >
-                                <VisibilityOff color="action" />
-                                <Typography variant="h6">
-                                    Nepublikované ({totalPending})
-                                </Typography>
-                            </Box>
-                            {totalPending === 0 ? (
-                                <Typography color="text.secondary">
-                                    Vše je publikováno.
-                                </Typography>
-                            ) : (
-                                <List disablePadding dense>
-                                    {pending.pages.map((item, index) => (
-                                        <Box key={item.id}>
-                                            {index > 0 && <Divider />}
-                                            <ListItem
-                                                disablePadding
-                                                sx={{ py: 0.5 }}
-                                                secondaryAction={
-                                                    <LinkButton
-                                                        href={`/admin/rocniky/${item.year.id}/stranky/${item.id}`}
-                                                        size="small"
-                                                    >
-                                                        Upravit
-                                                    </LinkButton>
-                                                }
-                                            >
-                                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                                    <Article fontSize="small" color="action" />
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    primary={item.title}
-                                                    secondary={`Ročník ${item.year.year}`}
-                                                    primaryTypographyProps={{
-                                                        noWrap: true,
-                                                        variant: "body2",
-                                                        sx: { maxWidth: "65%" },
-                                                    }}
-                                                    secondaryTypographyProps={{
-                                                        variant: "caption",
-                                                    }}
-                                                />
-                                            </ListItem>
-                                        </Box>
-                                    ))}
-                                </List>
-                            )}
-                        </CardContent>
-                    </Card>
-                </Box>
-            </Box>
+                                Spravovat ročníky
+                            </LinkButton>
+                        </Box>
+                    )}
+                </CardContent>
+            </Card>
         </Container>
     );
 }
