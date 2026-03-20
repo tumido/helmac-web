@@ -54,6 +54,7 @@ interface RichTextEditorProps {
     placeholder?: string;
     minHeight?: number;
     editorRef?: MutableRefObject<Editor | null>;
+    editable?: boolean;
 }
 
 function MenuBar({ editor }: { editor: Editor | null }) {
@@ -338,6 +339,7 @@ export function RichTextEditor({
     placeholder = "Zacnete psat...",
     minHeight = 300,
     editorRef,
+    editable = true,
 }: RichTextEditorProps) {
     const editor = useEditor({
         extensions: [
@@ -361,6 +363,7 @@ export function RichTextEditor({
             }),
         ],
         content: value,
+        editable,
         immediatelyRender: false,
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
@@ -371,6 +374,13 @@ export function RichTextEditor({
             },
         },
     });
+
+    // Sync editable prop changes
+    useEffect(() => {
+        if (editor) {
+            editor.setEditable(editable);
+        }
+    }, [editor, editable]);
 
     // Expose editor instance via ref
     useEffect(() => {
@@ -391,14 +401,16 @@ export function RichTextEditor({
                 borderColor: "divider",
                 borderRadius: 1,
                 overflow: "hidden",
-                "&:focus-within": {
-                    borderColor: "primary.main",
-                    boxShadow: (theme) =>
-                        `0 0 0 1px ${theme.palette.primary.main}`,
-                },
+                ...(editable && {
+                    "&:focus-within": {
+                        borderColor: "primary.main",
+                        boxShadow: (theme) =>
+                            `0 0 0 1px ${theme.palette.primary.main}`,
+                    },
+                }),
             }}
         >
-            <MenuBar editor={editor} />
+            {editable && <MenuBar editor={editor} />}
             <Box
                 sx={{
                     p: 2,
