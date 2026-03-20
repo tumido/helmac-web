@@ -24,6 +24,7 @@ export async function publicRegister(
         email: formData.get("email"),
         password: formData.get("password"),
         confirmPassword: formData.get("confirmPassword"),
+        gdprConsent: formData.get("gdprConsent") === "on",
     };
 
     const validated = publicRegisterSchema.safeParse(rawData);
@@ -59,12 +60,13 @@ export async function publicRegister(
     const user = existing
         ? await db.publicUser.update({
             where: { id: existing.id },
-            data: { passwordHash },
+            data: { passwordHash, gdprConsentAt: new Date() },
         })
         : await db.publicUser.create({
             data: {
                 email,
                 passwordHash,
+                gdprConsentAt: new Date(),
             },
         });
 

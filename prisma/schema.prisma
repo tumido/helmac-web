@@ -330,6 +330,7 @@ model PublicUser {
     passwordHash    String
     emailVerified   Boolean   @default(false)
     emailVerifiedAt DateTime?
+    gdprConsentAt   DateTime?
     createdAt       DateTime  @default(now())
     updatedAt       DateTime  @updatedAt
 
@@ -399,6 +400,7 @@ model RegistrationSubmission {
     emailSent       Boolean  @default(false)
     emailSentAt     DateTime?
     adminNote       String?   @db.Text
+    gdprConsentAt   DateTime?
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 

@@ -412,6 +412,16 @@ export async function submitDynamicRegistration(
     const publicSession = await getPublicSession();
     const publicUserId = publicSession?.sub ?? null;
 
+    // GDPR consent check for anonymous users
+    const gdprConsent = formData.get("gdprConsent") === "on";
+    if (!publicUserId && !gdprConsent) {
+        return {
+            success: false,
+            message: "Musíte souhlasit se zpracováním osobních údajů",
+            errors: { gdprConsent: ["Musíte souhlasit se zpracováním osobních údajů"] },
+        };
+    }
+
     // Create submission
     try {
         const submission = await db.registrationSubmission.create({
@@ -424,6 +434,7 @@ export async function submitDynamicRegistration(
                 variableSymbol,
                 totalPrice,
                 publicUserId,
+                gdprConsentAt: !publicUserId ? new Date() : undefined,
             },
         });
 

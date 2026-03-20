@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect, useActionState, type FormEvent } from "react";
-import { Box, Button, Alert, Paper, Snackbar } from "@mui/material";
+import { Box, Button, Alert, Paper, Snackbar, FormControlLabel, Checkbox, FormHelperText } from "@mui/material";
+import MuiLink from "@mui/material/Link";
+import NextLink from "next/link";
 import type { RegistrationFormData, SubmissionData, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
 import { isInputField, getAllFields, getAllInputFields, getAPInputFields, hasAdditionalPeopleFields, getDisabledOptionsForField } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
@@ -16,6 +18,7 @@ interface DynamicRegistrationFormProps {
     formData: RegistrationFormData;
     optionCounts?: OptionCounts;
     previewMode?: boolean;
+    isLoggedIn?: boolean;
 }
 
 function buildInitialValues(formData: RegistrationFormData): SubmissionData {
@@ -31,7 +34,7 @@ function buildInitialValues(formData: RegistrationFormData): SubmissionData {
     return values;
 }
 
-export function DynamicRegistrationForm({ formData, optionCounts, previewMode }: DynamicRegistrationFormProps) {
+export function DynamicRegistrationForm({ formData, optionCounts, previewMode, isLoggedIn }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData));
     const [additionalPeople, setAdditionalPeople] = useState<AdditionalPersonData[]>([]);
     const { visibleFields } = useConditionalFields(formData, values);
@@ -192,6 +195,27 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode }:
                         visibleMainFields={visibleFields}
                         visibleAPFieldsPerPerson={visibleAPFieldsPerPerson}
                     />
+                )}
+
+                {!isLoggedIn && !previewMode && (
+                    <Box sx={{ mt: 3 }}>
+                        <FormControlLabel
+                            control={<Checkbox name="gdprConsent" />}
+                            label={
+                                <>
+                                    Souhlasím se{" "}
+                                    <MuiLink component={NextLink} href="/gdpr" target="_blank">
+                                        zpracováním osobních údajů
+                                    </MuiLink>
+                                </>
+                            }
+                        />
+                        {state?.errors?.gdprConsent && (
+                            <FormHelperText error>
+                                {state.errors.gdprConsent[0]}
+                            </FormHelperText>
+                        )}
+                    </Box>
                 )}
 
                 <Box sx={{ mt: 4, textAlign: "center" }}>

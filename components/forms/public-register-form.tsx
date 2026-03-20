@@ -8,7 +8,12 @@ import {
     TextField,
     Alert,
     CircularProgress,
+    FormControlLabel,
+    Checkbox,
+    FormHelperText,
 } from "@mui/material";
+import NextLink from "next/link";
+import MuiLink from "@mui/material/Link";
 import { publicRegister } from "@/lib/actions/public/auth";
 
 function SubmitButton() {
@@ -82,6 +87,25 @@ export function PublicRegisterForm() {
                 error={!!state?.errors?.confirmPassword}
                 helperText={state?.errors?.confirmPassword?.[0]}
             />
+
+            <Box sx={{ mt: 1 }}>
+                <FormControlLabel
+                    control={<Checkbox name="gdprConsent" />}
+                    label={
+                        <>
+                            Souhlasím se{" "}
+                            <MuiLink component={NextLink} href="/gdpr" target="_blank">
+                                zpracováním osobních údajů
+                            </MuiLink>
+                        </>
+                    }
+                />
+                {state?.errors?.gdprConsent && (
+                    <FormHelperText error>
+                        {state.errors.gdprConsent[0]}
+                    </FormHelperText>
+                )}
+            </Box>
 
             <SubmitButton />
         </Box>

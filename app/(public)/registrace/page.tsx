@@ -4,6 +4,7 @@ import { DynamicRegistrationForm } from "@/components/public/features/registrati
 import { getRegistrationStatus, getActiveYear, getOptionCountsForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatDate } from "@/lib/utils/date";
+import { getPublicSession } from "@/lib/public-auth";
 
 export const metadata = {
     title: "Registrace | Helmac",
@@ -84,10 +85,13 @@ export default async function RegistracePage() {
 
     const formData = migrateFormData(status.formFields);
 
-    // Fetch counts if there are capacity limits
-    const optionCounts = formData.capacityLimits.length > 0
-        ? await getOptionCountsForYear(status.year!.id)
-        : undefined;
+    // Fetch counts if there are capacity limits and session for GDPR
+    const [optionCounts, publicSession] = await Promise.all([
+        formData.capacityLimits.length > 0
+            ? getOptionCountsForYear(status.year!.id)
+            : Promise.resolve(undefined),
+        getPublicSession(),
+    ]);
 
     return (
         <>
@@ -97,7 +101,7 @@ export default async function RegistracePage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <DynamicRegistrationForm formData={formData} optionCounts={optionCounts} />
+                <DynamicRegistrationForm formData={formData} optionCounts={optionCounts} isLoggedIn={!!publicSession} />
             </Container>
         </>
     );

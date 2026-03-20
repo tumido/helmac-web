@@ -4,6 +4,9 @@ export const publicRegisterSchema = z.object({
     email: z.string().email("Neplatný email"),
     password: z.string().min(8, "Heslo musí mít alespoň 8 znaků"),
     confirmPassword: z.string(),
+    gdprConsent: z.literal(true, {
+        message: "Musíte souhlasit se zpracováním osobních údajů",
+    }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Hesla se neshodují",
     path: ["confirmPassword"],
