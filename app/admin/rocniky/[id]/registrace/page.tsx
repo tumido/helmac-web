@@ -68,6 +68,12 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
         ? await getOptionCountsForYear(year.id)
         : undefined;
 
+    // Check registration open constraints
+    const mainEmail = await db.emailAccount.findFirst({ where: { isMain: true } });
+    const bankAccount = await db.bankAccount.findFirst({
+        where: { bankAccountNumber: { not: null } },
+    });
+
     return (
         <Container maxWidth="md">
             <PageHeader
@@ -85,6 +91,8 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
                 registrationStartDate={year.registrationStartDate}
                 submissionCount={year._count.registrationSubmissions}
                 totalPeopleCount={totalPeopleCount}
+                hasMainEmail={!!mainEmail}
+                hasBankAccount={!!bankAccount}
             />
 
             {formData && allInputFields.length > 0 && (

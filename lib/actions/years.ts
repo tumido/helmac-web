@@ -259,6 +259,22 @@ export async function toggleRegistration(yearId: string, open: boolean) {
     }
 
     try {
+        // Server-side constraint check when opening registration
+        if (open) {
+            const [mainEmail, bankAccount] = await Promise.all([
+                db.emailAccount.findFirst({ where: { isMain: true } }),
+                db.bankAccount.findFirst({ where: { bankAccountNumber: { not: null } } }),
+            ]);
+
+            const missing: string[] = [];
+            if (!mainEmail) missing.push("hlavní emailová adresa");
+            if (!bankAccount) missing.push("bankovní účet");
+
+            if (missing.length > 0) {
+                return { error: `Nelze otevřít registraci. Chybí: ${missing.join(", ")}` };
+            }
+        }
+
         await db.year.update({
             where: { id: yearId },
             data: { registrationOpen: open },

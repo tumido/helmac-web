@@ -11,10 +11,15 @@ import {
     DialogContentText,
     DialogTitle,
     FormControlLabel,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
     Switch,
     TextField,
     Typography,
 } from "@mui/material";
+import { Warning } from "@mui/icons-material";
 import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
 
 interface RegistrationSettingsProps {
@@ -23,6 +28,8 @@ interface RegistrationSettingsProps {
     registrationStartDate: Date | null;
     submissionCount: number;
     totalPeopleCount: number;
+    hasMainEmail: boolean;
+    hasBankAccount: boolean;
 }
 
 export function RegistrationSettings({
@@ -31,9 +38,12 @@ export function RegistrationSettings({
     registrationStartDate,
     submissionCount,
     totalPeopleCount,
+    hasMainEmail,
+    hasBankAccount,
 }: RegistrationSettingsProps) {
     const [isOpen, setIsOpen] = useState(registrationOpen);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [constraintsOpen, setConstraintsOpen] = useState(false);
     const [pendingToggle, setPendingToggle] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,7 +55,15 @@ export function RegistrationSettings({
     const [dateSaving, setDateSaving] = useState(false);
 
     const handleToggleClick = () => {
-        setPendingToggle(!isOpen);
+        const newValue = !isOpen;
+        setPendingToggle(newValue);
+
+        // When opening, check constraints first
+        if (newValue && (!hasMainEmail || !hasBankAccount)) {
+            setConstraintsOpen(true);
+            return;
+        }
+
         setConfirmOpen(true);
     };
 
@@ -144,6 +162,34 @@ export function RegistrationSettings({
                     <Button onClick={handleCancel}>Zrušit</Button>
                     <Button onClick={handleConfirm} variant="contained" autoFocus>
                         Potvrdit
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={constraintsOpen} onClose={() => { setConstraintsOpen(false); setPendingToggle(null); }}>
+                <DialogTitle>Nelze otevřít registraci</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Před otevřením registrace je nutné splnit následující podmínky:
+                    </DialogContentText>
+                    <List>
+                        {!hasMainEmail && (
+                            <ListItem>
+                                <ListItemIcon><Warning color="warning" /></ListItemIcon>
+                                <ListItemText primary="Nastavte hlavní emailovou adresu" />
+                            </ListItem>
+                        )}
+                        {!hasBankAccount && (
+                            <ListItem>
+                                <ListItemIcon><Warning color="warning" /></ListItemIcon>
+                                <ListItemText primary="Nastavte bankovní účet" />
+                            </ListItem>
+                        )}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => { setConstraintsOpen(false); setPendingToggle(null); }}>
+                        Zavřít
                     </Button>
                 </DialogActions>
             </Dialog>
