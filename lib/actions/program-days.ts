@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import {
     createProgramDaySchema,
     updateProgramDaySchema,
@@ -24,7 +24,7 @@ export async function createProgramDay(
     formData: FormData
 ): Promise<ProgramDayActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -85,7 +85,7 @@ export async function updateProgramDay(
     formData: FormData
 ): Promise<ProgramDayActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -147,7 +147,7 @@ export async function updateProgramDay(
 
 export async function deleteProgramDay(dayId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -170,7 +170,7 @@ export async function reorderProgramDays(
     dayIds: string[]
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
