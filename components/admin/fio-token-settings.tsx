@@ -246,7 +246,7 @@ export function FioTokenSettings({
                                             disabled={isToggling}
                                         />
                                     }
-                                    label="Automatická synchronizace (každých 10 minut)"
+                                    label="Automatická synchronizace (jednou denně)"
                                 />
                             </Box>
                         )}
