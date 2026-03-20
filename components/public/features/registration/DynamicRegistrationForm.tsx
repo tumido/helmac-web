@@ -19,14 +19,17 @@ interface DynamicRegistrationFormProps {
     optionCounts?: OptionCounts;
     previewMode?: boolean;
     isLoggedIn?: boolean;
+    publicEmail?: string;
 }
 
-function buildInitialValues(formData: RegistrationFormData): SubmissionData {
+function buildInitialValues(formData: RegistrationFormData, publicEmail?: string): SubmissionData {
     const values: SubmissionData = {};
     const inputFields = getAllInputFields(formData.fields);
     for (const field of inputFields) {
         if (field.type === "checkbox") {
             values[field.name] = false;
+        } else if (field.type === "email" && publicEmail) {
+            values[field.name] = publicEmail;
         } else {
             values[field.name] = "";
         }
@@ -34,8 +37,8 @@ function buildInitialValues(formData: RegistrationFormData): SubmissionData {
     return values;
 }
 
-export function DynamicRegistrationForm({ formData, optionCounts, previewMode, isLoggedIn }: DynamicRegistrationFormProps) {
-    const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData));
+export function DynamicRegistrationForm({ formData, optionCounts, previewMode, isLoggedIn, publicEmail }: DynamicRegistrationFormProps) {
+    const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData, publicEmail));
     const [additionalPeople, setAdditionalPeople] = useState<AdditionalPersonData[]>([]);
     const { visibleFields } = useConditionalFields(formData, values);
     const [previewSnackbar, setPreviewSnackbar] = useState(false);
