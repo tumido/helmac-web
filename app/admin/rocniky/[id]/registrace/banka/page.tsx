@@ -1,15 +1,17 @@
-import { Container } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { BankAccountSettings } from "@/components/admin/bank-account-settings";
+import { FioTokenSettings } from "@/components/admin/fio-token-settings";
+import { BankTransactionsTable } from "@/components/admin/bank-transactions-table";
 
 interface BankaPageProps {
     params: Promise<{ id: string }>;
 }
 
-async function getYearBankAccount(yearId: string) {
+async function getYearBankData(yearId: string) {
     return db.year.findUnique({
         where: { id: yearId },
         select: {
@@ -19,6 +21,28 @@ async function getYearBankAccount(yearId: string) {
             bankAccountPrefix: true,
             bankAccountNumber: true,
             bankAccountBankCode: true,
+            encryptedFioToken: true,
+            fioSyncEnabled: true,
+            lastFioSyncAt: true,
+        },
+    });
+}
+
+async function getRecentTransactions(yearId: string) {
+    return db.bankTransaction.findMany({
+        where: { yearId },
+        orderBy: { date: "desc" },
+        take: 20,
+        select: {
+            id: true,
+            date: true,
+            amount: true,
+            currency: true,
+            variableSymbol: true,
+            counterpartAccount: true,
+            counterpartName: true,
+            matchStatus: true,
+            submissionId: true,
         },
     });
 }
@@ -26,11 +50,19 @@ async function getYearBankAccount(yearId: string) {
 export default async function BankaPage({ params }: BankaPageProps) {
     await requireAdmin();
     const { id } = await params;
-    const year = await getYearBankAccount(id);
+    const [year, transactions] = await Promise.all([
+        getYearBankData(id),
+        getRecentTransactions(id),
+    ]);
 
     if (!year) {
         notFound();
     }
+
+    const transactionsForClient = transactions.map((tx) => ({
+        ...tx,
+        date: tx.date.toISOString(),
+    }));
 
     return (
         <Container maxWidth="md">
@@ -50,6 +82,25 @@ export default async function BankaPage({ params }: BankaPageProps) {
                 bankAccountNumber={year.bankAccountNumber}
                 bankAccountBankCode={year.bankAccountBankCode}
             />
+
+            <FioTokenSettings
+                yearId={year.id}
+                hasToken={!!year.encryptedFioToken}
+                syncEnabled={year.fioSyncEnabled}
+                lastSyncAt={year.lastFioSyncAt?.toISOString() ?? null}
+            />
+
+            {transactionsForClient.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Poslední transakce
+                    </Typography>
+                    <BankTransactionsTable
+                        transactions={transactionsForClient}
+                        yearId={year.id}
+                    />
+                </Box>
+            )}
         </Container>
     );
 }

@@ -63,6 +63,7 @@ model EmailAccount {
 
     confirmationYears Year[] @relation("ConfirmationEmail")
     priceChangeYears  Year[] @relation("PriceChangeEmail")
+    paymentYears      Year[] @relation("PaymentEmail")
 
     @@map("email_accounts")
 }
@@ -106,6 +107,17 @@ model Year {
   bankAccountNumber   String?
   bankAccountBankCode String?
 
+  encryptedFioToken       String?
+  lastFioSyncAt           DateTime?
+  fioSyncEnabled          Boolean   @default(false)
+
+  paymentEmailEnabled     Boolean   @default(false)
+  paymentEmailSubject     String?
+  paymentEmailBody        String?   @db.Text
+  paymentEmailBcc         String?
+  paymentEmailAccountId   String?
+  paymentEmailAccount     EmailAccount? @relation("PaymentEmail", fields: [paymentEmailAccountId], references: [id], onDelete: SetNull)
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -118,6 +130,7 @@ model Year {
   rules         Rule[]
   offers        Offer[]
   infoSections  InfoSection[]
+  bankTransactions        BankTransaction[]
 
   @@map("years")
 }
@@ -404,7 +417,47 @@ model RegistrationSubmission {
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 
+    bankTransactions BankTransaction[]
+
     @@map("registration_submissions")
+}
+
+// ============================================
+// BANK TRANSACTIONS - Fio Bank payment matching
+// ============================================
+
+model BankTransaction {
+    id                 String   @id @default(cuid())
+    yearId             String
+    year               Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+    fioTransactionId   String   @unique
+    date               DateTime
+    amount             Float
+    currency           String   @default("CZK")
+    variableSymbol     String?
+    counterpartAccount String?
+    counterpartName    String?
+    userMessage        String?
+    matchStatus        BankTransactionMatchStatus @default(UNPROCESSED)
+    submissionId       String?
+    submission         RegistrationSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+    processedAt        DateTime?
+    createdAt          DateTime @default(now())
+
+    @@index([yearId])
+    @@index([variableSymbol])
+    @@map("bank_transactions")
+}
+
+enum BankTransactionMatchStatus {
+    UNPROCESSED
+    MATCHED
+    PARTIAL_PAYMENT
+    OVERPAYMENT
+    NO_VARIABLE_SYMBOL
+    UNKNOWN_VS
+    ALREADY_PAID
+    OUTGOING
 }
 
 // ============================================

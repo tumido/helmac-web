@@ -24,9 +24,11 @@ import {
     Description,
     People,
     AccountBalance,
+    Receipt,
     Email,
     MarkEmailRead,
     PriceChange,
+    Payment,
     Settings,
 } from "@mui/icons-material";
 import { ListItemLinkButton } from "@/components/ui/link-button";
@@ -73,12 +75,14 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
         { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
         { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
         { text: "Banka", href: `${base}/registrace/banka`, icon: AccountBalance, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
+        { text: "Transakce", href: `${base}/registrace/transakce`, icon: Receipt, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
     ].filter((item) => !item.roles || (userRole && item.roles.includes(userRole)));
 
     const emailItems = [
         { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },
         { text: "Potvrzovací", href: `${base}/emaily/potvrzovaci`, icon: MarkEmailRead, indented: true },
         { text: "Změna ceny", href: `${base}/emaily/zmena-ceny`, icon: PriceChange, indented: true },
+        { text: "Platba", href: `${base}/emaily/platba`, icon: Payment, indented: true },
     ];
 
     return (

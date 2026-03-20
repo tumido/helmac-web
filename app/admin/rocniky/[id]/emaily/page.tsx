@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
-import { MarkEmailRead, PriceChange } from "@mui/icons-material";
+import { MarkEmailRead, Payment, PriceChange } from "@mui/icons-material";
 import { EmailToggle } from "./email-toggle";
 import { togglePriceChangeEmail } from "@/lib/actions/years";
+import { togglePaymentEmail } from "@/lib/actions/bank-sync";
 
 interface EmailyPageProps {
     params: Promise<{ id: string }>;
@@ -30,6 +31,13 @@ async function getYearEmailStatus(yearId: string) {
             priceChangeEmailBody: true,
             priceChangeEmailAccountId: true,
             priceChangeEmailAccount: {
+                select: { email: true, label: true },
+            },
+            paymentEmailEnabled: true,
+            paymentEmailSubject: true,
+            paymentEmailBody: true,
+            paymentEmailAccountId: true,
+            paymentEmailAccount: {
                 select: { email: true, label: true },
             },
         },
@@ -61,6 +69,7 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
 
     const hasConfirmationTemplate = !!year.confirmationEmailSubject && !!year.confirmationEmailBody;
     const hasPriceChangeTemplate = !!year.priceChangeEmailSubject && !!year.priceChangeEmailBody;
+    const hasPaymentTemplate = !!year.paymentEmailSubject && !!year.paymentEmailBody;
 
     return (
         <Container maxWidth="md">
@@ -107,7 +116,7 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                 </CardContent>
             </Card>
 
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Typography variant="h6" sx={{ mb: 2 }}>
                         Email při změně ceny
@@ -138,6 +147,42 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                             startIcon={<PriceChange />}
                         >
                             {hasPriceChangeTemplate ? "Zobrazit šablonu" : "Nastavit šablonu"}
+                        </LinkButton>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Email při přijetí platby
+                    </Typography>
+
+                    <EmailToggle
+                        yearId={year.id}
+                        initialEnabled={year.paymentEmailEnabled}
+                        hasTemplate={hasPaymentTemplate}
+                        toggleAction={togglePaymentEmail}
+                        label="Odesílat email po přijetí platby"
+                    />
+
+                    {!hasPaymentTemplate && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
+                            Šablona emailu zatím není nastavena.
+                        </Typography>
+                    )}
+
+                    {hasPaymentTemplate && (
+                        <SenderInfo account={year.paymentEmailAccount} />
+                    )}
+
+                    <Box sx={{ mt: 2 }}>
+                        <LinkButton
+                            href={`/admin/rocniky/${year.id}/emaily/platba`}
+                            variant="outlined"
+                            startIcon={<Payment />}
+                        >
+                            {hasPaymentTemplate ? "Zobrazit šablonu" : "Nastavit šablonu"}
                         </LinkButton>
                     </Box>
                 </CardContent>
