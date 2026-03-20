@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { createOfferSchema, updateOfferSchema } from "@/lib/validators/offers";
 
 export type OfferActionState = {
@@ -21,7 +21,7 @@ export async function createOffer(
     formData: FormData
 ): Promise<OfferActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -69,7 +69,7 @@ export async function updateOffer(
     formData: FormData
 ): Promise<OfferActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -119,7 +119,7 @@ export async function updateOffer(
 
 export async function deleteOffer(offerId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -142,7 +142,7 @@ export async function reorderOffers(
     offerIds: string[]
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

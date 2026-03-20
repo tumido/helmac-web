@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { createInfoSectionSchema, updateInfoSectionSchema } from "@/lib/validators/info";
 
 export type InfoSectionActionState = {
@@ -21,7 +21,7 @@ export async function createInfoSection(
     formData: FormData
 ): Promise<InfoSectionActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -69,7 +69,7 @@ export async function updateInfoSection(
     formData: FormData
 ): Promise<InfoSectionActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -119,7 +119,7 @@ export async function updateInfoSection(
 
 export async function deleteInfoSection(infoId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -142,7 +142,7 @@ export async function reorderInfoSections(
     infoSectionIds: string[]
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

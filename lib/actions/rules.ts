@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { createRuleSchema, updateRuleSchema } from "@/lib/validators/rules";
 
 export type RuleActionState = {
@@ -21,7 +21,7 @@ export async function createRule(
     formData: FormData
 ): Promise<RuleActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -69,7 +69,7 @@ export async function updateRule(
     formData: FormData
 ): Promise<RuleActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -119,7 +119,7 @@ export async function updateRule(
 
 export async function deleteRule(ruleId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -142,7 +142,7 @@ export async function reorderRules(
     ruleIds: string[]
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

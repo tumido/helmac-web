@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import {
     createAlbumSchema,
     updateAlbumSchema,
@@ -29,7 +29,7 @@ export async function createAlbum(
     formData: FormData
 ): Promise<AlbumActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -106,7 +106,7 @@ export async function updateAlbum(
     formData: FormData
 ): Promise<AlbumActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -155,7 +155,7 @@ export async function updateAlbum(
 
 export async function deleteAlbum(albumId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -177,7 +177,7 @@ export async function deleteAlbum(albumId: string) {
 // Bulk actions
 export async function bulkDeleteAlbums(albumIds: string[]) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

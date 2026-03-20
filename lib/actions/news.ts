@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { auth, requireAdmin } from "@/lib/auth";
+import { auth, requireEditor } from "@/lib/auth";
 import { createNewsSchema, updateNewsSchema } from "@/lib/validators/news";
 
 export type NewsActionState = {
@@ -25,7 +25,7 @@ export async function createNews(
 ): Promise<NewsActionState> {
     let session;
     try {
-        await requireAdmin();
+        await requireEditor();
         session = await auth();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
@@ -100,7 +100,7 @@ export async function updateNews(
     formData: FormData
 ): Promise<NewsActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -173,7 +173,7 @@ export async function updateNews(
 
 export async function deleteNews(newsId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -194,7 +194,7 @@ export async function deleteNews(newsId: string) {
 // Bulk actions
 export async function bulkDeleteNews(newsIds: string[]) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

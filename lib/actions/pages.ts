@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { createPageSchema, updatePageSchema } from "@/lib/validators/page";
 
 export type PageActionState = {
@@ -26,7 +26,7 @@ export async function createPage(
     formData: FormData
 ): Promise<PageActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -93,7 +93,7 @@ export async function updatePage(
     formData: FormData
 ): Promise<PageActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -161,7 +161,7 @@ export async function updatePageContent(
     content: Prisma.InputJsonValue
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -189,7 +189,7 @@ export async function updatePageContent(
 
 export async function publishPage(pageId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -210,7 +210,7 @@ export async function publishPage(pageId: string) {
 
 export async function unpublishPage(pageId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -234,7 +234,7 @@ export async function reorderPages(
     pageIds: string[]
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -259,7 +259,7 @@ export async function reorderPages(
 
 export async function deletePage(pageId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

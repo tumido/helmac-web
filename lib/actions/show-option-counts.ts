@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { saveShowOptionCountsSchema } from "@/lib/validators/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 
@@ -15,7 +15,7 @@ export async function saveShowOptionCounts(
     yearId: string,
     showOptionCounts: string[],
 ): Promise<SaveShowOptionCountsResult> {
-    await requireAdmin();
+    await requireEditor();
 
     const validated = saveShowOptionCountsSchema.safeParse(showOptionCounts);
     if (!validated.success) {

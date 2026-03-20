@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { saveInfoStatsConfigSchema } from "@/lib/validators/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import type { InfoStatsConfig } from "@/lib/types/registration-form";
@@ -16,7 +16,7 @@ export async function saveInfoStatsConfig(
     yearId: string,
     config: InfoStatsConfig,
 ): Promise<SaveInfoStatsConfigResult> {
-    await requireAdmin();
+    await requireEditor();
 
     const validated = saveInfoStatsConfigSchema.safeParse(config);
     if (!validated.success) {

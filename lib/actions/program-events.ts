@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import {
     createProgramEventSchema,
     updateProgramEventSchema,
@@ -30,7 +30,7 @@ export async function createProgramEvent(
     formData: FormData
 ): Promise<ProgramEventActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -111,7 +111,7 @@ export async function updateProgramEvent(
     formData: FormData
 ): Promise<ProgramEventActionState> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
@@ -189,7 +189,7 @@ export async function updateProgramEventStory(
     storyContent: Prisma.InputJsonValue
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -222,7 +222,7 @@ export async function updateProgramEventStory(
 
 export async function publishProgramEvent(eventId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -247,7 +247,7 @@ export async function publishProgramEvent(eventId: string) {
 
 export async function unpublishProgramEvent(eventId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -272,7 +272,7 @@ export async function unpublishProgramEvent(eventId: string) {
 
 export async function deleteProgramEvent(eventId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -299,7 +299,7 @@ export async function reorderProgramEvents(
     eventIds: string[]
 ): Promise<{ success?: boolean; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
