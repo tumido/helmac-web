@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Tab, Tabs } from "@mui/material";
 import { OfferItem } from "./offers.types";
 
 interface OfferTabsProps {
@@ -10,9 +10,6 @@ interface OfferTabsProps {
 }
 
 export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsProps) {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
     const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
         onOfferChange(newValue);
     };
@@ -28,9 +25,8 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
             <Tabs
                 value={selectedOfferId}
                 onChange={handleChange}
-                variant={isMobile ? "scrollable" : "standard"}
+                variant="scrollable"
                 scrollButtons="auto"
-                centered={!isMobile}
                 allowScrollButtonsMobile
                 sx={{
                     "& .MuiTab-root": {

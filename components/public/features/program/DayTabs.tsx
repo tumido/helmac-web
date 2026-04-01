@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Tab, Tabs } from "@mui/material";
 import { ProgramDay } from "./program.types";
 
 interface DayTabsProps {
@@ -17,9 +17,6 @@ function formatDayLabel(day: ProgramDay): string {
 }
 
 export function DayTabs({ days, selectedDayId, onDayChange }: DayTabsProps) {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
     const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
         onDayChange(newValue);
     };
@@ -35,9 +32,8 @@ export function DayTabs({ days, selectedDayId, onDayChange }: DayTabsProps) {
             <Tabs
                 value={selectedDayId}
                 onChange={handleChange}
-                variant={isMobile ? "scrollable" : "standard"}
+                variant="scrollable"
                 scrollButtons="auto"
-                centered={!isMobile}
                 allowScrollButtonsMobile
                 sx={{
                     "& .MuiTab-root": {
