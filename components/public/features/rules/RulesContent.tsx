@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { RuleTabs } from "./RuleTabs";
 import { RuleItem } from "./rules.types";
@@ -11,6 +11,8 @@ interface RulesContentProps {
 }
 
 export function RulesContent({ rules }: RulesContentProps) {
+    const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
@@ -25,6 +27,11 @@ export function RulesContent({ rules }: RulesContentProps) {
             setSelectedRuleId(tabParam);
         }
     }, [tabParam]);
+
+    const handleRuleChange = (ruleId: string) => {
+        setSelectedRuleId(ruleId);
+        router.replace(`${pathname}?tab=${ruleId}`, { scroll: false });
+    };
 
     if (rules.length === 0) {
         return (
@@ -41,7 +48,7 @@ export function RulesContent({ rules }: RulesContentProps) {
             <RuleTabs
                 rules={rules}
                 selectedRuleId={selectedRule.id}
-                onRuleChange={setSelectedRuleId}
+                onRuleChange={handleRuleChange}
             />
             <Typography
                 variant="body1"

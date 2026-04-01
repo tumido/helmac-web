@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { DayTabs } from "./DayTabs";
 import { TagFilter } from "./TagFilter";
@@ -27,6 +27,8 @@ interface GroupedEvents {
 }
 
 export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
+    const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
@@ -42,6 +44,11 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
             setSelectedDayId(tabParam);
         }
     }, [tabParam]);
+
+    const handleDayChange = (dayId: string) => {
+        setSelectedDayId(dayId);
+        router.replace(`${pathname}?tab=${dayId}`, { scroll: false });
+    };
     const [detailEvent, setDetailEvent] = useState<ProgramEvent | null>(null);
 
     const selectedDay = data.days.find((day) => day.id === selectedDayId);
@@ -90,7 +97,7 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
             <DayTabs
                 days={data.days}
                 selectedDayId={selectedDayId}
-                onDayChange={setSelectedDayId}
+                onDayChange={handleDayChange}
             />
 
             {/* Tag Filter */}

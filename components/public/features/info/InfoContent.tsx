@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { InfoTabs, type ExtraTab } from "./InfoTabs";
 import { InfoItem } from "./info.types";
@@ -14,6 +14,8 @@ interface InfoContentProps {
 const STATS_TAB_ID = "__stats__";
 
 export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
+    const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
@@ -33,6 +35,11 @@ export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
             setSelectedInfoId(tabParam);
         }
     }, [tabParam]);
+
+    const handleInfoChange = (infoId: string) => {
+        setSelectedInfoId(infoId);
+        router.replace(`${pathname}?tab=${infoId}`, { scroll: false });
+    };
 
     if (infoSections.length === 0 && !statsContent) {
         return (
@@ -54,7 +61,7 @@ export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
             <InfoTabs
                 infoSections={infoSections}
                 selectedInfoId={isStatsTab ? STATS_TAB_ID : selectedInfo?.id ?? ""}
-                onInfoChange={setSelectedInfoId}
+                onInfoChange={handleInfoChange}
                 extraTabs={extraTabs}
             />
             {isStatsTab ? (

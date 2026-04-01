@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { OfferTabs } from "./OfferTabs";
 import { OfferItem } from "./offers.types";
@@ -11,6 +11,8 @@ interface OffersContentProps {
 }
 
 export function OffersContent({ offers }: OffersContentProps) {
+    const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
@@ -25,6 +27,11 @@ export function OffersContent({ offers }: OffersContentProps) {
             setSelectedOfferId(tabParam);
         }
     }, [tabParam]);
+
+    const handleOfferChange = (offerId: string) => {
+        setSelectedOfferId(offerId);
+        router.replace(`${pathname}?tab=${offerId}`, { scroll: false });
+    };
 
     if (offers.length === 0) {
         return (
@@ -41,7 +48,7 @@ export function OffersContent({ offers }: OffersContentProps) {
             <OfferTabs
                 offers={offers}
                 selectedOfferId={selectedOffer.id}
-                onOfferChange={setSelectedOfferId}
+                onOfferChange={handleOfferChange}
             />
             <Typography
                 variant="body1"
