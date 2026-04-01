@@ -76,7 +76,7 @@ export const publicLightTheme = createTheme(
                 fontSize: "1rem",
             },
             body1: {
-                fontSize: "1rem",
+                fontSize: "0.85rem",
                 lineHeight: 1.7,
                 color: medievalLightColors.text.primary,
             },
