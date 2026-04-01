@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import Link from "next/link";
 import type { BankTransactionMatchStatus } from "@prisma/client";
+import { formatDate } from "@/lib/utils/date";
 
 interface TransactionRow {
     id: string;
@@ -103,7 +104,7 @@ export function BankTransactionsTable({
                             return (
                                 <TableRow key={tx.id}>
                                     <TableCell>
-                                        {new Date(tx.date).toLocaleDateString("cs-CZ")}
+                                        {formatDate(tx.date)}
                                     </TableCell>
                                     <TableCell align="right" sx={{
                                         color: tx.amount < 0 ? "error.main" : "success.main",

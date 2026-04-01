@@ -14,7 +14,9 @@ import {
     CardActions,
     Typography,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Save } from "@mui/icons-material";
+import dayjs, { Dayjs } from "dayjs";
 import { LinkButton } from "@/components/ui/link-button";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { createYear, updateYear, YearActionState } from "@/lib/actions/years";
@@ -55,12 +57,6 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
     );
 }
 
-function formatDateForInput(date: Date | null | undefined): string {
-    if (!date) return "";
-    const d = new Date(date);
-    return d.toISOString().split("T")[0];
-}
-
 export function YearForm({ mode, yearId, defaultValues, onCancel }: YearFormProps) {
     const action =
         mode === "create"
@@ -72,6 +68,12 @@ export function YearForm({ mode, yearId, defaultValues, onCancel }: YearFormProp
         null
     );
 
+    const [startDate, setStartDate] = useState<Dayjs | null>(
+        defaultValues?.startDate ? dayjs(defaultValues.startDate) : null
+    );
+    const [endDate, setEndDate] = useState<Dayjs | null>(
+        defaultValues?.endDate ? dayjs(defaultValues.endDate) : null
+    );
     const [headerPhoto, setHeaderPhoto] = useState(defaultValues?.headerPhoto || "");
     const [heroPhoto, setHeroPhoto] = useState(defaultValues?.heroPhoto || "");
 
@@ -146,33 +148,47 @@ export function YearForm({ mode, yearId, defaultValues, onCancel }: YearFormProp
                             gap: 3,
                         }}
                     >
-                        <TextField
-                            fullWidth
-                            id="startDate"
-                            name="startDate"
-                            label="Datum začátku"
-                            type="date"
-                            defaultValue={formatDateForInput(
-                                defaultValues?.startDate
-                            )}
-                            error={!!state?.error?.startDate}
-                            helperText={state?.error?.startDate?.[0]}
-                            InputLabelProps={{ shrink: true }}
-                        />
+                        <Box>
+                            <DatePicker
+                                label="Datum začátku"
+                                value={startDate}
+                                onChange={(v) => setStartDate(v)}
+                                format="DD.MM.YYYY"
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        error: !!state?.error?.startDate,
+                                        helperText: state?.error?.startDate?.[0],
+                                    },
+                                }}
+                            />
+                            <input
+                                type="hidden"
+                                name="startDate"
+                                value={startDate?.format("YYYY-MM-DD") ?? ""}
+                            />
+                        </Box>
 
-                        <TextField
-                            fullWidth
-                            id="endDate"
-                            name="endDate"
-                            label="Datum konce"
-                            type="date"
-                            defaultValue={formatDateForInput(
-                                defaultValues?.endDate
-                            )}
-                            error={!!state?.error?.endDate}
-                            helperText={state?.error?.endDate?.[0]}
-                            InputLabelProps={{ shrink: true }}
-                        />
+                        <Box>
+                            <DatePicker
+                                label="Datum konce"
+                                value={endDate}
+                                onChange={(v) => setEndDate(v)}
+                                format="DD.MM.YYYY"
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        error: !!state?.error?.endDate,
+                                        helperText: state?.error?.endDate?.[0],
+                                    },
+                                }}
+                            />
+                            <input
+                                type="hidden"
+                                name="endDate"
+                                value={endDate?.format("YYYY-MM-DD") ?? ""}
+                            />
+                        </Box>
                     </Box>
 
                     <Box>

@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Email, CheckCircle, Cancel } from "@mui/icons-material";
 import { resendConfirmationEmail } from "@/lib/actions/registration-submissions";
+import { formatDateTime } from "@/lib/utils/date";
 
 interface ResendEmailButtonProps {
     submissionId: string;
@@ -55,7 +56,7 @@ export function ResendEmailButton({ submissionId, emailSent, emailSentAt }: Rese
                 )}
                 <Typography variant="body2">
                     {emailSent
-                        ? `Email odeslán ${emailSentAt ? new Date(emailSentAt).toLocaleString("cs-CZ") : ""}`
+                        ? `Email odeslán ${emailSentAt ? formatDateTime(emailSentAt) : ""}`
                         : "Email nebyl odeslán"}
                 </Typography>
             </Box>

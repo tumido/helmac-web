@@ -16,10 +16,11 @@ import {
     ListItemIcon,
     ListItemText,
     Switch,
-    TextField,
     Typography,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Warning } from "@mui/icons-material";
+import dayjs, { Dayjs } from "dayjs";
 import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
 
 interface RegistrationSettingsProps {
@@ -47,10 +48,8 @@ export function RegistrationSettings({
     const [pendingToggle, setPendingToggle] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [dateValue, setDateValue] = useState(
-        registrationStartDate
-            ? new Date(registrationStartDate).toISOString().split("T")[0]
-            : ""
+    const [dateValue, setDateValue] = useState<Dayjs | null>(
+        registrationStartDate ? dayjs(registrationStartDate) : null
     );
     const [dateSaving, setDateSaving] = useState(false);
 
@@ -88,15 +87,17 @@ export function RegistrationSettings({
         setPendingToggle(null);
     };
 
-    const handleDateBlur = async () => {
+    const handleDateChange = async (newValue: Dayjs | null) => {
+        setDateValue(newValue);
+        const newDateStr = newValue?.format("YYYY-MM-DD") ?? null;
         const currentDbDate = registrationStartDate
             ? new Date(registrationStartDate).toISOString().split("T")[0]
-            : "";
-        if (dateValue === currentDbDate) return;
+            : null;
+        if (newDateStr === currentDbDate) return;
 
         setDateSaving(true);
         setError(null);
-        const result = await updateRegistrationStartDate(yearId, dateValue || null);
+        const result = await updateRegistrationStartDate(yearId, newDateStr);
         if (result.error) {
             setError(typeof result.error === "string" ? result.error : "Chyba");
         }
@@ -124,17 +125,19 @@ export function RegistrationSettings({
                     }
                 />
 
-                <TextField
-                    type="date"
+                <DatePicker
                     label="Datum otevření registrace"
                     value={dateValue}
-                    onChange={(e) => setDateValue(e.target.value)}
-                    onBlur={handleDateBlur}
+                    onChange={handleDateChange}
                     disabled={dateSaving}
-                    helperText="Pokud je registrace uzavřena, na veřejných stránkách se zobrazí datum otevření"
-                    InputLabelProps={{ shrink: true }}
-                    fullWidth
-                    sx={{ mt: 2 }}
+                    format="DD.MM.YYYY"
+                    slotProps={{
+                        textField: {
+                            fullWidth: true,
+                            helperText: "Pokud je registrace uzavřena, na veřejných stránkách se zobrazí datum otevření",
+                            sx: { mt: 2 },
+                        },
+                    }}
                 />
             </Box>
 

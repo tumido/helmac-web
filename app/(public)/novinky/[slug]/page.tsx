@@ -4,6 +4,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack, Person, CalendarToday } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { getNewsBySlugForActiveYear, getActiveYear } from "@/lib/services";
+import { formatDate } from "@/lib/utils/date";
 
 interface NewsDetailPageProps {
     params: Promise<{ slug: string }>;
@@ -35,11 +36,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     }
 
     const formattedDate = news.publishedAt
-        ? new Date(news.publishedAt).toLocaleDateString("cs-CZ", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-          })
+        ? formatDate(news.publishedAt)
         : null;
 
     return (

@@ -12,6 +12,7 @@ import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
 import { ArrowBack, Article, PhotoLibrary, Newspaper } from "@mui/icons-material";
 import { PageHeader, Card } from "@/components/public/ui";
 import { getYearByNumber } from "@/lib/services";
+import { formatDate } from "@/lib/utils/date";
 
 interface ArchiveYearPageProps {
     params: Promise<{ year: string }>;
@@ -154,11 +155,7 @@ export default async function ArchiveYearPage({
                                                     primary={item.title}
                                                     secondary={
                                                         item.publishedAt
-                                                            ? new Date(
-                                                                  item.publishedAt
-                                                              ).toLocaleDateString(
-                                                                  "cs-CZ"
-                                                              )
+                                                            ? formatDate(item.publishedAt)
                                                             : undefined
                                                     }
                                                 />

@@ -20,6 +20,7 @@ import {
     triggerGlobalManualSync,
 } from "@/lib/actions/bank-account";
 import type { MatchResult } from "@/lib/utils/payment-matching";
+import { formatDateTime } from "@/lib/utils/date";
 
 interface FioTokenSettingsProps {
     hasToken: boolean;
@@ -172,7 +173,7 @@ export function FioTokenSettings({
                             )}
                             {hasToken && lastSyncAt && (
                                 <Typography variant="body2">
-                                    Poslední synchronizace: {new Date(lastSyncAt).toLocaleString("cs-CZ")}
+                                    Poslední synchronizace: {formatDateTime(lastSyncAt)}
                                 </Typography>
                             )}
                         </Box>

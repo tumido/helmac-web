@@ -22,13 +22,7 @@ interface SortableDaysProps {
     days: Day[];
 }
 
-function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat("cs-CZ", {
-        weekday: "short",
-        day: "numeric",
-        month: "numeric",
-    }).format(new Date(date));
-}
+import { formatDate } from "@/lib/utils/date";
 
 export function SortableDays({ yearId, days }: SortableDaysProps) {
     const toast = useToast();

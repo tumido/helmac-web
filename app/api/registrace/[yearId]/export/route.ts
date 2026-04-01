@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAllInputFields, getAPInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { formatDateTime } from "@/lib/utils/date";
 import { isMinor } from "@/lib/utils/minor-detection";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -97,7 +98,7 @@ export async function GET(
             sub.isPaid ? "Ano" : "Ne",
             sub.totalPrice != null ? String(sub.totalPrice) : "",
             sub.variableSymbol ?? "",
-            new Date(sub.createdAt).toLocaleString("cs-CZ"),
+            formatDateTime(sub.createdAt),
         ]);
 
         // Additional people rows

@@ -42,10 +42,7 @@ interface SelectableNewsListProps {
     showYear?: boolean;
 }
 
-function formatDate(date: Date | null): string {
-    if (!date) return "";
-    return new Intl.DateTimeFormat("cs-CZ").format(new Date(date));
-}
+import { formatDate } from "@/lib/utils/date";
 
 export function SelectableNewsList({ news, editBasePath = "/admin/novinky", showYear = true }: SelectableNewsListProps) {
     const router = useRouter();

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useState } from "react";
 import {
     Box,
     Button,
@@ -12,7 +13,9 @@ import {
     CardContent,
     CardActions,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Save } from "@mui/icons-material";
+import dayjs, { Dayjs } from "dayjs";
 import { LinkButton } from "@/components/ui/link-button";
 import {
     createProgramDay,
@@ -51,12 +54,6 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
     );
 }
 
-function formatDateForInput(date?: Date): string {
-    if (!date) return "";
-    const d = new Date(date);
-    return d.toISOString().split("T")[0];
-}
-
 export function ProgramDayForm({
     mode,
     yearId,
@@ -71,6 +68,10 @@ export function ProgramDayForm({
     const [state, formAction] = useActionState<ProgramDayActionState, FormData>(
         action,
         null
+    );
+
+    const [dateValue, setDateValue] = useState<Dayjs | null>(
+        defaultValues?.date ? dayjs(defaultValues.date) : null
     );
 
     return (
@@ -97,18 +98,27 @@ export function ProgramDayForm({
                             gap: 3,
                         }}
                     >
-                        <TextField
-                            required
-                            fullWidth
-                            type="date"
-                            id="date"
-                            name="date"
-                            label="Datum"
-                            defaultValue={formatDateForInput(defaultValues?.date)}
-                            error={!!state?.error?.date}
-                            helperText={state?.error?.date?.[0]}
-                            InputLabelProps={{ shrink: true }}
-                        />
+                        <Box>
+                            <DatePicker
+                                label="Datum"
+                                value={dateValue}
+                                onChange={(v) => setDateValue(v)}
+                                format="DD.MM.YYYY"
+                                slotProps={{
+                                    textField: {
+                                        required: true,
+                                        fullWidth: true,
+                                        error: !!state?.error?.date,
+                                        helperText: state?.error?.date?.[0],
+                                    },
+                                }}
+                            />
+                            <input
+                                type="hidden"
+                                name="date"
+                                value={dateValue?.format("YYYY-MM-DD") ?? ""}
+                            />
+                        </Box>
 
                         <TextField
                             required

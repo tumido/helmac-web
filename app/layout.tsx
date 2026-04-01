@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
+import { DatePickerProvider } from "@/components/ui/date-picker-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,7 +34,9 @@ export default function RootLayout({
                 />
             </head>
             <body>
-                <AppRouterCacheProvider>{children}</AppRouterCacheProvider>
+                <AppRouterCacheProvider>
+                    <DatePickerProvider>{children}</DatePickerProvider>
+                </AppRouterCacheProvider>
             </body>
         </html>
     );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Typography, Box } from "@mui/material";
 import { Card } from "@/components/public/ui";
 import { NewsItem } from "./news.types";
+import { formatDate } from "@/lib/utils/date";
 
 interface NewsCardProps {
     news: NewsItem;
@@ -9,11 +10,7 @@ interface NewsCardProps {
 
 export function NewsCard({ news }: NewsCardProps) {
     const formattedDate = news.publishedAt
-        ? new Date(news.publishedAt).toLocaleDateString("cs-CZ", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-          })
+        ? formatDate(news.publishedAt)
         : null;
 
     return (

@@ -15,10 +15,12 @@ import {
     Divider,
     Box,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { getCurrentTierIndex, formatPrice } from "@/lib/utils/pricing";
 import { formatDate } from "@/lib/utils/date";
+import dayjs from "dayjs";
 
 interface DynamicFormFieldProps {
     field: FormField;
@@ -158,17 +160,26 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "date":
         case "birth_date":
             return (
-                <TextField
-                    name={htmlName}
-                    label={label}
-                    type="date"
-                    value={String(value)}
-                    onChange={(e) => onChange(field.name, e.target.value)}
-                    error={!!error}
-                    helperText={error}
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                />
+                <Box>
+                    <DatePicker
+                        label={label}
+                        value={value ? dayjs(String(value)) : null}
+                        onChange={(v) => onChange(field.name, v?.format("YYYY-MM-DD") ?? "")}
+                        format="DD.MM.YYYY"
+                        slotProps={{
+                            textField: {
+                                error: !!error,
+                                helperText: error,
+                                fullWidth: true,
+                            },
+                        }}
+                    />
+                    <input
+                        type="hidden"
+                        name={htmlName}
+                        value={String(value)}
+                    />
+                </Box>
             );
 
         case "email":

@@ -19,14 +19,7 @@ interface EditDayPageProps {
     params: Promise<{ id: string; dayId: string }>;
 }
 
-function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat("cs-CZ", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-    }).format(new Date(date));
-}
+import { formatDate } from "@/lib/utils/date";
 
 export default async function EditDayPage({ params }: EditDayPageProps) {
     const { id, dayId } = await params;

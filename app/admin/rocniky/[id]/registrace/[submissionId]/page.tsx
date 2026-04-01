@@ -13,6 +13,7 @@ import { getSubmissionById } from "@/lib/services/registration";
 import { getAllFields, getAPInputFields } from "@/lib/types/registration-form";
 import type { PricingSummaryData } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { formatDateTime } from "@/lib/utils/date";
 
 interface SubmissionDetailPageProps {
     params: Promise<{ id: string; submissionId: string }>;
@@ -52,8 +53,8 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                     </IconButton>
                 </NextLink>
                 <Typography variant="body2" color="text.secondary">
-                    Vytvořeno: {new Date(submission.createdAt).toLocaleString("cs-CZ")}
-                    {submission.paidAt && ` • Zaplaceno: ${new Date(submission.paidAt).toLocaleString("cs-CZ")}`}
+                    Vytvořeno: {formatDateTime(submission.createdAt)}
+                    {submission.paidAt && ` • Zaplaceno: ${formatDateTime(submission.paidAt)}`}
                 </Typography>
             </Box>
 

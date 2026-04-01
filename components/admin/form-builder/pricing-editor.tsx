@@ -19,6 +19,7 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
     Add,
     Delete,
@@ -29,6 +30,7 @@ import {
     CalendarTodayOutlined,
     WarningAmberOutlined,
 } from "@mui/icons-material";
+import dayjs from "dayjs";
 import type { PricingDefinition, PricedOption, FormElement } from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
 
@@ -302,13 +304,16 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                                     <Typography variant="body2" sx={{ minWidth: 60, fontWeight: 500 }}>
                                                         Termín {idx + 1}
                                                     </Typography>
-                                                    <TextField
-                                                        type="date"
-                                                        value={tier}
-                                                        onChange={(e) => handleUpdateTier(def.id, idx, e.target.value)}
-                                                        size="small"
-                                                        sx={{ flex: 1 }}
-                                                        InputLabelProps={{ shrink: true }}
+                                                    <DatePicker
+                                                        value={tier ? dayjs(tier) : null}
+                                                        onChange={(v) => handleUpdateTier(def.id, idx, v?.format("YYYY-MM-DD") ?? "")}
+                                                        format="DD.MM.YYYY"
+                                                        slotProps={{
+                                                            textField: {
+                                                                size: "small",
+                                                                sx: { flex: 1 },
+                                                            },
+                                                        }}
                                                     />
                                                     <Tooltip title="Odebrat termín">
                                                         <IconButton
