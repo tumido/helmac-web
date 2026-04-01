@@ -16,7 +16,9 @@ import {
     Autocomplete,
     Chip,
 } from "@mui/material";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { Save } from "@mui/icons-material";
+import dayjs, { Dayjs } from "dayjs";
 import { LinkButton } from "@/components/ui/link-button";
 import {
     createProgramEvent,
@@ -73,6 +75,9 @@ export function ProgramEventForm({
     const [selectedTags, setSelectedTags] = useState<string[]>(
         defaultValues?.tags || []
     );
+    const [timeValue, setTimeValue] = useState<Dayjs | null>(
+        defaultValues?.startTime ? dayjs(defaultValues.startTime, "HH:mm") : null
+    );
 
     const action =
         mode === "create"
@@ -111,18 +116,28 @@ export function ProgramEventForm({
                             gap: 3,
                         }}
                     >
-                        <TextField
-                            required
-                            fullWidth
-                            type="time"
-                            id="startTime"
-                            name="startTime"
-                            label="Čas začátku"
-                            defaultValue={defaultValues?.startTime || ""}
-                            error={!!state?.error?.startTime}
-                            helperText={state?.error?.startTime?.[0]}
-                            InputLabelProps={{ shrink: true }}
-                        />
+                        <Box>
+                            <TimePicker
+                                label="Čas začátku"
+                                value={timeValue}
+                                onChange={(v) => setTimeValue(v)}
+                                ampm={false}
+                                format="HH:mm"
+                                slotProps={{
+                                    textField: {
+                                        required: true,
+                                        fullWidth: true,
+                                        error: !!state?.error?.startTime,
+                                        helperText: state?.error?.startTime?.[0],
+                                    },
+                                }}
+                            />
+                            <input
+                                type="hidden"
+                                name="startTime"
+                                value={timeValue?.format("HH:mm") ?? ""}
+                            />
+                        </Box>
 
                         <TextField
                             required
