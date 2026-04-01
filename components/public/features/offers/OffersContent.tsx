@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { OfferTabs } from "./OfferTabs";
@@ -19,6 +19,12 @@ export function OffersContent({ offers }: OffersContentProps) {
         : offers[0]?.id || "";
 
     const [selectedOfferId, setSelectedOfferId] = useState(initialId);
+
+    useEffect(() => {
+        if (tabParam && offers.some((o) => o.id === tabParam)) {
+            setSelectedOfferId(tabParam);
+        }
+    }, [tabParam]);
 
     if (offers.length === 0) {
         return (
