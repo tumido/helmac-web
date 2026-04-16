@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
+import { ValidatePaymentsButton } from "@/components/admin/validate-payments-button";
 import { LinkButton } from "@/components/ui/link-button";
 import { getAllFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
@@ -114,6 +115,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 >
                     Export CSV
                 </LinkButton>
+                <ValidatePaymentsButton />
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
                 <LinkButton
