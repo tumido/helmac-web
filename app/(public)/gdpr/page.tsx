@@ -23,6 +23,9 @@ export default async function GdprPage() {
                         component="div"
                         sx={{
                             "& p": { mb: 2 },
+                            "& ul, & ol": { pl: 3, mb: 2 },
+                            "& ul": { listStyleType: "disc" },
+                            "& ol": { listStyleType: "decimal" },
                             lineHeight: 1.8,
                         }}
                         dangerouslySetInnerHTML={{ __html: setting.value }}

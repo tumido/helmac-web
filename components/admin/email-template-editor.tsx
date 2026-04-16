@@ -156,6 +156,8 @@ export function EmailTemplateEditor({
                                                 "& p": { margin: "0.5em 0" },
                                                 "& a": { color: "primary.main", textDecoration: "underline" },
                                                 "& ul, & ol": { paddingLeft: "1.5em" },
+                                                "& ul": { listStyleType: "disc" },
+                                                "& ol": { listStyleType: "decimal" },
                                                 "& blockquote": {
                                                     borderLeft: "4px solid",
                                                     borderColor: "grey.300",

@@ -71,6 +71,8 @@ export function RulesContent({ rules }: RulesContentProps) {
                         pl: 3,
                         mb: 2,
                     },
+                    "& ul": { listStyleType: "disc" },
+                    "& ol": { listStyleType: "decimal" },
                     "& blockquote": {
                         borderLeft: "4px solid",
                         borderColor: "divider",

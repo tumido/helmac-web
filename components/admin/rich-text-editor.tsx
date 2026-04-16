@@ -435,6 +435,8 @@ export function RichTextEditor({
                         "& ul, & ol": {
                             paddingLeft: "1.5em",
                         },
+                        "& ul": { listStyleType: "disc" },
+                        "& ol": { listStyleType: "decimal" },
                         "& blockquote": {
                             borderLeft: "4px solid",
                             borderColor: "grey.300",
