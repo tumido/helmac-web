@@ -95,22 +95,42 @@ function parseTransaction(tx: FioTransaction): ParsedBankTransaction | null {
 }
 
 async function fetchFioApi(url: string): Promise<FioApiResponse> {
+    // Log URL without token (replace token segment with ***)
+    const safeUrl = url.replace(/\/rest\/(.+?)\/[A-Za-z0-9]{10,}\//, "/rest/$1/***/");
+    console.log("[fio-api] Fetching:", safeUrl);
+
     const response = await fetch(url, {
         signal: AbortSignal.timeout(30000),
     });
+
+    console.log("[fio-api] Response status:", response.status);
 
     if (response.status === 409) {
         throw new FioRateLimitError();
     }
 
     if (!response.ok) {
+        const body = await response.text();
+        console.error("[fio-api] Error response body:", body);
         throw new FioApiError(
             `Fio API returned ${response.status}: ${response.statusText}`,
             response.status,
         );
     }
 
-    return response.json();
+    const data: FioApiResponse = await response.json();
+
+    const info = data.accountStatement?.info;
+    const txCount = data.accountStatement?.transactionList?.transaction?.length ?? 0;
+    console.log("[fio-api] Response info:", JSON.stringify({
+        accountId: info?.accountId,
+        dateStart: info?.dateStart,
+        dateEnd: info?.dateEnd,
+        currency: info?.currency,
+        transactionCount: txCount,
+    }));
+
+    return data;
 }
 
 function parseTransactions(data: FioApiResponse): ParsedBankTransaction[] {
@@ -157,16 +177,24 @@ export async function fetchTransactionsByDateRange(
  */
 export async function setLastDate(token: string, date: Date): Promise<void> {
     const formatDate = (d: Date) => d.toISOString().split("T")[0];
-    const url = `${FIO_API_BASE}/set-last-date/${token}/${formatDate(date)}/`;
+    const dateStr = formatDate(date);
+    const url = `${FIO_API_BASE}/set-last-date/${token}/${dateStr}/`;
+
+    console.log("[fio-api] Setting last-date cursor to:", dateStr);
+
     const response = await fetch(url, {
         signal: AbortSignal.timeout(30000),
     });
+
+    console.log("[fio-api] set-last-date response status:", response.status);
 
     if (response.status === 409) {
         throw new FioRateLimitError();
     }
 
     if (!response.ok) {
+        const body = await response.text();
+        console.error("[fio-api] set-last-date error body:", body);
         throw new FioApiError(
             `Fio API set-last-date returned ${response.status}: ${response.statusText}`,
             response.status,

@@ -167,13 +167,32 @@ export async function triggerGlobalManualSync() {
 
         const token = decrypt(bankAccount.encryptedFioToken);
 
+        console.log("[manual-sync] Bank account state:", {
+            fioSyncEnabled: bankAccount.fioSyncEnabled,
+            lastFioSyncAt: bankAccount.lastFioSyncAt,
+        });
+
         // Initialize Fio cursor if this is the first sync (no auto-sync enabled, no previous sync)
         if (!bankAccount.fioSyncEnabled && !bankAccount.lastFioSyncAt) {
+            console.log("[manual-sync] First sync — initializing cursor to today");
             await setLastDate(token, new Date());
         }
 
         const transactions = await fetchLastTransactions(token);
+        console.log("[manual-sync] Fetched transactions:", transactions.length);
+
+        if (transactions.length > 0) {
+            console.log("[manual-sync] First transaction sample:", JSON.stringify({
+                id: transactions[0].fioTransactionId,
+                date: transactions[0].date,
+                amount: transactions[0].amount,
+                vs: transactions[0].variableSymbol,
+                counterpart: transactions[0].counterpartName,
+            }));
+        }
+
         const result = await processTransactions(transactions);
+        console.log("[manual-sync] Processing result:", JSON.stringify(result));
 
         await db.bankAccount.update({
             where: { id: bankAccount.id },
