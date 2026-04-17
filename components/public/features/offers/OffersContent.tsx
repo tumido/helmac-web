@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { OfferTabs } from "./OfferTabs";
 import { OfferItem } from "./offers.types";
-import { richContentSx } from "@/lib/utils/rich-content-sx";
+import { ContentWithToc } from "@/components/public/features/toc";
 
 interface OffersContentProps {
     offers: OfferItem[];
@@ -51,12 +51,7 @@ export function OffersContent({ offers }: OffersContentProps) {
                 selectedOfferId={selectedOffer.id}
                 onOfferChange={handleOfferChange}
             />
-            <Typography
-                variant="body1"
-                component="div"
-                sx={richContentSx}
-                dangerouslySetInnerHTML={{ __html: selectedOffer.content }}
-            />
+            <ContentWithToc html={selectedOffer.content} showToc={selectedOffer.showToc} />
         </Box>
     );
 }

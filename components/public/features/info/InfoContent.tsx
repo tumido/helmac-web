@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { InfoTabs, type ExtraTab } from "./InfoTabs";
 import { InfoItem } from "./info.types";
-import { richContentSx } from "@/lib/utils/rich-content-sx";
+import { ContentWithToc } from "@/components/public/features/toc";
 
 interface InfoContentProps {
     infoSections: InfoItem[];
@@ -68,12 +68,7 @@ export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
             {isStatsTab ? (
                 <Box>{statsContent}</Box>
             ) : selectedInfo ? (
-                <Typography
-                    variant="body1"
-                    component="div"
-                    sx={richContentSx}
-                    dangerouslySetInnerHTML={{ __html: selectedInfo.content }}
-                />
+                <ContentWithToc html={selectedInfo.content} showToc={selectedInfo.showToc} />
             ) : null}
         </Box>
     );

@@ -28,6 +28,7 @@ export const getInfoSectionById = cache(async (infoId: string) => {
             yearId: true,
             title: true,
             content: true,
+            showToc: true,
             sortOrder: true,
         },
     });
@@ -52,6 +53,7 @@ export const getInfoSectionsForActiveYear = cache(async () => {
             id: true,
             title: true,
             content: true,
+            showToc: true,
             sortOrder: true,
         },
     });

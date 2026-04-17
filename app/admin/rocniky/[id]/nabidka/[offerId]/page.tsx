@@ -44,6 +44,7 @@ export default async function EditOfferPage({ params }: EditOfferPageProps) {
                 defaultValues={{
                     title: offer.title,
                     content: offer.content,
+                    showToc: offer.showToc,
                 }}
             />
         </Container>

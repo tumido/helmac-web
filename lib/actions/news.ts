@@ -41,6 +41,7 @@ export async function createNews(
         excerpt: formData.get("excerpt") || undefined,
         content: formData.get("content"),
         coverImage: formData.get("coverImage") || undefined,
+        showToc: formData.get("showToc"),
     };
 
     const validated = createNewsSchema.safeParse(rawData);
@@ -76,6 +77,7 @@ export async function createNews(
                 excerpt: validated.data.excerpt,
                 content: validated.data.content,
                 coverImage: validated.data.coverImage || null,
+                showToc: validated.data.showToc ?? false,
                 isPublished: true,
                 publishedAt: new Date(),
             },
@@ -111,6 +113,7 @@ export async function updateNews(
         excerpt: formData.get("excerpt") || undefined,
         content: formData.get("content"),
         coverImage: formData.get("coverImage") || undefined,
+        showToc: formData.get("showToc"),
     };
 
     const validated = updateNewsSchema.safeParse(rawData);
@@ -153,6 +156,7 @@ export async function updateNews(
                 excerpt: validated.data.excerpt,
                 content: validated.data.content,
                 coverImage: validated.data.coverImage || null,
+                showToc: validated.data.showToc,
                 isPublished: true,
                 publishedAt: news.publishedAt ?? new Date(),
             },

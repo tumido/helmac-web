@@ -28,6 +28,7 @@ export const getOfferById = cache(async (offerId: string) => {
             yearId: true,
             title: true,
             content: true,
+            showToc: true,
             sortOrder: true,
         },
     });
@@ -52,6 +53,7 @@ export const getOffersForActiveYear = cache(async () => {
             id: true,
             title: true,
             content: true,
+            showToc: true,
             sortOrder: true,
         },
     });

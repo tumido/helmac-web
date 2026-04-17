@@ -28,6 +28,7 @@ export const getRuleById = cache(async (ruleId: string) => {
             yearId: true,
             title: true,
             content: true,
+            showToc: true,
             sortOrder: true,
         },
     });
@@ -52,6 +53,7 @@ export const getRulesForActiveYear = cache(async () => {
             id: true,
             title: true,
             content: true,
+            showToc: true,
             sortOrder: true,
         },
     });

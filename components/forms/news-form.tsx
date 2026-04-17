@@ -14,6 +14,8 @@ import {
     MenuItem,
     Typography,
     IconButton,
+    Switch,
+    FormControlLabel,
 } from "@mui/material";
 import { Save, Refresh } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
@@ -33,6 +35,7 @@ interface NewsFormProps {
         excerpt?: string | null;
         content?: string;
         coverImage?: string | null;
+        showToc?: boolean;
     };
     cancelHref?: string;
     redirectTo?: string;
@@ -67,6 +70,7 @@ export function NewsForm({ mode, years, newsId, defaultValues, cancelHref = "/ad
     const [title, setTitle] = useState(defaultValues?.title || "");
     const [slug, setSlug] = useState(defaultValues?.slug || "");
     const [slugManuallyEdited, setSlugManuallyEdited] = useState(mode === "edit");
+    const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
 
     const action =
         mode === "create"
@@ -231,6 +235,16 @@ export function NewsForm({ mode, years, newsId, defaultValues, cancelHref = "/ad
                         )}
                     </Box>
 
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={showToc}
+                                onChange={(e) => setShowToc(e.target.checked)}
+                            />
+                        }
+                        label="Zobrazit obsah (TOC)"
+                    />
+                    <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

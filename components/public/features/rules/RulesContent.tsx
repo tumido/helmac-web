@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { RuleTabs } from "./RuleTabs";
 import { RuleItem } from "./rules.types";
-import { richContentSx } from "@/lib/utils/rich-content-sx";
+import { ContentWithToc } from "@/components/public/features/toc";
 
 interface RulesContentProps {
     rules: RuleItem[];
@@ -51,12 +51,7 @@ export function RulesContent({ rules }: RulesContentProps) {
                 selectedRuleId={selectedRule.id}
                 onRuleChange={handleRuleChange}
             />
-            <Typography
-                variant="body1"
-                component="div"
-                sx={richContentSx}
-                dangerouslySetInnerHTML={{ __html: selectedRule.content }}
-            />
+            <ContentWithToc html={selectedRule.content} showToc={selectedRule.showToc} />
         </Box>
     );
 }

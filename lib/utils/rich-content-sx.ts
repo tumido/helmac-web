@@ -11,12 +11,14 @@ export const richContentSx: SxProps<Theme> = {
         fontWeight: 600,
         mt: 3,
         mb: 1,
+        scrollMarginTop: "80px",
     },
     "& h3": {
         fontSize: "1.25rem",
         fontWeight: 600,
         mt: 2,
         mb: 1,
+        scrollMarginTop: "80px",
     },
     "& ul, & ol": {
         pl: 3,

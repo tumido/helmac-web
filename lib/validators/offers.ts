@@ -6,6 +6,7 @@ export const createOfferSchema = z.object({
         .min(1, "Název je povinný")
         .max(200, "Název je příliš dlouhý"),
     content: z.string().min(1, "Obsah je povinný"),
+    showToc: z.coerce.boolean().optional(),
 });
 
 export const updateOfferSchema = createOfferSchema.partial();

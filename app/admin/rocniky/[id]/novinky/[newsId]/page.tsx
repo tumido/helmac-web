@@ -75,6 +75,7 @@ export default async function YearEditNewsPage({ params }: YearEditNewsPageProps
                     excerpt: news.excerpt,
                     content: news.content,
                     coverImage: news.coverImage,
+                    showToc: news.showToc,
                 }}
                 cancelHref={`/admin/rocniky/${id}/novinky`}
                 redirectTo={`/admin/rocniky/${id}/novinky`}

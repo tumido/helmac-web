@@ -12,6 +12,8 @@ import {
     CardContent,
     CardActions,
     Typography,
+    Switch,
+    FormControlLabel,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
@@ -25,6 +27,7 @@ interface OfferFormProps {
     defaultValues?: {
         title?: string;
         content?: string;
+        showToc?: boolean;
     };
 }
 
@@ -51,6 +54,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 
 export function OfferForm({ mode, yearId, offerId, defaultValues }: OfferFormProps) {
     const [content, setContent] = useState(defaultValues?.content || "");
+    const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
 
     const action =
         mode === "create"
@@ -103,6 +107,17 @@ export function OfferForm({ mode, yearId, offerId, defaultValues }: OfferFormPro
                             </Typography>
                         )}
                     </Box>
+
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={showToc}
+                                onChange={(e) => setShowToc(e.target.checked)}
+                            />
+                        }
+                        label="Zobrazit obsah (TOC)"
+                    />
+                    <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

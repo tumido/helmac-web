@@ -70,6 +70,7 @@ export const getNewsBySlug = cache(async (yearId: string, slug: string) => {
             excerpt: true,
             content: true,
             coverImage: true,
+            showToc: true,
             publishedAt: true,
             author: {
                 select: { name: true },
@@ -99,6 +100,7 @@ export const getNewsBySlugForActiveYear = cache(async (slug: string) => {
             excerpt: true,
             content: true,
             coverImage: true,
+            showToc: true,
             publishedAt: true,
             author: {
                 select: { name: true },

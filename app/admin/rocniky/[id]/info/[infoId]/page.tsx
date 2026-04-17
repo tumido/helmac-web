@@ -44,6 +44,7 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
                 defaultValues={{
                     title: infoSection.title,
                     content: infoSection.content,
+                    showToc: infoSection.showToc,
                 }}
             />
         </Container>

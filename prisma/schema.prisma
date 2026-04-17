@@ -200,6 +200,7 @@ model Rule {
 
     title     String
     content   String   @db.Text
+    showToc   Boolean  @default(false)
     sortOrder Int      @default(0)
 
     createdAt DateTime @default(now())
@@ -219,6 +220,7 @@ model Offer {
 
     title     String
     content   String   @db.Text
+    showToc   Boolean  @default(false)
     sortOrder Int      @default(0)
 
     createdAt DateTime @default(now())
@@ -238,6 +240,7 @@ model InfoSection {
 
     title     String
     content   String   @db.Text
+    showToc   Boolean  @default(false)
     sortOrder Int      @default(0)
 
     createdAt DateTime @default(now())
@@ -290,6 +293,7 @@ model News {
   excerpt     String?
   content     String      @db.Text
   coverImage  String?
+  showToc     Boolean     @default(false)
 
   isPublished Boolean     @default(false)
   publishedAt DateTime?

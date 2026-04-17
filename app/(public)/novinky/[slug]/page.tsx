@@ -5,7 +5,7 @@ import { ArrowBack, Person, CalendarToday } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { getNewsBySlugForActiveYear, getActiveYear } from "@/lib/services";
 import { formatDate } from "@/lib/utils/date";
-import { richContentSx } from "@/lib/utils/rich-content-sx";
+import { ContentWithToc } from "@/components/public/features/toc";
 
 interface NewsDetailPageProps {
     params: Promise<{ slug: string }>;
@@ -105,12 +105,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                     </Typography>
                 )}
 
-                <Typography
-                    variant="body1"
-                    component="div"
-                    sx={richContentSx}
-                    dangerouslySetInnerHTML={{ __html: news.content }}
-                />
+                <ContentWithToc html={news.content} showToc={news.showToc} />
             </Container>
         </>
     );

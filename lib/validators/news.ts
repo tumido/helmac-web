@@ -22,6 +22,7 @@ export const createNewsSchema = z.object({
             "Neplatna URL obrazku"
         )
         .optional(),
+    showToc: z.coerce.boolean().optional(),
     isPublished: z.coerce.boolean().optional(),
     publishedAt: z.coerce.date().optional().nullable(),
 });

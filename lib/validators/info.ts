@@ -6,6 +6,7 @@ export const createInfoSectionSchema = z.object({
         .min(1, "Nazev je povinny")
         .max(200, "Nazev je prilis dlouhy"),
     content: z.string().min(1, "Obsah je povinny"),
+    showToc: z.coerce.boolean().optional(),
 });
 
 export const updateInfoSectionSchema = createInfoSectionSchema.partial();

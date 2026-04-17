@@ -32,7 +32,7 @@ function ThemedContent({ children, navSubtabs, registrationOpen, publicUser }: T
                     display: "flex",
                     flexDirection: "column",
                     minHeight: "100vh",
-                    overflowX: "hidden",
+                    overflowX: "clip",
                     transition: "background-color 0.3s ease-in-out",
                 }}
             >

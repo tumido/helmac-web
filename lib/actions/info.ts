@@ -29,6 +29,7 @@ export async function createInfoSection(
     const rawData = {
         title: formData.get("title"),
         content: formData.get("content"),
+        showToc: formData.get("showToc"),
     };
 
     const validated = createInfoSectionSchema.safeParse(rawData);
@@ -49,6 +50,7 @@ export async function createInfoSection(
                 yearId,
                 title: validated.data.title,
                 content: validated.data.content,
+                showToc: validated.data.showToc ?? false,
                 sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
             },
         });
@@ -77,6 +79,7 @@ export async function updateInfoSection(
     const rawData = {
         title: formData.get("title"),
         content: formData.get("content"),
+        showToc: formData.get("showToc"),
     };
 
     const validated = updateInfoSectionSchema.safeParse(rawData);
@@ -104,6 +107,7 @@ export async function updateInfoSection(
             data: {
                 title: validated.data.title,
                 content: validated.data.content,
+                showToc: validated.data.showToc,
             },
         });
 

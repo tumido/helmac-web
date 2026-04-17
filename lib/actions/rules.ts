@@ -29,6 +29,7 @@ export async function createRule(
     const rawData = {
         title: formData.get("title"),
         content: formData.get("content"),
+        showToc: formData.get("showToc"),
     };
 
     const validated = createRuleSchema.safeParse(rawData);
@@ -49,6 +50,7 @@ export async function createRule(
                 yearId,
                 title: validated.data.title,
                 content: validated.data.content,
+                showToc: validated.data.showToc ?? false,
                 sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
             },
         });
@@ -77,6 +79,7 @@ export async function updateRule(
     const rawData = {
         title: formData.get("title"),
         content: formData.get("content"),
+        showToc: formData.get("showToc"),
     };
 
     const validated = updateRuleSchema.safeParse(rawData);
@@ -104,6 +107,7 @@ export async function updateRule(
             data: {
                 title: validated.data.title,
                 content: validated.data.content,
+                showToc: validated.data.showToc,
             },
         });
 

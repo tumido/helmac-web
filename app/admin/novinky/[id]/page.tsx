@@ -81,6 +81,7 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
                     excerpt: news.excerpt,
                     content: news.content,
                     coverImage: news.coverImage,
+                    showToc: news.showToc,
                 }}
             />
         </Container>
