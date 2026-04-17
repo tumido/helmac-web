@@ -62,6 +62,11 @@ function buildFieldSchema(field: InputField): z.ZodTypeAny {
             return field.required ? schema : schema.optional().or(z.literal(""));
         }
 
+        case "pricing_quantity": {
+            const schema = z.coerce.number({ message: "Zadejte platné číslo" }).int("Zadejte celé číslo").min(0, "Hodnota nesmí být záporná");
+            return field.required ? schema : schema.optional().or(z.literal(""));
+        }
+
         case "text":
         case "textarea":
         default: {

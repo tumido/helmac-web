@@ -101,11 +101,11 @@ export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCo
                         ))}
                     </Box>
                 )}
-                {isInput && field.type === "pricing_select" && field.pricingId && pricingDefinitions && (() => {
+                {isInput && (field.type === "pricing_select" || field.type === "pricing_quantity") && field.pricingId && pricingDefinitions && (() => {
                     const def = pricingDefinitions.find((d) => d.id === field.pricingId);
                     return def ? (
                         <Typography variant="caption" color="text.secondary">
-                            Ceník: {def.name}
+                            {field.type === "pricing_quantity" ? `Cenový počet: ${def.name}${def.unitName ? ` (${def.unitName})` : ""}` : `Ceník: ${def.name}`}
                         </Typography>
                     ) : null;
                 })()}

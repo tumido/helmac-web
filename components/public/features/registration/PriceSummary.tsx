@@ -35,7 +35,7 @@ export function PriceSummary({
 }: PriceSummaryProps) {
     const summary = useMemo(() => {
         const pricingFields = allInputFields.filter(
-            (f) => f.type === "pricing_select" && f.pricingId
+            (f) => (f.type === "pricing_select" || f.type === "pricing_quantity") && f.pricingId
         );
 
         const mainLines: PriceLineItem[] = [];
@@ -47,40 +47,69 @@ export function PriceSummary({
             if (!def) continue;
             const tierIdx = getCurrentTierIndex(def.priceTiers);
 
-            // Main person
-            const mainVal = String(mainValues[field.name] ?? "");
-            if (mainVal && visibleMainFields.has(field.id)) {
-                const opt = def.options.find((o) => o.name === mainVal);
-                if (opt) {
-                    const price = opt.prices[tierIdx] ?? 0;
-                    mainLines.push({ label: def.name, optionName: opt.name, price });
+            if (field.type === "pricing_quantity") {
+                const unitOpt = def.options[0];
+                if (!unitOpt) continue;
+                const unitPrice = unitOpt.prices[tierIdx] ?? 0;
+
+                // Main person
+                const qty = Number(mainValues[field.name] ?? 0);
+                if (qty > 0 && visibleMainFields.has(field.id)) {
+                    const price = unitPrice * qty;
+                    mainLines.push({ label: def.name, optionName: `${qty}x ${def.unitName || "ks"}`, price });
                     grandTotal += price;
                 }
-            }
 
-            // Additional people
-            if (field.includeForAdditionalPeople) {
-                additionalPeople.forEach((person, idx) => {
-                    const personVal = String(person[field.name] ?? "");
-                    if (!personVal) return;
-
-                    // Check if field is visible for this person
-                    if (visibleAPFieldsPerPerson && visibleAPFieldsPerPerson[idx]) {
-                        if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
+                // Additional people
+                if (field.includeForAdditionalPeople) {
+                    additionalPeople.forEach((person, idx) => {
+                        const personQty = Number(person[field.name] ?? 0);
+                        if (personQty <= 0) return;
+                        if (visibleAPFieldsPerPerson && visibleAPFieldsPerPerson[idx]) {
+                            if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
+                        }
+                        const price = unitPrice * personQty;
+                        let apEntry = apLines.find((a) => a.personIndex === idx);
+                        if (!apEntry) {
+                            apEntry = { personIndex: idx, lines: [] };
+                            apLines.push(apEntry);
+                        }
+                        apEntry.lines.push({ label: def.name, optionName: `${personQty}x ${def.unitName || "ks"}`, price });
+                        grandTotal += price;
+                    });
+                }
+            } else {
+                // pricing_select
+                const mainVal = String(mainValues[field.name] ?? "");
+                if (mainVal && visibleMainFields.has(field.id)) {
+                    const opt = def.options.find((o) => o.name === mainVal);
+                    if (opt) {
+                        const price = opt.prices[tierIdx] ?? 0;
+                        mainLines.push({ label: def.name, optionName: opt.name, price });
+                        grandTotal += price;
                     }
+                }
 
-                    const opt = def.options.find((o) => o.name === personVal);
-                    if (!opt) return;
-
-                    const price = opt.prices[tierIdx] ?? 0;
-                    let apEntry = apLines.find((a) => a.personIndex === idx);
-                    if (!apEntry) {
-                        apEntry = { personIndex: idx, lines: [] };
-                        apLines.push(apEntry);
-                    }
-                    apEntry.lines.push({ label: def.name, optionName: opt.name, price });
-                    grandTotal += price;
-                });
+                // Additional people
+                if (field.includeForAdditionalPeople) {
+                    additionalPeople.forEach((person, idx) => {
+                        const personVal = String(person[field.name] ?? "");
+                        if (!personVal) return;
+                        if (visibleAPFieldsPerPerson && visibleAPFieldsPerPerson[idx]) {
+                            if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
+                        }
+                        const opt = def.options.find((o) => o.name === personVal);
+                        if (!opt) return;
+                        const price = opt.prices[tierIdx] ?? 0;
+                        let apEntry = apLines.find((a) => a.personIndex === idx);
+                        if (!apEntry) {
+                            apEntry = { personIndex: idx, lines: [] };
+                            apLines.push(apEntry);
+                        }
+                        apEntry.lines.push({ label: def.name, optionName: opt.name, price });
+                        grandTotal += price;
+                    });
+                }
             }
         }
 

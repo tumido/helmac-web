@@ -26,6 +26,7 @@ import {
     ExpandMore,
     ExpandLess,
     Sell,
+    Calculate,
     CategoryOutlined,
     CalendarTodayOutlined,
     WarningAmberOutlined,
@@ -55,21 +56,23 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
         for (const el of elements) {
             if (isConditionBlock(el)) {
                 for (const child of el.children) {
-                    if (child.type === "pricing_select" && "pricingId" in child && child.pricingId === definitionId) {
+                    if ((child.type === "pricing_select" || child.type === "pricing_quantity") && "pricingId" in child && child.pricingId === definitionId) {
                         count++;
                     }
                 }
-            } else if (el.type === "pricing_select" && "pricingId" in el && el.pricingId === definitionId) {
+            } else if ((el.type === "pricing_select" || el.type === "pricing_quantity") && "pricingId" in el && el.pricingId === definitionId) {
                 count++;
             }
         }
         return count;
     };
 
-    const handleAddDefinition = () => {
+    const handleAddDefinition = (type: "options" | "quantity" = "options") => {
         const newDef: PricingDefinition = {
             id: crypto.randomUUID(),
             name: "",
+            type,
+            ...(type === "quantity" ? { unitName: "" } : {}),
             priceTiers: [],
             options: [
                 {
@@ -85,7 +88,17 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
     };
 
     const handleUpdateDefinition = (id: string, updates: Partial<PricingDefinition>) => {
-        onChange(pricingDefinitions.map((d) => (d.id === id ? { ...d, ...updates } : d)));
+        onChange(pricingDefinitions.map((d) => {
+            if (d.id !== id) return d;
+            const updated = { ...d, ...updates };
+            // For quantity definitions, auto-sync the single option name to the definition name
+            if (updated.type === "quantity" && updates.name !== undefined && updated.options.length > 0) {
+                updated.options = updated.options.map((o, i) =>
+                    i === 0 ? { ...o, name: updates.name! } : o
+                );
+            }
+            return updated;
+        }));
     };
 
     const handleDeleteDefinition = (id: string) => {
@@ -215,6 +228,7 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {pricingDefinitions.map((def) => {
                     const isExpanded = expandedId === def.id;
+                    const isQuantity = def.type === "quantity";
                     return (
                         <Card key={def.id} variant="outlined" sx={{ borderRadius: 2 }}>
                             <Box
@@ -233,14 +247,14 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         width: 32,
                                         height: 32,
                                         borderRadius: 1,
-                                        backgroundColor: "success.main",
+                                        backgroundColor: isQuantity ? "info.main" : "success.main",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         flexShrink: 0,
                                     }}
                                 >
-                                    <Sell sx={{ fontSize: 18, color: "white" }} />
+                                    {isQuantity ? <Calculate sx={{ fontSize: 18, color: "white" }} /> : <Sell sx={{ fontSize: 18, color: "white" }} />}
                                 </Box>
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography variant="body1" fontWeight={500} noWrap>
@@ -273,8 +287,21 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         size="small"
                                         fullWidth
                                         sx={{ mb: 2 }}
-                                        placeholder='např. "Ubytování", "Vstupné"'
+                                        placeholder={isQuantity ? 'např. "Strava", "Parkování"' : 'např. "Ubytování", "Vstupné"'}
                                     />
+
+                                    {/* Unit name for quantity definitions */}
+                                    {isQuantity && (
+                                        <TextField
+                                            label="Název jednotky"
+                                            value={def.unitName ?? ""}
+                                            onChange={(e) => handleUpdateDefinition(def.id, { unitName: e.target.value })}
+                                            size="small"
+                                            fullWidth
+                                            sx={{ mb: 2 }}
+                                            placeholder='např. "den", "porce", "kus"'
+                                        />
+                                    )}
 
                                     {/* Price tiers */}
                                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -337,81 +364,143 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         Přidat termín
                                     </Button>
 
-                                    {/* Options */}
-                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                        Možnosti
-                                    </Typography>
-                                    {def.options.map((option) => (
-                                        <Box
-                                            key={option.id}
-                                            sx={{
-                                                p: 1.5,
-                                                mb: 1,
-                                                border: "1px solid",
-                                                borderColor: "divider",
-                                                borderRadius: 1,
-                                                backgroundColor: "action.hover",
-                                            }}
-                                        >
-                                            <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
-                                                <TextField
-                                                    label="Název možnosti"
-                                                    value={option.name}
-                                                    onChange={(e) => handleUpdateOption(def.id, option.id, { name: e.target.value })}
-                                                    size="small"
-                                                    sx={{ flex: 1 }}
-                                                />
-                                                <Tooltip title="Smazat možnost">
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => handleDeleteOption(def.id, option.id)}
-                                                            disabled={def.options.length <= 1}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                            </Box>
-                                            <TextField
-                                                label="Popis"
-                                                value={option.description}
-                                                onChange={(e) => handleUpdateOption(def.id, option.id, { description: e.target.value })}
-                                                size="small"
-                                                fullWidth
-                                                sx={{ mb: 1 }}
-                                            />
-                                            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                                                {def.priceTiers.map((tier, tierIdx) => (
-                                                    <TextField
-                                                        key={tierIdx}
-                                                        label={`Do ${tier || "?"}`}
-                                                        type="number"
-                                                        value={option.prices[tierIdx] ?? 0}
-                                                        onChange={(e) => handleUpdateOptionPrice(def.id, option.id, tierIdx, Number(e.target.value) || 0)}
-                                                        size="small"
-                                                        sx={{ width: 130 }}
-                                                        InputProps={{
-                                                            endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
-                                                        }}
-                                                    />
-                                                ))}
-                                                <TextField
-                                                    label="Na místě"
-                                                    type="number"
-                                                    value={option.prices[def.priceTiers.length] ?? 0}
-                                                    onChange={(e) => handleUpdateOptionPrice(def.id, option.id, def.priceTiers.length, Number(e.target.value) || 0)}
-                                                    size="small"
-                                                    sx={{ width: 130 }}
-                                                    InputProps={{
-                                                        endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                    {isQuantity ? (
+                                        <>
+                                            {/* Quantity: single unit with per-tier prices */}
+                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                Cena za jednotku
+                                            </Typography>
+                                            {def.options[0] && (
+                                                <Box
+                                                    sx={{
+                                                        p: 1.5,
+                                                        mb: 1,
+                                                        border: "1px solid",
+                                                        borderColor: "divider",
+                                                        borderRadius: 1,
+                                                        backgroundColor: "action.hover",
                                                     }}
-                                                />
-                                            </Box>
-                                        </Box>
-                                    ))}
+                                                >
+                                                    <TextField
+                                                        label="Popis / podmínky"
+                                                        value={def.options[0].description}
+                                                        onChange={(e) => handleUpdateOption(def.id, def.options[0].id, { description: e.target.value })}
+                                                        size="small"
+                                                        fullWidth
+                                                        multiline
+                                                        rows={2}
+                                                        sx={{ mb: 1 }}
+                                                    />
+                                                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                                        {def.priceTiers.map((tier, tierIdx) => (
+                                                            <TextField
+                                                                key={tierIdx}
+                                                                label={`Do ${tier || "?"}`}
+                                                                type="number"
+                                                                value={def.options[0].prices[tierIdx] ?? 0}
+                                                                onChange={(e) => handleUpdateOptionPrice(def.id, def.options[0].id, tierIdx, Number(e.target.value) || 0)}
+                                                                size="small"
+                                                                sx={{ width: 130 }}
+                                                                InputProps={{
+                                                                    endAdornment: <Typography variant="caption" color="info.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                                }}
+                                                            />
+                                                        ))}
+                                                        <TextField
+                                                            label="Na místě"
+                                                            type="number"
+                                                            value={def.options[0].prices[def.priceTiers.length] ?? 0}
+                                                            onChange={(e) => handleUpdateOptionPrice(def.id, def.options[0].id, def.priceTiers.length, Number(e.target.value) || 0)}
+                                                            size="small"
+                                                            sx={{ width: 130 }}
+                                                            InputProps={{
+                                                                endAdornment: <Typography variant="caption" color="info.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                </Box>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Options */}
+                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                Možnosti
+                                            </Typography>
+                                            {def.options.map((option) => (
+                                                <Box
+                                                    key={option.id}
+                                                    sx={{
+                                                        p: 1.5,
+                                                        mb: 1,
+                                                        border: "1px solid",
+                                                        borderColor: "divider",
+                                                        borderRadius: 1,
+                                                        backgroundColor: "action.hover",
+                                                    }}
+                                                >
+                                                    <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+                                                        <TextField
+                                                            label="Název možnosti"
+                                                            value={option.name}
+                                                            onChange={(e) => handleUpdateOption(def.id, option.id, { name: e.target.value })}
+                                                            size="small"
+                                                            sx={{ flex: 1 }}
+                                                        />
+                                                        <Tooltip title="Smazat možnost">
+                                                            <span>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={() => handleDeleteOption(def.id, option.id)}
+                                                                    disabled={def.options.length <= 1}
+                                                                >
+                                                                    <Delete fontSize="small" />
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </Box>
+                                                    <TextField
+                                                        label="Popis"
+                                                        value={option.description}
+                                                        onChange={(e) => handleUpdateOption(def.id, option.id, { description: e.target.value })}
+                                                        size="small"
+                                                        fullWidth
+                                                        sx={{ mb: 1 }}
+                                                    />
+                                                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                                        {def.priceTiers.map((tier, tierIdx) => (
+                                                            <TextField
+                                                                key={tierIdx}
+                                                                label={`Do ${tier || "?"}`}
+                                                                type="number"
+                                                                value={option.prices[tierIdx] ?? 0}
+                                                                onChange={(e) => handleUpdateOptionPrice(def.id, option.id, tierIdx, Number(e.target.value) || 0)}
+                                                                size="small"
+                                                                sx={{ width: 130 }}
+                                                                InputProps={{
+                                                                    endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                                }}
+                                                            />
+                                                        ))}
+                                                        <TextField
+                                                            label="Na místě"
+                                                            type="number"
+                                                            value={option.prices[def.priceTiers.length] ?? 0}
+                                                            onChange={(e) => handleUpdateOptionPrice(def.id, option.id, def.priceTiers.length, Number(e.target.value) || 0)}
+                                                            size="small"
+                                                            sx={{ width: 130 }}
+                                                            InputProps={{
+                                                                endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                </Box>
+                                            ))}
+                                        </>
+                                    )}
                                 </CardContent>
+                                {!isQuantity && (
                                 <CardActions sx={{ px: 2, pt: 0 }}>
                                     <Button
                                         size="small"
@@ -421,21 +510,33 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         Přidat možnost
                                     </Button>
                                 </CardActions>
+                                )}
                             </Collapse>
                         </Card>
                     );
                 })}
             </Box>
 
-            <Button
-                variant="outlined"
-                startIcon={<Add />}
-                onClick={handleAddDefinition}
-                sx={{ mt: 2 }}
-                fullWidth
-            >
-                Přidat cenovou skupinu
-            </Button>
+            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<Add />}
+                    onClick={() => handleAddDefinition("options")}
+                    sx={{ flex: 1 }}
+                    color="success"
+                >
+                    Přidat cenový výběr
+                </Button>
+                <Button
+                    variant="outlined"
+                    startIcon={<Add />}
+                    onClick={() => handleAddDefinition("quantity")}
+                    sx={{ flex: 1 }}
+                    color="info"
+                >
+                    Přidat cenový počet
+                </Button>
+            </Box>
 
             {/* Stats summary */}
             {pricingDefinitions.length > 0 && (

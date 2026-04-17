@@ -12,6 +12,7 @@ import {
     Article,
     AccountTree,
     Sell,
+    Calculate,
 } from "@mui/icons-material";
 
 export const FIELD_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -28,4 +29,5 @@ export const FIELD_TYPE_ICONS: Record<string, React.ReactNode> = {
     Article: <Article />,
     AccountTree: <AccountTree />,
     Sell: <Sell />,
+    Calculate: <Calculate />,
 };

@@ -31,7 +31,7 @@ export function computePricingSummary({
     if (pricingDefinitions.length === 0) return null;
 
     const pricingFields = allInputFields.filter(
-        (f) => f.type === "pricing_select" && f.pricingId
+        (f) => (f.type === "pricing_select" || f.type === "pricing_quantity") && f.pricingId
     );
     if (pricingFields.length === 0) return null;
 
@@ -50,6 +50,7 @@ export function computePricingSummary({
     interface SelectedOption {
         def: PricingDefinition;
         optionName: string;
+        quantity: number;
     }
 
     const selections: SelectedOption[] = [];
@@ -58,31 +59,54 @@ export function computePricingSummary({
         const def = pricingDefinitions.find((d) => d.id === field.pricingId);
         if (!def) continue;
 
-        // Main person
-        const mainVal = String(submissionData[field.name] ?? "");
-        if (mainVal && visibleFieldIds.has(field.id)) {
-            const opt = def.options.find((o) => o.name === mainVal);
-            if (opt) {
-                selections.push({ def, optionName: opt.name });
-            }
-        }
-
-        // Additional people
-        if (field.includeForAdditionalPeople) {
-            additionalPeople.forEach((person, idx) => {
-                const personVal = String(person[field.name] ?? "");
-                if (!personVal) return;
-
-                // Check visibility for this AP
-                if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
-                    return;
-                }
-
-                const opt = def.options.find((o) => o.name === personVal);
+        if (field.type === "pricing_quantity") {
+            // Quantity-based pricing: value is a number, single option in definition
+            const qty = Number(submissionData[field.name] ?? 0);
+            if (qty > 0 && visibleFieldIds.has(field.id)) {
+                const opt = def.options[0]; // Quantity definitions have exactly 1 option
                 if (opt) {
-                    selections.push({ def, optionName: opt.name });
+                    selections.push({ def, optionName: opt.name, quantity: qty });
                 }
-            });
+            }
+
+            // Additional people
+            if (field.includeForAdditionalPeople) {
+                additionalPeople.forEach((person, idx) => {
+                    const personQty = Number(person[field.name] ?? 0);
+                    if (personQty <= 0) return;
+                    if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
+                        return;
+                    }
+                    const opt = def.options[0];
+                    if (opt) {
+                        selections.push({ def, optionName: opt.name, quantity: personQty });
+                    }
+                });
+            }
+        } else {
+            // Option-based pricing (pricing_select): value is an option name
+            const mainVal = String(submissionData[field.name] ?? "");
+            if (mainVal && visibleFieldIds.has(field.id)) {
+                const opt = def.options.find((o) => o.name === mainVal);
+                if (opt) {
+                    selections.push({ def, optionName: opt.name, quantity: 1 });
+                }
+            }
+
+            // Additional people
+            if (field.includeForAdditionalPeople) {
+                additionalPeople.forEach((person, idx) => {
+                    const personVal = String(person[field.name] ?? "");
+                    if (!personVal) return;
+                    if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
+                        return;
+                    }
+                    const opt = def.options.find((o) => o.name === personVal);
+                    if (opt) {
+                        selections.push({ def, optionName: opt.name, quantity: 1 });
+                    }
+                });
+            }
         }
     }
 
@@ -96,11 +120,11 @@ export function computePricingSummary({
         const simulatedDate = new Date(new Date(tierDate).getTime() - 1);
         let totalPrice = 0;
 
-        for (const { def, optionName } of selections) {
+        for (const { def, optionName, quantity } of selections) {
             const tierIdx = getCurrentTierIndex(def.priceTiers, simulatedDate);
             const opt = def.options.find((o) => o.name === optionName);
             if (opt) {
-                totalPrice += opt.prices[tierIdx] ?? 0;
+                totalPrice += (opt.prices[tierIdx] ?? 0) * quantity;
             }
         }
 
@@ -113,11 +137,11 @@ export function computePricingSummary({
         const farFuture = new Date("2099-12-31");
         let totalPrice = 0;
 
-        for (const { def, optionName } of selections) {
+        for (const { def, optionName, quantity } of selections) {
             const tierIdx = getCurrentTierIndex(def.priceTiers, farFuture);
             const opt = def.options.find((o) => o.name === optionName);
             if (opt) {
-                totalPrice += opt.prices[tierIdx] ?? 0;
+                totalPrice += (opt.prices[tierIdx] ?? 0) * quantity;
             }
         }
 

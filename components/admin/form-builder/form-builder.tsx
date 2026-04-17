@@ -152,7 +152,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                 required: false,
                 options: type === "select" || type === "radio" ? ["Možnost 1"] : undefined,
             };
-            if (type === "pricing_select") {
+            if (type === "pricing_select" || type === "pricing_quantity") {
                 field.pricingId = pricingId || "";
             }
             return field;
@@ -179,9 +179,10 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
 
     const handleAddPricingField = useCallback((definitionId: string) => {
         const def = pricingDefinitions.find((d) => d.id === definitionId);
-        const newField = createField("pricing_select", elementsRef.current, definitionId);
+        const fieldType = def?.type === "quantity" ? "pricing_quantity" : "pricing_select";
+        const newField = createField(fieldType, elementsRef.current, definitionId);
         if (def && "label" in newField) {
-            (newField as InputField).label = def.name || "Cenový výběr";
+            (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : "Cenový výběr");
         }
         setElements((prev) => [...prev, newField]);
         setEditingField(newField);
@@ -508,13 +509,14 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             return;
         }
 
-        // -- Palette pricing drop: create new pricing_select field
+        // -- Palette pricing drop: create new pricing field
         if (activeIdStr.startsWith("palette-pricing-")) {
             const definitionId = activeIdStr.replace("palette-pricing-", "");
             const def = pricingDefinitions.find((d) => d.id === definitionId);
-            const newField = createField("pricing_select", elementsRef.current, definitionId);
+            const fieldType = def?.type === "quantity" ? "pricing_quantity" : "pricing_select";
+            const newField = createField(fieldType, elementsRef.current, definitionId);
             if (def && "label" in newField) {
-                (newField as InputField).label = def.name || "Cenový výběr";
+                (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : "Cenový výběr");
             }
 
             setElements((prev) => {
@@ -669,6 +671,8 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
         if (activeId.startsWith("palette-pricing-")) {
             const definitionId = activeId.replace("palette-pricing-", "");
             const def = pricingDefinitions.find((d) => d.id === definitionId);
+            const isQuantity = def?.type === "quantity";
+            const color = isQuantity ? "info" : "success";
             return (
                 <Paper
                     variant="outlined"
@@ -679,12 +683,12 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                         px: 1.5,
                         py: 1,
                         backgroundColor: "background.paper",
-                        borderColor: "success.main",
+                        borderColor: `${color}.main`,
                         width: 200,
                     }}
                 >
-                    <Box sx={{ color: "success.main", display: "flex" }}>
-                        {FIELD_TYPE_ICONS["Sell"]}
+                    <Box sx={{ color: `${color}.main`, display: "flex" }}>
+                        {FIELD_TYPE_ICONS[isQuantity ? "Calculate" : "Sell"]}
                     </Box>
                     <Typography variant="body2">{def?.name || "Ceník"}</Typography>
                 </Paper>

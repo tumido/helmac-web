@@ -53,6 +53,8 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
     const isInput = isInputField(editData);
     const needsOptions = isInput && (editData.type === "select" || editData.type === "radio");
     const isPricingSelect = isInput && editData.type === "pricing_select";
+    const isPricingQuantity = isInput && editData.type === "pricing_quantity";
+    const isPricing = isPricingSelect || isPricingQuantity;
 
     const handleSave = () => {
         if (!editData) return;
@@ -86,7 +88,7 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                 fullWidth
                                 required
                             />
-                            {!isPricingSelect && (
+                            {!isPricing && (
                                 <TextField
                                     label="Placeholder"
                                     value={inputData.placeholder || ""}
@@ -138,6 +140,34 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                                         </Typography>
                                                     ))}
                                                 </Box>
+                                            </>
+                                        )}
+                                        <Typography variant="caption" color="primary" sx={{ mt: 1, display: "block" }}>
+                                            Upravit ceny v záložce Ceník
+                                        </Typography>
+                                    </Box>
+                                );
+                            })()}
+
+                            {isPricingQuantity && (() => {
+                                const def = pricingDefinitions?.find((d) => d.id === inputData.pricingId);
+                                const unitOpt = def?.options[0];
+                                return (
+                                    <Box sx={{ p: 2, backgroundColor: "action.hover", borderRadius: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                            Cenový počet: {def?.name || "(nenalezena)"}
+                                        </Typography>
+                                        {def && (
+                                            <>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Jednotka: {def.unitName || "(nenastavena)"} · {def.priceTiers.length} {def.priceTiers.length === 1 ? "termín" : "termíny"}
+                                                </Typography>
+                                                {unitOpt && (
+                                                    <Typography variant="body2" sx={{ mt: 1 }}>
+                                                        Cena za jednotku: {def.priceTiers.map((_, i) => formatPrice(unitOpt.prices[i])).join(" / ")}
+                                                        {def.priceTiers.length > 0 ? " / " : ""}{formatPrice(unitOpt.prices[def.priceTiers.length])}
+                                                    </Typography>
+                                                )}
                                             </>
                                         )}
                                         <Typography variant="caption" color="primary" sx={{ mt: 1, display: "block" }}>

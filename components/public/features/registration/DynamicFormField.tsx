@@ -293,6 +293,84 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
             );
         }
 
+        case "pricing_quantity": {
+            const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+            if (!def) return null;
+            const unitOpt = def.options[0];
+            if (!unitOpt) return null;
+            const currentTier = getCurrentTierIndex(def.priceTiers);
+            const unitPrice = unitOpt.prices[currentTier] ?? 0;
+            const qty = Number(value) || 0;
+            const totalPrice = qty * unitPrice;
+            return (
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {label}
+                    </Typography>
+                    {unitOpt.description && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {unitOpt.description}
+                        </Typography>
+                    )}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                        <TextField
+                            name={htmlName}
+                            type="number"
+                            value={String(qty)}
+                            onChange={(e) => onChange(field.name, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                            error={!!error}
+                            helperText={error}
+                            inputProps={{ min: 0, step: 1 }}
+                            size="small"
+                            sx={{ width: 120 }}
+                        />
+                        {def.unitName && (
+                            <Typography variant="body2" color="text.secondary">
+                                {def.unitName}
+                            </Typography>
+                        )}
+                    </Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Cena za {def.unitName || "jednotku"}:
+                        </Typography>
+                        {def.priceTiers.map((tier, idx) => {
+                            if (unitOpt.prices[idx] === 0) return null;
+                            const isCurrent = idx === currentTier;
+                            return (
+                                <Typography
+                                    key={idx}
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: isCurrent ? 700 : 400,
+                                        color: isCurrent ? "info.main" : "text.secondary",
+                                    }}
+                                >
+                                    {isCurrent && "► "}do {formatDate(tier)}: {formatPrice(unitOpt.prices[idx])}
+                                </Typography>
+                            );
+                        })}
+                        {unitOpt.prices[def.priceTiers.length] !== 0 && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontWeight: currentTier === def.priceTiers.length ? 700 : 400,
+                                    color: currentTier === def.priceTiers.length ? "info.main" : "text.secondary",
+                                }}
+                            >
+                                {currentTier === def.priceTiers.length && "► "}{def.priceTiers.length > 0 ? "na místě: " : ""}{formatPrice(unitOpt.prices[def.priceTiers.length])}
+                            </Typography>
+                        )}
+                    </Box>
+                    {qty > 0 && unitPrice !== 0 && (
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 1, color: "info.main" }}>
+                            {qty} x {formatPrice(unitPrice)} = {formatPrice(totalPrice)}
+                        </Typography>
+                    )}
+                </Box>
+            );
+        }
+
         case "text":
         default:
             return (

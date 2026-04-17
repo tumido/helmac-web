@@ -51,6 +51,9 @@ export function getFieldOptionValues(
         const def = pricingDefinitions.find((d) => d.id === field.pricingId);
         return def ? def.options.map((o) => o.name) : [];
     }
+    if (field.type === "pricing_quantity") {
+        return []; // Quantity fields use numeric values, not option names
+    }
     return [];
 }
 

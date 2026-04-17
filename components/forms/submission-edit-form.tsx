@@ -166,6 +166,22 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                         );
                     }
 
+                    case "pricing_quantity": {
+                        const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                        return (
+                            <TextField
+                                key={field.id}
+                                label={`${field.label}${def?.unitName ? ` (${def.unitName})` : ""}`}
+                                type="number"
+                                value={String(value ?? 0)}
+                                onChange={(e) => handleChange(field.name, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                                fullWidth
+                                size="small"
+                                inputProps={{ min: 0, step: 1 }}
+                            />
+                        );
+                    }
+
                     case "textarea":
                         return (
                             <TextField
@@ -255,6 +271,21 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                                                             ))}
                                                         </Select>
                                                     </FormControl>
+                                                );
+                                            }
+                                            case "pricing_quantity": {
+                                                const qtyDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                                                return (
+                                                    <TextField
+                                                        key={field.id}
+                                                        label={`${field.label}${qtyDef?.unitName ? ` (${qtyDef.unitName})` : ""}`}
+                                                        type="number"
+                                                        value={String(value ?? 0)}
+                                                        onChange={(e) => handleAPChange(personIndex, field.name, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                                                        fullWidth
+                                                        size="small"
+                                                        inputProps={{ min: 0, step: 1 }}
+                                                    />
                                                 );
                                             }
                                             case "radio":

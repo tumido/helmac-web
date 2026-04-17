@@ -93,6 +93,8 @@ export function AdditionalPeopleSection({
         for (const field of apFields) {
             if (field.type === "checkbox") {
                 newPerson[field.name] = false;
+            } else if (field.type === "pricing_quantity") {
+                newPerson[field.name] = 0;
             } else {
                 newPerson[field.name] = "";
             }

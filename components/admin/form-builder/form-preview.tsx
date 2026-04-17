@@ -168,6 +168,41 @@ function PreviewField({ field, pricingDefinitions }: { field: FormField; pricing
             );
         }
 
+        case "pricing_quantity": {
+            const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+            if (!def) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
+            const unitOpt = def.options[0];
+            const unitPrice = unitOpt ? getCurrentPrice(def.priceTiers, unitOpt.prices) : 0;
+            return (
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {field.label}{field.required ? " *" : ""}
+                    </Typography>
+                    {unitOpt?.description && (
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                            {unitOpt.description}
+                        </Typography>
+                    )}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <TextField
+                            type="number"
+                            size="small"
+                            disabled
+                            value={0}
+                            sx={{ width: 120 }}
+                            inputProps={{ min: 0 }}
+                        />
+                        {def.unitName && (
+                            <Typography variant="body2" color="text.secondary">{def.unitName}</Typography>
+                        )}
+                        <Typography variant="body2" fontWeight={600} color="info.main">
+                            {formatPrice(unitPrice)} / {def.unitName || "ks"}
+                        </Typography>
+                    </Box>
+                </Box>
+            );
+        }
+
         case "textarea":
             return (
                 <TextField

@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { AccountTree, Sell, InfoOutlined } from "@mui/icons-material";
+import { AccountTree, Sell, Calculate, InfoOutlined } from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import type { FormCondition, PricingDefinition } from "@/lib/types/registration-form";
@@ -143,6 +143,9 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
         data: { type: "pricing", definitionId: definition.id },
     });
 
+    const isQuantity = definition.type === "quantity";
+    const color = isQuantity ? "info" : "success";
+
     return (
         <Paper
             ref={setNodeRef}
@@ -158,9 +161,9 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
                 py: 1,
                 cursor: "pointer",
                 opacity: isDragging ? 0.5 : 1,
-                borderColor: "success.main",
+                borderColor: `${color}.main`,
                 "&:hover": {
-                    borderColor: "success.dark",
+                    borderColor: `${color}.dark`,
                     backgroundColor: "action.hover",
                 },
                 "&:active": {
@@ -168,8 +171,8 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
                 },
             }}
         >
-            <Box sx={{ color: "success.main", display: "flex" }}>
-                <Sell fontSize="small" />
+            <Box sx={{ color: `${color}.main`, display: "flex" }}>
+                {isQuantity ? <Calculate fontSize="small" /> : <Sell fontSize="small" />}
             </Box>
             <Typography variant="body2" noWrap>
                 {definition.name || "(nepojmenovaná)"}
