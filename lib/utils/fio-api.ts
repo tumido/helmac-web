@@ -84,7 +84,7 @@ function parseTransaction(tx: FioTransaction): ParsedBankTransaction | null {
 
     return {
         fioTransactionId: String(txId),
-        date: new Date(dateStr as string),
+        date: new Date((dateStr as string).replace(/[+-]\d{4}$/, "")),
         amount: Number(amount),
         currency: tx.column14?.value ? String(tx.column14.value) : "CZK",
         counterpartAccount: fullAccount,

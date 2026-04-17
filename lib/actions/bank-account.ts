@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { encrypt, decrypt } from "@/lib/utils/encryption";
-import { fetchLastTransactions, setLastDate, FioRateLimitError } from "@/lib/utils/fio-api";
+import { fetchLastTransactions, fetchTransactionsByDateRange, setLastDate, FioRateLimitError } from "@/lib/utils/fio-api";
 import { processTransactions } from "@/lib/utils/payment-matching";
 import { updateBankAccountSchema } from "@/lib/validators/bank-account";
 import { fioTokenSchema } from "@/lib/validators/bank-sync";
@@ -169,20 +169,13 @@ export async function triggerGlobalManualSync() {
 
         const token = decrypt(bankAccount.encryptedFioToken);
 
-        console.log("[manual-sync] Bank account state:", {
-            fioSyncEnabled: bankAccount.fioSyncEnabled,
-            lastFioSyncAt: bankAccount.lastFioSyncAt,
-        });
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const today = new Date();
 
-        // Initialize Fio cursor if this is the first sync (no auto-sync enabled, no previous sync)
-        if (!bankAccount.fioSyncEnabled && !bankAccount.lastFioSyncAt) {
-            const threeDaysAgo = new Date();
-            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-            console.log("[manual-sync] First sync — initializing cursor to 3 days ago");
-            await setLastDate(token, threeDaysAgo);
-        }
+        console.log("[manual-sync] Fetching transactions from", threeDaysAgo.toISOString().split("T")[0], "to", today.toISOString().split("T")[0]);
 
-        const transactions = await fetchLastTransactions(token);
+        const transactions = await fetchTransactionsByDateRange(token, threeDaysAgo, today);
         console.log("[manual-sync] Fetched transactions:", transactions.length);
 
         if (transactions.length > 0) {

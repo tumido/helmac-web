@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/utils/encryption";
-import { fetchLastTransactions, FioRateLimitError } from "@/lib/utils/fio-api";
+import { fetchTransactionsByDateRange, FioRateLimitError } from "@/lib/utils/fio-api";
 import { processTransactions, type MatchResult } from "@/lib/utils/payment-matching";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
 
     try {
         const token = decrypt(bankAccount.encryptedFioToken);
-        const transactions = await fetchLastTransactions(token);
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const transactions = await fetchTransactionsByDateRange(token, threeDaysAgo, new Date());
         result = await processTransactions(transactions);
 
         await db.bankAccount.update({

@@ -13,7 +13,8 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:developers.fio.cz)"
     ]
   }
 }
