@@ -127,7 +127,9 @@ export async function toggleGlobalFioSync(enabled: boolean) {
         if (enabled && bankAccount?.encryptedFioToken) {
             try {
                 const token = decrypt(bankAccount.encryptedFioToken);
-                await setLastDate(token, new Date());
+                const threeDaysAgo = new Date();
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                await setLastDate(token, threeDaysAgo);
             } catch (error) {
                 if (error instanceof FioRateLimitError) {
                     return { error: "Fio API limit — zkuste to za 30 sekund" };
@@ -174,8 +176,10 @@ export async function triggerGlobalManualSync() {
 
         // Initialize Fio cursor if this is the first sync (no auto-sync enabled, no previous sync)
         if (!bankAccount.fioSyncEnabled && !bankAccount.lastFioSyncAt) {
-            console.log("[manual-sync] First sync — initializing cursor to today");
-            await setLastDate(token, new Date());
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            console.log("[manual-sync] First sync — initializing cursor to 3 days ago");
+            await setLastDate(token, threeDaysAgo);
         }
 
         const transactions = await fetchLastTransactions(token);
