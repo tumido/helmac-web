@@ -166,6 +166,12 @@ export async function triggerGlobalManualSync() {
         }
 
         const token = decrypt(bankAccount.encryptedFioToken);
+
+        // Initialize Fio cursor if this is the first sync (no auto-sync enabled, no previous sync)
+        if (!bankAccount.fioSyncEnabled && !bankAccount.lastFioSyncAt) {
+            await setLastDate(token, new Date());
+        }
+
         const transactions = await fetchLastTransactions(token);
         const result = await processTransactions(transactions);
 
