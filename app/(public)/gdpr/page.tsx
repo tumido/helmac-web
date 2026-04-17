@@ -1,6 +1,7 @@
 import { Container, Typography } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { db } from "@/lib/db";
+import { richContentSx } from "@/lib/utils/rich-content-sx";
 
 export const metadata = {
     title: "GDPR | Helmac",
@@ -21,13 +22,7 @@ export default async function GdprPage() {
                     <Typography
                         variant="body1"
                         component="div"
-                        sx={{
-                            "& p": { mb: 2 },
-                            "& ul, & ol": { pl: 3, mb: 2 },
-                            "& ul": { listStyleType: "disc" },
-                            "& ol": { listStyleType: "decimal" },
-                            lineHeight: 1.8,
-                        }}
+                        sx={richContentSx}
                         dangerouslySetInnerHTML={{ __html: setting.value }}
                     />
                 ) : (

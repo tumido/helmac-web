@@ -18,6 +18,7 @@ import {
 import { Edit, Save, Close } from "@mui/icons-material";
 import { updateEmailTemplate } from "@/lib/actions/years";
 import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor";
+import { richContentSx } from "@/lib/utils/rich-content-sx";
 
 type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
 
@@ -153,19 +154,7 @@ export function EmailTemplateEditor({
                                         <Box
                                             sx={{
                                                 mb: 2,
-                                                "& p": { margin: "0.5em 0" },
-                                                "& a": { color: "primary.main", textDecoration: "underline" },
-                                                "& ul, & ol": { paddingLeft: "1.5em" },
-                                                "& ul": { listStyleType: "disc" },
-                                                "& ol": { listStyleType: "decimal" },
-                                                "& blockquote": {
-                                                    borderLeft: "4px solid",
-                                                    borderColor: "grey.300",
-                                                    paddingLeft: "1em",
-                                                    marginLeft: 0,
-                                                    fontStyle: "italic",
-                                                    color: "text.secondary",
-                                                },
+                                                ...richContentSx,
                                             }}
                                             dangerouslySetInnerHTML={{ __html: savedBody }}
                                         />
