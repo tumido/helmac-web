@@ -15,6 +15,7 @@ import { getPublicUserPayments } from "@/lib/services/public-user";
 import { formatCzechAccount, czechAccountToIBAN, generateSPAYD } from "@/lib/utils/spayd";
 import { PaymentQrDialog } from "@/components/public/features/account/payment-qr-dialog";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
+import { runPaymentSync } from "@/lib/utils/sync-payments";
 
 export const metadata = {
     title: "Platby | Helmac",
@@ -22,6 +23,10 @@ export const metadata = {
 
 export default async function PaymentsPage() {
     const session = await requirePublicAuth();
+
+    // Trigger bank sync before loading payment data (rate-limited)
+    await runPaymentSync();
+
     const [payments, globalBank] = await Promise.all([
         getPublicUserPayments(session.sub),
         getGlobalBankAccount(),

@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { encrypt, decrypt } from "@/lib/utils/encryption";
-import { fetchLastTransactions, fetchTransactionsByDateRange, setLastDate, FioRateLimitError } from "@/lib/utils/fio-api";
-import { processTransactions } from "@/lib/utils/payment-matching";
+import { setLastDate, FioRateLimitError } from "@/lib/utils/fio-api";
+import { runPaymentSync } from "@/lib/utils/sync-payments";
 import { updateBankAccountSchema } from "@/lib/validators/bank-account";
 import { fioTokenSchema } from "@/lib/validators/bank-sync";
 
@@ -160,49 +160,16 @@ export async function triggerGlobalManualSync() {
         return { error: "Nemáte oprávnění" };
     }
 
-    try {
-        const bankAccount = await db.bankAccount.findFirst();
+    const syncResult = await runPaymentSync({ skipRateLimit: true });
 
-        if (!bankAccount?.encryptedFioToken) {
-            return { error: "Fio token není nastaven" };
-        }
-
-        const token = decrypt(bankAccount.encryptedFioToken);
-
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        const today = new Date();
-
-        console.log("[manual-sync] Fetching transactions from", threeDaysAgo.toISOString().split("T")[0], "to", today.toISOString().split("T")[0]);
-
-        const transactions = await fetchTransactionsByDateRange(token, threeDaysAgo, today);
-        console.log("[manual-sync] Fetched transactions:", transactions.length);
-
-        if (transactions.length > 0) {
-            console.log("[manual-sync] First transaction sample:", JSON.stringify({
-                id: transactions[0].fioTransactionId,
-                date: transactions[0].date,
-                amount: transactions[0].amount,
-                vs: transactions[0].variableSymbol,
-                counterpart: transactions[0].counterpartName,
-            }));
-        }
-
-        const result = await processTransactions(transactions);
-        console.log("[manual-sync] Processing result:", JSON.stringify(result));
-
-        await db.bankAccount.update({
-            where: { id: bankAccount.id },
-            data: { lastFioSyncAt: new Date() },
-        });
-
-        revalidatePath("/admin/nastaveni/banka");
-        return { success: true, result };
-    } catch (error) {
-        if (error instanceof FioRateLimitError) {
-            return { error: "Fio API limit — zkuste to za 30 sekund" };
-        }
-        console.error("Failed to trigger manual sync:", error);
-        return { error: "Synchronizace selhala" };
+    if (syncResult.error) {
+        return { error: syncResult.error === "rate-limit" ? "Fio API limit — zkuste to za 30 sekund" : "Synchronizace selhala" };
     }
+
+    if (syncResult.skipped) {
+        return { error: "Fio token není nastaven" };
+    }
+
+    revalidatePath("/admin/nastaveni/banka");
+    return { success: true, result: syncResult.result };
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Box, Typography, Paper, Divider } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
 import { CheckCircle } from "@mui/icons-material";
@@ -15,6 +16,14 @@ interface RegistrationSuccessProps {
 }
 
 export function RegistrationSuccess({ message, variableSymbol, totalPrice, paymentData }: RegistrationSuccessProps) {
+    useEffect(() => {
+        if (!paymentData) return;
+        const handler = () => {
+            navigator.sendBeacon("/api/public/sync-payments");
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [paymentData]);
     return (
         <Paper
             sx={{

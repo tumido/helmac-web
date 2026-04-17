@@ -26,12 +26,17 @@ interface PaymentQrDialogProps {
 export function PaymentQrDialog({ spaydString, amount, bankAccount, variableSymbol }: PaymentQrDialogProps) {
     const [open, setOpen] = useState(false);
 
+    const handleClose = () => {
+        setOpen(false);
+        fetch("/api/public/sync-payments", { method: "POST" }).catch(() => {});
+    };
+
     return (
         <>
             <IconButton size="small" onClick={() => setOpen(true)} title="Zobrazit QR kód pro platbu">
                 <QrCode2 />
             </IconButton>
-            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+            <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
                 <DialogTitle>QR platba</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: "flex", justifyContent: "center", mb: 3, mt: 1 }}>
@@ -80,7 +85,7 @@ export function PaymentQrDialog({ spaydString, amount, bankAccount, variableSymb
                     </Paper>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpen(false)}>Zavřít</Button>
+                    <Button onClick={handleClose}>Zavřít</Button>
                 </DialogActions>
             </Dialog>
         </>
