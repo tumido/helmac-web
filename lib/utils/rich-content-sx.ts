@@ -63,12 +63,13 @@ export const richContentSx: SxProps<Theme> = {
             p: 1,
         },
         "& th": {
-            backgroundColor: "grey.100",
+            backgroundColor: "#4b4b4b",
+            color: "#fff",
             fontWeight: 600,
         },
     },
     "& details": {
-        border: "1px solid",
+        border: "0px solid",
         borderColor: "divider",
         borderRadius: 1,
         p: 1,
@@ -77,6 +78,10 @@ export const richContentSx: SxProps<Theme> = {
     "& summary": {
         cursor: "pointer",
         fontWeight: 600,
+    },
+    "& details > [data-type='detailsContent'], & details > *:not(summary)": {
+        marginTop: 2,
+        marginLeft: 2,
     },
     "& iframe": {
         maxWidth: "100%",
