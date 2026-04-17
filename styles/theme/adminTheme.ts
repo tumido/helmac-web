@@ -6,6 +6,9 @@ import { adminColors } from "./colors";
 
 export const adminTheme = createTheme(
     {
+        breakpoints: {
+            values: { xs: 0, sm: 600, md: 900, lg: 1400, xl: 1536 },
+        },
         palette: {
             mode: "light",
             primary: adminColors.primary,

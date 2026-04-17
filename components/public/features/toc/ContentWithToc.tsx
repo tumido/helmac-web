@@ -139,9 +139,6 @@ export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
                     opacity: visible ? 1 : 0,
                     pointerEvents: visible ? "auto" : "none",
                     transition: "opacity 0.2s ease",
-                    "@media (max-width: 1400px)": {
-                        display: "none !important",
-                    },
                 }}
             >
                 <TableOfContents items={tocItems} variant="sidebar" />
