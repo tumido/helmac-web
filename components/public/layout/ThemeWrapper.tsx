@@ -51,11 +51,12 @@ interface ThemeWrapperProps {
     navSubtabs?: NavSubtabs;
     registrationOpen?: boolean;
     publicUser?: PublicUserInfo | null;
+    initialTheme?: "dark" | "light";
 }
 
-export function ThemeWrapper({ children, navSubtabs, registrationOpen, publicUser }: ThemeWrapperProps) {
+export function ThemeWrapper({ children, navSubtabs, registrationOpen, publicUser, initialTheme = "dark" }: ThemeWrapperProps) {
     return (
-        <ThemeModeProvider>
+        <ThemeModeProvider initialMode={initialTheme}>
             <ThemedContent navSubtabs={navSubtabs} registrationOpen={registrationOpen} publicUser={publicUser}>{children}</ThemedContent>
         </ThemeModeProvider>
     );

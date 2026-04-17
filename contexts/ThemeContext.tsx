@@ -3,7 +3,9 @@
 import {
     createContext,
     useContext,
-    useSyncExternalStore,
+    useState,
+    useCallback,
+    useEffect,
     ReactNode,
 } from "react";
 
@@ -25,36 +27,41 @@ export function useThemeMode() {
     return context;
 }
 
-const listeners = new Set<() => void>();
-
-function subscribe(callback: () => void) {
-    listeners.add(callback);
-    return () => {
-        listeners.delete(callback);
-    };
-}
-
-function getSnapshot(): ThemeMode {
-    const saved = localStorage.getItem("theme-mode");
-    return saved === "dark" || saved === "light" ? saved : "dark";
-}
-
-function getServerSnapshot(): ThemeMode {
-    return "dark";
+function setThemeCookie(mode: ThemeMode) {
+    document.cookie = `theme-mode=${mode};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
 }
 
 interface ThemeModeProviderProps {
+    initialMode: ThemeMode;
     children: ReactNode;
 }
 
-export function ThemeModeProvider({ children }: ThemeModeProviderProps) {
-    const mode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+export function ThemeModeProvider({ initialMode, children }: ThemeModeProviderProps) {
+    const [mode, setMode] = useState<ThemeMode>(initialMode);
 
-    const toggleTheme = () => {
-        const newMode = mode === "dark" ? "light" : "dark";
-        localStorage.setItem("theme-mode", newMode);
-        listeners.forEach((l) => l());
-    };
+    // Sync localStorage preference to cookie on first load (migration)
+    useEffect(() => {
+        const saved = localStorage.getItem("theme-mode");
+        if (saved === "dark" || saved === "light") {
+            setThemeCookie(saved);
+            if (saved !== initialMode) {
+                setMode(saved);
+            }
+        } else {
+            // No localStorage yet - persist the initial mode
+            localStorage.setItem("theme-mode", initialMode);
+            setThemeCookie(initialMode);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const toggleTheme = useCallback(() => {
+        setMode((prev) => {
+            const newMode = prev === "dark" ? "light" : "dark";
+            localStorage.setItem("theme-mode", newMode);
+            setThemeCookie(newMode);
+            return newMode;
+        });
+    }, []);
 
     return (
         <ThemeContext.Provider
