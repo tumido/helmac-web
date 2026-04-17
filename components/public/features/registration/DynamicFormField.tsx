@@ -371,6 +371,134 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
             );
         }
 
+        case "pricing_multi_select": {
+            const msDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+            if (!msDef) return null;
+            const msCurrentTier = getCurrentTierIndex(msDef.priceTiers);
+            let msSelected: string[] = [];
+            try {
+                const parsed = JSON.parse(String(value || "[]"));
+                if (Array.isArray(parsed)) msSelected = parsed;
+            } catch { /* empty */ }
+
+            const handleToggleOption = (optName: string) => {
+                const newSelected = msSelected.includes(optName)
+                    ? msSelected.filter((n) => n !== optName)
+                    : [...msSelected, optName];
+                onChange(field.name, JSON.stringify(newSelected));
+            };
+
+            return (
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {label}
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {msDef.options.map((opt) => {
+                            const isSelected = msSelected.includes(opt.name);
+                            const isDisabled = disabledOptions?.has(opt.name) ?? false;
+                            return (
+                                <Box
+                                    key={opt.id}
+                                    onClick={() => !isDisabled && handleToggleOption(opt.name)}
+                                    sx={{
+                                        p: 2,
+                                        border: "2px solid",
+                                        borderColor: isDisabled ? "action.disabled" : isSelected ? "secondary.main" : "divider",
+                                        borderRadius: 1,
+                                        backgroundColor: isDisabled ? "action.disabledBackground" : isSelected ? "secondary.50" : "transparent",
+                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        opacity: isDisabled ? 0.6 : 1,
+                                        "&:hover": isDisabled ? {} : {
+                                            borderColor: isSelected ? "secondary.main" : "action.selected",
+                                        },
+                                    }}
+                                >
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <Box
+                                            sx={{
+                                                width: 20,
+                                                height: 20,
+                                                borderRadius: 0.5,
+                                                border: "2px solid",
+                                                borderColor: isSelected ? "secondary.main" : "action.disabled",
+                                                backgroundColor: isSelected ? "secondary.main" : "transparent",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                                color: "white",
+                                                fontSize: 14,
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            {isSelected && "✓"}
+                                        </Box>
+                                        <Typography variant="body1" fontWeight={600}>
+                                            {opt.name}
+                                        </Typography>
+                                        {isDisabled && (
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    px: 1,
+                                                    py: 0.25,
+                                                    borderRadius: 1,
+                                                    backgroundColor: "error.main",
+                                                    color: "error.contrastText",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Kapacita vyčerpána
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    {opt.description && (
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, ml: 3.5 }}>
+                                            {opt.description}
+                                        </Typography>
+                                    )}
+                                    {opt.prices.some((p: number) => p !== 0) && (
+                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mt: 0.5, ml: 3.5 }}>
+                                            {msDef.priceTiers.map((tier, idx) => {
+                                                if (opt.prices[idx] === 0) return null;
+                                                const isCurrent = idx === msCurrentTier;
+                                                return (
+                                                    <Typography
+                                                        key={idx}
+                                                        variant="body2"
+                                                        sx={{
+                                                            fontWeight: isCurrent ? 700 : 400,
+                                                            color: isCurrent ? "secondary.main" : "text.secondary",
+                                                        }}
+                                                    >
+                                                        {isCurrent && "► "}do {formatDate(tier)}: {formatPrice(opt.prices[idx])}
+                                                    </Typography>
+                                                );
+                                            })}
+                                            {opt.prices[msDef.priceTiers.length] !== 0 && (
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontWeight: msCurrentTier === msDef.priceTiers.length ? 700 : 400,
+                                                        color: msCurrentTier === msDef.priceTiers.length ? "secondary.main" : "text.secondary",
+                                                    }}
+                                                >
+                                                    {msCurrentTier === msDef.priceTiers.length && "► "}{msDef.priceTiers.length > 0 ? "na místě: " : ""}{formatPrice(opt.prices[msDef.priceTiers.length])}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                    <input type="hidden" name={htmlName} value={String(value)} />
+                    {error && <FormHelperText error>{error}</FormHelperText>}
+                </Box>
+            );
+        }
+
         case "text":
         default:
             return (

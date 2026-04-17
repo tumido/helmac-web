@@ -35,7 +35,7 @@ export function PriceSummary({
 }: PriceSummaryProps) {
     const summary = useMemo(() => {
         const pricingFields = allInputFields.filter(
-            (f) => (f.type === "pricing_select" || f.type === "pricing_quantity") && f.pricingId
+            (f) => (f.type === "pricing_select" || f.type === "pricing_quantity" || f.type === "pricing_multi_select") && f.pricingId
         );
 
         const mainLines: PriceLineItem[] = [];
@@ -76,6 +76,49 @@ export function PriceSummary({
                         }
                         apEntry.lines.push({ label: def.name, optionName: `${personQty}x ${def.unitName || "ks"}`, price });
                         grandTotal += price;
+                    });
+                }
+            } else if (field.type === "pricing_multi_select") {
+                const parseSelected = (val: unknown): string[] => {
+                    try {
+                        const arr = JSON.parse(String(val ?? "[]"));
+                        return Array.isArray(arr) ? arr.filter((v): v is string => typeof v === "string") : [];
+                    } catch { return []; }
+                };
+
+                // Main person
+                const mainSelected = parseSelected(mainValues[field.name]);
+                if (mainSelected.length > 0 && visibleMainFields.has(field.id)) {
+                    for (const optName of mainSelected) {
+                        const opt = def.options.find((o) => o.name === optName);
+                        if (opt) {
+                            const price = opt.prices[tierIdx] ?? 0;
+                            mainLines.push({ label: def.name, optionName: opt.name, price });
+                            grandTotal += price;
+                        }
+                    }
+                }
+
+                // Additional people
+                if (field.includeForAdditionalPeople) {
+                    additionalPeople.forEach((person, idx) => {
+                        const personSelected = parseSelected(person[field.name]);
+                        if (personSelected.length === 0) return;
+                        if (visibleAPFieldsPerPerson && visibleAPFieldsPerPerson[idx]) {
+                            if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
+                        }
+                        for (const optName of personSelected) {
+                            const opt = def.options.find((o) => o.name === optName);
+                            if (!opt) continue;
+                            const price = opt.prices[tierIdx] ?? 0;
+                            let apEntry = apLines.find((a) => a.personIndex === idx);
+                            if (!apEntry) {
+                                apEntry = { personIndex: idx, lines: [] };
+                                apLines.push(apEntry);
+                            }
+                            apEntry.lines.push({ label: def.name, optionName: opt.name, price });
+                            grandTotal += price;
+                        }
                     });
                 }
             } else {

@@ -30,6 +30,8 @@ function buildInitialValues(formData: RegistrationFormData, publicEmail?: string
             values[field.name] = false;
         } else if (field.type === "pricing_quantity") {
             values[field.name] = 0;
+        } else if (field.type === "pricing_multi_select") {
+            values[field.name] = "[]";
         } else if (field.type === "email" && publicEmail) {
             values[field.name] = publicEmail;
         } else {

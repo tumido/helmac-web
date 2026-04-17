@@ -152,7 +152,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                 required: false,
                 options: type === "select" || type === "radio" ? ["Možnost 1"] : undefined,
             };
-            if (type === "pricing_select" || type === "pricing_quantity") {
+            if (type === "pricing_select" || type === "pricing_quantity" || type === "pricing_multi_select") {
                 field.pricingId = pricingId || "";
             }
             return field;
@@ -179,10 +179,10 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
 
     const handleAddPricingField = useCallback((definitionId: string) => {
         const def = pricingDefinitions.find((d) => d.id === definitionId);
-        const fieldType = def?.type === "quantity" ? "pricing_quantity" : "pricing_select";
+        const fieldType = def?.type === "quantity" ? "pricing_quantity" : def?.multiSelect ? "pricing_multi_select" : "pricing_select";
         const newField = createField(fieldType, elementsRef.current, definitionId);
         if (def && "label" in newField) {
-            (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : "Cenový výběr");
+            (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : fieldType === "pricing_multi_select" ? "Cenový vícevýběr" : "Cenový výběr");
         }
         setElements((prev) => [...prev, newField]);
         setEditingField(newField);
@@ -513,10 +513,10 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
         if (activeIdStr.startsWith("palette-pricing-")) {
             const definitionId = activeIdStr.replace("palette-pricing-", "");
             const def = pricingDefinitions.find((d) => d.id === definitionId);
-            const fieldType = def?.type === "quantity" ? "pricing_quantity" : "pricing_select";
+            const fieldType = def?.type === "quantity" ? "pricing_quantity" : def?.multiSelect ? "pricing_multi_select" : "pricing_select";
             const newField = createField(fieldType, elementsRef.current, definitionId);
             if (def && "label" in newField) {
-                (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : "Cenový výběr");
+                (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : fieldType === "pricing_multi_select" ? "Cenový vícevýběr" : "Cenový výběr");
             }
 
             setElements((prev) => {
@@ -672,7 +672,9 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             const definitionId = activeId.replace("palette-pricing-", "");
             const def = pricingDefinitions.find((d) => d.id === definitionId);
             const isQuantity = def?.type === "quantity";
-            const color = isQuantity ? "info" : "success";
+            const isMultiSelect = !isQuantity && def?.multiSelect;
+            const color = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
+            const icon = isQuantity ? "Calculate" : isMultiSelect ? "PlaylistAddCheck" : "Sell";
             return (
                 <Paper
                     variant="outlined"
@@ -688,7 +690,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                     }}
                 >
                     <Box sx={{ color: `${color}.main`, display: "flex" }}>
-                        {FIELD_TYPE_ICONS[isQuantity ? "Calculate" : "Sell"]}
+                        {FIELD_TYPE_ICONS[icon]}
                     </Box>
                     <Typography variant="body2">{def?.name || "Ceník"}</Typography>
                 </Paper>

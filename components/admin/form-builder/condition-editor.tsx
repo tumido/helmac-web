@@ -444,7 +444,7 @@ function FieldValuePicker({
         );
     }
 
-    if (targetField.type === "pricing_select" && targetField.pricingId && pricingDefinitions) {
+    if ((targetField.type === "pricing_select" || targetField.type === "pricing_multi_select") && targetField.pricingId && pricingDefinitions) {
         const def = pricingDefinitions.find((d) => d.id === targetField.pricingId);
         if (def) {
             return (

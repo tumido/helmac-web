@@ -13,8 +13,10 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
+    FormControlLabel,
     IconButton,
     Paper,
+    Switch,
     TextField,
     Tooltip,
     Typography,
@@ -27,6 +29,7 @@ import {
     ExpandLess,
     Sell,
     Calculate,
+    PlaylistAddCheck,
     CategoryOutlined,
     CalendarTodayOutlined,
     WarningAmberOutlined,
@@ -56,11 +59,11 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
         for (const el of elements) {
             if (isConditionBlock(el)) {
                 for (const child of el.children) {
-                    if ((child.type === "pricing_select" || child.type === "pricing_quantity") && "pricingId" in child && child.pricingId === definitionId) {
+                    if ((child.type === "pricing_select" || child.type === "pricing_quantity" || child.type === "pricing_multi_select") && "pricingId" in child && child.pricingId === definitionId) {
                         count++;
                     }
                 }
-            } else if ((el.type === "pricing_select" || el.type === "pricing_quantity") && "pricingId" in el && el.pricingId === definitionId) {
+            } else if ((el.type === "pricing_select" || el.type === "pricing_quantity" || el.type === "pricing_multi_select") && "pricingId" in el && el.pricingId === definitionId) {
                 count++;
             }
         }
@@ -229,6 +232,9 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                 {pricingDefinitions.map((def) => {
                     const isExpanded = expandedId === def.id;
                     const isQuantity = def.type === "quantity";
+                    const isMultiSelect = !isQuantity && def.multiSelect;
+                    const iconColor = isQuantity ? "info.main" : isMultiSelect ? "secondary.main" : "success.main";
+                    const IconComponent = isQuantity ? Calculate : isMultiSelect ? PlaylistAddCheck : Sell;
                     return (
                         <Card key={def.id} variant="outlined" sx={{ borderRadius: 2 }}>
                             <Box
@@ -247,14 +253,14 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         width: 32,
                                         height: 32,
                                         borderRadius: 1,
-                                        backgroundColor: isQuantity ? "info.main" : "success.main",
+                                        backgroundColor: iconColor,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         flexShrink: 0,
                                     }}
                                 >
-                                    {isQuantity ? <Calculate sx={{ fontSize: 18, color: "white" }} /> : <Sell sx={{ fontSize: 18, color: "white" }} />}
+                                    <IconComponent sx={{ fontSize: 18, color: "white" }} />
                                 </Box>
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography variant="body1" fontWeight={500} noWrap>
@@ -289,6 +295,24 @@ export function PricingEditor({ pricingDefinitions, elements, onChange }: Pricin
                                         sx={{ mb: 2 }}
                                         placeholder={isQuantity ? 'např. "Strava", "Parkování"' : 'např. "Ubytování", "Vstupné"'}
                                     />
+
+                                    {/* Multi-select toggle for options definitions */}
+                                    {!isQuantity && (
+                                        <Box sx={{ mb: 2 }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={def.multiSelect ?? false}
+                                                        onChange={(e) => handleUpdateDefinition(def.id, { multiSelect: e.target.checked || undefined })}
+                                                    />
+                                                }
+                                                label="Vícenásobný výběr"
+                                            />
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 4, mt: -0.5 }}>
+                                                Uživatel může vybrat více možností najednou
+                                            </Typography>
+                                        </Box>
+                                    )}
 
                                     {/* Unit name for quantity definitions */}
                                     {isQuantity && (

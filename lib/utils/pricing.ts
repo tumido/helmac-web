@@ -47,7 +47,7 @@ export function getFieldOptionValues(
     if (field.type === "select" || field.type === "radio") {
         return field.options ?? [];
     }
-    if (field.type === "pricing_select" && field.pricingId && pricingDefinitions) {
+    if ((field.type === "pricing_select" || field.type === "pricing_multi_select") && field.pricingId && pricingDefinitions) {
         const def = pricingDefinitions.find((d) => d.id === field.pricingId);
         return def ? def.options.map((o) => o.name) : [];
     }

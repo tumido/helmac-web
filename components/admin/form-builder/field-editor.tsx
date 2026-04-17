@@ -54,7 +54,9 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
     const needsOptions = isInput && (editData.type === "select" || editData.type === "radio");
     const isPricingSelect = isInput && editData.type === "pricing_select";
     const isPricingQuantity = isInput && editData.type === "pricing_quantity";
-    const isPricing = isPricingSelect || isPricingQuantity;
+    const isPricingMultiSelect = isInput && editData.type === "pricing_multi_select";
+    const isPricing = isPricingSelect || isPricingQuantity || isPricingMultiSelect;
+    const isOptionsBasedPricing = isPricingSelect || isPricingMultiSelect;
 
     const handleSave = () => {
         if (!editData) return;
@@ -120,7 +122,7 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                 </Typography>
                             </Box>
 
-                            {isPricingSelect && (() => {
+                            {isOptionsBasedPricing && (() => {
                                 const def = pricingDefinitions?.find((d) => d.id === inputData.pricingId);
                                 return (
                                     <Box sx={{ p: 2, backgroundColor: "action.hover", borderRadius: 1 }}>

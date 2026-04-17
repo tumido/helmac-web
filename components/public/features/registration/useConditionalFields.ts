@@ -19,8 +19,20 @@ export function evaluateCondition(
         if (!targetField || !isInputField(targetField)) return false;
 
         const currentValue = String(values[targetField.name] ?? "");
-        if (rule.operator === "equals" && currentValue !== rule.value) return false;
-        if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+
+        // For multi-select fields, check if the option is included in the JSON array
+        if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
+            let includes = false;
+            try {
+                const arr = JSON.parse(currentValue);
+                includes = Array.isArray(arr) && arr.includes(rule.value);
+            } catch { /* ignore */ }
+            if (rule.operator === "equals" && !includes) return false;
+            if (rule.operator === "not_equals" && includes) return false;
+        } else {
+            if (rule.operator === "equals" && currentValue !== rule.value) return false;
+            if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+        }
     }
     return true;
 }

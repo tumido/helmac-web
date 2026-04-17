@@ -48,8 +48,20 @@ function evaluateCondition(
         if (!targetField || !isInputField(targetField)) return false;
 
         const currentValue = String(rawData[targetField.name] ?? "");
-        if (rule.operator === "equals" && currentValue !== rule.value) return false;
-        if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+
+        // For multi-select fields, check if the option is included in the JSON array
+        if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
+            let includes = false;
+            try {
+                const arr = JSON.parse(currentValue);
+                includes = Array.isArray(arr) && arr.includes(rule.value);
+            } catch { /* ignore */ }
+            if (rule.operator === "equals" && !includes) return false;
+            if (rule.operator === "not_equals" && includes) return false;
+        } else {
+            if (rule.operator === "equals" && currentValue !== rule.value) return false;
+            if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+        }
     }
     return true;
 }
@@ -105,11 +117,23 @@ function validateCapacityLimits(
 
         // Count how many times this value appears in current submission
         let submittedCount = 0;
-        if (String(submissionData[field.name] ?? "") === limit.value) {
+        const mainVal = String(submissionData[field.name] ?? "");
+        if (field.type === "pricing_multi_select" && mainVal.startsWith("[")) {
+            try {
+                const arr = JSON.parse(mainVal);
+                if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
+            } catch { /* ignore */ }
+        } else if (mainVal === limit.value) {
             submittedCount++;
         }
         for (const person of additionalPeople) {
-            if (String(person[field.name] ?? "") === limit.value) {
+            const personVal = String(person[field.name] ?? "");
+            if (field.type === "pricing_multi_select" && personVal.startsWith("[")) {
+                try {
+                    const arr = JSON.parse(personVal);
+                    if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
+                } catch { /* ignore */ }
+            } else if (personVal === limit.value) {
                 submittedCount++;
             }
         }

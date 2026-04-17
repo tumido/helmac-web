@@ -62,6 +62,29 @@ function buildFieldSchema(field: InputField): z.ZodTypeAny {
             return field.required ? schema : schema.optional().or(z.literal(""));
         }
 
+        case "pricing_multi_select": {
+            // Value is a JSON-serialized string array, e.g. '["Opt1","Opt2"]'
+            const msSchema = z.string().refine((val) => {
+                try {
+                    const arr = JSON.parse(val);
+                    return Array.isArray(arr) && arr.every((v: unknown) => typeof v === "string");
+                } catch {
+                    return val === "" || val === "[]";
+                }
+            }, { message: "Neplatný výběr" });
+            if (field.required) {
+                return msSchema.refine((val) => {
+                    try {
+                        const arr = JSON.parse(val);
+                        return Array.isArray(arr) && arr.length > 0;
+                    } catch {
+                        return false;
+                    }
+                }, { message: "Vyberte alespoň jednu možnost" });
+            }
+            return msSchema;
+        }
+
         case "pricing_quantity": {
             const schema = z.coerce.number({ message: "Zadejte platné číslo" }).int("Zadejte celé číslo").min(0, "Hodnota nesmí být záporná");
             return field.required ? schema : schema.optional().or(z.literal(""));

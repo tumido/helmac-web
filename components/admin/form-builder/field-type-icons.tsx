@@ -13,6 +13,7 @@ import {
     AccountTree,
     Sell,
     Calculate,
+    PlaylistAddCheck,
 } from "@mui/icons-material";
 
 export const FIELD_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -30,4 +31,5 @@ export const FIELD_TYPE_ICONS: Record<string, React.ReactNode> = {
     AccountTree: <AccountTree />,
     Sell: <Sell />,
     Calculate: <Calculate />,
+    PlaylistAddCheck: <PlaylistAddCheck />,
 };

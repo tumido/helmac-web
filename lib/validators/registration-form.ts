@@ -21,7 +21,7 @@ const formConditionSchema = z.object({
 });
 
 const inputFieldSchema = z.object({
-    type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date", "birth_date", "pricing_select", "pricing_quantity"]),
+    type: z.enum(["text", "email", "textarea", "number", "checkbox", "select", "radio", "date", "birth_date", "pricing_select", "pricing_quantity", "pricing_multi_select"]),
     id: z.string().min(1),
     name: z.string().min(1),
     label: z.string().min(1, "Popisek je povinný"),
@@ -43,6 +43,7 @@ const pricingDefinitionSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1, "Název cenové skupiny je povinný"),
     type: z.enum(["options", "quantity"]).optional(),
+    multiSelect: z.boolean().optional(),
     unitName: z.string().optional(),
     priceTiers: z.array(z.string()),
     options: z.array(pricedOptionSchema).min(1, "Cenová skupina musí mít alespoň jednu možnost"),
@@ -196,7 +197,7 @@ export const saveRegistrationFormSchema = z.object({
     // Validate pricing_select and pricing_quantity fields reference existing pricing definitions
     const pricingIds = new Set(pricingDefinitions.map((d) => d.id));
     for (const field of inputFields) {
-        if (field.type === "pricing_select" || field.type === "pricing_quantity") {
+        if (field.type === "pricing_select" || field.type === "pricing_quantity" || field.type === "pricing_multi_select") {
             if (!field.pricingId || !pricingIds.has(field.pricingId)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,

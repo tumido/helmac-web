@@ -39,7 +39,7 @@ export default async function InfoPage({ params }: InfoPageProps) {
         const formData = migrateFormData(registrationForm.fields);
         const allInputFields = getAllInputFields(formData.fields);
         const optionFields = allInputFields.filter(
-            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
+            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select" || f.type === "pricing_multi_select"
         );
         const optionCounts = await getOptionCountsForYear(id);
 

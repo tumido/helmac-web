@@ -203,6 +203,43 @@ function PreviewField({ field, pricingDefinitions }: { field: FormField; pricing
             );
         }
 
+        case "pricing_multi_select": {
+            const msDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+            if (!msDef) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
+            return (
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {field.label}{field.required ? " *" : ""} (vícevýběr)
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {msDef.options.map((opt) => {
+                            const price = getCurrentPrice(msDef.priceTiers, opt.prices);
+                            return (
+                                <Paper
+                                    key={opt.id}
+                                    variant="outlined"
+                                    sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                >
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <Checkbox disabled size="small" />
+                                        <Box>
+                                            <Typography variant="body2" fontWeight={500}>{opt.name}</Typography>
+                                            {opt.description && (
+                                                <Typography variant="caption" color="text.secondary">{opt.description}</Typography>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                    <Typography variant="body2" fontWeight={600} color="secondary">
+                                        {formatPrice(price)}
+                                    </Typography>
+                                </Paper>
+                            );
+                        })}
+                    </Box>
+                </Box>
+            );
+        }
+
         case "textarea":
             return (
                 <TextField

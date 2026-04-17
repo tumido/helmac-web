@@ -123,6 +123,21 @@ function countValues(counts: OptionCounts, data: Record<string, unknown>): void 
         const str = String(val ?? "");
         if (!str || str === "false") continue;
         if (!counts[name]) counts[name] = {};
+
+        // Handle JSON array values (pricing_multi_select)
+        if (str.startsWith("[")) {
+            try {
+                const arr = JSON.parse(str);
+                if (Array.isArray(arr)) {
+                    for (const item of arr) {
+                        const s = String(item);
+                        if (s) counts[name][s] = (counts[name][s] || 0) + 1;
+                    }
+                    continue;
+                }
+            } catch { /* not JSON, treat as plain string */ }
+        }
+
         counts[name][str] = (counts[name][str] || 0) + 1;
     }
 }
@@ -144,6 +159,23 @@ export const getOptionPeopleForYear = cache(async (yearId: string, personFieldNa
             const str = String(val ?? "");
             if (!str || str === "false") continue;
             if (!people[name]) people[name] = {};
+
+            // Handle JSON array values (pricing_multi_select)
+            if (str.startsWith("[")) {
+                try {
+                    const arr = JSON.parse(str);
+                    if (Array.isArray(arr)) {
+                        for (const item of arr) {
+                            const s = String(item);
+                            if (!s) continue;
+                            if (!people[name][s]) people[name][s] = [];
+                            people[name][s].push(personLabel);
+                        }
+                        continue;
+                    }
+                } catch { /* not JSON, treat as plain string */ }
+            }
+
             if (!people[name][str]) people[name][str] = [];
             people[name][str].push(personLabel);
         }

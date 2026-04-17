@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { AccountTree, Sell, Calculate, InfoOutlined } from "@mui/icons-material";
+import { AccountTree, Sell, Calculate, PlaylistAddCheck, InfoOutlined } from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import type { FormCondition, PricingDefinition } from "@/lib/types/registration-form";
@@ -144,7 +144,8 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
     });
 
     const isQuantity = definition.type === "quantity";
-    const color = isQuantity ? "info" : "success";
+    const isMultiSelect = !isQuantity && definition.multiSelect;
+    const color = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
 
     return (
         <Paper
@@ -172,7 +173,7 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
             }}
         >
             <Box sx={{ color: `${color}.main`, display: "flex" }}>
-                {isQuantity ? <Calculate fontSize="small" /> : <Sell fontSize="small" />}
+                {isQuantity ? <Calculate fontSize="small" /> : isMultiSelect ? <PlaylistAddCheck fontSize="small" /> : <Sell fontSize="small" />}
             </Box>
             <Typography variant="body2" noWrap>
                 {definition.name || "(nepojmenovaná)"}

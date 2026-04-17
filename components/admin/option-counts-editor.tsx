@@ -80,9 +80,9 @@ export function OptionCountsEditor({
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    // Only fields with options (select, radio, pricing_select)
+    // Only fields with options (select, radio, pricing_select, pricing_multi_select)
     const eligibleFields = allInputFields.filter(
-        (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
+        (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select" || f.type === "pricing_multi_select"
     );
 
     const getFieldLabel = (fieldId: string) => {

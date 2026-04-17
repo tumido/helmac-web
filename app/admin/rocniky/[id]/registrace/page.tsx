@@ -59,7 +59,7 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
     // Fields with options for capacity limits
     const allInputFields = formData
         ? getAllInputFields(formData.fields).filter(
-            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select"
+            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select" || f.type === "pricing_multi_select"
         )
         : [];
 

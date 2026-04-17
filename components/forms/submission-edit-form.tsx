@@ -182,6 +182,39 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                         );
                     }
 
+                    case "pricing_multi_select": {
+                        const msDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                        const msOptions = msDef ? msDef.options.map((o) => o.name) : [];
+                        let msSelected: string[] = [];
+                        try {
+                            const parsed = JSON.parse(String(value ?? "[]"));
+                            if (Array.isArray(parsed)) msSelected = parsed;
+                        } catch { /* empty */ }
+                        return (
+                            <Box key={field.id}>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>{field.label}</Typography>
+                                {msOptions.map((opt) => (
+                                    <FormControlLabel
+                                        key={opt}
+                                        control={
+                                            <Checkbox
+                                                size="small"
+                                                checked={msSelected.includes(opt)}
+                                                onChange={(e) => {
+                                                    const newSelected = e.target.checked
+                                                        ? [...msSelected, opt]
+                                                        : msSelected.filter((s) => s !== opt);
+                                                    handleChange(field.name, JSON.stringify(newSelected));
+                                                }}
+                                            />
+                                        }
+                                        label={opt}
+                                    />
+                                ))}
+                            </Box>
+                        );
+                    }
+
                     case "textarea":
                         return (
                             <TextField
@@ -286,6 +319,38 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                                                         size="small"
                                                         inputProps={{ min: 0, step: 1 }}
                                                     />
+                                                );
+                                            }
+                                            case "pricing_multi_select": {
+                                                const apMsDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                                                const apMsOptions = apMsDef ? apMsDef.options.map((o) => o.name) : [];
+                                                let apMsSelected: string[] = [];
+                                                try {
+                                                    const parsed = JSON.parse(String(value ?? "[]"));
+                                                    if (Array.isArray(parsed)) apMsSelected = parsed;
+                                                } catch { /* empty */ }
+                                                return (
+                                                    <Box key={field.id}>
+                                                        <Typography variant="body2" sx={{ mb: 0.5 }}>{field.label}</Typography>
+                                                        {apMsOptions.map((opt) => (
+                                                            <FormControlLabel
+                                                                key={opt}
+                                                                control={
+                                                                    <Checkbox
+                                                                        size="small"
+                                                                        checked={apMsSelected.includes(opt)}
+                                                                        onChange={(e) => {
+                                                                            const newSel = e.target.checked
+                                                                                ? [...apMsSelected, opt]
+                                                                                : apMsSelected.filter((s) => s !== opt);
+                                                                            handleAPChange(personIndex, field.name, JSON.stringify(newSel));
+                                                                        }}
+                                                                    />
+                                                                }
+                                                                label={opt}
+                                                            />
+                                                        ))}
+                                                    </Box>
                                                 );
                                             }
                                             case "radio":

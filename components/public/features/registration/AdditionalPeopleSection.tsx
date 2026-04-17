@@ -95,6 +95,8 @@ export function AdditionalPeopleSection({
                 newPerson[field.name] = false;
             } else if (field.type === "pricing_quantity") {
                 newPerson[field.name] = 0;
+            } else if (field.type === "pricing_multi_select") {
+                newPerson[field.name] = "[]";
             } else {
                 newPerson[field.name] = "";
             }

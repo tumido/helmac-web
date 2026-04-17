@@ -31,7 +31,7 @@ export function computePricingSummary({
     if (pricingDefinitions.length === 0) return null;
 
     const pricingFields = allInputFields.filter(
-        (f) => (f.type === "pricing_select" || f.type === "pricing_quantity") && f.pricingId
+        (f) => (f.type === "pricing_select" || f.type === "pricing_quantity" || f.type === "pricing_multi_select") && f.pricingId
     );
     if (pricingFields.length === 0) return null;
 
@@ -80,6 +80,42 @@ export function computePricingSummary({
                     const opt = def.options[0];
                     if (opt) {
                         selections.push({ def, optionName: opt.name, quantity: personQty });
+                    }
+                });
+            }
+        } else if (field.type === "pricing_multi_select") {
+            // Multi-select pricing: value is JSON array of option names
+            const parseSelected = (val: unknown): string[] => {
+                try {
+                    const arr = JSON.parse(String(val ?? "[]"));
+                    return Array.isArray(arr) ? arr.filter((v): v is string => typeof v === "string") : [];
+                } catch {
+                    return [];
+                }
+            };
+
+            const mainSelected = parseSelected(submissionData[field.name]);
+            if (mainSelected.length > 0 && visibleFieldIds.has(field.id)) {
+                for (const optName of mainSelected) {
+                    const opt = def.options.find((o) => o.name === optName);
+                    if (opt) {
+                        selections.push({ def, optionName: opt.name, quantity: 1 });
+                    }
+                }
+            }
+
+            if (field.includeForAdditionalPeople) {
+                additionalPeople.forEach((person, idx) => {
+                    const personSelected = parseSelected(person[field.name]);
+                    if (personSelected.length === 0) return;
+                    if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
+                        return;
+                    }
+                    for (const optName of personSelected) {
+                        const opt = def.options.find((o) => o.name === optName);
+                        if (opt) {
+                            selections.push({ def, optionName: opt.name, quantity: 1 });
+                        }
                     }
                 });
             }

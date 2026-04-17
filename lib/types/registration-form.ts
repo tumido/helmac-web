@@ -11,6 +11,7 @@ export type FieldType =
     | "birth_date"
     | "pricing_select"
     | "pricing_quantity"
+    | "pricing_multi_select"
     | "heading"
     | "description";
 
@@ -45,6 +46,7 @@ export interface PricingDefinition {
     id: string;
     name: string;           // admin label, e.g. "Ubytování"
     type?: "options" | "quantity"; // "options" (default) = pick from options, "quantity" = per-unit quantity
+    multiSelect?: boolean;  // for options type: allow selecting multiple options
     unitName?: string;      // for quantity type: unit label, e.g. "den", "porce"
     priceTiers: string[];   // ISO date deadlines, shared across options
     options: PricedOption[];
@@ -223,6 +225,7 @@ export const FIELD_TYPE_META: Record<
     birth_date: { label: "Datum narození", icon: "Cake", group: "input" },
     pricing_select: { label: "Cenový výběr", icon: "Sell", group: "pricing" },
     pricing_quantity: { label: "Cenový počet", icon: "Calculate", group: "pricing" },
+    pricing_multi_select: { label: "Cenový vícevýběr", icon: "PlaylistAddCheck", group: "pricing" },
     heading: { label: "Nadpis", icon: "Title", group: "layout" },
     description: { label: "Popisek", icon: "Article", group: "layout" },
 };
