@@ -897,7 +897,15 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
 
                         {/* Right column: palette (desktop only) */}
                         {!isMobile && (
-                            <Box sx={{ width: 220, flexShrink: 0 }}>
+                            <Box sx={{
+                                width: 220,
+                                flexShrink: 0,
+                                position: "sticky",
+                                top: 80,
+                                alignSelf: "flex-start",
+                                maxHeight: "calc(100vh - 96px)",
+                                overflow: "auto",
+                            }}>
                                 <FieldPalette
                                     conditions={conditions}
                                     pricingDefinitions={pricingDefinitions}

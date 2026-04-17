@@ -46,7 +46,7 @@ export function AdminLayout({ children, userName, userRole, activeYearId }: Admi
                             p: { xs: 2, sm: 3 },
                             width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
                             backgroundColor: "background.default",
-                            overflow: "hidden",
+                            overflowX: "clip",
                         }}
                     >
                         <Toolbar />
