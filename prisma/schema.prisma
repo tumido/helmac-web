@@ -136,6 +136,7 @@ model Year {
   albums        Album[]
   registrationForm        RegistrationForm?
   registrationSubmissions RegistrationSubmission[]
+  formPreview             FormPreview?
   programDays   ProgramDay[]
   rules         Rule[]
   offers        Offer[]
@@ -494,4 +495,20 @@ enum RegistrationStatus {
     WAITLIST
     CANCELLED
     REJECTED
+}
+
+// ============================================
+// FORM PREVIEW - Shareable form preview links
+// ============================================
+
+model FormPreview {
+    id        String   @id @default(cuid())
+    yearId    String   @unique
+    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+    token     String   @unique @default(cuid())
+    data      Json
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("form_previews")
 }

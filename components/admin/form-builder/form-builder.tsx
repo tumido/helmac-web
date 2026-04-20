@@ -17,7 +17,7 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
-import { Add, Save, Visibility, Delete, TuneOutlined } from "@mui/icons-material";
+import { Add, Save, Visibility, Delete, TuneOutlined, ContentCopy } from "@mui/icons-material";
 import {
     DndContext,
     DragOverlay,
@@ -49,6 +49,7 @@ import { ConditionBlockItem } from "./condition-block-item";
 import { ConditionEditor } from "./condition-editor";
 import { PricingEditor } from "./pricing-editor";
 import { saveRegistrationForm, deleteRegistrationForm } from "@/lib/actions/registration-forms";
+import { saveFormPreview } from "@/lib/actions/form-preview";
 import { FIELD_TYPE_META, getAllFields } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
 import {
@@ -104,6 +105,8 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
     const [deleting, setDeleting] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [deletionBlock, setDeletionBlock] = useState<{ title: string; message: string; details: string[] } | null>(null);
+    const [previewToken, setPreviewToken] = useState<string | null>(null);
+    const [previewSaving, setPreviewSaving] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -813,23 +816,45 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                 <Button
                     variant="outlined"
                     startIcon={<Visibility />}
-                    onClick={() => {
-                        const formData: RegistrationFormData = {
-                            conditions,
-                            pricingDefinitions,
-                            priceTiers,
-                            capacityLimits,
-                            showOptionCounts,
-                            infoStatsConfig,
-                            fields: elements,
-                        };
-                        localStorage.setItem("form-preview-data", JSON.stringify(formData));
-                        window.open(`/admin/rocniky/${yearId}/registrace/nahled`, "_blank");
+                    onClick={async () => {
+                        setPreviewSaving(true);
+                        try {
+                            const formData: RegistrationFormData = {
+                                conditions,
+                                pricingDefinitions,
+                                priceTiers,
+                                capacityLimits,
+                                showOptionCounts,
+                                infoStatsConfig,
+                                fields: elements,
+                            };
+                            const { token } = await saveFormPreview(yearId, formData);
+                            setPreviewToken(token);
+                            window.open(`/nahled/${token}`, "_blank");
+                        } catch {
+                            setError("Nepodařilo se vytvořit náhled");
+                        } finally {
+                            setPreviewSaving(false);
+                        }
                     }}
-                    disabled={elements.length === 0}
+                    disabled={elements.length === 0 || previewSaving}
                 >
-                    Náhled
+                    {previewSaving ? "Ukládám..." : "Náhled"}
                 </Button>
+
+                {previewToken && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<ContentCopy />}
+                        onClick={() => {
+                            const url = `${window.location.origin}/nahled/${previewToken}`;
+                            navigator.clipboard.writeText(url);
+                        }}
+                    >
+                        Kopírovat odkaz
+                    </Button>
+                )}
 
                 <Button
                     variant="contained"
