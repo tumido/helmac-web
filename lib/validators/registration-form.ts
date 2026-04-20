@@ -45,7 +45,7 @@ const pricingDefinitionSchema = z.object({
     type: z.enum(["options", "quantity"]).optional(),
     multiSelect: z.boolean().optional(),
     unitName: z.string().optional(),
-    priceTiers: z.array(z.string()),
+    usePriceTiers: z.boolean(),
     options: z.array(pricedOptionSchema).min(1, "Cenová skupina musí mít alespoň jednu možnost"),
 });
 
@@ -99,6 +99,7 @@ export const saveInfoStatsConfigSchema = z.object({
 export const saveRegistrationFormSchema = z.object({
     conditions: z.array(formConditionSchema),
     pricingDefinitions: z.array(pricingDefinitionSchema),
+    priceTiers: z.array(z.string()).default([]),
     capacityLimits: z.array(capacityLimitSchema).default([]),
     showOptionCounts: z.array(z.string()).default([]),
     fields: z.array(formElementSchema),
@@ -208,10 +209,11 @@ export const saveRegistrationFormSchema = z.object({
         }
     }
 
-    // Validate pricing option prices length matches tiers + 1
+    // Validate pricing option prices length matches tiers + 1 (or 1 for flat pricing)
     for (const def of pricingDefinitions) {
+        const expectedLength = def.usePriceTiers ? data.priceTiers.length + 1 : 1;
         for (const opt of def.options) {
-            if (opt.prices.length !== def.priceTiers.length + 1) {
+            if (opt.prices.length !== expectedLength) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     message: `Možnost "${opt.name}" v cenové skupině "${def.name}" má nesprávný počet cen`,

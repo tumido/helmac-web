@@ -175,6 +175,7 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                                 error={isInputField(field) ? getFieldError(field.name) : undefined}
                                 onChange={handleChange}
                                 pricingDefinitions={formData.pricingDefinitions}
+                                priceTiers={formData.priceTiers}
                                 disabledOptions={disabledOpts}
                             />
                         );
@@ -196,6 +197,7 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                 {formData.pricingDefinitions.length > 0 && (
                     <PriceSummary
                         pricingDefinitions={formData.pricingDefinitions}
+                        priceTiers={formData.priceTiers ?? []}
                         allInputFields={allInputFields}
                         mainValues={values}
                         additionalPeople={additionalPeople}

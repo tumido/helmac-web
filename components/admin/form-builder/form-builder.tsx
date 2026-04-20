@@ -90,6 +90,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
     });
     const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
     const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
+    const [priceTiers, setPriceTiers] = useState<string[]>(initialFormData.priceTiers ?? []);
     const [capacityLimits] = useState(initialFormData.capacityLimits ?? []);
     const [showOptionCounts] = useState(initialFormData.showOptionCounts ?? []);
     const [infoStatsConfig] = useState(initialFormData.infoStatsConfig);
@@ -322,6 +323,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
         const formData: RegistrationFormData = {
             conditions,
             pricingDefinitions,
+            priceTiers,
             capacityLimits,
             showOptionCounts,
             infoStatsConfig,
@@ -815,6 +817,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                         const formData: RegistrationFormData = {
                             conditions,
                             pricingDefinitions,
+                            priceTiers,
                             capacityLimits,
                             showOptionCounts,
                             infoStatsConfig,
@@ -942,6 +945,8 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             {builderTab === 2 && (
                 <PricingEditor
                     pricingDefinitions={pricingDefinitions}
+                    priceTiers={priceTiers}
+                    onPriceTiersChange={setPriceTiers}
                     elements={elements}
                     onChange={setPricingDefinitions}
                 />
@@ -960,6 +965,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                 onSave={handleSaveField}
                 conditions={conditions}
                 pricingDefinitions={pricingDefinitions}
+                priceTiers={priceTiers}
             />
 
             <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>

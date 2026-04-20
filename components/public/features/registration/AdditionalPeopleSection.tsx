@@ -161,6 +161,7 @@ export function AdditionalPeopleSection({
                                         error={personErrors?.[field.name]?.[0]}
                                         onChange={(name, val) => handleFieldChange(personIndex, name, val)}
                                         pricingDefinitions={formData.pricingDefinitions}
+                                        priceTiers={formData.priceTiers}
                                         namePrefix={`ap_${personIndex}_`}
                                         disabledOptions={disabledOpts}
                                     />

@@ -421,6 +421,7 @@ export async function submitDynamicRegistration(
     // Compute pricing summary and generate variable symbol
     const pricingSummary = computePricingSummary({
         pricingDefinitions: formDataStored.pricingDefinitions,
+        priceTiers: formDataStored.priceTiers ?? [],
         allInputFields,
         submissionData,
         additionalPeople: parsedAP,

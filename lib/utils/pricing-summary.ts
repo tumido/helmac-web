@@ -9,6 +9,7 @@ import { getCurrentTierIndex } from "@/lib/utils/pricing";
 
 interface ComputePricingSummaryParams {
     pricingDefinitions: PricingDefinition[];
+    priceTiers: string[];
     allInputFields: InputField[];
     submissionData: Record<string, unknown>;
     additionalPeople: AdditionalPersonData[];
@@ -22,6 +23,7 @@ interface ComputePricingSummaryParams {
  */
 export function computePricingSummary({
     pricingDefinitions,
+    priceTiers,
     allInputFields,
     submissionData,
     additionalPeople,
@@ -35,14 +37,8 @@ export function computePricingSummary({
     );
     if (pricingFields.length === 0) return null;
 
-    // Collect all unique tier dates across all pricing definitions, sorted chronologically
-    const tierDateSet = new Set<string>();
-    for (const def of pricingDefinitions) {
-        for (const date of def.priceTiers) {
-            tierDateSet.add(date);
-        }
-    }
-    const allTierDates = Array.from(tierDateSet).sort(
+    // Use form-level shared tier dates
+    const allTierDates = [...priceTiers].sort(
         (a, b) => new Date(a).getTime() - new Date(b).getTime()
     );
 
@@ -157,7 +153,8 @@ export function computePricingSummary({
         let totalPrice = 0;
 
         for (const { def, optionName, quantity } of selections) {
-            const tierIdx = getCurrentTierIndex(def.priceTiers, simulatedDate);
+            const defTiers = def.usePriceTiers ? priceTiers : [];
+            const tierIdx = getCurrentTierIndex(defTiers, simulatedDate);
             const opt = def.options.find((o) => o.name === optionName);
             if (opt) {
                 totalPrice += (opt.prices[tierIdx] ?? 0) * quantity;
@@ -174,7 +171,8 @@ export function computePricingSummary({
         let totalPrice = 0;
 
         for (const { def, optionName, quantity } of selections) {
-            const tierIdx = getCurrentTierIndex(def.priceTiers, farFuture);
+            const defTiers = def.usePriceTiers ? priceTiers : [];
+            const tierIdx = getCurrentTierIndex(defTiers, farFuture);
             const opt = def.options.find((o) => o.name === optionName);
             if (opt) {
                 totalPrice += (opt.prices[tierIdx] ?? 0) * quantity;

@@ -48,7 +48,7 @@ export interface PricingDefinition {
     type?: "options" | "quantity"; // "options" (default) = pick from options, "quantity" = per-unit quantity
     multiSelect?: boolean;  // for options type: allow selecting multiple options
     unitName?: string;      // for quantity type: unit label, e.g. "den", "porce"
-    priceTiers: string[];   // ISO date deadlines, shared across options
+    usePriceTiers: boolean; // whether this definition uses the shared form-level tiers
     options: PricedOption[];
 }
 
@@ -102,6 +102,7 @@ export type FormElement = FormField | ConditionBlock;
 export interface RegistrationFormData {
     conditions: FormCondition[];           // defined in "Podmínky" tab
     pricingDefinitions: PricingDefinition[]; // defined in "Ceník" tab
+    priceTiers: string[];                  // shared ISO date deadlines for pricing
     capacityLimits: CapacityLimit[];       // capacity limits for options
     showOptionCounts: string[];            // field IDs whose option counts are shown publicly
     infoStatsConfig?: InfoStatsConfig;     // info page statistics configuration

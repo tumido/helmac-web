@@ -23,9 +23,10 @@ interface FormPreviewProps {
     elements: FormElement[];
     conditions: FormCondition[];
     pricingDefinitions?: PricingDefinition[];
+    priceTiers?: string[];
 }
 
-export function FormPreview({ elements, conditions, pricingDefinitions }: FormPreviewProps) {
+export function FormPreview({ elements, conditions, pricingDefinitions, priceTiers }: FormPreviewProps) {
     if (elements.length === 0) {
         return (
             <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
@@ -60,20 +61,20 @@ export function FormPreview({ elements, conditions, pricingDefinitions }: FormPr
                                 </Typography>
                                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                     {el.children.map((child) => (
-                                        <PreviewField key={child.id} field={child} pricingDefinitions={pricingDefinitions} />
+                                        <PreviewField key={child.id} field={child} pricingDefinitions={pricingDefinitions} priceTiers={priceTiers} />
                                     ))}
                                 </Box>
                             </Box>
                         );
                     }
-                    return <PreviewField key={el.id} field={el} pricingDefinitions={pricingDefinitions} />;
+                    return <PreviewField key={el.id} field={el} pricingDefinitions={pricingDefinitions} priceTiers={priceTiers} />;
                 })}
             </Box>
         </Paper>
     );
 }
 
-function PreviewField({ field, pricingDefinitions }: { field: FormField; pricingDefinitions?: PricingDefinition[] }) {
+function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormField; pricingDefinitions?: PricingDefinition[]; priceTiers?: string[] }) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -144,7 +145,7 @@ function PreviewField({ field, pricingDefinitions }: { field: FormField; pricing
                     </Typography>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                         {def.options.map((opt) => {
-                            const price = getCurrentPrice(def.priceTiers, opt.prices);
+                            const price = getCurrentPrice(def.usePriceTiers ? (priceTiers ?? []) : [], opt.prices);
                             return (
                                 <Paper
                                     key={opt.id}
@@ -172,7 +173,7 @@ function PreviewField({ field, pricingDefinitions }: { field: FormField; pricing
             const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
             if (!def) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
             const unitOpt = def.options[0];
-            const unitPrice = unitOpt ? getCurrentPrice(def.priceTiers, unitOpt.prices) : 0;
+            const unitPrice = unitOpt ? getCurrentPrice(def.usePriceTiers ? (priceTiers ?? []) : [], unitOpt.prices) : 0;
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
@@ -213,7 +214,7 @@ function PreviewField({ field, pricingDefinitions }: { field: FormField; pricing
                     </Typography>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                         {msDef.options.map((opt) => {
-                            const price = getCurrentPrice(msDef.priceTiers, opt.prices);
+                            const price = getCurrentPrice(msDef.usePriceTiers ? (priceTiers ?? []) : [], opt.prices);
                             return (
                                 <Paper
                                     key={opt.id}

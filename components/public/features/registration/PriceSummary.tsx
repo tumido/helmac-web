@@ -12,6 +12,7 @@ import { getCurrentTierIndex, formatPrice } from "@/lib/utils/pricing";
 
 interface PriceSummaryProps {
     pricingDefinitions: PricingDefinition[];
+    priceTiers: string[];
     allInputFields: InputField[];
     mainValues: SubmissionData;
     additionalPeople: AdditionalPersonData[];
@@ -27,6 +28,7 @@ interface PriceLineItem {
 
 export function PriceSummary({
     pricingDefinitions,
+    priceTiers,
     allInputFields,
     mainValues,
     additionalPeople,
@@ -45,7 +47,7 @@ export function PriceSummary({
         for (const field of pricingFields) {
             const def = pricingDefinitions.find((d) => d.id === field.pricingId);
             if (!def) continue;
-            const tierIdx = getCurrentTierIndex(def.priceTiers);
+            const tierIdx = getCurrentTierIndex(def.usePriceTiers ? priceTiers : []);
 
             if (field.type === "pricing_quantity") {
                 const unitOpt = def.options[0];

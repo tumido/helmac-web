@@ -28,11 +28,12 @@ interface DynamicFormFieldProps {
     error?: string;
     onChange: (name: string, value: string | number | boolean) => void;
     pricingDefinitions?: PricingDefinition[];
+    priceTiers?: string[];
     namePrefix?: string; // Prefix for HTML name attributes (used by AP fields to avoid DOM conflicts)
     disabledOptions?: Set<string>; // Option values that are at capacity
 }
 
-export function DynamicFormField({ field, value, error, onChange, pricingDefinitions, namePrefix, disabledOptions }: DynamicFormFieldProps) {
+export function DynamicFormField({ field, value, error, onChange, pricingDefinitions, priceTiers, namePrefix, disabledOptions }: DynamicFormFieldProps) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -200,7 +201,8 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "pricing_select": {
             const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
             if (!def) return null;
-            const currentTier = getCurrentTierIndex(def.priceTiers);
+            const defTiers = def.usePriceTiers ? (priceTiers ?? []) : [];
+            const currentTier = getCurrentTierIndex(defTiers);
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
@@ -254,7 +256,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                     )}
                                     {opt.prices.some((p: number) => p !== 0) && (
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mt: 0.5 }}>
-                                            {def.priceTiers.map((tier, idx) => {
+                                            {defTiers.map((tier, idx) => {
                                                 if (opt.prices[idx] === 0) return null;
                                                 const isCurrent = idx === currentTier;
                                                 return (
@@ -270,15 +272,15 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                                     </Typography>
                                                 );
                                             })}
-                                            {opt.prices[def.priceTiers.length] !== 0 && (
+                                            {opt.prices[defTiers.length] !== 0 && (
                                                 <Typography
                                                     variant="body2"
                                                     sx={{
-                                                        fontWeight: currentTier === def.priceTiers.length ? 700 : 400,
-                                                        color: currentTier === def.priceTiers.length ? "primary.main" : "text.secondary",
+                                                        fontWeight: currentTier === defTiers.length ? 700 : 400,
+                                                        color: currentTier === defTiers.length ? "primary.main" : "text.secondary",
                                                     }}
                                                 >
-                                                    {currentTier === def.priceTiers.length && "► "}{def.priceTiers.length > 0 ? "na místě: " : ""}{formatPrice(opt.prices[def.priceTiers.length])}
+                                                    {currentTier === defTiers.length && "► "}{defTiers.length > 0 ? "na místě: " : ""}{formatPrice(opt.prices[defTiers.length])}
                                                 </Typography>
                                             )}
                                         </Box>
@@ -298,7 +300,8 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
             if (!def) return null;
             const unitOpt = def.options[0];
             if (!unitOpt) return null;
-            const currentTier = getCurrentTierIndex(def.priceTiers);
+            const defTiersQ = def.usePriceTiers ? (priceTiers ?? []) : [];
+            const currentTier = getCurrentTierIndex(defTiersQ);
             const unitPrice = unitOpt.prices[currentTier] ?? 0;
             const qty = Number(value) || 0;
             const totalPrice = qty * unitPrice;
@@ -334,7 +337,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                         <Typography variant="body2" color="text.secondary">
                             Cena za {def.unitName || "jednotku"}:
                         </Typography>
-                        {def.priceTiers.map((tier, idx) => {
+                        {defTiersQ.map((tier, idx) => {
                             if (unitOpt.prices[idx] === 0) return null;
                             const isCurrent = idx === currentTier;
                             return (
@@ -350,15 +353,15 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                 </Typography>
                             );
                         })}
-                        {unitOpt.prices[def.priceTiers.length] !== 0 && (
+                        {unitOpt.prices[defTiersQ.length] !== 0 && (
                             <Typography
                                 variant="body2"
                                 sx={{
-                                    fontWeight: currentTier === def.priceTiers.length ? 700 : 400,
-                                    color: currentTier === def.priceTiers.length ? "info.main" : "text.secondary",
+                                    fontWeight: currentTier === defTiersQ.length ? 700 : 400,
+                                    color: currentTier === defTiersQ.length ? "info.main" : "text.secondary",
                                 }}
                             >
-                                {currentTier === def.priceTiers.length && "► "}{def.priceTiers.length > 0 ? "na místě: " : ""}{formatPrice(unitOpt.prices[def.priceTiers.length])}
+                                {currentTier === defTiersQ.length && "► "}{defTiersQ.length > 0 ? "na místě: " : ""}{formatPrice(unitOpt.prices[defTiersQ.length])}
                             </Typography>
                         )}
                     </Box>
@@ -374,7 +377,8 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
         case "pricing_multi_select": {
             const msDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
             if (!msDef) return null;
-            const msCurrentTier = getCurrentTierIndex(msDef.priceTiers);
+            const msDefTiers = msDef.usePriceTiers ? (priceTiers ?? []) : [];
+            const msCurrentTier = getCurrentTierIndex(msDefTiers);
             let msSelected: string[] = [];
             try {
                 const parsed = JSON.parse(String(value || "[]"));
@@ -460,7 +464,7 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                     )}
                                     {opt.prices.some((p: number) => p !== 0) && (
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, mt: 0.5, ml: 3.5 }}>
-                                            {msDef.priceTiers.map((tier, idx) => {
+                                            {msDefTiers.map((tier, idx) => {
                                                 if (opt.prices[idx] === 0) return null;
                                                 const isCurrent = idx === msCurrentTier;
                                                 return (
@@ -476,15 +480,15 @@ export function DynamicFormField({ field, value, error, onChange, pricingDefinit
                                                     </Typography>
                                                 );
                                             })}
-                                            {opt.prices[msDef.priceTiers.length] !== 0 && (
+                                            {opt.prices[msDefTiers.length] !== 0 && (
                                                 <Typography
                                                     variant="body2"
                                                     sx={{
-                                                        fontWeight: msCurrentTier === msDef.priceTiers.length ? 700 : 400,
-                                                        color: msCurrentTier === msDef.priceTiers.length ? "secondary.main" : "text.secondary",
+                                                        fontWeight: msCurrentTier === msDefTiers.length ? 700 : 400,
+                                                        color: msCurrentTier === msDefTiers.length ? "secondary.main" : "text.secondary",
                                                     }}
                                                 >
-                                                    {msCurrentTier === msDef.priceTiers.length && "► "}{msDef.priceTiers.length > 0 ? "na místě: " : ""}{formatPrice(opt.prices[msDef.priceTiers.length])}
+                                                    {msCurrentTier === msDefTiers.length && "► "}{msDefTiers.length > 0 ? "na místě: " : ""}{formatPrice(opt.prices[msDefTiers.length])}
                                                 </Typography>
                                             )}
                                         </Box>

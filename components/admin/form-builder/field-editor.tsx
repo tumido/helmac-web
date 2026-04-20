@@ -29,9 +29,10 @@ interface FieldEditorProps {
     onSave: (field: FormField) => void;
     conditions?: FormCondition[];
     pricingDefinitions?: PricingDefinition[];
+    priceTiers?: string[];
 }
 
-export function FieldEditor({ open, field, onClose, onSave, conditions, pricingDefinitions }: FieldEditorProps) {
+export function FieldEditor({ open, field, onClose, onSave, conditions, pricingDefinitions, priceTiers }: FieldEditorProps) {
     if (!field) return null;
 
     return (
@@ -43,11 +44,12 @@ export function FieldEditor({ open, field, onClose, onSave, conditions, pricingD
             onSave={onSave}
             conditions={conditions}
             pricingDefinitions={pricingDefinitions}
+            priceTiers={priceTiers}
         />
     );
 }
 
-function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDefinitions }: Omit<FieldEditorProps, "field"> & { field: FormField }) {
+function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDefinitions, priceTiers }: Omit<FieldEditorProps, "field"> & { field: FormField }) {
     const [editData, setEditData] = useState<FormField>(() => structuredClone(field));
 
     const isInput = isInputField(editData);
@@ -129,21 +131,24 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
                                             Cenová skupina: {def?.name || "(nenalezena)"}
                                         </Typography>
-                                        {def && (
-                                            <>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"} · {def.priceTiers.length} {def.priceTiers.length === 1 ? "termín" : "termíny"}
-                                                </Typography>
-                                                <Box sx={{ mt: 1 }}>
-                                                    {def.options.map((opt) => (
-                                                        <Typography key={opt.id} variant="body2" sx={{ mb: 0.5 }}>
-                                                            {opt.name}{opt.description ? ` — ${opt.description}` : ""} ({def.priceTiers.map((_, i) => formatPrice(opt.prices[i])).join(" / ")}
-                                                            {def.priceTiers.length > 0 ? " / " : ""}{formatPrice(opt.prices[def.priceTiers.length])})
-                                                        </Typography>
-                                                    ))}
-                                                </Box>
-                                            </>
-                                        )}
+                                        {def && (() => {
+                                            const defTiers = def.usePriceTiers ? (priceTiers ?? []) : [];
+                                            return (
+                                                <>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"}{def.usePriceTiers ? ` · ${defTiers.length} ${defTiers.length === 1 ? "termín" : "termíny"}` : " · paušální cena"}
+                                                    </Typography>
+                                                    <Box sx={{ mt: 1 }}>
+                                                        {def.options.map((opt) => (
+                                                            <Typography key={opt.id} variant="body2" sx={{ mb: 0.5 }}>
+                                                                {opt.name}{opt.description ? ` — ${opt.description}` : ""} ({defTiers.map((_, i) => formatPrice(opt.prices[i])).join(" / ")}
+                                                                {defTiers.length > 0 ? " / " : ""}{formatPrice(opt.prices[defTiers.length])})
+                                                            </Typography>
+                                                        ))}
+                                                    </Box>
+                                                </>
+                                            );
+                                        })()}
                                         <Typography variant="caption" color="primary" sx={{ mt: 1, display: "block" }}>
                                             Upravit ceny v záložce Ceník
                                         </Typography>
@@ -159,19 +164,22 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
                                             Cenový počet: {def?.name || "(nenalezena)"}
                                         </Typography>
-                                        {def && (
-                                            <>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Jednotka: {def.unitName || "(nenastavena)"} · {def.priceTiers.length} {def.priceTiers.length === 1 ? "termín" : "termíny"}
-                                                </Typography>
-                                                {unitOpt && (
-                                                    <Typography variant="body2" sx={{ mt: 1 }}>
-                                                        Cena za jednotku: {def.priceTiers.map((_, i) => formatPrice(unitOpt.prices[i])).join(" / ")}
-                                                        {def.priceTiers.length > 0 ? " / " : ""}{formatPrice(unitOpt.prices[def.priceTiers.length])}
+                                        {def && (() => {
+                                            const defTiersQ = def.usePriceTiers ? (priceTiers ?? []) : [];
+                                            return (
+                                                <>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Jednotka: {def.unitName || "(nenastavena)"}{def.usePriceTiers ? ` · ${defTiersQ.length} ${defTiersQ.length === 1 ? "termín" : "termíny"}` : " · paušální cena"}
                                                     </Typography>
-                                                )}
-                                            </>
-                                        )}
+                                                    {unitOpt && (
+                                                        <Typography variant="body2" sx={{ mt: 1 }}>
+                                                            Cena za jednotku: {defTiersQ.map((_, i) => formatPrice(unitOpt.prices[i])).join(" / ")}
+                                                            {defTiersQ.length > 0 ? " / " : ""}{formatPrice(unitOpt.prices[defTiersQ.length])}
+                                                        </Typography>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                         <Typography variant="caption" color="primary" sx={{ mt: 1, display: "block" }}>
                                             Upravit ceny v záložce Ceník
                                         </Typography>
