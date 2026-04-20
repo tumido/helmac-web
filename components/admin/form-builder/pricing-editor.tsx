@@ -28,6 +28,8 @@ import {
     ExpandMore,
     ExpandLess,
     Sell,
+    Calculate,
+    PlaylistAddCheck,
     CategoryOutlined,
     CalendarTodayOutlined,
     WarningAmberOutlined,
@@ -110,10 +112,12 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
 
     // --- Definition handlers ---
 
-    const handleAddDefinition = () => {
+    const handleAddDefinition = (type?: "options" | "quantity", multiSelect?: boolean) => {
         const newDef: PricingDefinition = {
             id: crypto.randomUUID(),
             name: "",
+            type: type,
+            multiSelect: multiSelect,
             usePriceTiers: false,
             options: [
                 {
@@ -306,6 +310,11 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {pricingDefinitions.map((def) => {
                     const isExpanded = expandedId === def.id;
+                    const isQuantity = def.type === "quantity";
+                    const isMultiSelect = !isQuantity && def.multiSelect;
+                    const typeColor = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
+                    const TypeIcon = isQuantity ? Calculate : isMultiSelect ? PlaylistAddCheck : Sell;
+                    const typeLabel = isQuantity ? "Cenový počet" : isMultiSelect ? "Cenový vícevýběr" : "Cenový výběr";
                     return (
                         <Card key={def.id} variant="outlined" sx={{ borderRadius: 2 }}>
                             <Box
@@ -324,21 +333,21 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                         width: 32,
                                         height: 32,
                                         borderRadius: 1,
-                                        backgroundColor: "success.main",
+                                        backgroundColor: `${typeColor}.main`,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         flexShrink: 0,
                                     }}
                                 >
-                                    <Sell sx={{ fontSize: 18, color: "white" }} />
+                                    <TypeIcon sx={{ fontSize: 18, color: "white" }} />
                                 </Box>
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography variant="body1" fontWeight={500} noWrap>
                                         {def.name || "(nepojmenovaná)"}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"}
+                                        {typeLabel} · {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"}
                                         {def.usePriceTiers ? ` · ${priceTiers.length} ${priceTiers.length === 1 ? "termín" : "termíny"}` : " · paušální cena"}
                                     </Typography>
                                 </Box>
@@ -486,15 +495,32 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                 })}
             </Box>
 
-            <Button
-                variant="outlined"
-                startIcon={<Add />}
-                onClick={handleAddDefinition}
-                sx={{ mt: 2 }}
-                fullWidth
-            >
-                Přidat cenovou skupinu
-            </Button>
+            <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<Sell />}
+                    onClick={() => handleAddDefinition("options", false)}
+                    sx={{ flex: "1 1 0", minWidth: 200, color: "success.main", borderColor: "success.main", "&:hover": { borderColor: "success.dark", backgroundColor: "rgba(46, 125, 50, 0.04)" } }}
+                >
+                    Přidat cenový výběr
+                </Button>
+                <Button
+                    variant="outlined"
+                    startIcon={<PlaylistAddCheck />}
+                    onClick={() => handleAddDefinition("options", true)}
+                    sx={{ flex: "1 1 0", minWidth: 200, color: "secondary.main", borderColor: "secondary.main", "&:hover": { borderColor: "secondary.dark", backgroundColor: "rgba(156, 39, 176, 0.04)" } }}
+                >
+                    Přidat cenový vícevýběr
+                </Button>
+                <Button
+                    variant="outlined"
+                    startIcon={<Calculate />}
+                    onClick={() => handleAddDefinition("quantity", false)}
+                    sx={{ flex: "1 1 0", minWidth: 200, color: "info.main", borderColor: "info.main", "&:hover": { borderColor: "info.dark", backgroundColor: "rgba(2, 136, 209, 0.04)" } }}
+                >
+                    Přidat cenový počet
+                </Button>
+            </Box>
 
             {/* Stats summary */}
             {pricingDefinitions.length > 0 && (
