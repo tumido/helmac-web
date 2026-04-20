@@ -54,7 +54,7 @@ export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
     useEffect(() => {
         if (!hasToc) return;
 
-        updatePosition();
+        requestAnimationFrame(updatePosition);
         window.addEventListener("scroll", updatePosition, { passive: true });
         window.addEventListener("resize", updatePosition, { passive: true });
 

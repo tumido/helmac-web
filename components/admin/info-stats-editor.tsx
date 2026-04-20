@@ -36,49 +36,6 @@ const defaultConfig: InfoStatsConfig = {
     stats: [],
 };
 
-function OptionCountsList({ fields, optionCounts }: { fields: InputField[]; optionCounts?: OptionCounts }) {
-    if (fields.length === 0) return null;
-
-    return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
-            {fields.map((field) => {
-                const options = field.options && field.options.length > 0
-                    ? field.options
-                    : optionCounts?.[field.name] ? Object.keys(optionCounts[field.name]) : [];
-
-                if (options.length === 0) return null;
-
-                return (
-                    <Box key={field.id}>
-                        {options.map((option) => {
-                            const count = optionCounts?.[field.name]?.[option] ?? 0;
-                            return (
-                                <Box
-                                    key={option}
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        px: 1,
-                                        py: 0.25,
-                                    }}
-                                >
-                                    <Typography variant="body2" color="text.secondary">
-                                        {option}
-                                    </Typography>
-                                    <Typography variant="body2" fontWeight="medium">
-                                        {count}&times;
-                                    </Typography>
-                                </Box>
-                            );
-                        })}
-                    </Box>
-                );
-            })}
-        </Box>
-    );
-}
-
 function createNewStat(): InfoStatItem {
     return {
         id: crypto.randomUUID(),
@@ -92,7 +49,6 @@ export function InfoStatsEditor({
     infoStatsConfig: initialConfig,
     allInputFields,
     optionFields,
-    optionCounts,
 }: InfoStatsEditorProps) {
     const [config, setConfig] = useState<InfoStatsConfig>(initialConfig ?? defaultConfig);
     const [saving, setSaving] = useState(false);

@@ -159,7 +159,7 @@ export function PriceSummary({
         }
 
         return { mainLines, apLines, grandTotal };
-    }, [pricingDefinitions, allInputFields, mainValues, additionalPeople, visibleMainFields, visibleAPFieldsPerPerson]);
+    }, [pricingDefinitions, priceTiers, allInputFields, mainValues, additionalPeople, visibleMainFields, visibleAPFieldsPerPerson]);
 
     // Show only when there's at least one price line
     if (summary.mainLines.length === 0 && summary.apLines.length === 0) {

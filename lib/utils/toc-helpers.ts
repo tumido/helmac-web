@@ -31,7 +31,7 @@ export function injectHeadingIds(html: string): string {
 
     return html.replace(/<h([23])([^>]*)>([\s\S]*?)<\/h[23]>/gi, (match, level, attrs, inner) => {
         const text = stripHtmlTags(inner);
-        let baseId = generateSlug(text) || `heading-${level}`;
+        const baseId = generateSlug(text) || `heading-${level}`;
 
         const count = usedIds.get(baseId) ?? 0;
         usedIds.set(baseId, count + 1);

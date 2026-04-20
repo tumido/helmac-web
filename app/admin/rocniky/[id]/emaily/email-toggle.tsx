@@ -17,7 +17,6 @@ interface EmailToggleProps {
 export function EmailToggle({
     yearId,
     initialEnabled,
-    hasTemplate,
     toggleAction = toggleConfirmationEmail,
     label = "Odesílat potvrzovací email po registraci",
 }: EmailToggleProps) {

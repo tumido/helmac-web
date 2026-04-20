@@ -45,6 +45,7 @@ export function ThemeModeProvider({ initialMode, children }: ThemeModeProviderPr
         if (saved === "dark" || saved === "light") {
             setThemeCookie(saved);
             if (saved !== initialMode) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing localStorage to state on mount
                 setMode(saved);
             }
         } else {

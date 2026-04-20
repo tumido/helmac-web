@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { RuleTabs } from "./RuleTabs";
@@ -17,20 +16,11 @@ export function RulesContent({ rules }: RulesContentProps) {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
-    const initialId = (tabParam && rules.some((r) => r.id === tabParam))
+    const selectedRuleId = (tabParam && rules.some((r) => r.id === tabParam))
         ? tabParam
         : rules[0]?.id || "";
 
-    const [selectedRuleId, setSelectedRuleId] = useState(initialId);
-
-    useEffect(() => {
-        if (tabParam && rules.some((r) => r.id === tabParam)) {
-            setSelectedRuleId(tabParam);
-        }
-    }, [tabParam]);
-
     const handleRuleChange = (ruleId: string) => {
-        setSelectedRuleId(ruleId);
         router.replace(`${pathname}?tab=${ruleId}`, { scroll: false });
     };
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { InfoTabs, type ExtraTab } from "./InfoTabs";
@@ -25,20 +24,11 @@ export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
         ...(statsContent ? [STATS_TAB_ID] : []),
     ];
 
-    const initialId = (tabParam && allTabIds.includes(tabParam))
+    const selectedInfoId = (tabParam && allTabIds.includes(tabParam))
         ? tabParam
         : infoSections[0]?.id || "";
 
-    const [selectedInfoId, setSelectedInfoId] = useState(initialId);
-
-    useEffect(() => {
-        if (tabParam && allTabIds.includes(tabParam)) {
-            setSelectedInfoId(tabParam);
-        }
-    }, [tabParam]);
-
     const handleInfoChange = (infoId: string) => {
-        setSelectedInfoId(infoId);
         router.replace(`${pathname}?tab=${infoId}`, { scroll: false });
     };
 

@@ -16,6 +16,7 @@ export function CookieConsent() {
 
     useEffect(() => {
         if (!hasCookieConsent()) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- reading document.cookie (external store) on mount
             setVisible(true);
         }
     }, []);

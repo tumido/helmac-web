@@ -14,7 +14,8 @@
       "mcp__context7__query-docs",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "WebFetch(domain:developers.fio.cz)"
+      "WebFetch(domain:developers.fio.cz)",
+      "Bash(git log:*)"
     ]
   }
 }

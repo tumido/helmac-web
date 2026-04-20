@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { DayTabs } from "./DayTabs";
@@ -32,21 +32,13 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
-    const initialDayId = (tabParam && data.days.some((d) => d.id === tabParam))
+    const selectedDayId = (tabParam && data.days.some((d) => d.id === tabParam))
         ? tabParam
         : data.days[0]?.id || "";
 
-    const [selectedDayId, setSelectedDayId] = useState(initialDayId);
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (tabParam && data.days.some((d) => d.id === tabParam)) {
-            setSelectedDayId(tabParam);
-        }
-    }, [tabParam]);
-
     const handleDayChange = (dayId: string) => {
-        setSelectedDayId(dayId);
         router.replace(`${pathname}?tab=${dayId}`, { scroll: false });
     };
     const [detailEvent, setDetailEvent] = useState<ProgramEvent | null>(null);
