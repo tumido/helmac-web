@@ -36,6 +36,8 @@ export async function GET(
     // Optional filters from query params
     const statusParam = request.nextUrl.searchParams.get("status");
     const paidParam = request.nextUrl.searchParams.get("paid");
+    const fieldParam = request.nextUrl.searchParams.get("field");
+    const valueParam = request.nextUrl.searchParams.get("value");
 
     const validStatuses = ["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"];
     const statusFilter = statusParam && validStatuses.includes(statusParam) ? statusParam : null;
@@ -81,6 +83,27 @@ export async function GET(
     const apFieldNames = new Set(getAPInputFields(formData.fields).map((f) => f.name));
     const refDate = year.startDate ? new Date(year.startDate) : undefined;
 
+    // Apply field-value filter (JSON field, must filter in JS)
+    let submissions = year.registrationSubmissions;
+    if (fieldParam && valueParam) {
+        submissions = submissions.filter((sub) => {
+            const data = sub.data as Record<string, unknown>;
+            const rawVal = data[fieldParam];
+            if (rawVal === true || rawVal === false) {
+                return (rawVal ? "Ano" : "Ne") === valueParam;
+            }
+            if (typeof rawVal === "string" && rawVal.startsWith("[")) {
+                try {
+                    const arr = JSON.parse(rawVal);
+                    if (Array.isArray(arr)) {
+                        return arr.includes(valueParam);
+                    }
+                } catch { /* not JSON */ }
+            }
+            return String(rawVal ?? "") === valueParam;
+        });
+    }
+
     // Build CSV header (add "Nezletilý" column after each birth_date field)
     const headers = [
         "Typ",
@@ -96,7 +119,7 @@ export async function GET(
 
     // Build CSV rows (main person + AP rows)
     const rows: string[][] = [];
-    for (const sub of year.registrationSubmissions) {
+    for (const sub of submissions) {
         const data = sub.data as Record<string, unknown>;
 
         // Main person row

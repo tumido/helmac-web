@@ -5,14 +5,16 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
+import { FieldValueFilter } from "@/components/admin/field-value-filter";
 import { ValidatePaymentsButton } from "@/components/admin/validate-payments-button";
 import { LinkButton } from "@/components/ui/link-button";
-import { getAllFields } from "@/lib/types/registration-form";
+import { getAllFields, getAllInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { getFieldOptionValues } from "@/lib/utils/pricing";
 
 interface PrihlaskyPageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ status?: string; paid?: string }>;
+    searchParams: Promise<{ status?: string; paid?: string; field?: string; value?: string }>;
 }
 
 async function getYearWithSubmissions(yearId: string) {
@@ -46,7 +48,7 @@ async function getYearWithSubmissions(yearId: string) {
 export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyPageProps) {
     await requireAdmin();
     const { id } = await params;
-    const { status, paid } = await searchParams;
+    const { status, paid, field: fieldParam, value: valueParam } = await searchParams;
     const year = await getYearWithSubmissions(id);
 
     if (!year) {
@@ -80,17 +82,38 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
 
     const formData = migrateFormData(year.registrationForm.fields);
     const fields = getAllFields(formData.fields);
+    const allInputFields = getAllInputFields(formData.fields);
     const statusFilter = status &&
         ["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"].includes(status)
         ? (status as "PENDING" | "CONFIRMED" | "WAITLIST" | "CANCELLED" | "REJECTED")
         : null;
     const paidFilter = paid === "true" ? true : paid === "false" ? false : null;
 
+    // Build eligible fields for field-value filter (fields with options)
+    const filterableFields = allInputFields
+        .filter((f) => ["select", "radio", "pricing_select", "pricing_multi_select", "checkbox"].includes(f.type))
+        .map((f) => {
+            const options = f.type === "checkbox"
+                ? ["Ano", "Ne"]
+                : getFieldOptionValues(f, formData.pricingDefinitions);
+            return { name: f.name, label: f.label, type: f.type, options };
+        })
+        .filter((f) => f.options.length > 0);
+
+    // Validate field/value params
+    const matchedField = fieldParam ? filterableFields.find((f) => f.name === fieldParam) : null;
+    const fieldFilter = matchedField ? matchedField.name : null;
+    const valueFilter = matchedField && valueParam && matchedField.options.includes(valueParam)
+        ? valueParam
+        : null;
+
     const basePath = `/admin/rocniky/${id}/registrace/prihlasky`;
     const statusParam = statusFilter ? `status=${statusFilter}` : "";
     const paidParam = paid === "true" || paid === "false" ? `paid=${paid}` : "";
-    const hasActiveFilter = statusFilter !== null || paidFilter !== null;
-    const filterQueryString = [statusParam, paidParam].filter(Boolean).join("&");
+    const fieldFilterParam = fieldFilter && valueFilter ? `field=${encodeURIComponent(fieldFilter)}` : "";
+    const valueFilterParam = fieldFilter && valueFilter ? `value=${encodeURIComponent(valueFilter)}` : "";
+    const hasActiveFilter = statusFilter !== null || paidFilter !== null || (fieldFilter !== null && valueFilter !== null);
+    const filterQueryString = [statusParam, paidParam, fieldFilterParam, valueFilterParam].filter(Boolean).join("&");
 
     return (
         <Container maxWidth="xl">
@@ -183,12 +206,23 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                     Nezaplaceno
                 </LinkButton>
             </Box>
+            {filterableFields.length > 0 && (
+                <FieldValueFilter
+                    basePath={basePath}
+                    fields={filterableFields}
+                    activeField={fieldFilter}
+                    activeValue={valueFilter}
+                    otherParams={[statusParam, paidParam].filter(Boolean).join("&")}
+                />
+            )}
             <SubmissionsTable
                 submissions={year.registrationSubmissions}
                 fields={fields}
                 yearId={year.id}
                 statusFilter={statusFilter}
                 paidFilter={paidFilter}
+                fieldFilter={fieldFilter}
+                valueFilter={valueFilter}
                 eventStartDate={year.startDate}
             />
         </Container>

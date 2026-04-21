@@ -49,13 +49,15 @@ interface SubmissionsTableProps {
     yearId: string;
     statusFilter: RegistrationStatus | null;
     paidFilter: boolean | null;
+    fieldFilter: string | null;
+    valueFilter: string | null;
     eventStartDate?: Date | null;
 }
 
 type SortKey = string;
 type SortDirection = "asc" | "desc";
 
-export function SubmissionsTable({ submissions, fields, yearId, statusFilter, paidFilter, eventStartDate }: SubmissionsTableProps) {
+export function SubmissionsTable({ submissions, fields, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate }: SubmissionsTableProps) {
     const router = useRouter();
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -89,8 +91,29 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
         ? statusFiltered.filter((s) => s.isPaid === paidFilter)
         : statusFiltered;
 
-    const filtered = search.trim()
+    const fieldFiltered = fieldFilter && valueFilter
         ? paidFiltered.filter((s) => {
+            const data = s.data as Record<string, unknown>;
+            const rawVal = data[fieldFilter];
+            // Checkbox fields store boolean, but filter uses "Ano"/"Ne"
+            if (rawVal === true || rawVal === false) {
+                return (rawVal ? "Ano" : "Ne") === valueFilter;
+            }
+            // pricing_multi_select stores JSON array string
+            if (typeof rawVal === "string" && rawVal.startsWith("[")) {
+                try {
+                    const arr = JSON.parse(rawVal);
+                    if (Array.isArray(arr)) {
+                        return arr.includes(valueFilter);
+                    }
+                } catch { /* not JSON */ }
+            }
+            return String(rawVal ?? "") === valueFilter;
+        })
+        : paidFiltered;
+
+    const filtered = search.trim()
+        ? fieldFiltered.filter((s) => {
             const term = search.trim().toLowerCase();
             const data = s.data as Record<string, unknown>;
 
@@ -119,7 +142,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
 
             return false;
         })
-        : paidFiltered;
+        : fieldFiltered;
 
     const sorted = [...filtered].sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
