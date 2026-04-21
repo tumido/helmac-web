@@ -52,6 +52,19 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
         return sum + 1 + ap;
     }, 0);
 
+    const [paidAgg, unpaidAgg] = await Promise.all([
+        db.registrationSubmission.aggregate({
+            where: { yearId: year.id, isPaid: true, status: { notIn: ["CANCELLED", "REJECTED"] } },
+            _sum: { totalPrice: true },
+        }),
+        db.registrationSubmission.aggregate({
+            where: { yearId: year.id, isPaid: false, status: { notIn: ["CANCELLED", "REJECTED"] } },
+            _sum: { totalPrice: true },
+        }),
+    ]);
+    const paidSum = paidAgg._sum.totalPrice ?? 0;
+    const unpaidSum = unpaidAgg._sum.totalPrice ?? 0;
+
     // Fetch form data for capacity limits editor
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
@@ -91,6 +104,8 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
                 registrationStartDate={year.registrationStartDate}
                 submissionCount={year._count.registrationSubmissions}
                 totalPeopleCount={totalPeopleCount}
+                paidSum={paidSum}
+                unpaidSum={unpaidSum}
                 hasMainEmail={!!mainEmail}
                 hasBankAccount={!!bankAccount}
             />

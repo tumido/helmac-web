@@ -22,6 +22,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Warning } from "@mui/icons-material";
 import dayjs, { Dayjs } from "dayjs";
 import { toggleRegistration, updateRegistrationStartDate } from "@/lib/actions/years";
+import { formatPrice } from "@/lib/utils/pricing";
 
 interface RegistrationSettingsProps {
     yearId: string;
@@ -29,6 +30,8 @@ interface RegistrationSettingsProps {
     registrationStartDate: Date | null;
     submissionCount: number;
     totalPeopleCount: number;
+    paidSum: number;
+    unpaidSum: number;
     hasMainEmail: boolean;
     hasBankAccount: boolean;
 }
@@ -39,6 +42,8 @@ export function RegistrationSettings({
     registrationStartDate,
     submissionCount,
     totalPeopleCount,
+    paidSum,
+    unpaidSum,
     hasMainEmail,
     hasBankAccount,
 }: RegistrationSettingsProps) {
@@ -147,6 +152,12 @@ export function RegistrationSettings({
                 </Typography>
                 <Typography variant="body1">
                     Registrovaných osob: <strong>{totalPeopleCount}</strong>
+                </Typography>
+                <Typography variant="body1">
+                    Zaplaceno: <strong>{formatPrice(paidSum)}</strong>
+                </Typography>
+                <Typography variant="body1">
+                    Nezaplaceno: <strong>{formatPrice(unpaidSum)}</strong>
                 </Typography>
             </Box>
 
