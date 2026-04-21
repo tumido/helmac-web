@@ -440,23 +440,27 @@ function MenuBar({ editor }: { editor: Editor | null }) {
 
             {/* Undo/Redo */}
             <Tooltip title="Zpet (Ctrl+Z)">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().undo().run()}
-                    disabled={!editor.can().undo()}
-                >
-                    <Undo fontSize="small" />
-                </IconButton>
+                <span>
+                    <IconButton
+                        size="small"
+                        onClick={() => editor.chain().focus().undo().run()}
+                        disabled={!editor.can().undo()}
+                    >
+                        <Undo fontSize="small" />
+                    </IconButton>
+                </span>
             </Tooltip>
 
             <Tooltip title="Znovu (Ctrl+Y)">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().redo().run()}
-                    disabled={!editor.can().redo()}
-                >
-                    <Redo fontSize="small" />
-                </IconButton>
+                <span>
+                    <IconButton
+                        size="small"
+                        onClick={() => editor.chain().focus().redo().run()}
+                        disabled={!editor.can().redo()}
+                    >
+                        <Redo fontSize="small" />
+                    </IconButton>
+                </span>
             </Tooltip>
         </Box>
     );
