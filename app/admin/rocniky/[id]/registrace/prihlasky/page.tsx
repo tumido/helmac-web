@@ -89,6 +89,8 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
     const basePath = `/admin/rocniky/${id}/registrace/prihlasky`;
     const statusParam = statusFilter ? `status=${statusFilter}` : "";
     const paidParam = paid === "true" || paid === "false" ? `paid=${paid}` : "";
+    const hasActiveFilter = statusFilter !== null || paidFilter !== null;
+    const filterQueryString = [statusParam, paidParam].filter(Boolean).join("&");
 
     return (
         <Container maxWidth="xl">
@@ -115,6 +117,16 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 >
                     Export CSV
                 </LinkButton>
+                {hasActiveFilter && (
+                    <LinkButton
+                        href={`/api/registrace/${year.id}/export?${filterQueryString}`}
+                        variant="outlined"
+                        startIcon={<Download />}
+                        size="small"
+                    >
+                        Export filtrovaných CSV
+                    </LinkButton>
+                )}
                 <ValidatePaymentsButton />
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
