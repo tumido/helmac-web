@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Helmac Web
 
-## Getting Started
+Yearly recurring event website with admin dashboard. Built with Next.js 16, React 19, MUI 5, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Development Setup
+
+### 1. Database
+
+Start PostgreSQL via Docker Compose:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This runs Postgres 16 on `localhost:5432` (user: `helmac`, password: `helmac123`, db: `helmac`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cat > .env.local <<EOF
+DATABASE_URL="postgresql://helmac:helmac123@localhost:5432/helmac?schema=public"
+DIRECT_URL="postgresql://helmac:helmac123@localhost:5432/helmac?schema=public"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="$(openssl rand -base64 32)"
+PUBLIC_JWT_SECRET="$(openssl rand -base64 32)"
+CRON_SECRET="$(openssl rand -base64 32)"
+ENCRYPTION_KEY="$(openssl rand -hex 32)"
+NODE_ENV="development"
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+EOF
+```
 
-## Learn More
+### 3. Install and seed
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run db:migrate       # apply migrations
+npm run db:seed          # seed initial data
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Run
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev              # starts on http://localhost:3000
+```
 
-## Deploy on Vercel
+Admin login: `admin@helmac.cz` / `admin123456` at [localhost:3000/admin](http://localhost:3000/admin)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Other Commands
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build            # production build (runs migrations first)
+npm run lint             # ESLint
+npm run db:studio        # Prisma Studio (DB browser)
+npx playwright test      # E2E tests
+```
