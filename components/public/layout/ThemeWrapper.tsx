@@ -7,6 +7,7 @@ import { publicTheme, publicLightTheme } from "@/styles/theme";
 import { ThemeModeProvider, useThemeMode } from "@/contexts/ThemeContext";
 import { Header } from "./Header";
 import { CookieConsent } from "@/components/public/ui/CookieConsent";
+import { ScrollToTop } from "@/components/public/ui";
 import { NavSubtabs } from "@/lib/services/navigation";
 
 export interface PublicUserInfo {
@@ -41,6 +42,7 @@ function ThemedContent({ children, navSubtabs, registrationOpen, publicUser }: T
                     {children}
                 </Box>
                 <CookieConsent />
+                <ScrollToTop />
             </Box>
         </ThemeProvider>
     );
