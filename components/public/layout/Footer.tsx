@@ -7,8 +7,10 @@ import {
     Typography,
     Link as MuiLink,
     Divider,
+    IconButton,
 } from "@mui/material";
 import { NAV_LINKS } from "@/lib/navigation";
+import { SOCIAL_LINKS } from "@/lib/social-links";
 import dayjs from "dayjs";
 import "dayjs/locale/cs";
 
@@ -179,8 +181,43 @@ export function Footer({ dates }: FooterProps) {
                         sx={{
                             display: "flex",
                             gap: 2,
+                            alignItems: "center",
                         }}
                     >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 0.5,
+                                alignItems: "center",
+                                mr: -0.5,
+                            }}
+                        >
+                            {SOCIAL_LINKS.map((link) => (
+                                <IconButton
+                                    key={link.href}
+                                    component="a"
+                                    href={link.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={link.label}
+                                    size="small"
+                                    disableRipple
+                                    sx={{
+                                        color: "text.secondary",
+                                        opacity: 0.6,
+                                        transition:
+                                            "opacity 200ms, color 200ms",
+                                        "&:hover": {
+                                            opacity: 1,
+                                            color: "primary.main",
+                                            backgroundColor: "transparent",
+                                        },
+                                    }}
+                                >
+                                    <link.Icon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                            ))}
+                        </Box>
                         {LEGAL_LINKS.map((link) => (
                             <MuiLink
                                 key={link.href}
