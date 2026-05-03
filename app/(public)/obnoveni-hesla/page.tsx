@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/public/ui";
 import { NewPasswordForm } from "@/components/forms/new-password-form";
 
 export const metadata = {
-    title: "Obnovení hesla | Helmac",
+    title: "Obnovení hesla | Helmáč",
     description: "Nastavte si nové heslo",
 };
 

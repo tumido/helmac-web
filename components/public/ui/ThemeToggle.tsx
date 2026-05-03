@@ -12,7 +12,7 @@ export function ThemeToggle({ size = "medium" }: ThemeToggleProps) {
     const { toggleTheme, isDark } = useThemeMode();
 
     return (
-        <Tooltip title={isDark ? "Prepnout na svetly rezim" : "Prepnout na tmavy rezim"}>
+        <Tooltip title={isDark ? "Přepnout na světlý režim" : "Přepnout na tmavý režim"}>
             <IconButton
                 onClick={toggleTheme}
                 size={size}
@@ -24,7 +24,7 @@ export function ThemeToggle({ size = "medium" }: ThemeToggleProps) {
                         transform: "rotate(180deg)",
                     },
                 }}
-                aria-label={isDark ? "Prepnout na svetly rezim" : "Prepnout na tmavy rezim"}
+                aria-label={isDark ? "Přepnout na světlý režim" : "Přepnout na tmavý režim"}
             >
                 {isDark ? <LightMode /> : <DarkMode />}
             </IconButton>

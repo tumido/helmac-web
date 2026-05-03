@@ -77,7 +77,7 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
         return (
             <Box sx={{ textAlign: "center", py: 8 }}>
                 <Typography color="text.secondary">
-                    Program zatim neni k dispozici.
+                    Program zatím není k dispozici.
                 </Typography>
             </Box>
         );
@@ -106,8 +106,8 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
                 <Box sx={{ textAlign: "center", py: 6 }}>
                     <Typography color="text.secondary">
                         {selectedTag
-                            ? `Zadne udalosti s tagem "${selectedTag}" pro tento den.`
-                            : "Pro tento den nejsou naplavnovany zadne udalosti."}
+                            ? `Žádné události s tagem "${selectedTag}" pro tento den.`
+                            : "Pro tento den nejsou naplánovány žádné události."}
                     </Typography>
                 </Box>
             ) : (

@@ -27,7 +27,7 @@ export function RulesContent({ rules }: RulesContentProps) {
     if (rules.length === 0) {
         return (
             <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-                Zatim nebyla pridana zadna pravidla.
+                Zatím nebyla přidána žádná pravidla.
             </Typography>
         );
     }

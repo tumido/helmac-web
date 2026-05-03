@@ -52,7 +52,7 @@ export function PageContent({ content }: PageContentProps) {
     if (blocks.length === 0) {
         return (
             <Typography color="text.secondary">
-                Obsah stranky zatim neni k dispozici.
+                Obsah stránky zatím není k dispozici.
             </Typography>
         );
     }

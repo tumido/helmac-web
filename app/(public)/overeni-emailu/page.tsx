@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/public/ui";
 import { EmailVerificationContent } from "./email-verification-content";
 
 export const metadata = {
-    title: "Ověření emailu | Helmac",
+    title: "Ověření emailu | Helmáč",
     description: "Ověřte svůj email pro aktivaci účtu",
 };
 

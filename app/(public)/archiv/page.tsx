@@ -6,8 +6,8 @@ import { getArchivedYears, getActiveYear } from "@/lib/services";
 import { formatDate } from "@/lib/utils/date";
 
 export const metadata = {
-    title: "Archiv | Helmac",
-    description: "Archiv minulych rocniku akce Helmac",
+    title: "Archiv | Helmáč",
+    description: "Archiv minulých ročníků akce Helmáč",
 };
 
 export default async function ArchivPage() {
@@ -20,14 +20,14 @@ export default async function ArchivPage() {
         <>
             <PageHeader
                 title="Archiv"
-                subtitle="Nahlednete do minulych rocniku"
+                subtitle="Nahlédněte do minulých ročníků"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 {years.length === 0 ? (
                     <Box sx={{ textAlign: "center", py: 8 }}>
                         <Typography color="text.secondary">
-                            Zatim zadne archivovane rocniky
+                            Zatím žádné archivované ročníky
                         </Typography>
                     </Box>
                 ) : (

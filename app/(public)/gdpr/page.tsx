@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { richContentSx } from "@/lib/utils/rich-content-sx";
 
 export const metadata = {
-    title: "GDPR | Helmac",
+    title: "GDPR | Helmáč",
     description: "Ochrana osobních údajů",
 };
 

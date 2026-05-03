@@ -143,7 +143,7 @@ export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
         >
             <Chip
                 icon={<FilterList />}
-                label="Vse"
+                label="Vše"
                 onClick={() => onTagChange(null)}
                 sx={chipStyles(isSelected(null))}
             />

@@ -9,8 +9,8 @@ import {
 import { getActiveYear } from "@/lib/services";
 
 export const metadata = {
-    title: "Program | Helmac",
-    description: "Program akce Helmac - kompletní harmonogram událostí a aktivit",
+    title: "Program | Helmáč",
+    description: "Program akce Helmáč - kompletní harmonogram událostí a aktivit",
 };
 
 export default async function ProgramPage() {

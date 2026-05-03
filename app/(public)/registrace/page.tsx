@@ -7,8 +7,8 @@ import { formatDate } from "@/lib/utils/date";
 import { getPublicSession } from "@/lib/public-auth";
 
 export const metadata = {
-    title: "Registrace | Helmac",
-    description: "Zaregistrujte se na akci Helmac",
+    title: "Registrace | Helmáč",
+    description: "Zaregistrujte se na akci Helmáč",
 };
 
 export default async function RegistracePage() {

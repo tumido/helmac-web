@@ -16,17 +16,17 @@ export async function generateMetadata({ params }: ArchivePageDetailProps) {
     const year = await getYearByNumber(yearNumber);
 
     if (!year) {
-        return { title: "Stranka nenalezena | Helmac" };
+        return { title: "Stránka nenalezena | Helmáč" };
     }
 
     const page = await getPublishedPageBySlug(year.id, slug);
 
     if (!page) {
-        return { title: "Stranka nenalezena | Helmac" };
+        return { title: "Stránka nenalezena | Helmáč" };
     }
 
     return {
-        title: `${page.title} | ${year.title} | Archiv | Helmac`,
+        title: `${page.title} | ${year.title} | Archiv | Helmáč`,
         description: page.seoDesc || undefined,
     };
 }
@@ -67,7 +67,7 @@ export default async function ArchivePageDetail({
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
-                    Zpet na rocnik {year.year}
+                    Zpět na ročník {year.year}
                 </LinkButton>
 
                 <PageContent content={page.content} />

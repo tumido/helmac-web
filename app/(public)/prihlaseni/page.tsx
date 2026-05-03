@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/public/ui";
 import { PublicLoginForm } from "@/components/forms/public-login-form";
 
 export const metadata = {
-    title: "Přihlášení | Helmac",
+    title: "Přihlášení | Helmáč",
     description: "Přihlaste se ke svému účtu",
 };
 

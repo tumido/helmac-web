@@ -8,7 +8,7 @@ import { getPublicUserRegistrations } from "@/lib/services/public-user";
 import { RegistrationHistoryTable } from "@/components/public/features/account/registration-detail-dialog";
 
 export const metadata = {
-    title: "Moje registrace | Helmac",
+    title: "Moje registrace | Helmáč",
 };
 
 export default async function RegistrationHistoryPage() {

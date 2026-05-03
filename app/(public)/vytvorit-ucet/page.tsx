@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/public/ui";
 import { PublicRegisterForm } from "@/components/forms/public-register-form";
 
 export const metadata = {
-    title: "Vytvoření účtu | Helmac",
+    title: "Vytvoření účtu | Helmáč",
     description: "Vytvořte si účet pro sledování registrací a plateb",
 };
 

@@ -49,7 +49,7 @@ export function MobileMenu({ open, onClose, items, registrationOpen, publicUser 
                         mb: 2,
                     }}
                 >
-                    HELMAC
+                    HELMÁČ
                 </Typography>
 
                 <Divider sx={{ mb: 2 }} />

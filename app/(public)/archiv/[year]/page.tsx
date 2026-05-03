@@ -24,11 +24,11 @@ export async function generateMetadata({ params }: ArchiveYearPageProps) {
     const year = await getYearByNumber(yearNumber);
 
     if (!year) {
-        return { title: "Rocnik nenalezen | Helmac" };
+        return { title: "Ročník nenalezen | Helmáč" };
     }
 
     return {
-        title: `${year.title} (${year.year}) | Archiv | Helmac`,
+        title: `${year.title} (${year.year}) | Archiv | Helmáč`,
         description: year.subtitle || undefined,
     };
 }
@@ -59,7 +59,7 @@ export default async function ArchiveYearPage({
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
-                    Zpet na archiv
+                    Zpět na archiv
                 </LinkButton>
 
                 <Grid container spacing={4}>
@@ -76,7 +76,7 @@ export default async function ArchiveYearPage({
                                 >
                                     <Article color="primary" />
                                     <Typography variant="h6">
-                                        Stranky
+                                        Stránky
                                     </Typography>
                                 </Box>
                                 <List disablePadding>
@@ -173,7 +173,7 @@ export default async function ArchiveYearPage({
                     year.news.length === 0 && (
                         <Box sx={{ textAlign: "center", py: 8 }}>
                             <Typography color="text.secondary">
-                                Zadny obsah pro tento rocnik
+                                Žádný obsah pro tento ročník
                             </Typography>
                         </Box>
                     )}

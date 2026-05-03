@@ -7,7 +7,7 @@ import { LogoutButton } from "@/components/public/features/account/logout-button
 import { formatDate } from "@/lib/utils/date";
 
 export const metadata = {
-    title: "Profil | Helmac",
+    title: "Profil | Helmáč",
 };
 
 export default async function ProfilePage() {

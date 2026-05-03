@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/public/ui";
 import { AccountNav } from "@/components/public/features/account/account-nav";
 
 export const metadata = {
-    title: "Můj účet | Helmac",
+    title: "Můj účet | Helmáč",
 };
 
 export default function AccountLayout({

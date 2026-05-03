@@ -5,8 +5,8 @@ import { RulesContent } from "@/components/public/features/rules";
 import { getRulesForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
-    title: "Pravidla | Helmac",
-    description: "Pravidla akce Helmac - herní pravidla a pokyny pro účastníky",
+    title: "Pravidla | Helmáč",
+    description: "Pravidla akce Helmáč - herní pravidla a pokyny pro účastníky",
 };
 
 export default async function PravidlaPage() {

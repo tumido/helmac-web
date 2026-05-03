@@ -261,7 +261,7 @@ const registrationFormData = {
     showOptionCounts: [F.armadaTemna, F.armadaSvetla],
     infoStatsConfig: { enabled: false, stats: [] },
     fields: [
-        { type: "heading", id: F.heading, text: "Helmac registrace" },
+        { type: "heading", id: F.heading, text: "Helmáč registrace" },
         {
             type: "description",
             id: F.description,
@@ -482,7 +482,7 @@ async function seedYears() {
     const year2026 = await prisma.year.create({
         data: {
             year: 2026,
-            title: "Helmac 2026",
+            title: "Helmáč 2026",
             subtitle: "vyzeneme zleho pana",
             isActive: true,
             startDate: new Date("2026-07-29"),
@@ -496,7 +496,7 @@ async function seedYears() {
     const year2025 = await prisma.year.create({
         data: {
             year: 2025,
-            title: "Helmac 2025",
+            title: "Helmáč 2025",
             subtitle: "Navrat kralovstvi",
             isActive: false,
             isArchived: true,
@@ -629,7 +629,7 @@ async function seedProgram(yearId: string) {
             sortOrder: 4,
             storyContent: {
                 paragraphs: [
-                    "Hlavni bitva Helmac 2026 bude probíhat na legendární hradbe u Rozkoše.",
+                    "Hlavni bitva Helmáč 2026 bude probíhat na legendární hradbe u Rozkoše.",
                     "Utkaji se dve velke armady — Temna strana (Skreti, Harad, Nekromanti) proti Svetle strane (Elfove, Lide, Trpaslici).",
                     "Bojuje se dle pravidel uvedenych v sekci Pravidla. Nezapomente si proverene zbrane a ochrannou vystroj!",
                 ],
@@ -659,7 +659,7 @@ async function seedOffers(yearId: string) {
         {
             title: "Workshopy",
             sortOrder: 0,
-            content: `<p>Na Helmaci si muzete vyzkouset ruzne workshopy vedene zkusenymi lektory.</p>
+            content: `<p>Na Helmáči si muzete vyzkouset ruzne workshopy vedene zkusenymi lektory.</p>
 <h3>Vyroba zbrani</h3>
 <p>Naucte se zaklady vyroby LARP zbrani z penovych materialu. Workshop je vhodny pro uplne zacatecniky i pokrocile, kteri si chteji zdokonalit techniku. K dispozici budou vsechny potrebne materialy a nastroje.</p>
 <h3>Tvorba kostymu</h3>
@@ -672,11 +672,11 @@ async function seedOffers(yearId: string) {
             sortOrder: 1,
             content: `<p>Behem akce se muzete zucastnit prednasek na ruzna temata spojena se svetem LARP a fantasy.</p>
 <h3>Historie a inspirace</h3>
-<p>Prezentace o historickych bitvach a udalostech, ktere nas inspirovaly pri tvorbe pribehove linie Helmace. Dozvite se, jak skutecne stredoveke valecnictvi ovlivnilo nase pravidla a scenare.</p>
+<p>Prezentace o historickych bitvach a udalostech, ktere nas inspirovaly pri tvorbe pribehove linie Helmáče. Dozvite se, jak skutecne stredoveke valecnictvi ovlivnilo nase pravidla a scenare.</p>
 <h3>LARP strategie a taktika</h3>
 <p>Jak efektivne vest armadu na LARP bitvisci? Zkuseni velitele se podeli o sve zkusenosti s organizaci formaci, komunikaci v boji a taktikami, ktere rozhoduji bitvy.</p>
-<h3>Svet Helmace</h3>
-<p>Prednaska o lore a svete, ve kterem se Helmac odehrava. Poznejte pribeh Temne a Svetle strany, jejich historii a motivace.</p>`,
+<h3>Svet Helmáče</h3>
+<p>Prednaska o lore a svete, ve kterem se Helmáč odehrava. Poznejte pribeh Temne a Svetle strany, jejich historii a motivace.</p>`,
         },
         {
             title: "Prvni pomoc",
@@ -703,12 +703,12 @@ async function seedInfoSections(yearId: string) {
             title: "Organizační",
             sortOrder: 0,
             content: `<h3>Kdy?</h3>
-<p>Helmac 2026 se kona od 29. cervence do 2. srpna 2026. Akce nema pevne stanoveny zacatek ani konec — prijedte, kdy vam to vyhovuje. Zavisí jen na vás, kolik si toho z cele akce budete chtit uzit. 🙂</p>
+<p>Helmáč 2026 se kona od 29. cervence do 2. srpna 2026. Akce nema pevne stanoveny zacatek ani konec — prijedte, kdy vam to vyhovuje. Zavisí jen na vás, kolik si toho z cele akce budete chtit uzit. 🙂</p>
 <h3>Kde?</h3>
 <p>Misto konani je velice rozkosne krasou sve krajiny. Hradba je postavena na louce blizko vesnicky nesouci nazev ROZKOS. Je to na hranicich Znojemského a Trebicského okresu.</p>
 <p><strong>POZOR letos se stanuje o louku vedle!</strong></p>
 <h3>Jak se tam dostat?</h3>
-<p>GPS souradnice: 49.0847N, 15.9456E. Z Brna smerem na Znojmo, odbocka na Rozkos. Sledujte znaceni „HELMAC" od hlavni silnice.</p>`,
+<p>GPS souradnice: 49.0847N, 15.9456E. Z Brna smerem na Znojmo, odbocka na Rozkos. Sledujte znaceni „HELMÁČ" od hlavni silnice.</p>`,
         },
         {
             title: "O vybavení účastníka",
@@ -728,13 +728,13 @@ async function seedInfoSections(yearId: string) {
 <p>Facebook: <a href="https://www.facebook.com/helmac">facebook.com/helmac</a></p>
 <p>Instagram: <a href="https://www.instagram.com/helmac_larp">@helmac_larp</a></p>
 <h3>V pripade nouze na akci</h3>
-<p>Obracejte se na kohokoliv z organizacniho tymu — budou oznaceni specialnim trikem s logem HELMAC a napisem ORG.</p>`,
+<p>Obracejte se na kohokoliv z organizacniho tymu — budou oznaceni specialnim trikem s logem HELMÁČ a napisem ORG.</p>`,
         },
         {
             title: "Donatori",
             sortOrder: 3,
             content: `<h3>Dekujeme nasim podporovatelum!</h3>
-<p>Helmac by se neobešel bez podpory skvělých lidi a organizaci, kteri nám pomahaji akci kazdy rok uskutecnit.</p>
+<p>Helmáč by se neobešel bez podpory skvělých lidi a organizaci, kteri nám pomahaji akci kazdy rok uskutecnit.</p>
 <p>Chcete se stat donatorem nebo partnerem akce? Kontaktujte nas na <a href="mailto:info@helmac.cz">info@helmac.cz</a>.</p>`,
         },
     ];
@@ -846,10 +846,10 @@ async function seedNews(yearId: string, authorId: string) {
         },
         {
             slug: "datum-helmace",
-            title: "Datum helmace",
-            excerpt: "Helmac letos bude a bude od 29.7 do 1.8",
+            title: "Datum Helmáče",
+            excerpt: "Helmáč letos bude a bude od 29.7 do 1.8",
             content:
-                "<p>Letos se Helmac kona od <strong>29. cervence do 2. srpna 2026</strong>. Tak si to zapiste do kalendaru a zacnete se pripravovat!</p><p>Taboreni bude jako obvykle na louce u Rozkoše. Letos se stanuje o louku vedle, takze bude vice prostoru.</p>",
+                "<p>Letos se Helmáč kona od <strong>29. cervence do 2. srpna 2026</strong>. Tak si to zapiste do kalendaru a zacnete se pripravovat!</p><p>Taboreni bude jako obvykle na louce u Rozkoše. Letos se stanuje o louku vedle, takze bude vice prostoru.</p>",
             isPublished: true,
             publishedAt: new Date("2026-03-11"),
         },
@@ -858,7 +858,7 @@ async function seedNews(yearId: string, authorId: string) {
             title: "Spoustime registraci",
             excerpt: "Je to tak",
             content:
-                "<p>Registrace na Helmac 2026 je oficialně otevrena! 🎉</p><p>Neváhejte a zaregistrujte se co nejdrive — vcasná registrace znamena nizsi cenu. Detaily o ceniku najdete primo v registracnim formulari.</p><p>Tesime se na vas!</p>",
+                "<p>Registrace na Helmáč 2026 je oficialně otevrena! 🎉</p><p>Neváhejte a zaregistrujte se co nejdrive — vcasná registrace znamena nizsi cenu. Detaily o ceniku najdete primo v registracnim formulari.</p><p>Tesime se na vas!</p>",
             isPublished: true,
             publishedAt: new Date("2026-03-11"),
         },
@@ -888,7 +888,7 @@ async function seedAlbums(
         },
         {
             yearId: yearId2026,
-            title: "Helmac 2025 fotky",
+            title: "Helmáč 2025 fotky",
             slug: "helmac-2025-fotky",
             description: "Fotogalerie z minuleho rocniku",
             externalUrl: "https://photos.google.com",
@@ -897,7 +897,7 @@ async function seedAlbums(
         },
         {
             yearId: yearId2025,
-            title: "Helmac 2025",
+            title: "Helmáč 2025",
             slug: "helmac-2025",
             description: "Oficialni fotogalerie rocniku 2025",
             externalUrl: "https://photos.google.com",
@@ -1176,7 +1176,7 @@ async function seedGdpr() {
         data: {
             key: "gdpr_text",
             value: `<h2>Zpracování osobních údajů</h2>
-<p>Správcem osobních údajů je organizační tým akce Helmac. Vaše osobní údaje (jméno, email, datum narození) zpracováváme za účelem organizace akce a komunikace s účastníky.</p>
+<p>Správcem osobních údajů je organizační tým akce Helmáč. Vaše osobní údaje (jméno, email, datum narození) zpracováváme za účelem organizace akce a komunikace s účastníky.</p>
 <p>Údaje jsou uchovávány po dobu nezbytnou pro organizaci akce a následně po dobu stanovenou právními předpisy. Máte právo na přístup ke svým údajům, jejich opravu, výmaz a další práva dle GDPR.</p>
 <p>Kontakt pro dotazy ohledně zpracování osobních údajů: <a href="mailto:info@helmac.cz">info@helmac.cz</a></p>`,
         },
@@ -1208,10 +1208,10 @@ async function seedArchivedYearContent(yearId: string, authorId: string) {
             yearId,
             authorId,
             slug: "helmac-2025-se-konal",
-            title: "Helmac 2025 se konal!",
+            title: "Helmáč 2025 se konal!",
             excerpt: "Dekujeme vsem ucastnikum za skvely rocnik",
             content:
-                "<p>Helmac 2025 je za nami! Dekujeme vsem, kteri prisjeli a udelali z letosniho rocniku nezapomenutelny zazitek. Tesime se na vas zase pristi rok!</p>",
+                "<p>Helmáč 2025 je za nami! Dekujeme vsem, kteri prisjeli a udelali z letosniho rocniku nezapomenutelny zazitek. Tesime se na vas zase pristi rok!</p>",
             isPublished: true,
             publishedAt: new Date("2025-08-05"),
         },

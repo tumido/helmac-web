@@ -121,7 +121,7 @@ export function ListFilters({
                         value={searchParams.get("yearId") ?? ""}
                         onChange={(e) => updateFilter("yearId", e.target.value)}
                     >
-                        <MenuItem value="">Vsechny rocniky</MenuItem>
+                        <MenuItem value="">Všechny rocniky</MenuItem>
                         {years.map((year) => (
                             <MenuItem key={year.id} value={year.id}>
                                 {year.year} - {year.title}
@@ -145,7 +145,7 @@ export function ListFilters({
                         value={searchParams.get("status") ?? ""}
                         onChange={(e) => updateFilter("status", e.target.value)}
                     >
-                        <MenuItem value="">Vsechny</MenuItem>
+                        <MenuItem value="">Všechny</MenuItem>
                         <MenuItem value="published">Publikovane</MenuItem>
                         <MenuItem value="draft">Skryte</MenuItem>
                     </Select>

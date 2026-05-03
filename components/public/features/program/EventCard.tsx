@@ -185,7 +185,7 @@ export function EventCard({ event, onOpenDetails }: EventCardProps) {
                                 },
                             }}
                         >
-                            vice...
+                            více...
                         </MuiLink>
                     )}
                     {isExpanded && (
@@ -205,7 +205,7 @@ export function EventCard({ event, onOpenDetails }: EventCardProps) {
                                 },
                             }}
                         >
-                            mene
+                            méně
                         </MuiLink>
                     )}
 

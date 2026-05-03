@@ -4,8 +4,8 @@ import { AlbumGrid } from "@/components/public/features/gallery/AlbumGrid";
 import { getAllPublishedAlbums, getActiveYear } from "@/lib/services";
 
 export const metadata = {
-    title: "Galerie | Helmac",
-    description: "Fotogalerie z akce Helmac",
+    title: "Galerie | Helmáč",
+    description: "Fotogalerie z akce Helmáč",
 };
 
 export default async function GaleriePage() {
@@ -18,7 +18,7 @@ export default async function GaleriePage() {
         <>
             <PageHeader
                 title="Galerie"
-                subtitle="Nahlednete do sveta Helmacu skrze nase fotografie"
+                subtitle="Nahlédněte do světa Helmáčů skrze naše fotografie"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>

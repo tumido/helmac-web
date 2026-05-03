@@ -11,7 +11,7 @@ export async function NewsPreview() {
         return (
             <Box sx={{ textAlign: "center", py: 4 }}>
                 <Typography color="text.secondary">
-                    Zatim zadne novinky
+                    Zatím žádné novinky
                 </Typography>
             </Box>
         );
@@ -29,7 +29,7 @@ export async function NewsPreview() {
             <Box sx={{ textAlign: "center", mt: 4 }}>
                 <Link href="/novinky" style={{ textDecoration: "none" }}>
                     <Button variant="outlined" endIcon={<ArrowForward />}>
-                        Vsechny novinky
+                        Všechny novinky
                     </Button>
                 </Link>
             </Box>

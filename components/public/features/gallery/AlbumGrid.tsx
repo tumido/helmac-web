@@ -10,7 +10,7 @@ export function AlbumGrid({ albums }: AlbumGridProps) {
     if (albums.length === 0) {
         return (
             <Box sx={{ textAlign: "center", py: 8 }}>
-                <Typography color="text.secondary">Zatim zadne alba</Typography>
+                <Typography color="text.secondary">Zatím žádná alba</Typography>
             </Box>
         );
     }

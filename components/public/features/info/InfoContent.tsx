@@ -35,7 +35,7 @@ export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
     if (infoSections.length === 0 && !statsContent) {
         return (
             <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-                Zatim nebyly pridany zadne informace.
+                Zatím nebyly přidány žádné informace.
             </Typography>
         );
     }

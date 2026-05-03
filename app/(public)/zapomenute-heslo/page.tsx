@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/public/ui";
 import { PasswordResetForm } from "@/components/forms/password-reset-form";
 
 export const metadata = {
-    title: "Zapomenuté heslo | Helmac",
+    title: "Zapomenuté heslo | Helmáč",
     description: "Obnovte si přístup ke svému účtu",
 };
 

@@ -11,7 +11,7 @@ export async function GalleryPreview() {
         return (
             <Box sx={{ textAlign: "center", py: 4 }}>
                 <Typography color="text.secondary">
-                    Zatim zadne alba
+                    Zatím žádná alba
                 </Typography>
             </Box>
         );
@@ -29,7 +29,7 @@ export async function GalleryPreview() {
             <Box sx={{ textAlign: "center", mt: 4 }}>
                 <Link href="/galerie" style={{ textDecoration: "none" }}>
                     <Button variant="outlined" endIcon={<ArrowForward />}>
-                        Cela galerie
+                        Celá galerie
                     </Button>
                 </Link>
             </Box>

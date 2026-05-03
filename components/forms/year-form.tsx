@@ -123,7 +123,7 @@ export function YearForm({ mode, yearId, defaultValues, onCancel }: YearFormProp
                             defaultValue={defaultValues?.title || ""}
                             error={!!state?.error?.title}
                             helperText={state?.error?.title?.[0]}
-                            placeholder="např. Helmac 2025"
+                            placeholder="např. Helmáč 2025"
                         />
                     </Box>
 

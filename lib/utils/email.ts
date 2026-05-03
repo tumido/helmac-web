@@ -179,7 +179,7 @@ export async function sendVerificationEmail(opts: {
         await transporter.sendMail({
             from,
             to: opts.to,
-            subject: "Ověření emailu – HELMAC",
+            subject: "Ověření emailu – HELMÁČ",
             text: textBody,
             html: htmlBody,
         });
@@ -219,7 +219,7 @@ export async function sendPasswordResetEmail(opts: {
         await transporter.sendMail({
             from,
             to: opts.to,
-            subject: "Obnovení hesla – HELMAC",
+            subject: "Obnovení hesla – HELMÁČ",
             text: textBody,
             html: htmlBody,
         });

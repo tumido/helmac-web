@@ -5,7 +5,7 @@ import { OffersContent } from "@/components/public/features/offers";
 import { getOffersForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
-    title: "Co nabízíme | Helmac",
+    title: "Co nabízíme | Helmáč",
     description: "Co vám naše akce nabízí",
 };
 

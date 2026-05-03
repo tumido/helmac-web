@@ -4,8 +4,8 @@ import { NewsList } from "@/components/public/features/news/NewsList";
 import { getLatestNewsForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
-    title: "Novinky | Helmac",
-    description: "Novinky a aktuality z akce Helmac",
+    title: "Novinky | Helmáč",
+    description: "Novinky a aktuality z akce Helmáč",
 };
 
 export default async function NovinkyPage() {

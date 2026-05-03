@@ -11,7 +11,7 @@ export function NewsList({ news }: NewsListProps) {
         return (
             <Box sx={{ textAlign: "center", py: 8 }}>
                 <Typography color="text.secondary">
-                    Zatim zadne novinky
+                    Zatím žádné novinky
                 </Typography>
             </Box>
         );

@@ -97,7 +97,7 @@ export function Header({ navSubtabs, registrationOpen, publicUser }: HeaderProps
                                 letterSpacing: "0.1em",
                             }}
                         >
-                            HELMAC
+                            HELMÁČ
                         </Typography>
 
                         <Navigation items={navItems} />

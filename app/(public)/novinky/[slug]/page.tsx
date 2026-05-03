@@ -16,11 +16,11 @@ export async function generateMetadata({ params }: NewsDetailPageProps) {
     const news = await getNewsBySlugForActiveYear(slug);
 
     if (!news) {
-        return { title: "Clanek nenalezen | Helmac" };
+        return { title: "Článek nenalezen | Helmáč" };
     }
 
     return {
-        title: `${news.title} | Helmac`,
+        title: `${news.title} | Helmáč`,
         description: news.excerpt || undefined,
     };
 }
@@ -50,7 +50,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                     startIcon={<ArrowBack />}
                     sx={{ mb: 4 }}
                 >
-                    Zpet na novinky
+                    Zpět na novinky
                 </LinkButton>
 
                 {news.coverImage && (

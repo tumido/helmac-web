@@ -8,8 +8,8 @@ import { getAllInputFields } from "@/lib/types/registration-form";
 import type { InputField, OptionPeople } from "@/lib/types/registration-form";
 
 export const metadata = {
-    title: "Info | Helmac",
-    description: "Důležité informace pro účastníky akce Helmac",
+    title: "Info | Helmáč",
+    description: "Důležité informace pro účastníky akce Helmáč",
 };
 
 export default async function InfoPage() {

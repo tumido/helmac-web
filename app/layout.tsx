@@ -4,8 +4,8 @@ import { DatePickerProvider } from "@/components/ui/date-picker-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Helmac",
-    description: "Helmac - Event website",
+    title: "Helmáč",
+    description: "Helmáč - Event website",
     icons: {
         icon: [
             { url: "/images/helmac-logo-centered.svg", type: "image/svg+xml" },

@@ -15,7 +15,7 @@ export default async function HomePage() {
     return (
         <>
             <HeroSection
-                title={activeYear?.title || "HELMAC"}
+                title={activeYear?.title || "HELMÁČ"}
                 backgroundImage={activeYear?.heroPhoto || undefined}
                 subtitle={
                     activeYear?.subtitle ||
@@ -51,7 +51,7 @@ export default async function HomePage() {
             <Section backgroundColor="background.paper">
                 <SectionTitle
                     title="Galerie"
-                    subtitle="Nahlédněte do světa Helmaců"
+                    subtitle="Nahlédněte do světa Helmáčů"
                 />
                 <GalleryPreview />
             </Section>

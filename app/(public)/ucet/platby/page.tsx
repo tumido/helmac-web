@@ -18,7 +18,7 @@ import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import { runPaymentSync } from "@/lib/utils/sync-payments";
 
 export const metadata = {
-    title: "Platby | Helmac",
+    title: "Platby | Helmáč",
 };
 
 export default async function PaymentsPage() {
