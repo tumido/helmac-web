@@ -5,9 +5,6 @@ export interface NewsItem {
     excerpt: string | null;
     coverImage: string | null;
     publishedAt: Date | null;
-    author: {
-        name: string;
-    };
 }
 
 export interface NewsDetail extends NewsItem {

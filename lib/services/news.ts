@@ -17,11 +17,6 @@ export const getPublishedNews = cache(
                 excerpt: true,
                 coverImage: true,
                 publishedAt: true,
-                author: {
-                    select: {
-                        name: true,
-                    },
-                },
             },
         });
     }
@@ -49,9 +44,6 @@ export const getLatestNewsForActiveYear = cache(async (limit: number = 3) => {
             excerpt: true,
             coverImage: true,
             publishedAt: true,
-            author: {
-                select: { name: true },
-            },
         },
     });
 });
@@ -72,9 +64,6 @@ export const getNewsBySlug = cache(async (yearId: string, slug: string) => {
             coverImage: true,
             showToc: true,
             publishedAt: true,
-            author: {
-                select: { name: true },
-            },
         },
     });
 });
@@ -102,9 +91,6 @@ export const getNewsBySlugForActiveYear = cache(async (slug: string) => {
             coverImage: true,
             showToc: true,
             publishedAt: true,
-            author: {
-                select: { name: true },
-            },
         },
     });
 });

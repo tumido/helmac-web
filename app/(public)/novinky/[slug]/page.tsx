@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Container, Typography, Box, Chip } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
-import { ArrowBack, Person, CalendarToday } from "@mui/icons-material";
+import { ArrowBack, CalendarToday } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
 import { getNewsBySlugForActiveYear, getActiveYear } from "@/lib/services";
 import { formatDate } from "@/lib/utils/date";
@@ -78,12 +78,6 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                         alignItems: "center",
                     }}
                 >
-                    <Chip
-                        icon={<Person />}
-                        label={news.author.name}
-                        variant="outlined"
-                        size="small"
-                    />
                     {formattedDate && (
                         <Chip
                             icon={<CalendarToday />}

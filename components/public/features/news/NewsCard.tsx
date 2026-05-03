@@ -55,7 +55,7 @@ export function NewsCard({ news }: NewsCardProps) {
                 <Box
                     sx={{
                         display: "flex",
-                        justifyContent: "space-between",
+                        justifyContent: "flex-end",
                         alignItems: "center",
                         mt: "auto",
                         pt: 2,
@@ -63,9 +63,6 @@ export function NewsCard({ news }: NewsCardProps) {
                         borderColor: "divider",
                     }}
                 >
-                    <Typography variant="caption" color="text.secondary">
-                        {news.author.name}
-                    </Typography>
                     {formattedDate && (
                         <Typography variant="caption" color="text.secondary">
                             {formattedDate}
