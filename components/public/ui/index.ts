@@ -1,3 +1,4 @@
+export { AnimatedSection } from "./AnimatedSection";
 export { Section } from "./Section";
 export { SectionTitle } from "./SectionTitle";
 export { Card } from "./Card";
