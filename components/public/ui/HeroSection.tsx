@@ -7,6 +7,7 @@ import { ReactNode } from "react";
 interface HeroSectionProps {
     title: string;
     subtitle?: string;
+    eventDate?: string;
     backgroundImage?: string;
     ctaText?: string;
     ctaHref?: string;
@@ -19,6 +20,7 @@ interface HeroSectionProps {
 export function HeroSection({
     title,
     subtitle,
+    eventDate,
     backgroundImage,
     ctaText,
     ctaHref,
@@ -90,6 +92,23 @@ export function HeroSection({
                 >
                     {title}
                 </Typography>
+
+                {eventDate && (
+                    <Typography
+                        component="p"
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: 600,
+                            fontSize: { xs: "1.1rem", sm: "1.25rem", md: "1.4rem" },
+                            letterSpacing: "0.08em",
+                            color: isDark ? "secondary.main" : "primary.dark",
+                            mt: -1,
+                            mb: 2,
+                        }}
+                    >
+                        {eventDate}
+                    </Typography>
+                )}
 
                 {subtitle && (
                     <Typography

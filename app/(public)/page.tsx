@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { HeroSection, Section, SectionTitle } from "@/components/public/ui";
-import { formatDate } from "@/lib/utils/date";
+import { formatDate, formatEventDateRange } from "@/lib/utils/date";
 import { NewsPreview } from "@/components/public/features/news/NewsPreview";
 import { GalleryPreview } from "@/components/public/features/gallery/GalleryPreview";
 import { RegistrationCTA } from "@/components/public/features/registration/RegistrationCTA";
@@ -12,10 +12,13 @@ export default async function HomePage() {
         getRegistrationStatus(),
     ]);
 
+    const eventDate = formatEventDateRange(activeYear?.startDate, activeYear?.endDate);
+
     return (
         <>
             <HeroSection
                 title={activeYear?.title || "HELMÁČ"}
+                eventDate={eventDate ?? undefined}
                 backgroundImage={activeYear?.heroPhoto || undefined}
                 subtitle={
                     activeYear?.subtitle ||
