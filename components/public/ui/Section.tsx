@@ -1,5 +1,6 @@
 import { Box, Container, ContainerProps } from "@mui/material";
 import { ReactNode } from "react";
+import { AnimatedSection } from "./AnimatedSection";
 
 interface SectionProps {
     children: ReactNode;
@@ -7,6 +8,8 @@ interface SectionProps {
     py?: number | { xs?: number; sm?: number; md?: number };
     backgroundColor?: string;
     id?: string;
+    disableAnimation?: boolean;
+    animationDelay?: number;
 }
 
 export function Section({
@@ -15,6 +18,8 @@ export function Section({
     py = { xs: 6, md: 10 },
     backgroundColor,
     id,
+    disableAnimation,
+    animationDelay,
 }: SectionProps) {
     return (
         <Box
@@ -25,7 +30,14 @@ export function Section({
                 backgroundColor,
             }}
         >
-            <Container maxWidth={maxWidth}>{children}</Container>
+            <Container maxWidth={maxWidth}>
+                <AnimatedSection
+                    disableAnimation={disableAnimation}
+                    delay={animationDelay}
+                >
+                    {children}
+                </AnimatedSection>
+            </Container>
         </Box>
     );
 }
