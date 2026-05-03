@@ -18,17 +18,15 @@ import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/public/ui";
 import { NavSubtabs } from "@/lib/services/navigation";
+import { NAV_LINKS } from "@/lib/navigation";
 import type { PublicUserInfo } from "./ThemeWrapper";
 
-const baseNavItems: { label: string; href: string; subtabKey?: keyof NavSubtabs }[] = [
-    { label: "Program", href: "/program", subtabKey: "program" },
-    { label: "Co nabízíme", href: "/co-nabizime", subtabKey: "nabidka" },
-    { label: "Info", href: "/info", subtabKey: "info" },
-    { label: "Pravidla", href: "/pravidla", subtabKey: "pravidla" },
-    { label: "Galerie", href: "/galerie" },
-    { label: "Novinky", href: "/novinky" },
-    { label: "Archiv", href: "/archiv" },
-];
+const SUBTAB_KEYS: Record<string, keyof NavSubtabs> = {
+    "/program": "program",
+    "/co-nabizime": "nabidka",
+    "/info": "info",
+    "/pravidla": "pravidla",
+};
 
 interface HeaderProps {
     navSubtabs?: NavSubtabs;
@@ -49,8 +47,9 @@ export function Header({ navSubtabs, registrationOpen, publicUser }: HeaderProps
     };
 
     const navItems: NavItem[] = useMemo(() => {
-        return baseNavItems.map((item) => {
-            const subtabs = item.subtabKey && navSubtabs?.[item.subtabKey];
+        return NAV_LINKS.map((item) => {
+            const subtabKey = SUBTAB_KEYS[item.href];
+            const subtabs = subtabKey && navSubtabs?.[subtabKey];
             if (subtabs && subtabs.length > 1) {
                 return {
                     label: item.label,
