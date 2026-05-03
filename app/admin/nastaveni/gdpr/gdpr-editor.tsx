@@ -34,26 +34,49 @@ export function GdprEditor({ initialContent }: GdprEditorProps) {
     };
 
     return (
-        <Box>
+        <Box
+            sx={
+                isEditing
+                    ? {
+                          height: "calc(100dvh - 180px)",
+                          display: "flex",
+                          flexDirection: "column",
+                      }
+                    : undefined
+            }
+        >
             {feedback && (
                 <Alert
                     severity={feedback.type}
                     onClose={() => setFeedback(null)}
-                    sx={{ mb: 2 }}
+                    sx={{ mb: 2, flexShrink: 0 }}
                 >
                     {feedback.message}
                 </Alert>
             )}
 
-            <RichTextEditor
-                value={content}
-                onChange={setContent}
-                placeholder="Zadejte obsah GDPR / ochrana osobních údajů..."
-                minHeight={400}
-                editable={isEditing}
-            />
+            <Box
+                sx={
+                    isEditing
+                        ? {
+                              flex: 1,
+                              minHeight: 200,
+                              display: "flex",
+                              flexDirection: "column",
+                          }
+                        : undefined
+                }
+            >
+                <RichTextEditor
+                    value={content}
+                    onChange={setContent}
+                    placeholder="Zadejte obsah GDPR / ochrana osobních údajů..."
+                    minHeight={200}
+                    editable={isEditing}
+                />
+            </Box>
 
-            <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+            <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1, flexShrink: 0 }}>
                 {isEditing ? (
                     <>
                         <Button

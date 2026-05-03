@@ -554,6 +554,10 @@ export function RichTextEditor({
                 borderRadius: 1,
                 overflow: "hidden",
                 ...(editable && {
+                    height: "100%",
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
                     "&:focus-within": {
                         borderColor: "primary.main",
                         boxShadow: (theme) =>
@@ -566,11 +570,21 @@ export function RichTextEditor({
             <Box
                 sx={{
                     p: 2,
-                    minHeight,
                     backgroundColor: "background.paper",
+                    ...(editable
+                        ? {
+                              flex: 1,
+                              minHeight,
+                              overflowY: "auto",
+                          }
+                        : {
+                              minHeight,
+                          }),
                     "& .ProseMirror": {
                         outline: "none",
-                        minHeight: minHeight - 32,
+                        ...(editable
+                            ? { height: "100%" }
+                            : { minHeight: minHeight - 32 }),
                         "& p": {
                             margin: "0.5em 0",
                         },

@@ -128,9 +128,43 @@ export function EmailTemplateEditor({
     const hasTemplate = !!savedSubject || !!savedBody;
 
     return (
-        <Box>
-            <Card variant="outlined">
-                <CardContent>
+        <Box
+            sx={
+                editing
+                    ? {
+                          height: "calc(100dvh - 180px)",
+                          display: "flex",
+                          flexDirection: "column",
+                      }
+                    : undefined
+            }
+        >
+            <Card
+                variant="outlined"
+                sx={
+                    editing
+                        ? {
+                              flex: 1,
+                              minHeight: 0,
+                              display: "flex",
+                              flexDirection: "column",
+                          }
+                        : undefined
+                }
+            >
+                <CardContent
+                    sx={
+                        editing
+                            ? {
+                                  flex: 1,
+                                  minHeight: 0,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  overflow: "auto",
+                              }
+                            : undefined
+                    }
+                >
                     {!editing ? (
                         // Read-only mode
                         <Box>
@@ -205,7 +239,7 @@ export function EmailTemplateEditor({
                         </Box>
                     ) : (
                         // Edit mode
-                        <Box>
+                        <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
                             {emailAccounts.length > 0 && (
                                 <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                                     <InputLabel>Odesílat z</InputLabel>
@@ -237,10 +271,10 @@ export function EmailTemplateEditor({
                                 sx={{ mb: 2 }}
                             />
 
-                            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, flexShrink: 0 }}>
                                 Text emailu
                             </Typography>
-                            <Box sx={{ mb: 1 }}>
+                            <Box sx={{ mb: 1, flex: 1, minHeight: 200, display: "flex", flexDirection: "column" }}>
                                 <RichTextEditor
                                     value={toEditorHtml(body)}
                                     onChange={setBody}
@@ -249,7 +283,7 @@ export function EmailTemplateEditor({
                                     placeholder="Zadejte text emailu..."
                                 />
                                 {fieldErrors.confirmationEmailBody && (
-                                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", flexShrink: 0 }}>
                                         {fieldErrors.confirmationEmailBody[0]}
                                     </Typography>
                                 )}

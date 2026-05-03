@@ -67,13 +67,31 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
     );
 
     return (
-        <Card>
-            <Box component="form" action={formAction}>
+        <Card
+            sx={{
+                height: "calc(100dvh - 180px)",
+                display: "flex",
+                flexDirection: "column",
+            }}
+        >
+            <Box
+                component="form"
+                action={formAction}
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    minHeight: 0,
+                }}
+            >
                 <CardContent
                     sx={{
                         display: "flex",
                         flexDirection: "column",
                         gap: 3,
+                        flex: 1,
+                        overflow: "auto",
+                        minHeight: 0,
                     }}
                 >
                     {state?.error?._form && (
@@ -91,18 +109,32 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                         helperText={state?.error?.title?.[0]}
                     />
 
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    <Box
+                        sx={{
+                            flex: 1,
+                            minHeight: 200,
+                            display: "flex",
+                            flexDirection: "column",
+                        }}
+                    >
+                        <Typography
+                            variant="subtitle2"
+                            sx={{ mb: 1, flexShrink: 0 }}
+                        >
                             Obsah *
                         </Typography>
                         <RichTextEditor
                             value={content}
                             onChange={setContent}
-                            minHeight={300}
+                            minHeight={200}
                         />
                         <input type="hidden" name="content" value={content} />
                         {state?.error?.content && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                            <Typography
+                                variant="caption"
+                                color="error"
+                                sx={{ mt: 0.5, flexShrink: 0 }}
+                            >
                                 {state.error.content[0]}
                             </Typography>
                         )}
