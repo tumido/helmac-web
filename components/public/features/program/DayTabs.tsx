@@ -9,13 +9,6 @@ interface DayTabsProps {
     onDayChange: (dayId: string) => void;
 }
 
-function formatDayLabel(day: ProgramDay): string {
-    const date = new Date(day.date);
-    const weekday = date.toLocaleDateString("cs-CZ", { weekday: "short" });
-    const dayNum = date.getDate();
-    return `${day.label} - ${weekday} ${dayNum}`;
-}
-
 export function DayTabs({ days, selectedDayId, onDayChange }: DayTabsProps) {
     const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
         onDayChange(newValue);
@@ -56,7 +49,7 @@ export function DayTabs({ days, selectedDayId, onDayChange }: DayTabsProps) {
                 {days.map((day) => (
                     <Tab
                         key={day.id}
-                        label={formatDayLabel(day)}
+                        label={day.label}
                         value={day.id}
                     />
                 ))}
