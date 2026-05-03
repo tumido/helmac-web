@@ -51,7 +51,8 @@ export function CookieConsent() {
                     }}
                 >
                     <Typography variant="body2">
-                        Tento web využívá soubory cookies nezbytné pro správné fungování stránek.
+                        Využíváme soubory cookies nezbytné pro správné fungování stránek. Žádné analytické ani
+                        marketingové cookies nepoužíváme.
                         Pokračováním v prohlížení souhlasíte s jejich použitím.
                     </Typography>
                     <Button
