@@ -44,4 +44,9 @@ public/uploads/
 .env.vercel
 .env.local
 .idea/
+
+# Claude and automated worflows
 .claude/plans/
+.claude/worktrees/
+screenshots/
+.playwright-mcp

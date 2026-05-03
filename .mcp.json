@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "next-devtools-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["next-devtools-mcp@latest"],
+      "env": {}
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest",
+        "--browser-url=http://127.0.0.1:9222"
+      ],
+      "env": {}
+    },
+    "eslint": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"]
+    },
+    "playwright-parallel": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["playwright-parallel-mcp"]
+    }
+  }
+}
