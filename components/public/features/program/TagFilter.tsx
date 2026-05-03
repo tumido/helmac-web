@@ -1,6 +1,5 @@
 "use client";
 
-import { Box, Chip, useTheme } from "@mui/material";
 import {
     FilterList,
     EmojiEvents,
@@ -16,6 +15,10 @@ import {
     Shield,
 } from "@mui/icons-material";
 import { ReactElement } from "react";
+import {
+    FilterChips,
+    FilterChipItem,
+} from "@/components/public/ui/FilterChips";
 
 interface TagFilterProps {
     tags: string[];
@@ -23,7 +26,6 @@ interface TagFilterProps {
     onTagChange: (tag: string | null) => void;
 }
 
-// Map tags to icons
 function getTagIcon(tag: string): ReactElement | undefined {
     const tagLower = tag.toLowerCase();
 
@@ -91,74 +93,23 @@ function getTagIcon(tag: string): ReactElement | undefined {
 }
 
 export function TagFilter({ tags, selectedTag, onTagChange }: TagFilterProps) {
-    const theme = useTheme();
-    const isDark = theme.palette.mode === "dark";
-    const isSelected = (tag: string | null) => selectedTag === tag;
-
-    const chipStyles = (selected: boolean) => ({
-        borderRadius: "50px",
-        height: { xs: 34, sm: 40 },
-        px: 1,
-        fontSize: { xs: "0.8rem", sm: "0.95rem" },
-        fontWeight: selected ? 700 : 500,
-        border: "2px solid",
-        borderColor: selected ? "primary.main" : isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
-        backgroundColor: selected ? "primary.main" : "transparent",
-        color: selected ? "primary.contrastText" : "text.primary",
-        transition: "all 0.2s ease-in-out",
-        "& .MuiChip-icon": {
-            color: selected ? "primary.contrastText" : "primary.main",
-            marginLeft: "8px",
-            fontSize: "1.2rem",
-        },
-        "& .MuiChip-label": {
-            px: 1.5,
-        },
-        "&:hover": {
-            backgroundColor: selected
-                ? "primary.dark"
-                : "rgba(201, 162, 39, 0.15)",
-            borderColor: selected ? "primary.dark" : "rgba(201, 162, 39, 0.5)",
-        },
-    });
+    const items: FilterChipItem[] = [
+        { key: "__all__", label: "Vše", icon: <FilterList /> },
+        ...tags.map((tag) => ({
+            key: tag,
+            label: tag,
+            icon: getTagIcon(tag),
+        })),
+    ];
 
     return (
-        <Box
-            sx={{
-                display: "flex",
-                gap: { xs: 1, sm: 1.5 },
-                flexWrap: "wrap",
-                mb: 3,
-                mt: 4,
-                pb: 2,
-                overflowX: "auto",
-                "&::-webkit-scrollbar": {
-                    height: 4,
-                },
-                "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: isDark ? "rgba(201, 162, 39, 0.3)" : "rgba(154, 123, 26, 0.4)",
-                    borderRadius: 2,
-                },
-            }}
-        >
-            <Chip
-                icon={<FilterList />}
-                label="Vše"
-                onClick={() => onTagChange(null)}
-                sx={chipStyles(isSelected(null))}
-            />
-            {tags.map((tag) => {
-                const icon = getTagIcon(tag);
-                return (
-                    <Chip
-                        key={tag}
-                        icon={icon}
-                        label={tag}
-                        onClick={() => onTagChange(tag)}
-                        sx={chipStyles(isSelected(tag))}
-                    />
-                );
-            })}
-        </Box>
+        <FilterChips
+            items={items}
+            selectedKey={selectedTag ?? "__all__"}
+            onSelect={(key) =>
+                onTagChange(key === "__all__" ? null : key)
+            }
+            sx={{ mb: 3, mt: 4, pb: 2 }}
+        />
     );
 }
