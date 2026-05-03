@@ -18,11 +18,16 @@ interface RegistrationSuccessProps {
 export function RegistrationSuccess({ message, variableSymbol, totalPrice, paymentData }: RegistrationSuccessProps) {
     useEffect(() => {
         if (!paymentData) return;
-        const handler = () => {
+        const trigger = () => {
             navigator.sendBeacon("/api/public/sync-payments");
         };
-        window.addEventListener("beforeunload", handler);
-        return () => window.removeEventListener("beforeunload", handler);
+        window.addEventListener("beforeunload", trigger);
+        return () => {
+            window.removeEventListener("beforeunload", trigger);
+            // Cleanup runs on client-side navigation (Next.js Link clicks);
+            // beforeunload only covers full-page unloads.
+            trigger();
+        };
     }, [paymentData]);
     return (
         <Paper
@@ -134,8 +139,7 @@ export function RegistrationSuccess({ message, variableSymbol, totalPrice, payme
             ) : null}
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                Potvrzení jsme vám zaslali na email. Sledujte novinky pro další
-                informace o platbě a dalších pokynech.
+                Potvrzení o registraci jsme vám zaslali na email. Potvrzení platby může trvat až jeden den.
             </Typography>
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
                 <LinkButton href="/" variant="contained">
