@@ -54,7 +54,7 @@ export default async function HomePage() {
             <Section backgroundColor="background.paper">
                 <SectionTitle
                     title="Galerie"
-                    subtitle="Nahlédněte do světa Helmáčů"
+                    subtitle="Nahlédněte do světa Helmáče"
                 />
                 <GalleryPreview />
             </Section>

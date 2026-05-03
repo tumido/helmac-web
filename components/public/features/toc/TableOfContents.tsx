@@ -25,30 +25,51 @@ export function TableOfContents({ items, variant }: TableOfContentsProps) {
     }, [activeId, variant]);
 
     useEffect(() => {
-        const headingElements = items
-            .map((item) => document.getElementById(item.id))
-            .filter(Boolean) as HTMLElement[];
-
-        if (headingElements.length === 0) return;
-
-        // Track which heading is active based on scroll position
-        const handleScroll = () => {
-            let current = "";
-            for (const el of headingElements) {
-                const rect = el.getBoundingClientRect();
-                if (rect.top <= 120) {
-                    current = el.id;
+        // Heading elements are resolved freshly on every recompute. The
+        // content container in ContentWithToc renders via dangerouslySetInnerHTML
+        // and React may replace its child nodes on re-render, so any references
+        // captured once would go stale (rect collapses to 0,0,0,0 → loop picks
+        // the last heading regardless of scroll position).
+        const computeActive = () => {
+            const headerH =
+                document.querySelector("header")?.getBoundingClientRect().height ?? 64;
+            const threshold = Math.round(headerH) + 8;
+            let active = "";
+            for (const item of items) {
+                const el = document.getElementById(item.id);
+                if (!el) continue;
+                if (el.getBoundingClientRect().top - threshold <= 0) {
+                    active = item.id;
+                } else {
+                    break;
                 }
             }
-            if (current) {
-                setActiveId(current);
-            }
+            setActiveId(active);
         };
 
-        handleScroll();
-        window.addEventListener("scroll", handleScroll, { passive: true });
+        // Run once after layout has settled, then on scroll (rAF-throttled)
+        // and resize. No IntersectionObserver — it would require holding
+        // element refs we can't safely cache.
+        const initFrame = requestAnimationFrame(computeActive);
 
-        return () => window.removeEventListener("scroll", handleScroll);
+        let pendingFrame = 0;
+        const onScroll = () => {
+            if (pendingFrame) return;
+            pendingFrame = requestAnimationFrame(() => {
+                pendingFrame = 0;
+                computeActive();
+            });
+        };
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", computeActive, { passive: true });
+
+        return () => {
+            cancelAnimationFrame(initFrame);
+            if (pendingFrame) cancelAnimationFrame(pendingFrame);
+            window.removeEventListener("scroll", onScroll);
+            window.removeEventListener("resize", computeActive);
+        };
     }, [items]);
 
     const handleClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, id: string) => {

@@ -18,7 +18,7 @@ export default async function GaleriePage() {
         <>
             <PageHeader
                 title="Galerie"
-                subtitle="Nahlédněte do světa Helmáčů skrze naše fotografie"
+                subtitle="Nahlédněte do světa Helmáče skrze naše fotografie"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
