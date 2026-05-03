@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { ThemeWrapper } from "@/components/public/layout/ThemeWrapper";
 import { getNavigationSubtabs, getRegistrationStatus } from "@/lib/services";
+import { getActiveYear } from "@/lib/services/years";
 import { NavSubtabs } from "@/lib/services/navigation";
 import { getPublicSession } from "@/lib/public-auth";
 
@@ -9,11 +10,12 @@ export default async function PublicLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const [navSubtabs, regStatus, publicSession, cookieStore] = await Promise.all([
+    const [navSubtabs, regStatus, publicSession, cookieStore, activeYear] = await Promise.all([
         getNavigationSubtabs(),
         getRegistrationStatus(),
         getPublicSession(),
         cookies(),
+        getActiveYear(),
     ]);
 
     const themeCookie = cookieStore.get("theme-mode")?.value;
@@ -23,12 +25,20 @@ export default async function PublicLayout({
         ? { email: publicSession.email }
         : null;
 
+    const footerDates = activeYear
+        ? {
+            startDate: activeYear.startDate?.toISOString() ?? null,
+            endDate: activeYear.endDate?.toISOString() ?? null,
+        }
+        : null;
+
     return (
         <ThemeWrapper
             navSubtabs={navSubtabs as NavSubtabs}
             registrationOpen={regStatus.isOpen}
             publicUser={publicUser}
             initialTheme={initialTheme}
+            footerDates={footerDates}
         >
             {children}
         </ThemeWrapper>

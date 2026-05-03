@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import { publicTheme, publicLightTheme } from "@/styles/theme";
 import { ThemeModeProvider, useThemeMode } from "@/contexts/ThemeContext";
 import { Header } from "./Header";
+import { Footer, FooterDates } from "./Footer";
 import { CookieConsent } from "@/components/public/ui/CookieConsent";
 import { ScrollToTop } from "@/components/public/ui";
 import { NavSubtabs } from "@/lib/services/navigation";
@@ -19,9 +20,10 @@ interface ThemedContentProps {
     navSubtabs?: NavSubtabs;
     registrationOpen?: boolean;
     publicUser?: PublicUserInfo | null;
+    footerDates?: FooterDates | null;
 }
 
-function ThemedContent({ children, navSubtabs, registrationOpen, publicUser }: ThemedContentProps) {
+function ThemedContent({ children, navSubtabs, registrationOpen, publicUser, footerDates }: ThemedContentProps) {
     const { isDark } = useThemeMode();
     const theme = isDark ? publicTheme : publicLightTheme;
 
@@ -41,6 +43,7 @@ function ThemedContent({ children, navSubtabs, registrationOpen, publicUser }: T
                 <Box component="main" sx={{ flex: 1 }}>
                     {children}
                 </Box>
+                <Footer dates={footerDates} />
                 <CookieConsent />
                 <ScrollToTop />
             </Box>
@@ -54,12 +57,13 @@ interface ThemeWrapperProps {
     registrationOpen?: boolean;
     publicUser?: PublicUserInfo | null;
     initialTheme?: "dark" | "light";
+    footerDates?: FooterDates | null;
 }
 
-export function ThemeWrapper({ children, navSubtabs, registrationOpen, publicUser, initialTheme = "dark" }: ThemeWrapperProps) {
+export function ThemeWrapper({ children, navSubtabs, registrationOpen, publicUser, initialTheme = "dark", footerDates }: ThemeWrapperProps) {
     return (
         <ThemeModeProvider initialMode={initialTheme}>
-            <ThemedContent navSubtabs={navSubtabs} registrationOpen={registrationOpen} publicUser={publicUser}>{children}</ThemedContent>
+            <ThemedContent navSubtabs={navSubtabs} registrationOpen={registrationOpen} publicUser={publicUser} footerDates={footerDates}>{children}</ThemedContent>
         </ThemeModeProvider>
     );
 }
