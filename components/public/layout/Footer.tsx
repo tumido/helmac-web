@@ -94,7 +94,7 @@ export function Footer({ dates }: FooterProps) {
                                     mb: 0.5,
                                 }}
                             >
-                                HELMAC
+                                HELMÁČ
                             </Typography>
                             <Typography
                                 variant="caption"
