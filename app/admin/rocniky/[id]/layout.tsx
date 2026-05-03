@@ -23,6 +23,7 @@ export default async function YearLayout({ children, params }: YearLayoutProps) 
                 title: year.title,
                 startDate: year.startDate?.toISOString() ?? null,
                 endDate: year.endDate?.toISOString() ?? null,
+                conditionalEmails: year.conditionalEmails,
             }}
         >
             {children}

@@ -61,6 +61,10 @@ export const getYearById = cache(async (id: string) => {
             endDate: true,
             headerPhoto: true,
             heroPhoto: true,
+            conditionalEmails: {
+                select: { id: true, name: true },
+                orderBy: { createdAt: "asc" },
+            },
         },
     });
 });

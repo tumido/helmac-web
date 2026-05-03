@@ -8,6 +8,7 @@ export interface SidebarYearData {
     title: string;
     startDate: string | null;
     endDate: string | null;
+    conditionalEmails: { id: string; name: string }[];
 }
 
 export interface BreadcrumbItem {

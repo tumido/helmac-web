@@ -490,66 +490,105 @@ export async function submitDynamicRegistration(
             }
         }
 
+        // Prepare email data (shared by confirmation and conditional emails)
+        const emailField = allInputFields.find((f) => f.type === "email");
+        const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+
+        const bankAccount = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
+            ? formatCzechAccount(
+                globalBank.bankAccountNumber,
+                globalBank.bankAccountBankCode,
+                globalBank.bankAccountPrefix ?? undefined,
+            )
+            : null;
+
+        const placeholders = buildPlaceholders({
+            submissionData,
+            variableSymbol,
+            totalPrice,
+            bankAccount,
+            yearNumber: activeYear.year,
+            yearTitle: activeYear.title,
+        });
+
+        // Generate QR payment image if payment data is available
+        let qrImageBuffer: Buffer | null = null;
+        if (paymentData) {
+            qrImageBuffer = await generateQRPaymentImage({
+                iban: paymentData.iban,
+                amount: paymentData.totalAmount,
+                variableSymbol: paymentData.variableSymbol,
+            });
+        }
+
         // Send confirmation email if enabled (non-blocking)
         if (
             activeYear.confirmationEmailEnabled &&
             activeYear.confirmationEmailSubject &&
-            activeYear.confirmationEmailBody
+            activeYear.confirmationEmailBody &&
+            recipientEmail
         ) {
             try {
-                const emailField = allInputFields.find((f) => f.type === "email");
-                const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+                const emailSubject = replacePlaceholders(activeYear.confirmationEmailSubject, placeholders);
+                const emailBody = replacePlaceholders(activeYear.confirmationEmailBody, placeholders);
 
-                if (recipientEmail) {
-                    const bankAccount = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
-                        ? formatCzechAccount(
-                            globalBank.bankAccountNumber,
-                            globalBank.bankAccountBankCode,
-                            globalBank.bankAccountPrefix ?? undefined,
-                        )
-                        : null;
+                const sent = await sendConfirmationEmail({
+                    to: recipientEmail,
+                    subject: emailSubject,
+                    body: emailBody,
+                    bcc: activeYear.confirmationEmailBcc ?? undefined,
+                    qrImageBuffer: qrImageBuffer ?? undefined,
+                    accountId: activeYear.confirmationEmailAccountId,
+                });
 
-                    const placeholders = buildPlaceholders({
-                        submissionData,
-                        variableSymbol,
-                        totalPrice,
-                        bankAccount,
-                        yearNumber: activeYear.year,
-                        yearTitle: activeYear.title,
+                if (sent) {
+                    await db.registrationSubmission.update({
+                        where: { id: submission.id },
+                        data: { emailSent: true, emailSentAt: new Date() },
                     });
-
-                    const emailSubject = replacePlaceholders(activeYear.confirmationEmailSubject, placeholders);
-                    const emailBody = replacePlaceholders(activeYear.confirmationEmailBody, placeholders);
-
-                    // Generate QR payment image if payment data is available
-                    let qrImageBuffer: Buffer | null = null;
-                    if (paymentData) {
-                        qrImageBuffer = await generateQRPaymentImage({
-                            iban: paymentData.iban,
-                            amount: paymentData.totalAmount,
-                            variableSymbol: paymentData.variableSymbol,
-                        });
-                    }
-
-                    const sent = await sendConfirmationEmail({
-                        to: recipientEmail,
-                        subject: emailSubject,
-                        body: emailBody,
-                        bcc: activeYear.confirmationEmailBcc ?? undefined,
-                        qrImageBuffer: qrImageBuffer ?? undefined,
-                        accountId: activeYear.confirmationEmailAccountId,
-                    });
-
-                    if (sent) {
-                        await db.registrationSubmission.update({
-                            where: { id: submission.id },
-                            data: { emailSent: true, emailSentAt: new Date() },
-                        });
-                    }
                 }
             } catch (emailError) {
                 console.error("Failed to send confirmation email:", emailError);
                 // Email failure does NOT block registration
+            }
+        }
+
+        // Send conditional emails (non-blocking)
+        if (recipientEmail) {
+            try {
+                const conditionalEmails = await db.conditionalEmail.findMany({
+                    where: { yearId: activeYear.id, enabled: true },
+                    select: {
+                        conditionFieldName: true,
+                        conditionValue: true,
+                        subject: true,
+                        body: true,
+                        bcc: true,
+                        accountId: true,
+                    },
+                });
+
+                for (const ce of conditionalEmails) {
+                    if (!ce.subject || !ce.body) continue;
+
+                    const fieldValue = String(submissionData[ce.conditionFieldName] ?? "");
+                    if (fieldValue !== ce.conditionValue) continue;
+
+                    const ceSubject = replacePlaceholders(ce.subject, placeholders);
+                    const ceBody = replacePlaceholders(ce.body, placeholders);
+
+                    await sendConfirmationEmail({
+                        to: recipientEmail,
+                        subject: ceSubject,
+                        body: ceBody,
+                        bcc: ce.bcc ?? undefined,
+                        qrImageBuffer: qrImageBuffer ?? undefined,
+                        accountId: ce.accountId,
+                    });
+                }
+            } catch (condEmailError) {
+                console.error("Failed to send conditional emails:", condEmailError);
+                // Conditional email failure does NOT block registration
             }
         }
 

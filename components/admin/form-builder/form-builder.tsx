@@ -57,8 +57,10 @@ import {
     getBrokenOptionRemovals,
     getFieldIdsUsedInConditions,
     getFieldExternalUsages,
+    getConditionalEmailsUsingField,
+    getConditionalEmailsUsingOptionValue,
 } from "@/lib/utils/condition-validation";
-import type { FieldExternalUsage } from "@/lib/utils/condition-validation";
+import type { FieldExternalUsage, ConditionalEmailInfo } from "@/lib/utils/condition-validation";
 import type {
     FormField,
     FormElement,
@@ -78,9 +80,10 @@ interface FormBuilderProps {
     yearId: string;
     initialFormData: RegistrationFormData;
     emailFieldNames?: string[];
+    conditionalEmails?: ConditionalEmailInfo[];
 }
 
-export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: FormBuilderProps) {
+export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], conditionalEmails = [] }: FormBuilderProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -206,12 +209,29 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
                 ? getFieldOptionValues(updatedField as InputField, pricingDefinitions)
                 : [];
             if (originalOptions.length > 0) {
+                const newSet = new Set(newOptions);
+                const allDetails: string[] = [];
+
+                // Check condition block usages
                 const broken = getBrokenOptionRemovals(updatedField.id, originalOptions, newOptions, conditions);
                 if (broken.length > 0) {
+                    allDetails.push(...broken.map((b) => `„${b.removedValue}" v podmínce „${b.conditionName}"`));
+                }
+
+                // Check conditional email option usages
+                for (const opt of originalOptions) {
+                    if (newSet.has(opt)) continue;
+                    const ceUsages = getConditionalEmailsUsingOptionValue(updatedField.id, opt, conditionalEmails);
+                    for (const u of ceUsages) {
+                        allDetails.push(`„${opt}" v podmíněném emailu „${u.emailName}"`);
+                    }
+                }
+
+                if (allDetails.length > 0) {
                     setDeletionBlock({
                         title: "Nelze uložit změny",
-                        message: "Odebrané možnosti jsou používány v podmínkách:",
-                        details: broken.map((b) => `„${b.removedValue}" v podmínce „${b.conditionName}"`),
+                        message: "Odebrané možnosti jsou používány:",
+                        details: allDetails,
                     });
                     return;
                 }
@@ -219,7 +239,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
         }
         setElements((prev) => updateFieldInElements(prev, updatedField));
         setEditingField(null);
-    }, [editingField, conditions, pricingDefinitions]);
+    }, [editingField, conditions, pricingDefinitions, conditionalEmails]);
 
     const handleDeleteField = useCallback((fieldId: string) => {
         const details: string[] = [];
@@ -228,6 +248,12 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
         const conditionUsages = getConditionsUsingField(fieldId, conditions);
         if (conditionUsages.length > 0) {
             details.push(...conditionUsages.map((u) => `Podmínka: „${u.conditionName}"`));
+        }
+
+        // Check conditional email usages
+        const ceUsages = getConditionalEmailsUsingField(fieldId, conditionalEmails);
+        if (ceUsages.length > 0) {
+            details.push(...ceUsages.map((u) => `Podmíněný email: „${u.emailName}"`));
         }
 
         // Check external usages (email, limits, stats)
@@ -255,7 +281,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [] }: F
             return;
         }
         setElements((prev) => removeFieldFromElements(prev, fieldId));
-    }, [conditions, capacityLimits, showOptionCounts, emailFieldNamesSet, infoStatsConfig]);
+    }, [conditions, capacityLimits, showOptionCounts, emailFieldNamesSet, infoStatsConfig, conditionalEmails]);
 
     const handleCreateConditionFromOption = useCallback((fieldId: string, fieldLabel: string, optionValue: string) => {
         const conditionId = crypto.randomUUID();

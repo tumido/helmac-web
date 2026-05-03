@@ -61,9 +61,10 @@ model EmailAccount {
     createdAt         DateTime @default(now())
     updatedAt         DateTime @updatedAt
 
-    confirmationYears Year[] @relation("ConfirmationEmail")
-    priceChangeYears  Year[] @relation("PriceChangeEmail")
-    paymentYears      Year[] @relation("PaymentEmail")
+    confirmationYears   Year[] @relation("ConfirmationEmail")
+    priceChangeYears    Year[] @relation("PriceChangeEmail")
+    paymentYears        Year[] @relation("PaymentEmail")
+    conditionalEmails   ConditionalEmail[] @relation("ConditionalEmailAccount")
 
     @@map("email_accounts")
 }
@@ -131,19 +132,50 @@ model Year {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  pages         Page[]
-  news          News[]
-  albums        Album[]
+  pages              Page[]
+  news               News[]
+  albums             Album[]
   registrationForm        RegistrationForm?
   registrationSubmissions RegistrationSubmission[]
   formPreview             FormPreview?
-  programDays   ProgramDay[]
-  rules         Rule[]
-  offers        Offer[]
-  infoSections  InfoSection[]
-  bankTransactions        BankTransaction[]
+  programDays        ProgramDay[]
+  rules              Rule[]
+  offers             Offer[]
+  infoSections       InfoSection[]
+  bankTransactions   BankTransaction[]
+  conditionalEmails  ConditionalEmail[]
 
   @@map("years")
+}
+
+// ============================================
+// CONDITIONAL EMAILS - Condition-based post-registration emails
+// ============================================
+
+model ConditionalEmail {
+    id                  String   @id @default(cuid())
+    yearId              String
+    year                Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+    name                String
+    enabled             Boolean  @default(false)
+
+    conditionFieldId    String
+    conditionFieldName  String
+    conditionValue      String
+
+    subject             String?
+    body                String?  @db.Text
+    bcc                 String?
+    accountId           String?
+    account             EmailAccount? @relation("ConditionalEmailAccount", fields: [accountId], references: [id], onDelete: SetNull)
+
+    sortOrder           Int      @default(0)
+
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
+
+    @@map("conditional_emails")
 }
 
 // ============================================

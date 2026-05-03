@@ -1,4 +1,4 @@
-import { Container, Box, Typography, Card, CardContent } from "@mui/material";
+import { Container, Box, Divider, Typography, Card, CardContent } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
@@ -7,10 +7,17 @@ import { MarkEmailRead, Payment, PriceChange } from "@mui/icons-material";
 import { EmailToggle } from "./email-toggle";
 import { togglePriceChangeEmail } from "@/lib/actions/years";
 import { togglePaymentEmail } from "@/lib/actions/bank-sync";
+import { ConditionalEmailCard } from "./conditional-email-card";
+import { CreateConditionalEmailDialog } from "./create-conditional-email-dialog";
+import { getRegistrationFormForYear } from "@/lib/services";
+import { migrateFormData } from "@/lib/utils/form-migration";
+import { getAllInputFields } from "@/lib/types/registration-form";
 
 interface EmailyPageProps {
     params: Promise<{ id: string }>;
 }
+
+const OPTION_FIELD_TYPES = new Set(["select", "radio", "checkbox", "pricing_select"]);
 
 async function getYearEmailStatus(yearId: string) {
     return db.year.findUnique({
@@ -39,6 +46,21 @@ async function getYearEmailStatus(yearId: string) {
             paymentEmailAccountId: true,
             paymentEmailAccount: {
                 select: { email: true, label: true },
+            },
+            conditionalEmails: {
+                select: {
+                    id: true,
+                    name: true,
+                    enabled: true,
+                    conditionFieldName: true,
+                    conditionValue: true,
+                    subject: true,
+                    body: true,
+                    account: {
+                        select: { email: true, label: true },
+                    },
+                },
+                orderBy: { createdAt: "asc" },
             },
         },
     });
@@ -70,6 +92,19 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
     const hasConfirmationTemplate = !!year.confirmationEmailSubject && !!year.confirmationEmailBody;
     const hasPriceChangeTemplate = !!year.priceChangeEmailSubject && !!year.priceChangeEmailBody;
     const hasPaymentTemplate = !!year.paymentEmailSubject && !!year.paymentEmailBody;
+
+    // Build available fields for conditional email creation
+    const registrationForm = await getRegistrationFormForYear(year.id);
+    const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
+    const allInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const availableFields = allInputFields
+        .filter((f) => OPTION_FIELD_TYPES.has(f.type) && f.options && f.options.length > 0)
+        .map((f) => ({
+            id: f.id,
+            name: f.name,
+            label: f.label,
+            options: f.options!,
+        }));
 
     return (
         <Container maxWidth="md">
@@ -152,7 +187,7 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                 </CardContent>
             </Card>
 
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Typography variant="h6" sx={{ mb: 2 }}>
                         Email při přijetí platby
@@ -187,6 +222,27 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            {year.conditionalEmails.length > 0 && (
+                <>
+                    <Divider sx={{ my: 4 }} />
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                        Podmíněné emaily
+                    </Typography>
+                    {year.conditionalEmails.map((email) => (
+                        <ConditionalEmailCard
+                            key={email.id}
+                            yearId={year.id}
+                            email={email}
+                        />
+                    ))}
+                </>
+            )}
+
+            <CreateConditionalEmailDialog
+                yearId={year.id}
+                availableFields={availableFields}
+            />
         </Container>
     );
 }

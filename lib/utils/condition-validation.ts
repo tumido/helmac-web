@@ -96,6 +96,41 @@ export function getBrokenOptionRemovals(
     return result;
 }
 
+// --- Conditional email guards ---
+
+export interface ConditionalEmailUsage {
+    emailId: string;
+    emailName: string;
+}
+
+export interface ConditionalEmailInfo {
+    id: string;
+    name: string;
+    conditionFieldId: string;
+    conditionValue: string;
+}
+
+/** Returns conditional emails that use the given field ID as their condition */
+export function getConditionalEmailsUsingField(
+    fieldId: string,
+    conditionalEmails: ConditionalEmailInfo[],
+): ConditionalEmailUsage[] {
+    return conditionalEmails
+        .filter((e) => e.conditionFieldId === fieldId)
+        .map((e) => ({ emailId: e.id, emailName: e.name }));
+}
+
+/** Returns conditional emails that use a specific option value on a field as condition */
+export function getConditionalEmailsUsingOptionValue(
+    fieldId: string,
+    value: string,
+    conditionalEmails: ConditionalEmailInfo[],
+): ConditionalEmailUsage[] {
+    return conditionalEmails
+        .filter((e) => e.conditionFieldId === fieldId && e.conditionValue === value)
+        .map((e) => ({ emailId: e.id, emailName: e.name }));
+}
+
 /** Returns all field IDs referenced by any condition rule */
 export function getFieldIdsUsedInConditions(
     conditions: FormCondition[],

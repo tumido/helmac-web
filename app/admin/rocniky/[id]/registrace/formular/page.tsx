@@ -19,6 +19,16 @@ async function getYearWithForm(yearId: string) {
             confirmationEmailSubject: true,
             confirmationEmailBody: true,
             registrationForm: { select: { id: true, fields: true } },
+            conditionalEmails: {
+                select: {
+                    id: true,
+                    name: true,
+                    conditionFieldId: true,
+                    conditionValue: true,
+                    subject: true,
+                    body: true,
+                },
+            },
         },
     });
 }
@@ -45,10 +55,31 @@ export default async function FormularPage({ params }: FormularPageProps) {
     }
 
     const formData = migrateFormData(year.registrationForm?.fields);
+
+    // Extract field names used in confirmation email placeholders
     const emailFieldNames = extractEmailFieldNames(
         year.confirmationEmailSubject,
         year.confirmationEmailBody,
     );
+
+    // Also extract field names used in conditional email placeholders
+    for (const ce of year.conditionalEmails) {
+        const ceFieldNames = extractEmailFieldNames(ce.subject, ce.body);
+        for (const name of ceFieldNames) {
+            emailFieldNames.push(name);
+        }
+    }
+
+    // Deduplicate
+    const uniqueEmailFieldNames = [...new Set(emailFieldNames)];
+
+    // Pass conditional email condition info for field/option deletion guards
+    const conditionalEmails = year.conditionalEmails.map((ce) => ({
+        id: ce.id,
+        name: ce.name,
+        conditionFieldId: ce.conditionFieldId,
+        conditionValue: ce.conditionValue,
+    }));
 
     return (
         <Container maxWidth="lg">
@@ -61,7 +92,12 @@ export default async function FormularPage({ params }: FormularPageProps) {
                 ]}
                 title="Registrační formulář"
             />
-            <FormBuilder yearId={year.id} initialFormData={formData} emailFieldNames={emailFieldNames} />
+            <FormBuilder
+                yearId={year.id}
+                initialFormData={formData}
+                emailFieldNames={uniqueEmailFieldNames}
+                conditionalEmails={conditionalEmails}
+            />
         </Container>
     );
 }
