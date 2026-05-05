@@ -35,7 +35,11 @@ import {
     WarningAmberOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
-import type { PricingDefinition, PricedOption, FormElement } from "@/lib/types/registration-form";
+import type {
+    PricingDefinition,
+    PricedOption,
+    FormElement,
+} from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
 
 interface PricingEditorProps {
@@ -51,7 +55,13 @@ interface BlockInfo {
     fieldCount: number;
 }
 
-export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChange, elements, onChange }: PricingEditorProps) {
+export function PricingEditor({
+    pricingDefinitions,
+    priceTiers,
+    onPriceTiersChange,
+    elements,
+    onChange,
+}: PricingEditorProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [blockInfo, setBlockInfo] = useState<BlockInfo | null>(null);
 
@@ -61,11 +71,23 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
         for (const el of elements) {
             if (isConditionBlock(el)) {
                 for (const child of el.children) {
-                    if ((child.type === "pricing_select" || child.type === "pricing_quantity" || child.type === "pricing_multi_select") && "pricingId" in child && child.pricingId === definitionId) {
+                    if (
+                        (child.type === "pricing_select" ||
+                            child.type === "pricing_quantity" ||
+                            child.type === "pricing_multi_select") &&
+                        "pricingId" in child &&
+                        child.pricingId === definitionId
+                    ) {
                         count++;
                     }
                 }
-            } else if ((el.type === "pricing_select" || el.type === "pricing_quantity" || el.type === "pricing_multi_select") && "pricingId" in el && el.pricingId === definitionId) {
+            } else if (
+                (el.type === "pricing_select" ||
+                    el.type === "pricing_quantity" ||
+                    el.type === "pricing_multi_select") &&
+                "pricingId" in el &&
+                el.pricingId === definitionId
+            ) {
                 count++;
             }
         }
@@ -78,30 +100,34 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
         const newTiers = [...priceTiers, ""];
         onPriceTiersChange(newTiers);
         // Add a price slot for each definition using tiers
-        onChange(pricingDefinitions.map((d) => {
-            if (!d.usePriceTiers) return d;
-            const newOptions = d.options.map((opt) => {
-                const prices = [...opt.prices];
-                // Insert a 0 before the fallback (last element)
-                prices.splice(prices.length - 1, 0, 0);
-                return { ...opt, prices };
-            });
-            return { ...d, options: newOptions };
-        }));
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (!d.usePriceTiers) return d;
+                const newOptions = d.options.map((opt) => {
+                    const prices = [...opt.prices];
+                    // Insert a 0 before the fallback (last element)
+                    prices.splice(prices.length - 1, 0, 0);
+                    return { ...opt, prices };
+                });
+                return { ...d, options: newOptions };
+            })
+        );
     };
 
     const handleRemoveTier = (tierIndex: number) => {
         const newTiers = priceTiers.filter((_, i) => i !== tierIndex);
         onPriceTiersChange(newTiers);
         // Remove corresponding price slot from definitions using tiers
-        onChange(pricingDefinitions.map((d) => {
-            if (!d.usePriceTiers) return d;
-            const newOptions = d.options.map((opt) => {
-                const prices = opt.prices.filter((_, i) => i !== tierIndex);
-                return { ...opt, prices };
-            });
-            return { ...d, options: newOptions };
-        }));
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (!d.usePriceTiers) return d;
+                const newOptions = d.options.map((opt) => {
+                    const prices = opt.prices.filter((_, i) => i !== tierIndex);
+                    return { ...opt, prices };
+                });
+                return { ...d, options: newOptions };
+            })
+        );
     };
 
     const handleUpdateTier = (tierIndex: number, value: string) => {
@@ -112,7 +138,10 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
 
     // --- Definition handlers ---
 
-    const handleAddDefinition = (type?: "options" | "quantity", multiSelect?: boolean) => {
+    const handleAddDefinition = (
+        type?: "options" | "quantity",
+        multiSelect?: boolean
+    ) => {
         const newDef: PricingDefinition = {
             id: crypto.randomUUID(),
             name: "",
@@ -132,8 +161,15 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
         setExpandedId(newDef.id);
     };
 
-    const handleUpdateDefinition = (id: string, updates: Partial<PricingDefinition>) => {
-        onChange(pricingDefinitions.map((d) => (d.id === id ? { ...d, ...updates } : d)));
+    const handleUpdateDefinition = (
+        id: string,
+        updates: Partial<PricingDefinition>
+    ) => {
+        onChange(
+            pricingDefinitions.map((d) =>
+                d.id === id ? { ...d, ...updates } : d
+            )
+        );
     };
 
     const handleDeleteDefinition = (id: string) => {
@@ -150,73 +186,102 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
         if (expandedId === id) setExpandedId(null);
     };
 
-    const handleToggleUsePriceTiers = (definitionId: string, useTiers: boolean) => {
-        onChange(pricingDefinitions.map((d) => {
-            if (d.id !== definitionId) return d;
-            if (useTiers) {
-                // Expand prices from [flat] to [tier1, tier2, ..., fallback]
-                const newOptions = d.options.map((opt) => {
-                    const flatPrice = opt.prices[0] ?? 0;
-                    const prices = new Array(priceTiers.length).fill(flatPrice);
-                    prices.push(flatPrice); // fallback
-                    return { ...opt, prices };
-                });
-                return { ...d, usePriceTiers: true, options: newOptions };
-            } else {
-                // Collapse prices to [fallback]
-                const newOptions = d.options.map((opt) => {
-                    const fallback = opt.prices[opt.prices.length - 1] ?? 0;
-                    return { ...opt, prices: [fallback] };
-                });
-                return { ...d, usePriceTiers: false, options: newOptions };
-            }
-        }));
+    const handleToggleUsePriceTiers = (
+        definitionId: string,
+        useTiers: boolean
+    ) => {
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (d.id !== definitionId) return d;
+                if (useTiers) {
+                    // Expand prices from [flat] to [tier1, tier2, ..., fallback]
+                    const newOptions = d.options.map((opt) => {
+                        const flatPrice = opt.prices[0] ?? 0;
+                        const prices = new Array(priceTiers.length).fill(
+                            flatPrice
+                        );
+                        prices.push(flatPrice); // fallback
+                        return { ...opt, prices };
+                    });
+                    return { ...d, usePriceTiers: true, options: newOptions };
+                } else {
+                    // Collapse prices to [fallback]
+                    const newOptions = d.options.map((opt) => {
+                        const fallback = opt.prices[opt.prices.length - 1] ?? 0;
+                        return { ...opt, prices: [fallback] };
+                    });
+                    return { ...d, usePriceTiers: false, options: newOptions };
+                }
+            })
+        );
     };
 
     const handleAddOption = (definitionId: string) => {
-        onChange(pricingDefinitions.map((d) => {
-            if (d.id !== definitionId) return d;
-            const priceCount = d.usePriceTiers ? priceTiers.length + 1 : 1;
-            const newOption: PricedOption = {
-                id: crypto.randomUUID(),
-                name: "",
-                description: "",
-                prices: new Array(priceCount).fill(0),
-            };
-            return { ...d, options: [...d.options, newOption] };
-        }));
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (d.id !== definitionId) return d;
+                const priceCount = d.usePriceTiers ? priceTiers.length + 1 : 1;
+                const newOption: PricedOption = {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    description: "",
+                    prices: new Array(priceCount).fill(0),
+                };
+                return { ...d, options: [...d.options, newOption] };
+            })
+        );
     };
 
-    const handleUpdateOption = (definitionId: string, optionId: string, updates: Partial<PricedOption>) => {
-        onChange(pricingDefinitions.map((d) => {
-            if (d.id !== definitionId) return d;
-            return {
-                ...d,
-                options: d.options.map((o) => (o.id === optionId ? { ...o, ...updates } : o)),
-            };
-        }));
+    const handleUpdateOption = (
+        definitionId: string,
+        optionId: string,
+        updates: Partial<PricedOption>
+    ) => {
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (d.id !== definitionId) return d;
+                return {
+                    ...d,
+                    options: d.options.map((o) =>
+                        o.id === optionId ? { ...o, ...updates } : o
+                    ),
+                };
+            })
+        );
     };
 
-    const handleUpdateOptionPrice = (definitionId: string, optionId: string, priceIndex: number, value: number) => {
-        onChange(pricingDefinitions.map((d) => {
-            if (d.id !== definitionId) return d;
-            return {
-                ...d,
-                options: d.options.map((o) => {
-                    if (o.id !== optionId) return o;
-                    const newPrices = [...o.prices];
-                    newPrices[priceIndex] = value;
-                    return { ...o, prices: newPrices };
-                }),
-            };
-        }));
+    const handleUpdateOptionPrice = (
+        definitionId: string,
+        optionId: string,
+        priceIndex: number,
+        value: number
+    ) => {
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (d.id !== definitionId) return d;
+                return {
+                    ...d,
+                    options: d.options.map((o) => {
+                        if (o.id !== optionId) return o;
+                        const newPrices = [...o.prices];
+                        newPrices[priceIndex] = value;
+                        return { ...o, prices: newPrices };
+                    }),
+                };
+            })
+        );
     };
 
     const handleDeleteOption = (definitionId: string, optionId: string) => {
-        onChange(pricingDefinitions.map((d) => {
-            if (d.id !== definitionId) return d;
-            return { ...d, options: d.options.filter((o) => o.id !== optionId) };
-        }));
+        onChange(
+            pricingDefinitions.map((d) => {
+                if (d.id !== definitionId) return d;
+                return {
+                    ...d,
+                    options: d.options.filter((o) => o.id !== optionId),
+                };
+            })
+        );
     };
 
     // Stats
@@ -225,11 +290,17 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
         const now = new Date();
         return {
             date: now.toISOString().split("T")[0],
-            twoWeeks: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            twoWeeks: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0],
         };
     });
-    const totalActiveTiers = priceTiers.filter((t) => t && t >= today.date).length;
-    const expiringTiers = priceTiers.filter((t) => t && t >= today.date && t <= today.twoWeeks).length;
+    const totalActiveTiers = priceTiers.filter(
+        (t) => t && t >= today.date
+    ).length;
+    const expiringTiers = priceTiers.filter(
+        (t) => t && t >= today.date && t <= today.twoWeeks
+    ).length;
 
     return (
         <Box>
@@ -237,7 +308,8 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                 Ceník
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Definujte cenové skupiny s termínovými slevami. Poté je přetáhněte z palety do formuláře.
+                Definujte cenové skupiny s termínovými slevami. Poté je
+                přetáhněte z palety do formuláře.
             </Typography>
 
             {/* Shared price tiers section */}
@@ -245,12 +317,25 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                     Cenové termíny (sdílené)
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-                    Termíny platí pro všechny cenové skupiny, které je používají. Ceny platí do uvedeného data. Po posledním termínu platí cena &bdquo;na místě&ldquo;.
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mb: 1, display: "block" }}
+                >
+                    Termíny platí pro všechny cenové skupiny, které je
+                    používají. Ceny platí do uvedeného data. Po posledním
+                    termínu platí cena &bdquo;na místě&ldquo;.
                 </Typography>
 
                 {priceTiers.length > 0 && (
-                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 1,
+                            flexWrap: "wrap",
+                            mb: 1,
+                        }}
+                    >
                         {priceTiers.map((tier, idx) => (
                             <Paper
                                 key={idx}
@@ -265,12 +350,20 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                     minWidth: 180,
                                 }}
                             >
-                                <Typography variant="body2" sx={{ minWidth: 60, fontWeight: 500 }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ minWidth: 60, fontWeight: 500 }}
+                                >
                                     Termín {idx + 1}
                                 </Typography>
                                 <DatePicker
                                     value={tier ? dayjs(tier) : null}
-                                    onChange={(v) => handleUpdateTier(idx, v?.format("YYYY-MM-DD") ?? "")}
+                                    onChange={(v) =>
+                                        handleUpdateTier(
+                                            idx,
+                                            v?.format("YYYY-MM-DD") ?? ""
+                                        )
+                                    }
                                     format="DD.MM.YYYY"
                                     slotProps={{
                                         textField: {
@@ -302,7 +395,10 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
             </Paper>
 
             {pricingDefinitions.length === 0 && (
-                <Typography color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
+                <Typography
+                    color="text.secondary"
+                    sx={{ textAlign: "center", py: 3 }}
+                >
                     Zatím nejsou definovány žádné cenové skupiny.
                 </Typography>
             )}
@@ -312,11 +408,27 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                     const isExpanded = expandedId === def.id;
                     const isQuantity = def.type === "quantity";
                     const isMultiSelect = !isQuantity && def.multiSelect;
-                    const typeColor = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
-                    const TypeIcon = isQuantity ? Calculate : isMultiSelect ? PlaylistAddCheck : Sell;
-                    const typeLabel = isQuantity ? "Cenový počet" : isMultiSelect ? "Cenový vícevýběr" : "Cenový výběr";
+                    const typeColor = isQuantity
+                        ? "info"
+                        : isMultiSelect
+                          ? "primary"
+                          : "success";
+                    const TypeIcon = isQuantity
+                        ? Calculate
+                        : isMultiSelect
+                          ? PlaylistAddCheck
+                          : Sell;
+                    const typeLabel = isQuantity
+                        ? "Cenový počet"
+                        : isMultiSelect
+                          ? "Cenový vícevýběr"
+                          : "Cenový výběr";
                     return (
-                        <Card key={def.id} variant="outlined" sx={{ borderRadius: 2 }}>
+                        <Card
+                            key={def.id}
+                            variant="outlined"
+                            sx={{ borderRadius: 2 }}
+                        >
                             <Box
                                 sx={{
                                     display: "flex",
@@ -326,7 +438,9 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                     py: 1.5,
                                     cursor: "pointer",
                                 }}
-                                onClick={() => setExpandedId(isExpanded ? null : def.id)}
+                                onClick={() =>
+                                    setExpandedId(isExpanded ? null : def.id)
+                                }
                             >
                                 <Box
                                     sx={{
@@ -340,18 +454,36 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                         flexShrink: 0,
                                     }}
                                 >
-                                    <TypeIcon sx={{ fontSize: 18, color: "white" }} />
+                                    <TypeIcon
+                                        sx={{ fontSize: 18, color: "white" }}
+                                    />
                                 </Box>
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography variant="body1" fontWeight={500} noWrap>
+                                    <Typography
+                                        variant="body1"
+                                        fontWeight={500}
+                                        noWrap
+                                    >
                                         {def.name || "(nepojmenovaná)"}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {typeLabel} · {def.options.length} {def.options.length === 1 ? "možnost" : "možnosti"}
-                                        {def.usePriceTiers ? ` · ${priceTiers.length} ${priceTiers.length === 1 ? "termín" : "termíny"}` : " · paušální cena"}
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        {typeLabel} · {def.options.length}{" "}
+                                        {def.options.length === 1
+                                            ? "možnost"
+                                            : "možnosti"}
+                                        {def.usePriceTiers
+                                            ? ` · ${priceTiers.length} ${priceTiers.length === 1 ? "termín" : "termíny"}`
+                                            : " · paušální cena"}
                                     </Typography>
                                 </Box>
-                                {isExpanded ? <ExpandLess color="action" /> : <ExpandMore color="action" />}
+                                {isExpanded ? (
+                                    <ExpandLess color="action" />
+                                ) : (
+                                    <ExpandMore color="action" />
+                                )}
                                 <Tooltip title="Smazat cenovou skupinu">
                                     <IconButton
                                         size="small"
@@ -370,7 +502,11 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                     <TextField
                                         label="Název cenové skupiny"
                                         value={def.name}
-                                        onChange={(e) => handleUpdateDefinition(def.id, { name: e.target.value })}
+                                        onChange={(e) =>
+                                            handleUpdateDefinition(def.id, {
+                                                name: e.target.value,
+                                            })
+                                        }
                                         size="small"
                                         fullWidth
                                         sx={{ mb: 2 }}
@@ -382,7 +518,12 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                         control={
                                             <Switch
                                                 checked={def.usePriceTiers}
-                                                onChange={(e) => handleToggleUsePriceTiers(def.id, e.target.checked)}
+                                                onChange={(e) =>
+                                                    handleToggleUsePriceTiers(
+                                                        def.id,
+                                                        e.target.checked
+                                                    )
+                                                }
                                             />
                                         }
                                         label="Použít cenové termíny"
@@ -390,7 +531,10 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                     />
 
                                     {/* Options */}
-                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                    <Typography
+                                        variant="subtitle2"
+                                        sx={{ mb: 1 }}
+                                    >
                                         Možnosti
                                     </Typography>
                                     {def.options.map((option) => (
@@ -405,11 +549,26 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                                 backgroundColor: "action.hover",
                                             }}
                                         >
-                                            <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 1,
+                                                    mb: 1,
+                                                }}
+                                            >
                                                 <TextField
                                                     label="Název možnosti"
                                                     value={option.name}
-                                                    onChange={(e) => handleUpdateOption(def.id, option.id, { name: e.target.value })}
+                                                    onChange={(e) =>
+                                                        handleUpdateOption(
+                                                            def.id,
+                                                            option.id,
+                                                            {
+                                                                name: e.target
+                                                                    .value,
+                                                            }
+                                                        )
+                                                    }
                                                     size="small"
                                                     sx={{ flex: 1 }}
                                                 />
@@ -418,8 +577,16 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                                         <IconButton
                                                             size="small"
                                                             color="error"
-                                                            onClick={() => handleDeleteOption(def.id, option.id)}
-                                                            disabled={def.options.length <= 1}
+                                                            onClick={() =>
+                                                                handleDeleteOption(
+                                                                    def.id,
+                                                                    option.id
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                def.options
+                                                                    .length <= 1
+                                                            }
                                                         >
                                                             <Delete fontSize="small" />
                                                         </IconButton>
@@ -429,37 +596,113 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                             <TextField
                                                 label="Popis"
                                                 value={option.description}
-                                                onChange={(e) => handleUpdateOption(def.id, option.id, { description: e.target.value })}
+                                                onChange={(e) =>
+                                                    handleUpdateOption(
+                                                        def.id,
+                                                        option.id,
+                                                        {
+                                                            description:
+                                                                e.target.value,
+                                                        }
+                                                    )
+                                                }
                                                 size="small"
                                                 fullWidth
                                                 sx={{ mb: 1 }}
                                             />
-                                            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 1,
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
                                                 {def.usePriceTiers ? (
                                                     <>
-                                                        {priceTiers.map((tier, tierIdx) => (
-                                                            <TextField
-                                                                key={tierIdx}
-                                                                label={`Do ${tier || "?"}`}
-                                                                type="number"
-                                                                value={option.prices[tierIdx] ?? 0}
-                                                                onChange={(e) => handleUpdateOptionPrice(def.id, option.id, tierIdx, Number(e.target.value) || 0)}
-                                                                size="small"
-                                                                sx={{ width: 130 }}
-                                                                InputProps={{
-                                                                    endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
-                                                                }}
-                                                            />
-                                                        ))}
+                                                        {priceTiers.map(
+                                                            (tier, tierIdx) => (
+                                                                <TextField
+                                                                    key={
+                                                                        tierIdx
+                                                                    }
+                                                                    label={`Do ${tier || "?"}`}
+                                                                    type="number"
+                                                                    value={
+                                                                        option
+                                                                            .prices[
+                                                                            tierIdx
+                                                                        ] ?? 0
+                                                                    }
+                                                                    onChange={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleUpdateOptionPrice(
+                                                                            def.id,
+                                                                            option.id,
+                                                                            tierIdx,
+                                                                            Number(
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            ) ||
+                                                                                0
+                                                                        )
+                                                                    }
+                                                                    size="small"
+                                                                    sx={{
+                                                                        width: 130,
+                                                                    }}
+                                                                    InputProps={{
+                                                                        endAdornment:
+                                                                            (
+                                                                                <Typography
+                                                                                    variant="caption"
+                                                                                    color="success.main"
+                                                                                    sx={{
+                                                                                        fontWeight: 600,
+                                                                                    }}
+                                                                                >
+                                                                                    Kč
+                                                                                </Typography>
+                                                                            ),
+                                                                    }}
+                                                                />
+                                                            )
+                                                        )}
                                                         <TextField
                                                             label="Na místě"
                                                             type="number"
-                                                            value={option.prices[priceTiers.length] ?? 0}
-                                                            onChange={(e) => handleUpdateOptionPrice(def.id, option.id, priceTiers.length, Number(e.target.value) || 0)}
+                                                            value={
+                                                                option.prices[
+                                                                    priceTiers
+                                                                        .length
+                                                                ] ?? 0
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleUpdateOptionPrice(
+                                                                    def.id,
+                                                                    option.id,
+                                                                    priceTiers.length,
+                                                                    Number(
+                                                                        e.target
+                                                                            .value
+                                                                    ) || 0
+                                                                )
+                                                            }
                                                             size="small"
                                                             sx={{ width: 130 }}
                                                             InputProps={{
-                                                                endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                                endAdornment: (
+                                                                    <Typography
+                                                                        variant="caption"
+                                                                        color="success.main"
+                                                                        sx={{
+                                                                            fontWeight: 600,
+                                                                        }}
+                                                                    >
+                                                                        Kč
+                                                                    </Typography>
+                                                                ),
                                                             }}
                                                         />
                                                     </>
@@ -467,12 +710,35 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                                                     <TextField
                                                         label="Cena"
                                                         type="number"
-                                                        value={option.prices[0] ?? 0}
-                                                        onChange={(e) => handleUpdateOptionPrice(def.id, option.id, 0, Number(e.target.value) || 0)}
+                                                        value={
+                                                            option.prices[0] ??
+                                                            0
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleUpdateOptionPrice(
+                                                                def.id,
+                                                                option.id,
+                                                                0,
+                                                                Number(
+                                                                    e.target
+                                                                        .value
+                                                                ) || 0
+                                                            )
+                                                        }
                                                         size="small"
                                                         sx={{ width: 130 }}
                                                         InputProps={{
-                                                            endAdornment: <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>Kč</Typography>,
+                                                            endAdornment: (
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="success.main"
+                                                                    sx={{
+                                                                        fontWeight: 600,
+                                                                    }}
+                                                                >
+                                                                    Kč
+                                                                </Typography>
+                                                            ),
                                                         }}
                                                     />
                                                 )}
@@ -500,7 +766,16 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                     variant="outlined"
                     startIcon={<Sell />}
                     onClick={() => handleAddDefinition("options", false)}
-                    sx={{ flex: "1 1 0", minWidth: 200, color: "success.main", borderColor: "success.main", "&:hover": { borderColor: "success.dark", backgroundColor: "rgba(46, 125, 50, 0.04)" } }}
+                    sx={{
+                        flex: "1 1 0",
+                        minWidth: 200,
+                        color: "success.main",
+                        borderColor: "success.main",
+                        "&:hover": {
+                            borderColor: "success.dark",
+                            backgroundColor: "rgba(46, 125, 50, 0.04)",
+                        },
+                    }}
                 >
                     Přidat cenový výběr
                 </Button>
@@ -508,7 +783,16 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                     variant="outlined"
                     startIcon={<PlaylistAddCheck />}
                     onClick={() => handleAddDefinition("options", true)}
-                    sx={{ flex: "1 1 0", minWidth: 200, color: "secondary.main", borderColor: "secondary.main", "&:hover": { borderColor: "secondary.dark", backgroundColor: "rgba(156, 39, 176, 0.04)" } }}
+                    sx={{
+                        flex: "1 1 0",
+                        minWidth: 200,
+                        color: "secondary.main",
+                        borderColor: "secondary.main",
+                        "&:hover": {
+                            borderColor: "secondary.dark",
+                            backgroundColor: "rgba(156, 39, 176, 0.04)",
+                        },
+                    }}
                 >
                     Přidat cenový vícevýběr
                 </Button>
@@ -516,7 +800,16 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                     variant="outlined"
                     startIcon={<Calculate />}
                     onClick={() => handleAddDefinition("quantity", false)}
-                    sx={{ flex: "1 1 0", minWidth: 200, color: "info.main", borderColor: "info.main", "&:hover": { borderColor: "info.dark", backgroundColor: "rgba(2, 136, 209, 0.04)" } }}
+                    sx={{
+                        flex: "1 1 0",
+                        minWidth: 200,
+                        color: "info.main",
+                        borderColor: "info.main",
+                        "&:hover": {
+                            borderColor: "info.dark",
+                            backgroundColor: "rgba(2, 136, 209, 0.04)",
+                        },
+                    }}
                 >
                     Přidat cenový počet
                 </Button>
@@ -525,10 +818,30 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
             {/* Stats summary */}
             {pricingDefinitions.length > 0 && (
                 <Box sx={{ display: "flex", gap: 2, mt: 3, flexWrap: "wrap" }}>
-                    <Paper variant="outlined" sx={{ p: 2, flex: "1 1 0", minWidth: 140, borderRadius: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                            <CategoryOutlined sx={{ fontSize: 18, color: "primary.main" }} />
-                            <Typography variant="caption" color="text.secondary">
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2,
+                            flex: "1 1 0",
+                            minWidth: 140,
+                            borderRadius: 2,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 0.5,
+                            }}
+                        >
+                            <CategoryOutlined
+                                sx={{ fontSize: 18, color: "primary.main" }}
+                            />
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                            >
                                 Celkem skupin
                             </Typography>
                         </Box>
@@ -536,10 +849,30 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                             {totalGroups}
                         </Typography>
                     </Paper>
-                    <Paper variant="outlined" sx={{ p: 2, flex: "1 1 0", minWidth: 140, borderRadius: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                            <CalendarTodayOutlined sx={{ fontSize: 18, color: "success.main" }} />
-                            <Typography variant="caption" color="text.secondary">
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2,
+                            flex: "1 1 0",
+                            minWidth: 140,
+                            borderRadius: 2,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 0.5,
+                            }}
+                        >
+                            <CalendarTodayOutlined
+                                sx={{ fontSize: 18, color: "success.main" }}
+                            />
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                            >
                                 Aktivních termínů
                             </Typography>
                         </Box>
@@ -547,10 +880,30 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                             {totalActiveTiers}
                         </Typography>
                     </Paper>
-                    <Paper variant="outlined" sx={{ p: 2, flex: "1 1 0", minWidth: 140, borderRadius: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                            <WarningAmberOutlined sx={{ fontSize: 18, color: "warning.main" }} />
-                            <Typography variant="caption" color="text.secondary">
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2,
+                            flex: "1 1 0",
+                            minWidth: 140,
+                            borderRadius: 2,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 0.5,
+                            }}
+                        >
+                            <WarningAmberOutlined
+                                sx={{ fontSize: 18, color: "warning.main" }}
+                            />
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                            >
                                 Končící termíny
                             </Typography>
                         </Box>
@@ -565,13 +918,18 @@ export function PricingEditor({ pricingDefinitions, priceTiers, onPriceTiersChan
                 <DialogTitle>Nelze smazat cenovou skupinu</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Cenová skupina &bdquo;{blockInfo?.definitionName}&ldquo; je používána v {blockInfo?.fieldCount}{" "}
-                        {blockInfo?.fieldCount === 1 ? "poli" : "polích"} ve formuláři.
-                        Nejdříve odstraňte všechna pole cenového výběru, která ji používají.
+                        Cenová skupina &bdquo;{blockInfo?.definitionName}&ldquo;
+                        je používána v {blockInfo?.fieldCount}{" "}
+                        {blockInfo?.fieldCount === 1 ? "poli" : "polích"} ve
+                        formuláři. Nejdříve odstraňte všechna pole cenového
+                        výběru, která ji používají.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setBlockInfo(null)} variant="contained">
+                    <Button
+                        onClick={() => setBlockInfo(null)}
+                        variant="contained"
+                    >
                         Rozumím
                     </Button>
                 </DialogActions>

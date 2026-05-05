@@ -1,9 +1,15 @@
-import type { FormCondition, FormElement, ConditionBlock, CapacityLimit, InfoStatsConfig } from "@/lib/types/registration-form";
+import type {
+    FormCondition,
+    FormElement,
+    ConditionBlock,
+    CapacityLimit,
+    InfoStatsConfig,
+} from "@/lib/types/registration-form";
 import { isConditionBlock } from "@/lib/types/registration-form";
 
 export interface FieldExternalUsage {
-    label: string;   // "Email", "Limit", "Statistiky", "Info statistiky"
-    color: "warning" | "secondary" | "success" | "info";
+    label: string; // "Email", "Limit", "Statistiky", "Info statistiky"
+    color: "warning" | "primary" | "success" | "info";
 }
 
 /** Returns external usages (email, capacity limit, stats, info stats) for a given field */
@@ -13,7 +19,7 @@ export function getFieldExternalUsages(
     capacityLimits: CapacityLimit[],
     showOptionCounts: string[],
     emailFieldNames: Set<string>,
-    infoStatsConfig?: InfoStatsConfig,
+    infoStatsConfig?: InfoStatsConfig
 ): FieldExternalUsage[] {
     const usages: FieldExternalUsage[] = [];
 
@@ -22,14 +28,18 @@ export function getFieldExternalUsages(
     }
 
     if (capacityLimits.some((l) => l.fieldId === fieldId)) {
-        usages.push({ label: "Limit", color: "secondary" });
+        usages.push({ label: "Limit", color: "primary" });
     }
 
     if (showOptionCounts.includes(fieldId)) {
         usages.push({ label: "Statistiky", color: "success" });
     }
 
-    if (infoStatsConfig?.stats.some((s) => s.fieldIds.includes(fieldId) || s.personFieldId === fieldId)) {
+    if (
+        infoStatsConfig?.stats.some(
+            (s) => s.fieldIds.includes(fieldId) || s.personFieldId === fieldId
+        )
+    ) {
         usages.push({ label: "Info statistiky", color: "info" });
     }
 
@@ -44,34 +54,40 @@ export interface ConditionUsageInfo {
 /** Finds conditions whose rules reference a given field ID */
 export function getConditionsUsingField(
     fieldId: string,
-    conditions: FormCondition[],
+    conditions: FormCondition[]
 ): ConditionUsageInfo[] {
     return conditions
         .filter((c) => c.rules.some((r) => r.fieldId === fieldId))
-        .map((c) => ({ conditionId: c.id, conditionName: c.name || "(nepojmenovaná)" }));
+        .map((c) => ({
+            conditionId: c.id,
+            conditionName: c.name || "(nepojmenovaná)",
+        }));
 }
 
 /** Finds conditions whose rules reference a specific option value on a specific field */
 export function getConditionsUsingOptionValue(
     fieldId: string,
     value: string,
-    conditions: FormCondition[],
+    conditions: FormCondition[]
 ): ConditionUsageInfo[] {
     return conditions
         .filter((c) =>
-            c.rules.some((r) => r.fieldId === fieldId && r.value === value),
+            c.rules.some((r) => r.fieldId === fieldId && r.value === value)
         )
-        .map((c) => ({ conditionId: c.id, conditionName: c.name || "(nepojmenovaná)" }));
+        .map((c) => ({
+            conditionId: c.id,
+            conditionName: c.name || "(nepojmenovaná)",
+        }));
 }
 
 /** Finds condition blocks that reference a given condition ID */
 export function getBlocksUsingCondition(
     conditionId: string,
-    elements: FormElement[],
+    elements: FormElement[]
 ): ConditionBlock[] {
     return elements.filter(
         (el): el is ConditionBlock =>
-            isConditionBlock(el) && el.conditionId === conditionId,
+            isConditionBlock(el) && el.conditionId === conditionId
     );
 }
 
@@ -80,7 +96,7 @@ export function getBrokenOptionRemovals(
     fieldId: string,
     originalOptions: string[],
     newOptions: string[],
-    conditions: FormCondition[],
+    conditions: FormCondition[]
 ): { removedValue: string; conditionName: string }[] {
     const newSet = new Set(newOptions);
     const result: { removedValue: string; conditionName: string }[] = [];
@@ -89,7 +105,10 @@ export function getBrokenOptionRemovals(
         if (newSet.has(opt)) continue;
         const usages = getConditionsUsingOptionValue(fieldId, opt, conditions);
         for (const usage of usages) {
-            result.push({ removedValue: opt, conditionName: usage.conditionName });
+            result.push({
+                removedValue: opt,
+                conditionName: usage.conditionName,
+            });
         }
     }
 
@@ -113,7 +132,7 @@ export interface ConditionalEmailInfo {
 /** Returns conditional emails that use the given field ID as their condition */
 export function getConditionalEmailsUsingField(
     fieldId: string,
-    conditionalEmails: ConditionalEmailInfo[],
+    conditionalEmails: ConditionalEmailInfo[]
 ): ConditionalEmailUsage[] {
     return conditionalEmails
         .filter((e) => e.conditionFieldId === fieldId)
@@ -124,16 +143,18 @@ export function getConditionalEmailsUsingField(
 export function getConditionalEmailsUsingOptionValue(
     fieldId: string,
     value: string,
-    conditionalEmails: ConditionalEmailInfo[],
+    conditionalEmails: ConditionalEmailInfo[]
 ): ConditionalEmailUsage[] {
     return conditionalEmails
-        .filter((e) => e.conditionFieldId === fieldId && e.conditionValue === value)
+        .filter(
+            (e) => e.conditionFieldId === fieldId && e.conditionValue === value
+        )
         .map((e) => ({ emailId: e.id, emailName: e.name }));
 }
 
 /** Returns all field IDs referenced by any condition rule */
 export function getFieldIdsUsedInConditions(
-    conditions: FormCondition[],
+    conditions: FormCondition[]
 ): Set<string> {
     const ids = new Set<string>();
     for (const c of conditions) {

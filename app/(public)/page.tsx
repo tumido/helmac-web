@@ -12,7 +12,10 @@ export default async function HomePage() {
         getRegistrationStatus(),
     ]);
 
-    const eventDate = formatEventDateRange(activeYear?.startDate, activeYear?.endDate);
+    const eventDate = formatEventDateRange(
+        activeYear?.startDate,
+        activeYear?.endDate
+    );
 
     return (
         <>
@@ -26,7 +29,7 @@ export default async function HomePage() {
                 }
                 ctaText={regStatus.isOpen ? "Registrovat se" : undefined}
                 ctaHref={regStatus.isOpen ? "/registrace" : undefined}
-                secondaryCtaText="Vice o programu"
+                secondaryCtaText="Více o programu"
                 secondaryCtaHref="/program"
             >
                 {!regStatus.isOpen && regStatus.registrationStartDate && (
@@ -38,7 +41,8 @@ export default async function HomePage() {
                             fontWeight: 300,
                         }}
                     >
-                        Registrace se otevře {formatDate(regStatus.registrationStartDate)}
+                        Registrace se otevře{" "}
+                        {formatDate(regStatus.registrationStartDate)}
                     </Typography>
                 )}
             </HeroSection>

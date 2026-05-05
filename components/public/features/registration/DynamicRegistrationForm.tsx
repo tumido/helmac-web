@@ -1,18 +1,55 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, useActionState, type FormEvent } from "react";
-import { Box, Button, Alert, Paper, Snackbar, FormControlLabel, Checkbox, FormHelperText } from "@mui/material";
+import {
+    useState,
+    useCallback,
+    useMemo,
+    useEffect,
+    useActionState,
+    type FormEvent,
+} from "react";
+import {
+    Box,
+    Button,
+    Alert,
+    Paper,
+    Snackbar,
+    FormControlLabel,
+    Checkbox,
+    FormHelperText,
+} from "@mui/material";
 import MuiLink from "@mui/material/Link";
 import NextLink from "next/link";
-import type { RegistrationFormData, SubmissionData, OptionCounts, AdditionalPersonData } from "@/lib/types/registration-form";
-import { isInputField, getAllFields, getAllInputFields, getAPInputFields, hasAdditionalPeopleFields, getDisabledOptionsForField } from "@/lib/types/registration-form";
+import type {
+    RegistrationFormData,
+    SubmissionData,
+    OptionCounts,
+    AdditionalPersonData,
+} from "@/lib/types/registration-form";
+import {
+    isInputField,
+    getAllFields,
+    getAllInputFields,
+    getAPInputFields,
+    hasAdditionalPeopleFields,
+    getDisabledOptionsForField,
+} from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
-import { useConditionalFields, evaluateAPVisibleFields } from "./useConditionalFields";
+import {
+    useConditionalFields,
+    evaluateAPVisibleFields,
+} from "./useConditionalFields";
 import { AdditionalPeopleSection } from "./AdditionalPeopleSection";
 import { PriceSummary } from "./PriceSummary";
-import { buildMergedDataForAP, getAPFieldNames } from "@/lib/utils/additional-people";
-import { submitDynamicRegistration, type RegistrationState } from "@/lib/actions/public/registration";
+import {
+    buildMergedDataForAP,
+    getAPFieldNames,
+} from "@/lib/utils/additional-people";
+import {
+    submitDynamicRegistration,
+    type RegistrationState,
+} from "@/lib/actions/public/registration";
 
 interface DynamicRegistrationFormProps {
     formData: RegistrationFormData;
@@ -22,7 +59,10 @@ interface DynamicRegistrationFormProps {
     publicEmail?: string;
 }
 
-function buildInitialValues(formData: RegistrationFormData, publicEmail?: string): SubmissionData {
+function buildInitialValues(
+    formData: RegistrationFormData,
+    publicEmail?: string
+): SubmissionData {
     const values: SubmissionData = {};
     const inputFields = getAllInputFields(formData.fields);
     for (const field of inputFields) {
@@ -41,20 +81,33 @@ function buildInitialValues(formData: RegistrationFormData, publicEmail?: string
     return values;
 }
 
-export function DynamicRegistrationForm({ formData, optionCounts, previewMode, isLoggedIn, publicEmail }: DynamicRegistrationFormProps) {
-    const [values, setValues] = useState<SubmissionData>(() => buildInitialValues(formData, publicEmail));
-    const [additionalPeople, setAdditionalPeople] = useState<AdditionalPersonData[]>([]);
+export function DynamicRegistrationForm({
+    formData,
+    optionCounts,
+    previewMode,
+    isLoggedIn,
+    publicEmail,
+}: DynamicRegistrationFormProps) {
+    const [values, setValues] = useState<SubmissionData>(() =>
+        buildInitialValues(formData, publicEmail)
+    );
+    const [additionalPeople, setAdditionalPeople] = useState<
+        AdditionalPersonData[]
+    >([]);
     const { visibleFields } = useConditionalFields(formData, values);
     const [previewSnackbar, setPreviewSnackbar] = useState(false);
 
-    const [state, formAction, isPending] = useActionState<RegistrationState | null, FormData>(
-        submitDynamicRegistration,
-        null
-    );
+    const [state, formAction, isPending] = useActionState<
+        RegistrationState | null,
+        FormData
+    >(submitDynamicRegistration, null);
 
-    const handleChange = useCallback((name: string, value: string | number | boolean) => {
-        setValues((prev) => ({ ...prev, [name]: value }));
-    }, []);
+    const handleChange = useCallback(
+        (name: string, value: string | number | boolean) => {
+            setValues((prev) => ({ ...prev, [name]: value }));
+        },
+        []
+    );
 
     const getFieldError = useCallback(
         (name: string): string | undefined => {
@@ -77,17 +130,33 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
             if (!visibleFields.has(field.id)) continue;
 
             if (field.type === "pricing_select" && field.pricingId) {
-                const def = formData.pricingDefinitions.find(d => d.id === field.pricingId);
+                const def = formData.pricingDefinitions.find(
+                    (d) => d.id === field.pricingId
+                );
                 if (!def) continue;
-                const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
-                const enabledOptions = def.options.filter(o => !disabledOpts.has(o.name));
+                const disabledOpts = getDisabledOptionsForField(
+                    field.id,
+                    field.name,
+                    formData.capacityLimits,
+                    optionCounts
+                );
+                const enabledOptions = def.options.filter(
+                    (o) => !disabledOpts.has(o.name)
+                );
                 if (enabledOptions.length === 1) {
                     updates[field.name] = enabledOptions[0].name;
                 }
             } else if (field.type === "select" || field.type === "radio") {
                 if (!field.options || field.options.length === 0) continue;
-                const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
-                const enabledOptions = field.options.filter(o => !disabledOpts.has(o));
+                const disabledOpts = getDisabledOptionsForField(
+                    field.id,
+                    field.name,
+                    formData.capacityLimits,
+                    optionCounts
+                );
+                const enabledOptions = field.options.filter(
+                    (o) => !disabledOpts.has(o)
+                );
                 if (enabledOptions.length === 1) {
                     updates[field.name] = enabledOptions[0];
                 }
@@ -96,7 +165,7 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
 
         if (Object.keys(updates).length > 0) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-select single enabled option based on capacity constraints
-            setValues(prev => {
+            setValues((prev) => {
                 const next = { ...prev };
                 let changed = false;
                 for (const [name, value] of Object.entries(updates)) {
@@ -159,13 +228,22 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                     return null;
                 })}
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
+                >
                     {allFields.map((field) => {
                         if (!visibleFields.has(field.id)) return null;
 
-                        const value = isInputField(field) ? (values[field.name] ?? "") : "";
+                        const value = isInputField(field)
+                            ? (values[field.name] ?? "")
+                            : "";
                         const disabledOpts = isInputField(field)
-                            ? getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts)
+                            ? getDisabledOptionsForField(
+                                  field.id,
+                                  field.name,
+                                  formData.capacityLimits,
+                                  optionCounts
+                              )
                             : undefined;
 
                         return (
@@ -173,7 +251,11 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                                 key={field.id}
                                 field={field}
                                 value={value}
-                                error={isInputField(field) ? getFieldError(field.name) : undefined}
+                                error={
+                                    isInputField(field)
+                                        ? getFieldError(field.name)
+                                        : undefined
+                                }
                                 onChange={handleChange}
                                 pricingDefinitions={formData.pricingDefinitions}
                                 priceTiers={formData.priceTiers}
@@ -214,7 +296,11 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                             label={
                                 <>
                                     Souhlasím se{" "}
-                                    <MuiLink component={NextLink} href="/gdpr" target="_blank">
+                                    <MuiLink
+                                        component={NextLink}
+                                        href="/gdpr"
+                                        target="_blank"
+                                    >
                                         zpracováním osobních údajů
                                     </MuiLink>
                                 </>
@@ -232,7 +318,7 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                     <Button
                         type="submit"
                         variant="contained"
-                        color="secondary"
+                        color="primary"
                         size="large"
                         disabled={!previewMode && isPending}
                         sx={{
@@ -244,8 +330,8 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                         {!previewMode && isPending
                             ? "Odesílám..."
                             : previewMode
-                                ? "Odeslat registraci (náhled)"
-                                : "Odeslat registraci"}
+                              ? "Odeslat registraci (náhled)"
+                              : "Odeslat registraci"}
                     </Button>
                     {state?.message && !state.success && (
                         <Alert severity="error" sx={{ mt: 2 }}>
@@ -262,7 +348,10 @@ export function DynamicRegistrationForm({ formData, optionCounts, previewMode, i
                     onClose={() => setPreviewSnackbar(false)}
                     anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
                 >
-                    <Alert severity="info" onClose={() => setPreviewSnackbar(false)}>
+                    <Alert
+                        severity="info"
+                        onClose={() => setPreviewSnackbar(false)}
+                    >
                         Toto je pouze náhled. Registrace nebyla odeslána.
                     </Alert>
                 </Snackbar>

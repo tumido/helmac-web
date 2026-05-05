@@ -1,10 +1,19 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { AccountTree, Sell, Calculate, PlaylistAddCheck, InfoOutlined } from "@mui/icons-material";
+import {
+    AccountTree,
+    Sell,
+    Calculate,
+    PlaylistAddCheck,
+    InfoOutlined,
+} from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { FieldType, FIELD_TYPE_META } from "@/lib/types/registration-form";
-import type { FormCondition, PricingDefinition } from "@/lib/types/registration-form";
+import type {
+    FormCondition,
+    PricingDefinition,
+} from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
 
 interface DraggablePaletteItemProps {
@@ -15,7 +24,13 @@ interface DraggablePaletteItemProps {
     onAdd?: (type: FieldType) => void;
 }
 
-function DraggablePaletteItem({ type, label, icon, compact, onAdd }: DraggablePaletteItemProps) {
+function DraggablePaletteItem({
+    type,
+    label,
+    icon,
+    compact,
+    onAdd,
+}: DraggablePaletteItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-${type}`,
         data: { type },
@@ -48,8 +63,13 @@ function DraggablePaletteItem({ type, label, icon, compact, onAdd }: DraggablePa
                     },
                 }}
             >
-                <Box sx={{ color: "primary.main", display: "flex" }}>{icon}</Box>
-                <Typography variant="caption" sx={{ fontSize: "0.65rem", textAlign: "center" }}>
+                <Box sx={{ color: "primary.main", display: "flex" }}>
+                    {icon}
+                </Box>
+                <Typography
+                    variant="caption"
+                    sx={{ fontSize: "0.65rem", textAlign: "center" }}
+                >
                     {label}
                 </Typography>
             </Paper>
@@ -91,7 +111,10 @@ interface DraggableConditionItemProps {
     onAdd?: (conditionId: string) => void;
 }
 
-function DraggableConditionItem({ condition, onAdd }: DraggableConditionItemProps) {
+function DraggableConditionItem({
+    condition,
+    onAdd,
+}: DraggableConditionItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-condition-${condition.id}`,
         data: { type: "condition", conditionId: condition.id },
@@ -137,7 +160,10 @@ interface DraggablePricingItemProps {
     onAdd?: (definitionId: string) => void;
 }
 
-function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) {
+function DraggablePricingItem({
+    definition,
+    onAdd,
+}: DraggablePricingItemProps) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-pricing-${definition.id}`,
         data: { type: "pricing", definitionId: definition.id },
@@ -145,7 +171,7 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
 
     const isQuantity = definition.type === "quantity";
     const isMultiSelect = !isQuantity && definition.multiSelect;
-    const color = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
+    const color = isQuantity ? "info" : isMultiSelect ? "primary" : "success";
 
     return (
         <Paper
@@ -173,7 +199,13 @@ function DraggablePricingItem({ definition, onAdd }: DraggablePricingItemProps) 
             }}
         >
             <Box sx={{ color: `${color}.main`, display: "flex" }}>
-                {isQuantity ? <Calculate fontSize="small" /> : isMultiSelect ? <PlaylistAddCheck fontSize="small" /> : <Sell fontSize="small" />}
+                {isQuantity ? (
+                    <Calculate fontSize="small" />
+                ) : isMultiSelect ? (
+                    <PlaylistAddCheck fontSize="small" />
+                ) : (
+                    <Sell fontSize="small" />
+                )}
             </Box>
             <Typography variant="body2" noWrap>
                 {definition.name || "(nepojmenovaná)"}
@@ -190,9 +222,19 @@ interface FieldPaletteProps {
     onAddPricingField?: (definitionId: string) => void;
 }
 
-export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddField, onAddConditionBlock, onAddPricingField }: FieldPaletteProps) {
-    const inputTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "input");
-    const layoutTypes = Object.entries(FIELD_TYPE_META).filter(([, meta]) => meta.group === "layout");
+export function FieldPalette({
+    conditions = [],
+    pricingDefinitions = [],
+    onAddField,
+    onAddConditionBlock,
+    onAddPricingField,
+}: FieldPaletteProps) {
+    const inputTypes = Object.entries(FIELD_TYPE_META).filter(
+        ([, meta]) => meta.group === "input"
+    );
+    const layoutTypes = Object.entries(FIELD_TYPE_META).filter(
+        ([, meta]) => meta.group === "layout"
+    );
 
     return (
         <Paper
@@ -204,7 +246,11 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddFi
                 top: 16,
             }}
         >
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ mb: 1 }}
+            >
                 Vstupní pole
             </Typography>
             <Box
@@ -227,10 +273,21 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddFi
                 ))}
             </Box>
 
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ mb: 1 }}
+            >
                 Rozložení
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.75,
+                    mb: 2,
+                }}
+            >
                 {layoutTypes.map(([type, meta]) => (
                     <DraggablePaletteItem
                         key={type}
@@ -244,10 +301,21 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddFi
 
             {conditions.length > 0 && (
                 <>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                    >
                         Podmínky
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.75,
+                            mb: 2,
+                        }}
+                    >
                         {conditions.map((condition) => (
                             <DraggableConditionItem
                                 key={condition.id}
@@ -261,10 +329,21 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddFi
 
             {pricingDefinitions.length > 0 && (
                 <>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                    >
                         Ceník
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.75,
+                            mb: 2,
+                        }}
+                    >
                         {pricingDefinitions.map((def) => (
                             <DraggablePricingItem
                                 key={def.id}
@@ -284,12 +363,18 @@ export function FieldPalette({ conditions = [], pricingDefinitions = [], onAddFi
                     p: 1.5,
                     borderRadius: 1,
                     backgroundColor: "info.50",
-                    bgcolor: (theme) => theme.palette.mode === "light" ? "rgba(2, 136, 209, 0.08)" : "rgba(2, 136, 209, 0.15)",
+                    bgcolor: (theme) =>
+                        theme.palette.mode === "light"
+                            ? "rgba(2, 136, 209, 0.08)"
+                            : "rgba(2, 136, 209, 0.15)",
                 }}
             >
-                <InfoOutlined sx={{ fontSize: 16, color: "info.main", mt: 0.25 }} />
+                <InfoOutlined
+                    sx={{ fontSize: 16, color: "info.main", mt: 0.25 }}
+                />
                 <Typography variant="caption" color="text.secondary">
-                    Klikněte na pole pro přidání na konec, nebo přetáhněte na konkrétní místo.
+                    Klikněte na pole pro přidání na konec, nebo přetáhněte na
+                    konkrétní místo.
                 </Typography>
             </Box>
         </Paper>

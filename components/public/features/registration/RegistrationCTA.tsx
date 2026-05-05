@@ -17,7 +17,7 @@ export async function RegistrationCTA() {
                     sx={{
                         textAlign: "center",
                         py: { xs: 6, md: 10 },
-                        color: "common.white",
+                        color: "primary.contrastText",
                     }}
                 >
                     <Typography
@@ -25,12 +25,17 @@ export async function RegistrationCTA() {
                         component="h2"
                         sx={{
                             fontFamily: '"Cinzel", serif',
-                            color: "common.white",
+                            color: "primary.contrastText",
                             mb: 2,
-                            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+                            fontSize: {
+                                xs: "1.5rem",
+                                sm: "2rem",
+                                md: "2.5rem",
+                            },
                         }}
                     >
-                        Registrace se otevře {formatDate(status.registrationStartDate)}
+                        Registrace se otevře{" "}
+                        {formatDate(status.registrationStartDate)}
                     </Typography>
                     <Typography
                         variant="body1"
@@ -49,7 +54,6 @@ export async function RegistrationCTA() {
                 sx={{
                     textAlign: "center",
                     py: { xs: 6, md: 10 },
-                    color: "common.white",
                 }}
             >
                 <Typography
@@ -57,7 +61,7 @@ export async function RegistrationCTA() {
                     component="h2"
                     sx={{
                         fontFamily: '"Cinzel", serif',
-                        color: "common.white",
+                        color: "primary.contrastText",
                         mb: 2,
                         fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                     }}
@@ -66,15 +70,18 @@ export async function RegistrationCTA() {
                 </Typography>
                 <Typography
                     variant="body1"
-                    sx={{ opacity: 0.9, mb: 4, maxWidth: 600, mx: "auto" }}
+                    sx={{
+                        opacity: 0.9,
+                        mb: 4,
+                        maxWidth: 600,
+                        mx: "auto",
+                        color: "primary.contrastText",
+                    }}
                 >
-                    Registrace na {status.year?.title} je otevřena. Pojďte
-                    zažít nezapomenutelný LARP zážitek.
+                    Registrace na {status.year?.title} je otevřena. Pojďte zažít
+                    nezapomenutelný LARP zážitek.
                 </Typography>
-                <Link
-                    href="/registrace"
-                    style={{ textDecoration: "none" }}
-                >
+                <Link href="/registrace" style={{ textDecoration: "none" }}>
                     <Button
                         variant="contained"
                         color="secondary"
@@ -91,7 +98,11 @@ export async function RegistrationCTA() {
                 {status.registrationCount > 0 && (
                     <Typography
                         variant="body1"
-                        sx={{ mt: 2, opacity: 0.7 }}
+                        sx={{
+                            mt: 2,
+                            opacity: 0.7,
+                            color: "primary.contrastText",
+                        }}
                     >
                         Již {status.registrationCount} registrovaných účastníků
                     </Typography>

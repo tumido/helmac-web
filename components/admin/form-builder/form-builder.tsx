@@ -17,7 +17,14 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
-import { Add, Save, Visibility, Delete, TuneOutlined, ContentCopy } from "@mui/icons-material";
+import {
+    Add,
+    Save,
+    Visibility,
+    Delete,
+    TuneOutlined,
+    ContentCopy,
+} from "@mui/icons-material";
 import {
     DndContext,
     DragOverlay,
@@ -48,7 +55,10 @@ import { SortableFieldItem } from "./sortable-field-item";
 import { ConditionBlockItem } from "./condition-block-item";
 import { ConditionEditor } from "./condition-editor";
 import { PricingEditor } from "./pricing-editor";
-import { saveRegistrationForm, deleteRegistrationForm } from "@/lib/actions/registration-forms";
+import {
+    saveRegistrationForm,
+    deleteRegistrationForm,
+} from "@/lib/actions/registration-forms";
 import { saveFormPreview } from "@/lib/actions/form-preview";
 import { FIELD_TYPE_META, getAllFields } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
@@ -60,7 +70,10 @@ import {
     getConditionalEmailsUsingField,
     getConditionalEmailsUsingOptionValue,
 } from "@/lib/utils/condition-validation";
-import type { FieldExternalUsage, ConditionalEmailInfo } from "@/lib/utils/condition-validation";
+import type {
+    FieldExternalUsage,
+    ConditionalEmailInfo,
+} from "@/lib/utils/condition-validation";
 import type {
     FormField,
     FormElement,
@@ -83,18 +96,31 @@ interface FormBuilderProps {
     conditionalEmails?: ConditionalEmailInfo[];
 }
 
-export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], conditionalEmails = [] }: FormBuilderProps) {
+export function FormBuilder({
+    yearId,
+    initialFormData,
+    emailFieldNames = [],
+    conditionalEmails = [],
+}: FormBuilderProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-    const [elements, setElements] = useState<FormElement[]>(initialFormData.fields);
+    const [elements, setElements] = useState<FormElement[]>(
+        initialFormData.fields
+    );
     const elementsRef = useRef(elements);
     useEffect(() => {
         elementsRef.current = elements;
     });
-    const [conditions, setConditions] = useState<FormCondition[]>(initialFormData.conditions);
-    const [pricingDefinitions, setPricingDefinitions] = useState<PricingDefinition[]>(initialFormData.pricingDefinitions ?? []);
-    const [priceTiers, setPriceTiers] = useState<string[]>(initialFormData.priceTiers ?? []);
+    const [conditions, setConditions] = useState<FormCondition[]>(
+        initialFormData.conditions
+    );
+    const [pricingDefinitions, setPricingDefinitions] = useState<
+        PricingDefinition[]
+    >(initialFormData.pricingDefinitions ?? []);
+    const [priceTiers, setPriceTiers] = useState<string[]>(
+        initialFormData.priceTiers ?? []
+    );
     const [capacityLimits] = useState(initialFormData.capacityLimits ?? []);
     const [showOptionCounts] = useState(initialFormData.showOptionCounts ?? []);
     const [infoStatsConfig] = useState(initialFormData.infoStatsConfig);
@@ -107,7 +133,11 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
-    const [deletionBlock, setDeletionBlock] = useState<{ title: string; message: string; details: string[] } | null>(null);
+    const [deletionBlock, setDeletionBlock] = useState<{
+        title: string;
+        message: string;
+        details: string[];
+    } | null>(null);
     const [previewToken, setPreviewToken] = useState<string | null>(null);
     const [previewSaving, setPreviewSaving] = useState(false);
 
@@ -115,11 +145,14 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
-        }),
+        })
     );
 
     const allFields = getAllFields(elements);
-    const emailFieldNamesSet = useMemo(() => new Set(emailFieldNames), [emailFieldNames]);
+    const emailFieldNamesSet = useMemo(
+        () => new Set(emailFieldNames),
+        [emailFieldNames]
+    );
 
     const fieldExternalUsagesMap = useMemo(() => {
         const map = new Map<string, FieldExternalUsage[]>();
@@ -131,7 +164,7 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                     capacityLimits,
                     showOptionCounts,
                     emailFieldNamesSet,
-                    infoStatsConfig,
+                    infoStatsConfig
                 );
                 if (usages.length > 0) {
                     map.set(field.id, usages);
@@ -139,38 +172,71 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
             }
         }
         return map;
-    }, [allFields, capacityLimits, showOptionCounts, emailFieldNamesSet, infoStatsConfig]);
+    }, [
+        allFields,
+        capacityLimits,
+        showOptionCounts,
+        emailFieldNamesSet,
+        infoStatsConfig,
+    ]);
 
-    const createField = useCallback((type: FieldType, currentElements: FormElement[], pricingId?: string): FormField => {
-        const id = crypto.randomUUID();
-        const existingFields = getAllFields(currentElements);
+    const createField = useCallback(
+        (
+            type: FieldType,
+            currentElements: FormElement[],
+            pricingId?: string
+        ): FormField => {
+            const id = crypto.randomUUID();
+            const existingFields = getAllFields(currentElements);
 
-        if (type === "heading") {
-            return { type: "heading", id, text: "Nový nadpis" } as HeadingField;
-        } else if (type === "description") {
-            return { type: "description", id, text: "Popisek textu" } as DescriptionField;
-        } else {
-            const fieldCount = existingFields.filter((f) => f.type !== "heading" && f.type !== "description").length;
-            const field: InputField = {
-                type,
-                id,
-                name: `field_${id.substring(0, 8)}`,
-                label: `Pole ${fieldCount + 1}`,
-                required: false,
-                options: type === "select" || type === "radio" ? ["Možnost 1"] : undefined,
-            };
-            if (type === "pricing_select" || type === "pricing_quantity" || type === "pricing_multi_select") {
-                field.pricingId = pricingId || "";
+            if (type === "heading") {
+                return {
+                    type: "heading",
+                    id,
+                    text: "Nový nadpis",
+                } as HeadingField;
+            } else if (type === "description") {
+                return {
+                    type: "description",
+                    id,
+                    text: "Popisek textu",
+                } as DescriptionField;
+            } else {
+                const fieldCount = existingFields.filter(
+                    (f) => f.type !== "heading" && f.type !== "description"
+                ).length;
+                const field: InputField = {
+                    type,
+                    id,
+                    name: `field_${id.substring(0, 8)}`,
+                    label: `Pole ${fieldCount + 1}`,
+                    required: false,
+                    options:
+                        type === "select" || type === "radio"
+                            ? ["Možnost 1"]
+                            : undefined,
+                };
+                if (
+                    type === "pricing_select" ||
+                    type === "pricing_quantity" ||
+                    type === "pricing_multi_select"
+                ) {
+                    field.pricingId = pricingId || "";
+                }
+                return field;
             }
-            return field;
-        }
-    }, []);
+        },
+        []
+    );
 
-    const handleAddField = useCallback((type: FieldType) => {
-        const newField = createField(type, elementsRef.current);
-        setElements((prev) => [...prev, newField]);
-        setEditingField(newField);
-    }, [createField]);
+    const handleAddField = useCallback(
+        (type: FieldType) => {
+            const newField = createField(type, elementsRef.current);
+            setElements((prev) => [...prev, newField]);
+            setEditingField(newField);
+        },
+        [createField]
+    );
 
     const handleAddConditionBlock = useCallback((conditionId: string) => {
         setElements((prev) => {
@@ -184,158 +250,245 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
         });
     }, []);
 
-    const handleAddPricingField = useCallback((definitionId: string) => {
-        const def = pricingDefinitions.find((d) => d.id === definitionId);
-        const fieldType = def?.type === "quantity" ? "pricing_quantity" : def?.multiSelect ? "pricing_multi_select" : "pricing_select";
-        const newField = createField(fieldType, elementsRef.current, definitionId);
-        if (def && "label" in newField) {
-            (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : fieldType === "pricing_multi_select" ? "Cenový vícevýběr" : "Cenový výběr");
-        }
-        setElements((prev) => [...prev, newField]);
-        setEditingField(newField);
-    }, [createField, pricingDefinitions]);
+    const handleAddPricingField = useCallback(
+        (definitionId: string) => {
+            const def = pricingDefinitions.find((d) => d.id === definitionId);
+            const fieldType =
+                def?.type === "quantity"
+                    ? "pricing_quantity"
+                    : def?.multiSelect
+                      ? "pricing_multi_select"
+                      : "pricing_select";
+            const newField = createField(
+                fieldType,
+                elementsRef.current,
+                definitionId
+            );
+            if (def && "label" in newField) {
+                (newField as InputField).label =
+                    def.name ||
+                    (fieldType === "pricing_quantity"
+                        ? "Cenový počet"
+                        : fieldType === "pricing_multi_select"
+                          ? "Cenový vícevýběr"
+                          : "Cenový výběr");
+            }
+            setElements((prev) => [...prev, newField]);
+            setEditingField(newField);
+        },
+        [createField, pricingDefinitions]
+    );
 
     const handleEditField = useCallback((field: FormField) => {
         setEditingField(field);
     }, []);
 
-    const handleSaveField = useCallback((updatedField: FormField) => {
-        // Check if saving would break conditions by removing referenced options
-        if (editingField && ("options" in updatedField || "pricingId" in updatedField)) {
-            const originalOptions = editingField && "options" in editingField
-                ? getFieldOptionValues(editingField as InputField, pricingDefinitions)
-                : [];
-            const newOptions = "options" in updatedField
-                ? getFieldOptionValues(updatedField as InputField, pricingDefinitions)
-                : [];
-            if (originalOptions.length > 0) {
-                const newSet = new Set(newOptions);
-                const allDetails: string[] = [];
+    const handleSaveField = useCallback(
+        (updatedField: FormField) => {
+            // Check if saving would break conditions by removing referenced options
+            if (
+                editingField &&
+                ("options" in updatedField || "pricingId" in updatedField)
+            ) {
+                const originalOptions =
+                    editingField && "options" in editingField
+                        ? getFieldOptionValues(
+                              editingField as InputField,
+                              pricingDefinitions
+                          )
+                        : [];
+                const newOptions =
+                    "options" in updatedField
+                        ? getFieldOptionValues(
+                              updatedField as InputField,
+                              pricingDefinitions
+                          )
+                        : [];
+                if (originalOptions.length > 0) {
+                    const newSet = new Set(newOptions);
+                    const allDetails: string[] = [];
 
-                // Check condition block usages
-                const broken = getBrokenOptionRemovals(updatedField.id, originalOptions, newOptions, conditions);
-                if (broken.length > 0) {
-                    allDetails.push(...broken.map((b) => `„${b.removedValue}" v podmínce „${b.conditionName}"`));
-                }
+                    // Check condition block usages
+                    const broken = getBrokenOptionRemovals(
+                        updatedField.id,
+                        originalOptions,
+                        newOptions,
+                        conditions
+                    );
+                    if (broken.length > 0) {
+                        allDetails.push(
+                            ...broken.map(
+                                (b) =>
+                                    `„${b.removedValue}" v podmínce „${b.conditionName}"`
+                            )
+                        );
+                    }
 
-                // Check conditional email option usages
-                for (const opt of originalOptions) {
-                    if (newSet.has(opt)) continue;
-                    const ceUsages = getConditionalEmailsUsingOptionValue(updatedField.id, opt, conditionalEmails);
-                    for (const u of ceUsages) {
-                        allDetails.push(`„${opt}" v podmíněném emailu „${u.emailName}"`);
+                    // Check conditional email option usages
+                    for (const opt of originalOptions) {
+                        if (newSet.has(opt)) continue;
+                        const ceUsages = getConditionalEmailsUsingOptionValue(
+                            updatedField.id,
+                            opt,
+                            conditionalEmails
+                        );
+                        for (const u of ceUsages) {
+                            allDetails.push(
+                                `„${opt}" v podmíněném emailu „${u.emailName}"`
+                            );
+                        }
+                    }
+
+                    if (allDetails.length > 0) {
+                        setDeletionBlock({
+                            title: "Nelze uložit změny",
+                            message: "Odebrané možnosti jsou používány:",
+                            details: allDetails,
+                        });
+                        return;
                     }
                 }
+            }
+            setElements((prev) => updateFieldInElements(prev, updatedField));
+            setEditingField(null);
+        },
+        [editingField, conditions, pricingDefinitions, conditionalEmails]
+    );
 
-                if (allDetails.length > 0) {
-                    setDeletionBlock({
-                        title: "Nelze uložit změny",
-                        message: "Odebrané možnosti jsou používány:",
-                        details: allDetails,
-                    });
-                    return;
+    const handleDeleteField = useCallback(
+        (fieldId: string) => {
+            const details: string[] = [];
+
+            // Check condition usages
+            const conditionUsages = getConditionsUsingField(
+                fieldId,
+                conditions
+            );
+            if (conditionUsages.length > 0) {
+                details.push(
+                    ...conditionUsages.map(
+                        (u) => `Podmínka: „${u.conditionName}"`
+                    )
+                );
+            }
+
+            // Check conditional email usages
+            const ceUsages = getConditionalEmailsUsingField(
+                fieldId,
+                conditionalEmails
+            );
+            if (ceUsages.length > 0) {
+                details.push(
+                    ...ceUsages.map((u) => `Podmíněný email: „${u.emailName}"`)
+                );
+            }
+
+            // Check external usages (email, limits, stats)
+            const field = findFieldById(elementsRef.current, fieldId);
+            if (field && isInputField(field)) {
+                const externalUsages = getFieldExternalUsages(
+                    fieldId,
+                    field.name,
+                    capacityLimits,
+                    showOptionCounts,
+                    emailFieldNamesSet,
+                    infoStatsConfig
+                );
+                for (const usage of externalUsages) {
+                    details.push(usage.label);
                 }
             }
-        }
-        setElements((prev) => updateFieldInElements(prev, updatedField));
-        setEditingField(null);
-    }, [editingField, conditions, pricingDefinitions, conditionalEmails]);
 
-    const handleDeleteField = useCallback((fieldId: string) => {
-        const details: string[] = [];
-
-        // Check condition usages
-        const conditionUsages = getConditionsUsingField(fieldId, conditions);
-        if (conditionUsages.length > 0) {
-            details.push(...conditionUsages.map((u) => `Podmínka: „${u.conditionName}"`));
-        }
-
-        // Check conditional email usages
-        const ceUsages = getConditionalEmailsUsingField(fieldId, conditionalEmails);
-        if (ceUsages.length > 0) {
-            details.push(...ceUsages.map((u) => `Podmíněný email: „${u.emailName}"`));
-        }
-
-        // Check external usages (email, limits, stats)
-        const field = findFieldById(elementsRef.current, fieldId);
-        if (field && isInputField(field)) {
-            const externalUsages = getFieldExternalUsages(
-                fieldId,
-                field.name,
-                capacityLimits,
-                showOptionCounts,
-                emailFieldNamesSet,
-                infoStatsConfig,
-            );
-            for (const usage of externalUsages) {
-                details.push(usage.label);
+            if (details.length > 0) {
+                setDeletionBlock({
+                    title: "Nelze smazat pole",
+                    message: "Pole je používáno v:",
+                    details,
+                });
+                return;
             }
-        }
+            setElements((prev) => removeFieldFromElements(prev, fieldId));
+        },
+        [
+            conditions,
+            capacityLimits,
+            showOptionCounts,
+            emailFieldNamesSet,
+            infoStatsConfig,
+            conditionalEmails,
+        ]
+    );
 
-        if (details.length > 0) {
-            setDeletionBlock({
-                title: "Nelze smazat pole",
-                message: "Pole je používáno v:",
-                details,
-            });
-            return;
-        }
-        setElements((prev) => removeFieldFromElements(prev, fieldId));
-    }, [conditions, capacityLimits, showOptionCounts, emailFieldNamesSet, infoStatsConfig, conditionalEmails]);
-
-    const handleCreateConditionFromOption = useCallback((fieldId: string, fieldLabel: string, optionValue: string) => {
-        const conditionId = crypto.randomUUID();
-        const newCondition: FormCondition = {
-            id: conditionId,
-            name: `${fieldLabel} je ${optionValue}`,
-            rules: [{ type: "field_value", fieldId, operator: "equals", value: optionValue }],
-        };
-        setConditions((prev) => [...prev, newCondition]);
-
-        // Auto-insert a condition block below the source field
-        setElements((prev) => {
-            const newBlock: ConditionBlock = {
-                type: "condition",
-                id: crypto.randomUUID(),
-                conditionId,
-                children: [],
+    const handleCreateConditionFromOption = useCallback(
+        (fieldId: string, fieldLabel: string, optionValue: string) => {
+            const conditionId = crypto.randomUUID();
+            const newCondition: FormCondition = {
+                id: conditionId,
+                name: `${fieldLabel} je ${optionValue}`,
+                rules: [
+                    {
+                        type: "field_value",
+                        fieldId,
+                        operator: "equals",
+                        value: optionValue,
+                    },
+                ],
             };
+            setConditions((prev) => [...prev, newCondition]);
 
-            // Check root-level first
-            const rootIndex = prev.findIndex((el) => el.id === fieldId);
-            if (rootIndex !== -1) {
-                const updated = [...prev];
-                updated.splice(rootIndex + 1, 0, newBlock);
-                return updated;
-            }
+            // Auto-insert a condition block below the source field
+            setElements((prev) => {
+                const newBlock: ConditionBlock = {
+                    type: "condition",
+                    id: crypto.randomUUID(),
+                    conditionId,
+                    children: [],
+                };
 
-            // Field is nested inside a condition block — insert block after the parent
-            const parentIndex = prev.findIndex(
-                (el) => isConditionBlock(el) && el.children.some((c) => c.id === fieldId)
-            );
-            if (parentIndex !== -1) {
-                const updated = [...prev];
-                updated.splice(parentIndex + 1, 0, newBlock);
-                return updated;
-            }
+                // Check root-level first
+                const rootIndex = prev.findIndex((el) => el.id === fieldId);
+                if (rootIndex !== -1) {
+                    const updated = [...prev];
+                    updated.splice(rootIndex + 1, 0, newBlock);
+                    return updated;
+                }
 
-            // Fallback: append to end
-            return [...prev, newBlock];
-        });
-    }, []);
+                // Field is nested inside a condition block — insert block after the parent
+                const parentIndex = prev.findIndex(
+                    (el) =>
+                        isConditionBlock(el) &&
+                        el.children.some((c) => c.id === fieldId)
+                );
+                if (parentIndex !== -1) {
+                    const updated = [...prev];
+                    updated.splice(parentIndex + 1, 0, newBlock);
+                    return updated;
+                }
 
-    const handleToggleField = useCallback((fieldId: string, updates: Partial<InputField>) => {
-        setElements((prev) => {
-            const field = findFieldById(prev, fieldId);
-            if (!field || !isInputField(field)) return prev;
-            return updateFieldInElements(prev, { ...field, ...updates });
-        });
-    }, []);
+                // Fallback: append to end
+                return [...prev, newBlock];
+            });
+        },
+        []
+    );
+
+    const handleToggleField = useCallback(
+        (fieldId: string, updates: Partial<InputField>) => {
+            setElements((prev) => {
+                const field = findFieldById(prev, fieldId);
+                if (!field || !isInputField(field)) return prev;
+                return updateFieldInElements(prev, { ...field, ...updates });
+            });
+        },
+        []
+    );
 
     const handleDeleteBlock = useCallback((blockId: string) => {
         setElements((prev) => {
             // When deleting a block, move its children to root at the same position
-            const idx = prev.findIndex((el) => isConditionBlock(el) && el.id === blockId);
+            const idx = prev.findIndex(
+                (el) => isConditionBlock(el) && el.id === blockId
+            );
             if (idx === -1) return prev;
             const block = prev[idx] as ConditionBlock;
             const result = [...prev];
@@ -377,7 +530,11 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
         const result = await deleteRegistrationForm(yearId);
 
         if (result.error) {
-            setError(typeof result.error === "string" ? result.error : "Nepodařilo se smazat formulář");
+            setError(
+                typeof result.error === "string"
+                    ? result.error
+                    : "Nepodařilo se smazat formulář"
+            );
         } else {
             setElements([]);
             setConditions([]);
@@ -389,18 +546,21 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
     // -- DnD logic --
 
     // Find which container an item belongs to
-    const findContainer = useCallback((itemId: string): string | null => {
-        // Check root-level elements
-        for (const el of elements) {
-            if (isConditionBlock(el)) {
-                if (el.id === itemId) return "root";
-                if (el.children.some((c) => c.id === itemId)) return el.id;
-            } else {
-                if (el.id === itemId) return "root";
+    const findContainer = useCallback(
+        (itemId: string): string | null => {
+            // Check root-level elements
+            for (const el of elements) {
+                if (isConditionBlock(el)) {
+                    if (el.id === itemId) return "root";
+                    if (el.children.some((c) => c.id === itemId)) return el.id;
+                } else {
+                    if (el.id === itemId) return "root";
+                }
             }
-        }
-        return null;
-    }, [elements]);
+            return null;
+        },
+        [elements]
+    );
 
     // Custom collision detection
     const collisionDetection: CollisionDetection = useCallback((args) => {
@@ -409,7 +569,9 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
         if (pointerCollisions.length > 0) {
             // Prefer container droppables
             const containerHit = pointerCollisions.find(
-                (c) => String(c.id).startsWith("container-") || c.id === "root-droppable"
+                (c) =>
+                    String(c.id).startsWith("container-") ||
+                    c.id === "root-droppable"
             );
             if (containerHit) {
                 // Also check for sortable items within
@@ -435,261 +597,336 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
         setActiveId(String(event.active.id));
     }, []);
 
-    const handleDragOver = useCallback((event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
+    const handleDragOver = useCallback(
+        (event: DragOverEvent) => {
+            const { active, over } = event;
+            if (!over) return;
 
-        const activeIdStr = String(active.id);
-        const overIdStr = String(over.id);
-
-        // Don't process palette items during over
-        if (activeIdStr.startsWith("palette-")) return;
-
-        // Find containers
-        const activeContainer = findContainer(activeIdStr);
-        let overContainer: string | null = null;
-
-        if (overIdStr.startsWith("container-")) {
-            // Dropping directly on a container
-            overContainer = overIdStr.replace("container-", "");
-        } else if (overIdStr === "root-droppable") {
-            overContainer = "root";
-        } else {
-            overContainer = findContainer(overIdStr);
-        }
-
-        if (!activeContainer || !overContainer) return;
-        if (activeContainer === overContainer) return;
-
-        // Move between containers
-        setElements((prev) => {
-            // Extract the field from its current container
-            const field = findFieldById(prev, activeIdStr);
-            if (!field || isConditionBlock(field as FormElement)) return prev;
-
-            let updated = removeFieldFromElements(prev, activeIdStr);
-
-            // Add to new container
-            if (overContainer === "root") {
-                // Add at root level
-                const overIndex = updated.findIndex((el) => {
-                    if (isConditionBlock(el)) return el.id === overIdStr;
-                    return el.id === overIdStr;
-                });
-                if (overIndex !== -1) {
-                    updated.splice(overIndex + 1, 0, field);
-                } else {
-                    updated.push(field);
-                }
-            } else {
-                // Add into a condition block
-                updated = updated.map((el) => {
-                    if (isConditionBlock(el) && el.id === overContainer) {
-                        const overChildIdx = el.children.findIndex((c) => c.id === overIdStr);
-                        const children = [...el.children];
-                        if (overChildIdx !== -1) {
-                            children.splice(overChildIdx + 1, 0, field);
-                        } else {
-                            children.push(field);
-                        }
-                        return { ...el, children };
-                    }
-                    return el;
-                });
-            }
-
-            return updated;
-        });
-    }, [findContainer]);
-
-    const handleDragEnd = useCallback((event: DragEndEvent) => {
-        const { active, over } = event;
-        setActiveId(null);
-
-        const activeIdStr = String(active.id);
-
-        // -- Palette condition drop: create new condition block
-        if (activeIdStr.startsWith("palette-condition-")) {
-            const conditionId = activeIdStr.replace("palette-condition-", "");
-
-            setElements((prev) => {
-                const newBlock: ConditionBlock = {
-                    type: "condition",
-                    id: crypto.randomUUID(),
-                    conditionId,
-                    children: [],
-                };
-
-                if (over) {
-                    const overIdStr = String(over.id);
-                    // Find root-level insert position
-                    const overIndex = prev.findIndex((el) => {
-                        if (isConditionBlock(el)) return el.id === overIdStr;
-                        return el.id === overIdStr;
-                    });
-
-                    if (overIndex !== -1) {
-                        const updated = [...prev];
-                        updated.splice(overIndex + 1, 0, newBlock);
-                        return updated;
-                    }
-                }
-
-                return [...prev, newBlock];
-            });
-            return;
-        }
-
-        // -- Palette pricing drop: create new pricing field
-        if (activeIdStr.startsWith("palette-pricing-")) {
-            const definitionId = activeIdStr.replace("palette-pricing-", "");
-            const def = pricingDefinitions.find((d) => d.id === definitionId);
-            const fieldType = def?.type === "quantity" ? "pricing_quantity" : def?.multiSelect ? "pricing_multi_select" : "pricing_select";
-            const newField = createField(fieldType, elementsRef.current, definitionId);
-            if (def && "label" in newField) {
-                (newField as InputField).label = def.name || (fieldType === "pricing_quantity" ? "Cenový počet" : fieldType === "pricing_multi_select" ? "Cenový vícevýběr" : "Cenový výběr");
-            }
-
-            setElements((prev) => {
-                if (over) {
-                    const overIdStr = String(over.id);
-
-                    if (overIdStr.startsWith("container-")) {
-                        const blockId = overIdStr.replace("container-", "");
-                        return prev.map((el) => {
-                            if (isConditionBlock(el) && el.id === blockId) {
-                                return { ...el, children: [...el.children, newField] };
-                            }
-                            return el;
-                        });
-                    }
-
-                    const parentBlock = prev.find(
-                        (el) => isConditionBlock(el) && el.children.some((c) => c.id === overIdStr)
-                    );
-                    if (parentBlock && isConditionBlock(parentBlock)) {
-                        return prev.map((el) => {
-                            if (isConditionBlock(el) && el.id === parentBlock.id) {
-                                const childIdx = el.children.findIndex((c) => c.id === overIdStr);
-                                const children = [...el.children];
-                                children.splice(childIdx + 1, 0, newField);
-                                return { ...el, children };
-                            }
-                            return el;
-                        });
-                    }
-
-                    const overIndex = prev.findIndex((el) => {
-                        if (isConditionBlock(el)) return el.id === overIdStr;
-                        return el.id === overIdStr;
-                    });
-
-                    if (overIndex !== -1) {
-                        const updated = [...prev];
-                        updated.splice(overIndex + 1, 0, newField);
-                        return updated;
-                    }
-                }
-
-                return [...prev, newField];
-            });
-            setEditingField(newField);
-            return;
-        }
-
-        // -- Palette field drop: create new field
-        if (activeIdStr.startsWith("palette-")) {
-            const type = activeIdStr.replace("palette-", "") as FieldType;
-            const newField = createField(type, elementsRef.current);
-
-            setElements((prev) => {
-                if (over) {
-                    const overIdStr = String(over.id);
-
-                    // Check if dropping into a container
-                    if (overIdStr.startsWith("container-")) {
-                        const blockId = overIdStr.replace("container-", "");
-                        return prev.map((el) => {
-                            if (isConditionBlock(el) && el.id === blockId) {
-                                return { ...el, children: [...el.children, newField] };
-                            }
-                            return el;
-                        });
-                    }
-
-                    // Check if over target is inside a condition block
-                    const parentBlock = prev.find(
-                        (el) => isConditionBlock(el) && el.children.some((c) => c.id === overIdStr)
-                    );
-                    if (parentBlock && isConditionBlock(parentBlock)) {
-                        return prev.map((el) => {
-                            if (isConditionBlock(el) && el.id === parentBlock.id) {
-                                const childIdx = el.children.findIndex((c) => c.id === overIdStr);
-                                const children = [...el.children];
-                                children.splice(childIdx + 1, 0, newField);
-                                return { ...el, children };
-                            }
-                            return el;
-                        });
-                    }
-
-                    // Root level insert
-                    const overIndex = prev.findIndex((el) => {
-                        if (isConditionBlock(el)) return el.id === overIdStr;
-                        return el.id === overIdStr;
-                    });
-
-                    if (overIndex !== -1) {
-                        const updated = [...prev];
-                        updated.splice(overIndex + 1, 0, newField);
-                        return updated;
-                    }
-                }
-
-                // Append to end
-                return [...prev, newField];
-            });
-            setEditingField(newField);
-            return;
-        }
-
-        // -- Internal reorder (same container)
-        if (over && active.id !== over.id) {
+            const activeIdStr = String(active.id);
             const overIdStr = String(over.id);
 
+            // Don't process palette items during over
+            if (activeIdStr.startsWith("palette-")) return;
+
+            // Find containers
+            const activeContainer = findContainer(activeIdStr);
+            let overContainer: string | null = null;
+
+            if (overIdStr.startsWith("container-")) {
+                // Dropping directly on a container
+                overContainer = overIdStr.replace("container-", "");
+            } else if (overIdStr === "root-droppable") {
+                overContainer = "root";
+            } else {
+                overContainer = findContainer(overIdStr);
+            }
+
+            if (!activeContainer || !overContainer) return;
+            if (activeContainer === overContainer) return;
+
+            // Move between containers
             setElements((prev) => {
-                const activeContainer = findContainerInElements(prev, activeIdStr);
-                const overContainer = findContainerForOver(prev, overIdStr);
+                // Extract the field from its current container
+                const field = findFieldById(prev, activeIdStr);
+                if (!field || isConditionBlock(field as FormElement))
+                    return prev;
 
-                if (!activeContainer || !overContainer) return prev;
-                if (activeContainer !== overContainer) return prev; // cross-container handled in onDragOver
+                let updated = removeFieldFromElements(prev, activeIdStr);
 
-                if (activeContainer === "root") {
-                    const oldIndex = prev.findIndex((el) => {
-                        if (isConditionBlock(el)) return el.id === activeIdStr;
-                        return el.id === activeIdStr;
-                    });
-                    const newIndex = prev.findIndex((el) => {
+                // Add to new container
+                if (overContainer === "root") {
+                    // Add at root level
+                    const overIndex = updated.findIndex((el) => {
                         if (isConditionBlock(el)) return el.id === overIdStr;
                         return el.id === overIdStr;
                     });
-                    if (oldIndex === -1 || newIndex === -1) return prev;
-                    return arrayMove(prev, oldIndex, newIndex);
+                    if (overIndex !== -1) {
+                        updated.splice(overIndex + 1, 0, field);
+                    } else {
+                        updated.push(field);
+                    }
                 } else {
-                    // Reorder within a condition block
-                    return prev.map((el) => {
-                        if (isConditionBlock(el) && el.id === activeContainer) {
-                            const oldIndex = el.children.findIndex((c) => c.id === activeIdStr);
-                            const newIndex = el.children.findIndex((c) => c.id === overIdStr);
-                            if (oldIndex === -1 || newIndex === -1) return el;
-                            return { ...el, children: arrayMove(el.children, oldIndex, newIndex) };
+                    // Add into a condition block
+                    updated = updated.map((el) => {
+                        if (isConditionBlock(el) && el.id === overContainer) {
+                            const overChildIdx = el.children.findIndex(
+                                (c) => c.id === overIdStr
+                            );
+                            const children = [...el.children];
+                            if (overChildIdx !== -1) {
+                                children.splice(overChildIdx + 1, 0, field);
+                            } else {
+                                children.push(field);
+                            }
+                            return { ...el, children };
                         }
                         return el;
                     });
                 }
+
+                return updated;
             });
-        }
-    }, [createField, pricingDefinitions]);
+        },
+        [findContainer]
+    );
+
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const { active, over } = event;
+            setActiveId(null);
+
+            const activeIdStr = String(active.id);
+
+            // -- Palette condition drop: create new condition block
+            if (activeIdStr.startsWith("palette-condition-")) {
+                const conditionId = activeIdStr.replace(
+                    "palette-condition-",
+                    ""
+                );
+
+                setElements((prev) => {
+                    const newBlock: ConditionBlock = {
+                        type: "condition",
+                        id: crypto.randomUUID(),
+                        conditionId,
+                        children: [],
+                    };
+
+                    if (over) {
+                        const overIdStr = String(over.id);
+                        // Find root-level insert position
+                        const overIndex = prev.findIndex((el) => {
+                            if (isConditionBlock(el))
+                                return el.id === overIdStr;
+                            return el.id === overIdStr;
+                        });
+
+                        if (overIndex !== -1) {
+                            const updated = [...prev];
+                            updated.splice(overIndex + 1, 0, newBlock);
+                            return updated;
+                        }
+                    }
+
+                    return [...prev, newBlock];
+                });
+                return;
+            }
+
+            // -- Palette pricing drop: create new pricing field
+            if (activeIdStr.startsWith("palette-pricing-")) {
+                const definitionId = activeIdStr.replace(
+                    "palette-pricing-",
+                    ""
+                );
+                const def = pricingDefinitions.find(
+                    (d) => d.id === definitionId
+                );
+                const fieldType =
+                    def?.type === "quantity"
+                        ? "pricing_quantity"
+                        : def?.multiSelect
+                          ? "pricing_multi_select"
+                          : "pricing_select";
+                const newField = createField(
+                    fieldType,
+                    elementsRef.current,
+                    definitionId
+                );
+                if (def && "label" in newField) {
+                    (newField as InputField).label =
+                        def.name ||
+                        (fieldType === "pricing_quantity"
+                            ? "Cenový počet"
+                            : fieldType === "pricing_multi_select"
+                              ? "Cenový vícevýběr"
+                              : "Cenový výběr");
+                }
+
+                setElements((prev) => {
+                    if (over) {
+                        const overIdStr = String(over.id);
+
+                        if (overIdStr.startsWith("container-")) {
+                            const blockId = overIdStr.replace("container-", "");
+                            return prev.map((el) => {
+                                if (isConditionBlock(el) && el.id === blockId) {
+                                    return {
+                                        ...el,
+                                        children: [...el.children, newField],
+                                    };
+                                }
+                                return el;
+                            });
+                        }
+
+                        const parentBlock = prev.find(
+                            (el) =>
+                                isConditionBlock(el) &&
+                                el.children.some((c) => c.id === overIdStr)
+                        );
+                        if (parentBlock && isConditionBlock(parentBlock)) {
+                            return prev.map((el) => {
+                                if (
+                                    isConditionBlock(el) &&
+                                    el.id === parentBlock.id
+                                ) {
+                                    const childIdx = el.children.findIndex(
+                                        (c) => c.id === overIdStr
+                                    );
+                                    const children = [...el.children];
+                                    children.splice(childIdx + 1, 0, newField);
+                                    return { ...el, children };
+                                }
+                                return el;
+                            });
+                        }
+
+                        const overIndex = prev.findIndex((el) => {
+                            if (isConditionBlock(el))
+                                return el.id === overIdStr;
+                            return el.id === overIdStr;
+                        });
+
+                        if (overIndex !== -1) {
+                            const updated = [...prev];
+                            updated.splice(overIndex + 1, 0, newField);
+                            return updated;
+                        }
+                    }
+
+                    return [...prev, newField];
+                });
+                setEditingField(newField);
+                return;
+            }
+
+            // -- Palette field drop: create new field
+            if (activeIdStr.startsWith("palette-")) {
+                const type = activeIdStr.replace("palette-", "") as FieldType;
+                const newField = createField(type, elementsRef.current);
+
+                setElements((prev) => {
+                    if (over) {
+                        const overIdStr = String(over.id);
+
+                        // Check if dropping into a container
+                        if (overIdStr.startsWith("container-")) {
+                            const blockId = overIdStr.replace("container-", "");
+                            return prev.map((el) => {
+                                if (isConditionBlock(el) && el.id === blockId) {
+                                    return {
+                                        ...el,
+                                        children: [...el.children, newField],
+                                    };
+                                }
+                                return el;
+                            });
+                        }
+
+                        // Check if over target is inside a condition block
+                        const parentBlock = prev.find(
+                            (el) =>
+                                isConditionBlock(el) &&
+                                el.children.some((c) => c.id === overIdStr)
+                        );
+                        if (parentBlock && isConditionBlock(parentBlock)) {
+                            return prev.map((el) => {
+                                if (
+                                    isConditionBlock(el) &&
+                                    el.id === parentBlock.id
+                                ) {
+                                    const childIdx = el.children.findIndex(
+                                        (c) => c.id === overIdStr
+                                    );
+                                    const children = [...el.children];
+                                    children.splice(childIdx + 1, 0, newField);
+                                    return { ...el, children };
+                                }
+                                return el;
+                            });
+                        }
+
+                        // Root level insert
+                        const overIndex = prev.findIndex((el) => {
+                            if (isConditionBlock(el))
+                                return el.id === overIdStr;
+                            return el.id === overIdStr;
+                        });
+
+                        if (overIndex !== -1) {
+                            const updated = [...prev];
+                            updated.splice(overIndex + 1, 0, newField);
+                            return updated;
+                        }
+                    }
+
+                    // Append to end
+                    return [...prev, newField];
+                });
+                setEditingField(newField);
+                return;
+            }
+
+            // -- Internal reorder (same container)
+            if (over && active.id !== over.id) {
+                const overIdStr = String(over.id);
+
+                setElements((prev) => {
+                    const activeContainer = findContainerInElements(
+                        prev,
+                        activeIdStr
+                    );
+                    const overContainer = findContainerForOver(prev, overIdStr);
+
+                    if (!activeContainer || !overContainer) return prev;
+                    if (activeContainer !== overContainer) return prev; // cross-container handled in onDragOver
+
+                    if (activeContainer === "root") {
+                        const oldIndex = prev.findIndex((el) => {
+                            if (isConditionBlock(el))
+                                return el.id === activeIdStr;
+                            return el.id === activeIdStr;
+                        });
+                        const newIndex = prev.findIndex((el) => {
+                            if (isConditionBlock(el))
+                                return el.id === overIdStr;
+                            return el.id === overIdStr;
+                        });
+                        if (oldIndex === -1 || newIndex === -1) return prev;
+                        return arrayMove(prev, oldIndex, newIndex);
+                    } else {
+                        // Reorder within a condition block
+                        return prev.map((el) => {
+                            if (
+                                isConditionBlock(el) &&
+                                el.id === activeContainer
+                            ) {
+                                const oldIndex = el.children.findIndex(
+                                    (c) => c.id === activeIdStr
+                                );
+                                const newIndex = el.children.findIndex(
+                                    (c) => c.id === overIdStr
+                                );
+                                if (oldIndex === -1 || newIndex === -1)
+                                    return el;
+                                return {
+                                    ...el,
+                                    children: arrayMove(
+                                        el.children,
+                                        oldIndex,
+                                        newIndex
+                                    ),
+                                };
+                            }
+                            return el;
+                        });
+                    }
+                });
+            }
+        },
+        [createField, pricingDefinitions]
+    );
 
     const handleDragCancel = useCallback(() => {
         setActiveId(null);
@@ -704,8 +941,16 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
             const def = pricingDefinitions.find((d) => d.id === definitionId);
             const isQuantity = def?.type === "quantity";
             const isMultiSelect = !isQuantity && def?.multiSelect;
-            const color = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
-            const icon = isQuantity ? "Calculate" : isMultiSelect ? "PlaylistAddCheck" : "Sell";
+            const color = isQuantity
+                ? "info"
+                : isMultiSelect
+                  ? "primary"
+                  : "success";
+            const icon = isQuantity
+                ? "Calculate"
+                : isMultiSelect
+                  ? "PlaylistAddCheck"
+                  : "Sell";
             return (
                 <Paper
                     variant="outlined"
@@ -723,7 +968,9 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                     <Box sx={{ color: `${color}.main`, display: "flex" }}>
                         {FIELD_TYPE_ICONS[icon]}
                     </Box>
-                    <Typography variant="body2">{def?.name || "Ceník"}</Typography>
+                    <Typography variant="body2">
+                        {def?.name || "Ceník"}
+                    </Typography>
                 </Paper>
             );
         }
@@ -748,7 +995,9 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                     <Box sx={{ color: "info.main", display: "flex" }}>
                         {FIELD_TYPE_ICONS["AccountTree"]}
                     </Box>
-                    <Typography variant="body2">{condition?.name || "Podmínka"}</Typography>
+                    <Typography variant="body2">
+                        {condition?.name || "Podmínka"}
+                    </Typography>
                 </Paper>
             );
         }
@@ -785,18 +1034,30 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
             return (
                 <Paper elevation={4} sx={{ p: 1.5 }}>
                     <Typography variant="body2" fontWeight={500}>
-                        {meta.label}: {"label" in field ? field.label : field.text}
+                        {meta.label}:{" "}
+                        {"label" in field ? field.label : field.text}
                     </Typography>
                 </Paper>
             );
         }
 
         // Condition block overlay
-        const block = elements.find((el) => isConditionBlock(el) && el.id === activeId);
+        const block = elements.find(
+            (el) => isConditionBlock(el) && el.id === activeId
+        );
         if (block && isConditionBlock(block)) {
-            const condition = conditions.find((c) => c.id === block.conditionId);
+            const condition = conditions.find(
+                (c) => c.id === block.conditionId
+            );
             return (
-                <Paper elevation={4} sx={{ p: 1.5, borderLeft: "4px solid", borderLeftColor: "info.main" }}>
+                <Paper
+                    elevation={4}
+                    sx={{
+                        p: 1.5,
+                        borderLeft: "4px solid",
+                        borderLeftColor: "info.main",
+                    }}
+                >
                     <Typography variant="body2" fontWeight={500}>
                         Podmínka: {condition?.name || "(nepojmenovaná)"}
                     </Typography>
@@ -807,12 +1068,17 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
         return null;
     };
 
-    const hasElements = elements.length > 0 || initialFormData.fields.length > 0;
+    const hasElements =
+        elements.length > 0 || initialFormData.fields.length > 0;
 
     return (
         <Box>
             {error && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                <Alert
+                    severity="error"
+                    sx={{ mb: 2 }}
+                    onClose={() => setError(null)}
+                >
                     {error}
                 </Alert>
             )}
@@ -854,7 +1120,10 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                                 infoStatsConfig,
                                 fields: elements,
                             };
-                            const { token } = await saveFormPreview(yearId, formData);
+                            const { token } = await saveFormPreview(
+                                yearId,
+                                formData
+                            );
                             setPreviewToken(token);
                             window.open(`/nahled/${token}`, "_blank");
                         } catch {
@@ -886,7 +1155,10 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                     variant="contained"
                     startIcon={<Save />}
                     onClick={handleSave}
-                    disabled={saving || (elements.length === 0 && conditions.length === 0)}
+                    disabled={
+                        saving ||
+                        (elements.length === 0 && conditions.length === 0)
+                    }
                 >
                     {saving ? "Ukládám..." : "Uložit formulář"}
                 </Button>
@@ -926,16 +1198,27 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                                 onDeleteField={handleDeleteField}
                                 onDeleteBlock={handleDeleteBlock}
                                 onToggleField={handleToggleField}
-                                onCreateCondition={handleCreateConditionFromOption}
+                                onCreateCondition={
+                                    handleCreateConditionFromOption
+                                }
                                 fieldExternalUsages={fieldExternalUsagesMap}
                             />
 
-                            <Box sx={{ display: "flex", gap: 1, mt: 2, flexWrap: "wrap" }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: 1,
+                                    mt: 2,
+                                    flexWrap: "wrap",
+                                }}
+                            >
                                 {isMobile && (
                                     <Button
                                         variant="outlined"
                                         startIcon={<Add />}
-                                        onClick={() => setTypeSelectorOpen(true)}
+                                        onClick={() =>
+                                            setTypeSelectorOpen(true)
+                                        }
                                     >
                                         Přidat pole
                                     </Button>
@@ -946,7 +1229,9 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                                         variant="outlined"
                                         color="error"
                                         startIcon={<Delete />}
-                                        onClick={() => setDeleteConfirmOpen(true)}
+                                        onClick={() =>
+                                            setDeleteConfirmOpen(true)
+                                        }
                                         disabled={deleting}
                                     >
                                         Smazat formulář
@@ -957,20 +1242,24 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
 
                         {/* Right column: palette (desktop only) */}
                         {!isMobile && (
-                            <Box sx={{
-                                width: 220,
-                                flexShrink: 0,
-                                position: "sticky",
-                                top: 80,
-                                alignSelf: "flex-start",
-                                maxHeight: "calc(100vh - 96px)",
-                                overflow: "auto",
-                            }}>
+                            <Box
+                                sx={{
+                                    width: 220,
+                                    flexShrink: 0,
+                                    position: "sticky",
+                                    top: 80,
+                                    alignSelf: "flex-start",
+                                    maxHeight: "calc(100vh - 96px)",
+                                    overflow: "auto",
+                                }}
+                            >
                                 <FieldPalette
                                     conditions={conditions}
                                     pricingDefinitions={pricingDefinitions}
                                     onAddField={handleAddField}
-                                    onAddConditionBlock={handleAddConditionBlock}
+                                    onAddConditionBlock={
+                                        handleAddConditionBlock
+                                    }
                                     onAddPricingField={handleAddPricingField}
                                 />
                             </Box>
@@ -1019,37 +1308,57 @@ export function FormBuilder({ yearId, initialFormData, emailFieldNames = [], con
                 priceTiers={priceTiers}
             />
 
-            <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+            <Dialog
+                open={deleteConfirmOpen}
+                onClose={() => setDeleteConfirmOpen(false)}
+            >
                 <DialogTitle>Smazat formulář?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Tato akce smaže registrační formulář a všechny přijaté registrace. Tuto akci nelze vrátit.
+                        Tato akce smaže registrační formulář a všechny přijaté
+                        registrace. Tuto akci nelze vrátit.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteConfirmOpen(false)}>Zrušit</Button>
-                    <Button onClick={handleDelete} color="error" variant="contained">
+                    <Button onClick={() => setDeleteConfirmOpen(false)}>
+                        Zrušit
+                    </Button>
+                    <Button
+                        onClick={handleDelete}
+                        color="error"
+                        variant="contained"
+                    >
                         Smazat
                     </Button>
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={!!deletionBlock} onClose={() => setDeletionBlock(null)}>
+            <Dialog
+                open={!!deletionBlock}
+                onClose={() => setDeletionBlock(null)}
+            >
                 <DialogTitle>{deletionBlock?.title}</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>{deletionBlock?.message}</DialogContentText>
+                    <DialogContentText>
+                        {deletionBlock?.message}
+                    </DialogContentText>
                     {deletionBlock?.details && (
                         <Box component="ul" sx={{ mt: 1, pl: 2 }}>
                             {deletionBlock.details.map((detail, idx) => (
                                 <li key={idx}>
-                                    <Typography variant="body2">{detail}</Typography>
+                                    <Typography variant="body2">
+                                        {detail}
+                                    </Typography>
                                 </li>
                             ))}
                         </Box>
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeletionBlock(null)} variant="contained">
+                    <Button
+                        onClick={() => setDeletionBlock(null)}
+                        variant="contained"
+                    >
                         Rozumím
                     </Button>
                 </DialogActions>
@@ -1068,11 +1377,25 @@ interface FormDropZoneProps {
     onDeleteField: (fieldId: string) => void;
     onDeleteBlock: (blockId: string) => void;
     onToggleField?: (fieldId: string, updates: Partial<InputField>) => void;
-    onCreateCondition?: (fieldId: string, fieldLabel: string, optionValue: string) => void;
+    onCreateCondition?: (
+        fieldId: string,
+        fieldLabel: string,
+        optionValue: string
+    ) => void;
     fieldExternalUsages?: Map<string, FieldExternalUsage[]>;
 }
 
-function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, onDeleteField, onDeleteBlock, onToggleField, onCreateCondition, fieldExternalUsages }: FormDropZoneProps) {
+function FormDropZone({
+    elements,
+    conditions,
+    pricingDefinitions,
+    onEditField,
+    onDeleteField,
+    onDeleteBlock,
+    onToggleField,
+    onCreateCondition,
+    fieldExternalUsages,
+}: FormDropZoneProps) {
     const usedFieldIds = getFieldIdsUsedInConditions(conditions);
 
     const { setNodeRef, isOver } = useDroppable({
@@ -1086,10 +1409,7 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
     });
 
     return (
-        <SortableContext
-            items={rootIds}
-            strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={rootIds} strategy={verticalListSortingStrategy}>
             <Box
                 ref={setNodeRef}
                 sx={{
@@ -1107,12 +1427,15 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                         color="text.secondary"
                         sx={{ textAlign: "center", py: 4 }}
                     >
-                        Formulář je prázdný. Přetáhněte pole z palety nebo použijte tlačítko.
+                        Formulář je prázdný. Přetáhněte pole z palety nebo
+                        použijte tlačítko.
                     </Typography>
                 ) : (
                     elements.map((el) => {
                         if (isConditionBlock(el)) {
-                            const condition = conditions.find((c) => c.id === el.conditionId);
+                            const condition = conditions.find(
+                                (c) => c.id === el.conditionId
+                            );
                             return (
                                 <SortableFieldItem key={el.id} id={el.id}>
                                     <ConditionBlockItem
@@ -1125,7 +1448,9 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                                         usedFieldIds={usedFieldIds}
                                         pricingDefinitions={pricingDefinitions}
                                         onCreateCondition={onCreateCondition}
-                                        fieldExternalUsages={fieldExternalUsages}
+                                        fieldExternalUsages={
+                                            fieldExternalUsages
+                                        }
                                     />
                                 </SortableFieldItem>
                             );
@@ -1141,7 +1466,9 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
                                     usedInCondition={usedFieldIds.has(el.id)}
                                     pricingDefinitions={pricingDefinitions}
                                     onCreateCondition={onCreateCondition}
-                                    externalUsages={fieldExternalUsages?.get(el.id)}
+                                    externalUsages={fieldExternalUsages?.get(
+                                        el.id
+                                    )}
                                 />
                             </SortableFieldItem>
                         );
@@ -1154,7 +1481,10 @@ function FormDropZone({ elements, conditions, pricingDefinitions, onEditField, o
 
 // -- Helper functions --
 
-function findFieldById(elements: FormElement[], fieldId: string): FormField | null {
+function findFieldById(
+    elements: FormElement[],
+    fieldId: string
+): FormField | null {
     for (const el of elements) {
         if (isConditionBlock(el)) {
             const child = el.children.find((c) => c.id === fieldId);
@@ -1166,23 +1496,33 @@ function findFieldById(elements: FormElement[], fieldId: string): FormField | nu
     return null;
 }
 
-function updateFieldInElements(elements: FormElement[], updatedField: FormField): FormElement[] {
+function updateFieldInElements(
+    elements: FormElement[],
+    updatedField: FormField
+): FormElement[] {
     return elements.map((el) => {
         if (isConditionBlock(el)) {
             return {
                 ...el,
-                children: el.children.map((c) => (c.id === updatedField.id ? updatedField : c)),
+                children: el.children.map((c) =>
+                    c.id === updatedField.id ? updatedField : c
+                ),
             };
         }
         return el.id === updatedField.id ? updatedField : el;
     });
 }
 
-function removeFieldFromElements(elements: FormElement[], fieldId: string): FormElement[] {
+function removeFieldFromElements(
+    elements: FormElement[],
+    fieldId: string
+): FormElement[] {
     const result: FormElement[] = [];
     for (const el of elements) {
         if (isConditionBlock(el)) {
-            const filteredChildren = el.children.filter((c) => c.id !== fieldId);
+            const filteredChildren = el.children.filter(
+                (c) => c.id !== fieldId
+            );
             result.push({ ...el, children: filteredChildren });
         } else if (el.id !== fieldId) {
             result.push(el);
@@ -1191,7 +1531,10 @@ function removeFieldFromElements(elements: FormElement[], fieldId: string): Form
     return result;
 }
 
-function findContainerInElements(elements: FormElement[], itemId: string): string | null {
+function findContainerInElements(
+    elements: FormElement[],
+    itemId: string
+): string | null {
     for (const el of elements) {
         if (isConditionBlock(el)) {
             if (el.id === itemId) return "root";
@@ -1203,8 +1546,12 @@ function findContainerInElements(elements: FormElement[], itemId: string): strin
     return null;
 }
 
-function findContainerForOver(elements: FormElement[], overId: string): string | null {
+function findContainerForOver(
+    elements: FormElement[],
+    overId: string
+): string | null {
     if (overId === "root-droppable") return "root";
-    if (overId.startsWith("container-")) return overId.replace("container-", "");
+    if (overId.startsWith("container-"))
+        return overId.replace("container-", "");
     return findContainerInElements(elements, overId);
 }
