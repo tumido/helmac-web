@@ -15,7 +15,12 @@ import {
     Radio,
     Paper,
 } from "@mui/material";
-import type { FormField, FormElement, FormCondition, PricingDefinition } from "@/lib/types/registration-form";
+import type {
+    FormField,
+    FormElement,
+    FormCondition,
+    PricingDefinition,
+} from "@/lib/types/registration-form";
 import { isInputField, isConditionBlock } from "@/lib/types/registration-form";
 import { getCurrentPrice, formatPrice } from "@/lib/utils/pricing";
 
@@ -26,10 +31,18 @@ interface FormPreviewProps {
     priceTiers?: string[];
 }
 
-export function FormPreview({ elements, conditions, pricingDefinitions, priceTiers }: FormPreviewProps) {
+export function FormPreview({
+    elements,
+    conditions,
+    pricingDefinitions,
+    priceTiers,
+}: FormPreviewProps) {
     if (elements.length === 0) {
         return (
-            <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+            <Typography
+                color="text.secondary"
+                sx={{ textAlign: "center", py: 4 }}
+            >
                 Formulář je prázdný. Přidejte pole pomocí tlačítka výše.
             </Typography>
         );
@@ -37,13 +50,19 @@ export function FormPreview({ elements, conditions, pricingDefinitions, priceTie
 
     return (
         <Paper variant="outlined" sx={{ p: 3 }}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ mb: 2 }}
+            >
                 Náhled formuláře
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {elements.map((el) => {
                     if (isConditionBlock(el)) {
-                        const condition = conditions.find((c) => c.id === el.conditionId);
+                        const condition = conditions.find(
+                            (c) => c.id === el.conditionId
+                        );
                         return (
                             <Box
                                 key={el.id}
@@ -56,25 +75,59 @@ export function FormPreview({ elements, conditions, pricingDefinitions, priceTie
                                     borderRadius: 1,
                                 }}
                             >
-                                <Typography variant="caption" color="info.main" fontWeight={600} sx={{ mb: 1, display: "block" }}>
-                                    Podmínka: {condition?.name || "(nepojmenovaná)"}
+                                <Typography
+                                    variant="caption"
+                                    color="info.main"
+                                    fontWeight={600}
+                                    sx={{ mb: 1, display: "block" }}
+                                >
+                                    Podmínka:{" "}
+                                    {condition?.name || "(nepojmenovaná)"}
                                 </Typography>
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2,
+                                    }}
+                                >
                                     {el.children.map((child) => (
-                                        <PreviewField key={child.id} field={child} pricingDefinitions={pricingDefinitions} priceTiers={priceTiers} />
+                                        <PreviewField
+                                            key={child.id}
+                                            field={child}
+                                            pricingDefinitions={
+                                                pricingDefinitions
+                                            }
+                                            priceTiers={priceTiers}
+                                        />
                                     ))}
                                 </Box>
                             </Box>
                         );
                     }
-                    return <PreviewField key={el.id} field={el} pricingDefinitions={pricingDefinitions} priceTiers={priceTiers} />;
+                    return (
+                        <PreviewField
+                            key={el.id}
+                            field={el}
+                            pricingDefinitions={pricingDefinitions}
+                            priceTiers={priceTiers}
+                        />
+                    );
                 })}
             </Box>
         </Paper>
     );
 }
 
-function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormField; pricingDefinitions?: PricingDefinition[]; priceTiers?: string[] }) {
+function PreviewField({
+    field,
+    pricingDefinitions,
+    priceTiers,
+}: {
+    field: FormField;
+    pricingDefinitions?: PricingDefinition[];
+    priceTiers?: string[];
+}) {
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
@@ -106,7 +159,10 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
             return (
                 <FormControl fullWidth disabled>
                     <InputLabel>{`${field.label}${field.required ? " *" : ""}`}</InputLabel>
-                    <Select value="" label={`${field.label}${field.required ? " *" : ""}`}>
+                    <Select
+                        value=""
+                        label={`${field.label}${field.required ? " *" : ""}`}
+                    >
                         {(field.options || []).map((opt) => (
                             <MenuItem key={opt} value={opt}>
                                 {opt}
@@ -120,7 +176,8 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
             return (
                 <FormControl disabled>
                     <Typography variant="body2" sx={{ mb: 0.5 }}>
-                        {field.label}{field.required ? " *" : ""}
+                        {field.label}
+                        {field.required ? " *" : ""}
                     </Typography>
                     <RadioGroup>
                         {(field.options || []).map((opt) => (
@@ -136,29 +193,65 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
             );
 
         case "pricing_select": {
-            const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
-            if (!def) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
+            const def = pricingDefinitions?.find(
+                (d) => d.id === field.pricingId
+            );
+            if (!def)
+                return (
+                    <Typography variant="body2" color="error">
+                        Cenová skupina nenalezena
+                    </Typography>
+                );
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                        {field.label}{field.required ? " *" : ""}
+                        {field.label}
+                        {field.required ? " *" : ""}
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                        }}
+                    >
                         {def.options.map((opt) => {
-                            const price = getCurrentPrice(def.usePriceTiers ? (priceTiers ?? []) : [], opt.prices);
+                            const price = getCurrentPrice(
+                                def.usePriceTiers ? (priceTiers ?? []) : [],
+                                opt.prices
+                            );
                             return (
                                 <Paper
                                     key={opt.id}
                                     variant="outlined"
-                                    sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                    sx={{
+                                        p: 1.5,
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Box>
-                                        <Typography variant="body2" fontWeight={500}>{opt.name}</Typography>
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={500}
+                                        >
+                                            {opt.name}
+                                        </Typography>
                                         {opt.description && (
-                                            <Typography variant="caption" color="text.secondary">{opt.description}</Typography>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {opt.description}
+                                            </Typography>
                                         )}
                                     </Box>
-                                    <Typography variant="body2" fontWeight={600} color="primary">
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                        color="primary"
+                                    >
                                         {formatPrice(price)}
                                     </Typography>
                                 </Paper>
@@ -170,17 +263,34 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
         }
 
         case "pricing_quantity": {
-            const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
-            if (!def) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
+            const def = pricingDefinitions?.find(
+                (d) => d.id === field.pricingId
+            );
+            if (!def)
+                return (
+                    <Typography variant="body2" color="error">
+                        Cenová skupina nenalezena
+                    </Typography>
+                );
             const unitOpt = def.options[0];
-            const unitPrice = unitOpt ? getCurrentPrice(def.usePriceTiers ? (priceTiers ?? []) : [], unitOpt.prices) : 0;
+            const unitPrice = unitOpt
+                ? getCurrentPrice(
+                      def.usePriceTiers ? (priceTiers ?? []) : [],
+                      unitOpt.prices
+                  )
+                : 0;
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                        {field.label}{field.required ? " *" : ""}
+                        {field.label}
+                        {field.required ? " *" : ""}
                     </Typography>
                     {unitOpt?.description && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mb: 1, display: "block" }}
+                        >
                             {unitOpt.description}
                         </Typography>
                     )}
@@ -194,9 +304,15 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
                             inputProps={{ min: 0 }}
                         />
                         {def.unitName && (
-                            <Typography variant="body2" color="text.secondary">{def.unitName}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {def.unitName}
+                            </Typography>
                         )}
-                        <Typography variant="body2" fontWeight={600} color="info.main">
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="info.main"
+                        >
                             {formatPrice(unitPrice)} / {def.unitName || "ks"}
                         </Typography>
                     </Box>
@@ -205,32 +321,74 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
         }
 
         case "pricing_multi_select": {
-            const msDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
-            if (!msDef) return <Typography variant="body2" color="error">Cenová skupina nenalezena</Typography>;
+            const msDef = pricingDefinitions?.find(
+                (d) => d.id === field.pricingId
+            );
+            if (!msDef)
+                return (
+                    <Typography variant="body2" color="error">
+                        Cenová skupina nenalezena
+                    </Typography>
+                );
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                        {field.label}{field.required ? " *" : ""} (vícevýběr)
+                        {field.label}
+                        {field.required ? " *" : ""} (vícevýběr)
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                        }}
+                    >
                         {msDef.options.map((opt) => {
-                            const price = getCurrentPrice(msDef.usePriceTiers ? (priceTiers ?? []) : [], opt.prices);
+                            const price = getCurrentPrice(
+                                msDef.usePriceTiers ? (priceTiers ?? []) : [],
+                                opt.prices
+                            );
                             return (
                                 <Paper
                                     key={opt.id}
                                     variant="outlined"
-                                    sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                    sx={{
+                                        p: 1.5,
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
                                 >
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                        }}
+                                    >
                                         <Checkbox disabled size="small" />
                                         <Box>
-                                            <Typography variant="body2" fontWeight={500}>{opt.name}</Typography>
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight={500}
+                                            >
+                                                {opt.name}
+                                            </Typography>
                                             {opt.description && (
-                                                <Typography variant="caption" color="text.secondary">{opt.description}</Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                >
+                                                    {opt.description}
+                                                </Typography>
                                             )}
                                         </Box>
                                     </Box>
-                                    <Typography variant="body2" fontWeight={600} color="secondary">
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                        color="secondary"
+                                    >
                                         {formatPrice(price)}
                                     </Typography>
                                 </Paper>
@@ -258,10 +416,23 @@ function PreviewField({ field, pricingDefinitions, priceTiers }: { field: FormFi
                 <TextField
                     label={`${field.label}${field.required ? " *" : ""}`}
                     placeholder={field.placeholder}
-                    type={field.type === "email" ? "email" : field.type === "number" ? "number" : (field.type === "date" || field.type === "birth_date") ? "date" : "text"}
+                    type={
+                        field.type === "email"
+                            ? "email"
+                            : field.type === "number"
+                              ? "number"
+                              : field.type === "date" ||
+                                  field.type === "birth_date"
+                                ? "date"
+                                : "text"
+                    }
                     fullWidth
                     disabled
-                    InputLabelProps={(field.type === "date" || field.type === "birth_date") ? { shrink: true } : undefined}
+                    InputLabelProps={
+                        field.type === "date" || field.type === "birth_date"
+                            ? { shrink: true }
+                            : undefined
+                    }
                 />
             );
     }

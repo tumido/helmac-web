@@ -87,7 +87,9 @@ export function HeroSection({
                         color: isDark ? "common.white" : "primary.dark",
                         fontSize: { xs: "2.5rem", md: "4rem" },
                         mb: 3,
-                        textShadow: isDark ? "0 2px 10px rgba(0,0,0,0.3)" : "0 2px 10px rgba(255,255,255,0.3)",
+                        textShadow: isDark
+                            ? "0 2px 10px rgba(0,0,0,0.3)"
+                            : "0 2px 10px rgba(255,255,255,0.3)",
                     }}
                 >
                     {title}
@@ -99,7 +101,11 @@ export function HeroSection({
                         sx={{
                             fontFamily: '"Cinzel", serif',
                             fontWeight: 600,
-                            fontSize: { xs: "1.1rem", sm: "1.25rem", md: "1.4rem" },
+                            fontSize: {
+                                xs: "1.1rem",
+                                sm: "1.25rem",
+                                md: "1.4rem",
+                            },
                             letterSpacing: "0.08em",
                             color: isDark ? "secondary.main" : "primary.dark",
                             mt: -1,
@@ -164,8 +170,12 @@ export function HeroSection({
                                     px: 4,
                                     py: 1.5,
                                     fontSize: "1.1rem",
-                                    color: isDark ? "common.white" : "text.primary",
-                                    borderColor: isDark ? "common.white" : "text.secondary",
+                                    color: isDark
+                                        ? "common.white"
+                                        : "text.primary",
+                                    borderColor: isDark
+                                        ? "common.white"
+                                        : "text.secondary",
                                     "&:hover": {
                                         borderColor: "secondary.main",
                                         color: "secondary.main",

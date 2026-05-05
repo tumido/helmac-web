@@ -13,7 +13,11 @@ import {
     Tooltip,
 } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
-import { Menu as MenuIcon, AccountCircle, PersonOutline } from "@mui/icons-material";
+import {
+    Menu as MenuIcon,
+    AccountCircle,
+    PersonOutline,
+} from "@mui/icons-material";
 import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/public/ui";
@@ -34,7 +38,11 @@ interface HeaderProps {
     publicUser?: PublicUserInfo | null;
 }
 
-export function Header({ navSubtabs, registrationOpen, publicUser }: HeaderProps) {
+export function Header({
+    navSubtabs,
+    registrationOpen,
+    publicUser,
+}: HeaderProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const trigger = useScrollTrigger({
@@ -101,7 +109,13 @@ export function Header({ navSubtabs, registrationOpen, publicUser }: HeaderProps
 
                         <Navigation items={navItems} />
 
-                        <Box sx={{ display: { xs: "flex", lg: "none" }, alignItems: "center", gap: 1 }}>
+                        <Box
+                            sx={{
+                                display: { xs: "flex", lg: "none" },
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
                             <ThemeToggle size="small" />
                             {publicUser ? (
                                 <Tooltip title="Můj účet">
@@ -134,7 +148,13 @@ export function Header({ navSubtabs, registrationOpen, publicUser }: HeaderProps
                             </IconButton>
                         </Box>
 
-                        <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 2 }}>
+                        <Box
+                            sx={{
+                                display: { xs: "none", lg: "flex" },
+                                alignItems: "center",
+                                gap: 2,
+                            }}
+                        >
                             <ThemeToggle />
                             {registrationOpen && (
                                 <LinkButton

@@ -12,7 +12,10 @@ export default async function HomePage() {
         getRegistrationStatus(),
     ]);
 
-    const eventDate = formatEventDateRange(activeYear?.startDate, activeYear?.endDate);
+    const eventDate = formatEventDateRange(
+        activeYear?.startDate,
+        activeYear?.endDate
+    );
 
     return (
         <>
@@ -38,7 +41,8 @@ export default async function HomePage() {
                             fontWeight: 300,
                         }}
                     >
-                        Registrace se otevře {formatDate(regStatus.registrationStartDate)}
+                        Registrace se otevře{" "}
+                        {formatDate(regStatus.registrationStartDate)}
                     </Typography>
                 )}
             </HeroSection>

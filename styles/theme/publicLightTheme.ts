@@ -192,7 +192,8 @@ export const publicLightTheme = createTheme(
                 styleOverrides: {
                     root: {
                         "& .MuiOutlinedInput-root": {
-                            backgroundColor: medievalLightColors.background.dark,
+                            backgroundColor:
+                                medievalLightColors.background.dark,
                             borderRadius: 4,
                             "& fieldset": {
                                 borderColor: `${medievalLightColors.text.muted}66`,

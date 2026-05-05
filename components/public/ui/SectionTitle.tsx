@@ -44,7 +44,11 @@ export function SectionTitle({
                 <Typography
                     variant="body1"
                     color="text.secondary"
-                    sx={{ mt: 2, maxWidth: 600, mx: align === "center" ? "auto" : 0 }}
+                    sx={{
+                        mt: 2,
+                        maxWidth: 600,
+                        mx: align === "center" ? "auto" : 0,
+                    }}
                 >
                     {subtitle}
                 </Typography>

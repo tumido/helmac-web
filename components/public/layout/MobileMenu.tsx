@@ -23,7 +23,13 @@ interface MobileMenuProps {
     publicUser?: PublicUserInfo | null;
 }
 
-export function MobileMenu({ open, onClose, items, registrationOpen, publicUser }: MobileMenuProps) {
+export function MobileMenu({
+    open,
+    onClose,
+    items,
+    registrationOpen,
+    publicUser,
+}: MobileMenuProps) {
     const pathname = usePathname();
 
     return (
@@ -57,7 +63,8 @@ export function MobileMenu({ open, onClose, items, registrationOpen, publicUser 
                 <List disablePadding>
                     {items.map((item) => {
                         const isActive = pathname === item.href;
-                        const hasSubItems = item.subItems && item.subItems.length > 0;
+                        const hasSubItems =
+                            item.subItems && item.subItems.length > 0;
 
                         return (
                             <Box key={item.href}>
@@ -80,32 +87,36 @@ export function MobileMenu({ open, onClose, items, registrationOpen, publicUser 
                                         <ListItemText
                                             primary={item.label}
                                             primaryTypographyProps={{
-                                                fontWeight: isActive ? 700 : 400,
+                                                fontWeight: isActive
+                                                    ? 700
+                                                    : 400,
                                             }}
                                         />
                                     </ListItemLinkButton>
                                 </ListItem>
 
-                                {hasSubItems && item.subItems!.map((sub) => (
-                                    <ListItem key={sub.id} disablePadding>
-                                        <ListItemLinkButton
-                                            href={sub.href}
-                                            onClick={onClose}
-                                            sx={{
-                                                pl: 4,
-                                                borderLeft: "3px solid transparent",
-                                            }}
-                                        >
-                                            <ListItemText
-                                                primary={sub.label}
-                                                primaryTypographyProps={{
-                                                    fontSize: "0.875rem",
-                                                    color: "text.secondary",
+                                {hasSubItems &&
+                                    item.subItems!.map((sub) => (
+                                        <ListItem key={sub.id} disablePadding>
+                                            <ListItemLinkButton
+                                                href={sub.href}
+                                                onClick={onClose}
+                                                sx={{
+                                                    pl: 4,
+                                                    borderLeft:
+                                                        "3px solid transparent",
                                                 }}
-                                            />
-                                        </ListItemLinkButton>
-                                    </ListItem>
-                                ))}
+                                            >
+                                                <ListItemText
+                                                    primary={sub.label}
+                                                    primaryTypographyProps={{
+                                                        fontSize: "0.875rem",
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                            </ListItemLinkButton>
+                                        </ListItem>
+                                    ))}
                             </Box>
                         );
                     })}
@@ -137,7 +148,10 @@ export function MobileMenu({ open, onClose, items, registrationOpen, publicUser 
                         fullWidth
                         onClick={onClose}
                         startIcon={<AccountCircle />}
-                        sx={{ color: "primary.main", borderColor: "primary.main" }}
+                        sx={{
+                            color: "primary.main",
+                            borderColor: "primary.main",
+                        }}
                     >
                         Můj účet
                     </LinkButton>
