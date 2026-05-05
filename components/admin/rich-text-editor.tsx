@@ -20,6 +20,12 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     Popover,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    TextField,
 } from "@mui/material";
 import {
     FormatBold,
@@ -73,25 +79,82 @@ interface RichTextEditorProps {
     editable?: boolean;
 }
 
+function normalizeLinkHref(url: string): string {
+    const trimmed = url.trim();
+    if (trimmed === "") return trimmed;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith("//")) return trimmed;
+    if (trimmed.startsWith("/")) return trimmed;
+    if (trimmed.startsWith("#")) return trimmed;
+    return `https://${trimmed}`;
+}
+
 function MenuBar({ editor }: { editor: Editor | null }) {
     const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+    const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+    const [linkUrl, setLinkUrl] = useState("");
+    const [linkText, setLinkText] = useState("");
+    const [linkEditing, setLinkEditing] = useState(false);
+    const [showLinkTextField, setShowLinkTextField] = useState(false);
 
-    const setLink = useCallback(() => {
+    const openLinkDialog = useCallback(() => {
+        if (!editor) return;
+        const previousUrl: string = editor.getAttributes("link").href ?? "";
+        const { from, to } = editor.state.selection;
+        const hasSelection = from !== to;
+        const isInLink = editor.isActive("link");
+
+        setLinkUrl(previousUrl);
+        setLinkText("");
+        setLinkEditing(Boolean(previousUrl));
+        setShowLinkTextField(!hasSelection && !isInLink);
+        setLinkDialogOpen(true);
+    }, [editor]);
+
+    const closeLinkDialog = useCallback(() => {
+        setLinkDialogOpen(false);
+    }, []);
+
+    const submitLink = useCallback(() => {
         if (!editor) return;
 
-        const previousUrl = editor.getAttributes("link").href;
-        const url = window.prompt("URL odkazu:", previousUrl);
-
-        if (url === null) {
+        const rawUrl = linkUrl.trim();
+        if (rawUrl === "") {
             return;
         }
 
-        if (url === "") {
-            editor.chain().focus().extendMarkRange("link").unsetLink().run();
-            return;
+        const href = normalizeLinkHref(rawUrl);
+
+        const { from, to } = editor.state.selection;
+        const hasSelection = from !== to;
+
+        if (hasSelection || editor.isActive("link")) {
+            editor
+                .chain()
+                .focus()
+                .extendMarkRange("link")
+                .setLink({ href })
+                .run();
+        } else {
+            const text = linkText.trim() || rawUrl;
+            editor
+                .chain()
+                .focus()
+                .insertContent({
+                    type: "text",
+                    text,
+                    marks: [{ type: "link", attrs: { href } }],
+                })
+                .run();
         }
 
-        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+        setLinkDialogOpen(false);
+    }, [editor, linkUrl, linkText]);
+
+    const removeLink = useCallback(() => {
+        if (!editor) return;
+        editor.chain().focus().extendMarkRange("link").unsetLink().run();
+        setLinkDialogOpen(false);
     }, [editor]);
 
     const addImage = useCallback(() => {
@@ -381,7 +444,7 @@ function MenuBar({ editor }: { editor: Editor | null }) {
             <Tooltip title="Pridat odkaz">
                 <IconButton
                     size="small"
-                    onClick={setLink}
+                    onClick={openLinkDialog}
                     color={editor.isActive("link") ? "primary" : "default"}
                 >
                     <LinkIcon fontSize="small" />
@@ -462,6 +525,69 @@ function MenuBar({ editor }: { editor: Editor | null }) {
                     </IconButton>
                 </span>
             </Tooltip>
+
+            <Dialog
+                open={linkDialogOpen}
+                onClose={closeLinkDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    {linkEditing ? "Upravit odkaz" : "Pridat odkaz"}
+                </DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="URL odkazu"
+                        type="url"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitLink();
+                            }
+                        }}
+                        placeholder="https://example.com"
+                        fullWidth
+                        variant="outlined"
+                    />
+                    {showLinkTextField && (
+                        <TextField
+                            margin="dense"
+                            label="Text odkazu (volitelne)"
+                            value={linkText}
+                            onChange={(e) => setLinkText(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    submitLink();
+                                }
+                            }}
+                            placeholder="Pokud nevyplnite, zobrazi se URL"
+                            fullWidth
+                            variant="outlined"
+                        />
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    {linkEditing && (
+                        <Button onClick={removeLink} color="error">
+                            Odebrat odkaz
+                        </Button>
+                    )}
+                    <Box sx={{ flex: 1 }} />
+                    <Button onClick={closeLinkDialog}>Zrusit</Button>
+                    <Button
+                        onClick={submitLink}
+                        variant="contained"
+                        disabled={linkUrl.trim() === ""}
+                    >
+                        {linkEditing ? "Ulozit" : "Pridat"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
