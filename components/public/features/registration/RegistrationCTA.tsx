@@ -90,7 +90,7 @@ export async function RegistrationCTA() {
                 </Link>
                 {status.registrationCount > 0 && (
                     <Typography
-                        variant="body2"
+                        variant="body1"
                         sx={{ mt: 2, opacity: 0.7 }}
                     >
                         Již {status.registrationCount} registrovaných účastníků
