@@ -238,6 +238,7 @@ export function NewsForm({ mode, years, newsId, defaultValues, cancelHref = "/ad
                             value={content}
                             onChange={setContent}
                             minHeight={200}
+                            yearId={selectedYearId}
                         />
                         <input type="hidden" name="content" value={content} />
                         {state?.error?.content && (

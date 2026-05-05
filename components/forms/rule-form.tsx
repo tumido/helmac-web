@@ -127,6 +127,7 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                             value={content}
                             onChange={setContent}
                             minHeight={200}
+                            yearId={yearId}
                         />
                         <input type="hidden" name="content" value={content} />
                         {state?.error?.content && (

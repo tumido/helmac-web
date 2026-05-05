@@ -127,6 +127,7 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
                             value={content}
                             onChange={setContent}
                             minHeight={200}
+                            yearId={yearId}
                         />
                         <input type="hidden" name="content" value={content} />
                         {state?.error?.content && (

@@ -26,7 +26,9 @@ import {
     DialogActions,
     Button,
     TextField,
+    Autocomplete,
 } from "@mui/material";
+import { getLinkTargets, type LinkTarget } from "@/lib/actions/link-targets";
 import {
     FormatBold,
     FormatItalic,
@@ -77,6 +79,7 @@ interface RichTextEditorProps {
     minHeight?: number;
     editorRef?: MutableRefObject<Editor | null>;
     editable?: boolean;
+    yearId?: string;
 }
 
 function normalizeLinkHref(url: string): string {
@@ -89,13 +92,21 @@ function normalizeLinkHref(url: string): string {
     return `https://${trimmed}`;
 }
 
-function MenuBar({ editor }: { editor: Editor | null }) {
+function MenuBar({
+    editor,
+    yearId,
+}: {
+    editor: Editor | null;
+    yearId?: string;
+}) {
     const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
     const [linkDialogOpen, setLinkDialogOpen] = useState(false);
     const [linkUrl, setLinkUrl] = useState("");
     const [linkText, setLinkText] = useState("");
     const [linkEditing, setLinkEditing] = useState(false);
     const [showLinkTextField, setShowLinkTextField] = useState(false);
+    const [linkTargets, setLinkTargets] = useState<LinkTarget[] | null>(null);
+    const [linkTargetsLoading, setLinkTargetsLoading] = useState(false);
 
     const openLinkDialog = useCallback(() => {
         if (!editor) return;
@@ -109,7 +120,26 @@ function MenuBar({ editor }: { editor: Editor | null }) {
         setLinkEditing(Boolean(previousUrl));
         setShowLinkTextField(!hasSelection && !isInLink);
         setLinkDialogOpen(true);
-    }, [editor]);
+
+        if (linkTargets === null && !linkTargetsLoading) {
+            setLinkTargetsLoading(true);
+            getLinkTargets(yearId)
+                .then((targets) => setLinkTargets(targets))
+                .catch(() => setLinkTargets([]))
+                .finally(() => setLinkTargetsLoading(false));
+        }
+    }, [editor, yearId, linkTargets, linkTargetsLoading]);
+
+    const handleTargetSelect = useCallback(
+        (target: LinkTarget | null) => {
+            if (!target) return;
+            setLinkUrl(target.url);
+            if (showLinkTextField) {
+                setLinkText(target.label);
+            }
+        },
+        [showLinkTextField],
+    );
 
     const closeLinkDialog = useCallback(() => {
         setLinkDialogOpen(false);
@@ -570,6 +600,27 @@ function MenuBar({ editor }: { editor: Editor | null }) {
                             variant="outlined"
                         />
                     )}
+                    <Autocomplete<LinkTarget>
+                        sx={{ mt: 2 }}
+                        options={linkTargets ?? []}
+                        loading={linkTargetsLoading}
+                        groupBy={(option) => option.group}
+                        getOptionLabel={(option) => option.label}
+                        isOptionEqualToValue={(option, value) =>
+                            option.url === value.url
+                        }
+                        value={null}
+                        onChange={(_, value) => handleTargetSelect(value)}
+                        blurOnSelect
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Vybrat stranku webu"
+                                placeholder="Vyhledat stranku nebo podsekci"
+                                variant="outlined"
+                            />
+                        )}
+                    />
                 </DialogContent>
                 <DialogActions>
                     {linkEditing && (
@@ -599,6 +650,7 @@ export function RichTextEditor({
     minHeight = 300,
     editorRef,
     editable = true,
+    yearId,
 }: RichTextEditorProps) {
     const editor = useEditor({
         extensions: [
@@ -692,7 +744,7 @@ export function RichTextEditor({
                 }),
             }}
         >
-            {editable && <MenuBar editor={editor} />}
+            {editable && <MenuBar editor={editor} yearId={yearId} />}
             <Box
                 sx={{
                     p: 2,
