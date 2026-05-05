@@ -17,12 +17,6 @@ export const publicLightTheme = createTheme(
                 dark: medievalLightColors.gold.dark,
                 contrastText: medievalLightColors.gold.contrastText,
             },
-            secondary: {
-                main: medievalLightColors.gold.main,
-                light: medievalLightColors.gold.light,
-                dark: medievalLightColors.gold.dark,
-                contrastText: medievalLightColors.gold.contrastText,
-            },
             background: {
                 default: medievalLightColors.background.default,
                 paper: medievalLightColors.background.paper,
@@ -135,10 +129,11 @@ export const publicLightTheme = createTheme(
                         },
                     },
                     containedSecondary: {
-                        backgroundColor: medievalLightColors.gold.main,
-                        color: medievalLightColors.gold.contrastText,
+                        backgroundColor: medievalLightColors.background.default,
+                        color: medievalLightColors.text.primary,
                         "&:hover": {
-                            backgroundColor: medievalLightColors.gold.dark,
+                            backgroundColor:
+                                medievalLightColors.background.paper,
                         },
                     },
                     outlined: {
