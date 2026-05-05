@@ -13,44 +13,21 @@ import {
     Button,
     CircularProgress,
 } from "@mui/material";
-import { Delete, Visibility, VisibilityOff } from "@mui/icons-material";
-import {
-    publishProgramEvent,
-    unpublishProgramEvent,
-    deleteProgramEvent,
-} from "@/lib/actions/program-events";
+import { Delete } from "@mui/icons-material";
+import { deleteProgramEvent } from "@/lib/actions/program-events";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface ProgramEventActionsProps {
     eventId: string;
-    isPublished: boolean;
 }
 
-export function ProgramEventActions({
-    eventId,
-    isPublished,
-}: ProgramEventActionsProps) {
+export function ProgramEventActions({ eventId }: ProgramEventActionsProps) {
     const router = useRouter();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const handleTogglePublish = async () => {
-        setLoading(true);
-        setError(null);
-        const result = isPublished
-            ? await unpublishProgramEvent(eventId)
-            : await publishProgramEvent(eventId);
-        setLoading(false);
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(isPublished ? "Událost byla skryta" : "Událost byla publikována");
-            router.refresh();
-        }
-    };
 
     const handleDelete = async () => {
         setLoading(true);
@@ -78,18 +55,6 @@ export function ProgramEventActions({
     return (
         <>
             <Box sx={{ display: "flex", gap: 0.5 }}>
-                <Tooltip
-                    title={isPublished ? "Skrýt událost" : "Publikovat událost"}
-                >
-                    <IconButton
-                        size="small"
-                        color={isPublished ? "success" : "default"}
-                        onClick={handleTogglePublish}
-                    >
-                        {isPublished ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                </Tooltip>
-
                 <Tooltip title="Smazat událost">
                     <IconButton
                         size="small"

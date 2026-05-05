@@ -50,7 +50,6 @@ export const createProgramEventSchema = z.object({
         .optional(),
     tags: z.array(z.string()).default([]),
     storyContent: z.any().optional(),
-    isPublished: z.coerce.boolean().optional(),
 });
 
 export const updateProgramEventSchema = createProgramEventSchema.partial();

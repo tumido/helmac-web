@@ -1,8 +1,4 @@
-import { Container, Typography, Box, Chip } from "@mui/material";
-import {
-    Visibility,
-    VisibilityOff,
-} from "@mui/icons-material";
+import { Container, Typography, Box } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getProgramEvent, getAllTagsForYear } from "@/lib/services/program";
 import { ProgramEventForm } from "@/components/forms/program-event-form";
@@ -36,23 +32,6 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
                 title="Upravit udalost"
             />
             <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <Chip
-                        label={event.isPublished ? "Publikovano" : "Skryto"}
-                        size="small"
-                        color={event.isPublished ? "success" : "default"}
-                        icon={
-                            event.isPublished ? <Visibility /> : <VisibilityOff />
-                        }
-                    />
-                </Box>
                 <Typography color="text.secondary">
                     {event.startTime} - {event.title}
                 </Typography>
@@ -71,7 +50,6 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
                     location: event.location,
                     imageUrl: event.imageUrl,
                     tags: event.tags,
-                    isPublished: event.isPublished,
                 }}
             />
         </Container>

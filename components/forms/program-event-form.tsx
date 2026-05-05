@@ -11,8 +11,6 @@ import {
     Card,
     CardContent,
     CardActions,
-    FormControlLabel,
-    Switch,
     Autocomplete,
     Chip,
 } from "@mui/material";
@@ -39,7 +37,6 @@ interface ProgramEventFormProps {
         location?: string;
         imageUrl?: string | null;
         tags?: string[];
-        isPublished?: boolean;
     };
 }
 
@@ -231,19 +228,6 @@ export function ProgramEventForm({
                         name="tags"
                         value={JSON.stringify(selectedTags)}
                     />
-
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                id="isPublished"
-                                name="isPublished"
-                                value="true"
-                                defaultChecked={defaultValues?.isPublished ?? false}
-                            />
-                        }
-                        label="Publikovat událost"
-                    />
-
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

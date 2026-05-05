@@ -56,7 +56,6 @@ export async function createProgramEvent(
         location: formData.get("location"),
         imageUrl: formData.get("imageUrl") || undefined,
         tags,
-        isPublished: formData.get("isPublished") === "true",
     };
 
     const validated = createProgramEventSchema.safeParse(rawData);
@@ -89,7 +88,7 @@ export async function createProgramEvent(
                 location: validated.data.location,
                 imageUrl: validated.data.imageUrl || null,
                 tags: validated.data.tags,
-                isPublished: validated.data.isPublished ?? false,
+                isPublished: true,
                 sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
             },
         });
@@ -137,7 +136,6 @@ export async function updateProgramEvent(
         location: formData.get("location"),
         imageUrl: formData.get("imageUrl") || undefined,
         tags,
-        isPublished: formData.get("isPublished") === "true",
     };
 
     const validated = updateProgramEventSchema.safeParse(rawData);
@@ -165,7 +163,7 @@ export async function updateProgramEvent(
                 location: validated.data.location,
                 imageUrl: validated.data.imageUrl || null,
                 tags: validated.data.tags,
-                isPublished: validated.data.isPublished,
+                isPublished: true,
             },
         });
 
@@ -217,56 +215,6 @@ export async function updateProgramEventStory(
     } catch (error) {
         console.error("Failed to update event story:", error);
         return { error: "Nepodařilo se uložit příběh události" };
-    }
-}
-
-export async function publishProgramEvent(eventId: string) {
-    try {
-        await requireEditor();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    try {
-        const event = await db.programEvent.update({
-            where: { id: eventId },
-            data: { isPublished: true },
-            include: { day: { select: { yearId: true } } },
-        });
-
-        revalidatePath(
-            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}`
-        );
-        revalidatePath("/program");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to publish event:", error);
-        return { error: "Nepodařilo se publikovat událost" };
-    }
-}
-
-export async function unpublishProgramEvent(eventId: string) {
-    try {
-        await requireEditor();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    try {
-        const event = await db.programEvent.update({
-            where: { id: eventId },
-            data: { isPublished: false },
-            include: { day: { select: { yearId: true } } },
-        });
-
-        revalidatePath(
-            `/admin/rocniky/${event.day.yearId}/program/${event.dayId}`
-        );
-        revalidatePath("/program");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to unpublish event:", error);
-        return { error: "Nepodařilo se skrýt událost" };
     }
 }
 

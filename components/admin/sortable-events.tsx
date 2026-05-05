@@ -1,13 +1,7 @@
 "use client";
 
 import { Box, Chip, Tooltip, Typography } from "@mui/material";
-import {
-    Edit,
-    AccessTime,
-    Place,
-    Visibility,
-    VisibilityOff,
-} from "@mui/icons-material";
+import { Edit, AccessTime, Place } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { SortableList } from "@/components/admin/sortable-list";
 import { ProgramEventActions } from "@/components/admin/program-event-actions";
@@ -19,7 +13,6 @@ interface Event {
     startTime: string;
     title: string;
     location: string;
-    isPublished: boolean;
     tags: string[];
 }
 
@@ -83,26 +76,6 @@ export function SortableEvents({ yearId, dayId, events }: SortableEventsProps) {
                             <Typography fontWeight="medium">
                                 {event.title}
                             </Typography>
-                            <Chip
-                                label={
-                                    event.isPublished
-                                        ? "Publikováno"
-                                        : "Skryto"
-                                }
-                                size="small"
-                                color={
-                                    event.isPublished
-                                        ? "success"
-                                        : "default"
-                                }
-                                icon={
-                                    event.isPublished ? (
-                                        <Visibility />
-                                    ) : (
-                                        <VisibilityOff />
-                                    )
-                                }
-                            />
                         </Box>
                         <Box
                             sx={{
@@ -153,10 +126,7 @@ export function SortableEvents({ yearId, dayId, events }: SortableEventsProps) {
                                 <Edit />
                             </IconLinkButton>
                         </Tooltip>
-                        <ProgramEventActions
-                            eventId={event.id}
-                            isPublished={event.isPublished}
-                        />
+                        <ProgramEventActions eventId={event.id} />
                     </Box>
                 </Box>
             )}
