@@ -411,7 +411,7 @@ export function PricingEditor({
                     const typeColor = isQuantity
                         ? "info"
                         : isMultiSelect
-                          ? "secondary"
+                          ? "primary"
                           : "success";
                     const TypeIcon = isQuantity
                         ? Calculate

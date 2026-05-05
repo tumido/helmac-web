@@ -29,7 +29,7 @@ export default async function HomePage() {
                 }
                 ctaText={regStatus.isOpen ? "Registrovat se" : undefined}
                 ctaHref={regStatus.isOpen ? "/registrace" : undefined}
-                secondaryCtaText="Vice o programu"
+                secondaryCtaText="Více o programu"
                 secondaryCtaHref="/program"
             >
                 {!regStatus.isOpen && regStatus.registrationStartDate && (

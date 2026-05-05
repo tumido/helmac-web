@@ -171,7 +171,7 @@ function DraggablePricingItem({
 
     const isQuantity = definition.type === "quantity";
     const isMultiSelect = !isQuantity && definition.multiSelect;
-    const color = isQuantity ? "info" : isMultiSelect ? "secondary" : "success";
+    const color = isQuantity ? "info" : isMultiSelect ? "primary" : "success";
 
     return (
         <Paper

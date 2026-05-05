@@ -34,7 +34,7 @@ export function SectionTitle({
                             align === "center" ? "translateX(-50%)" : "none",
                         width: 80,
                         height: 3,
-                        backgroundColor: "secondary.main",
+                        backgroundColor: "primary.main",
                     },
                 }}
             >

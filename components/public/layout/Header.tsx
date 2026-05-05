@@ -160,7 +160,7 @@ export function Header({
                                 <LinkButton
                                     href="/registrace"
                                     variant="contained"
-                                    color="secondary"
+                                    color="primary"
                                     sx={{
                                         fontWeight: 700,
                                         px: 3,

@@ -387,7 +387,7 @@ function PreviewField({
                                     <Typography
                                         variant="body2"
                                         fontWeight={600}
-                                        color="secondary"
+                                        color="primary"
                                     >
                                         {formatPrice(price)}
                                     </Typography>

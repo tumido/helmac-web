@@ -8,7 +8,7 @@ interface DecorativeDividerProps {
 
 export function DecorativeDivider({
     variant = "simple",
-    color = "secondary",
+    color = "primary",
     my = 4,
 }: DecorativeDividerProps) {
     if (variant === "ornate") {

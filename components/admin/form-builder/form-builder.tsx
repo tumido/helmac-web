@@ -944,7 +944,7 @@ export function FormBuilder({
             const color = isQuantity
                 ? "info"
                 : isMultiSelect
-                  ? "secondary"
+                  ? "primary"
                   : "success";
             const icon = isQuantity
                 ? "Calculate"

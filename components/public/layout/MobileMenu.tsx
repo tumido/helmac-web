@@ -129,7 +129,7 @@ export function MobileMenu({
                         <LinkButton
                             href="/registrace"
                             variant="contained"
-                            color="secondary"
+                            color="primary"
                             fullWidth
                             onClick={onClose}
                             sx={{ fontWeight: 700 }}

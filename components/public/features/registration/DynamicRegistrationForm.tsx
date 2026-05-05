@@ -318,7 +318,7 @@ export function DynamicRegistrationForm({
                     <Button
                         type="submit"
                         variant="contained"
-                        color="secondary"
+                        color="primary"
                         size="large"
                         disabled={!previewMode && isPending}
                         sx={{

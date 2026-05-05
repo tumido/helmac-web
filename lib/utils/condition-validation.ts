@@ -9,7 +9,7 @@ import { isConditionBlock } from "@/lib/types/registration-form";
 
 export interface FieldExternalUsage {
     label: string; // "Email", "Limit", "Statistiky", "Info statistiky"
-    color: "warning" | "secondary" | "success" | "info";
+    color: "warning" | "primary" | "success" | "info";
 }
 
 /** Returns external usages (email, capacity limit, stats, info stats) for a given field */
@@ -28,7 +28,7 @@ export function getFieldExternalUsages(
     }
 
     if (capacityLimits.some((l) => l.fieldId === fieldId)) {
-        usages.push({ label: "Limit", color: "secondary" });
+        usages.push({ label: "Limit", color: "primary" });
     }
 
     if (showOptionCounts.includes(fieldId)) {

@@ -107,7 +107,7 @@ export function HeroSection({
                                 md: "1.4rem",
                             },
                             letterSpacing: "0.08em",
-                            color: isDark ? "secondary.main" : "primary.dark",
+                            color: isDark ? "primary.main" : "primary.dark",
                             mt: -1,
                             mb: 2,
                         }}
@@ -150,7 +150,7 @@ export function HeroSection({
                             <LinkButton
                                 href={ctaHref}
                                 variant="contained"
-                                color="secondary"
+                                color="primary"
                                 size="large"
                                 sx={{
                                     px: 4,
@@ -165,21 +165,12 @@ export function HeroSection({
                             <LinkButton
                                 href={secondaryCtaHref}
                                 variant="outlined"
+                                color="secondary"
                                 size="large"
                                 sx={{
                                     px: 4,
                                     py: 1.5,
                                     fontSize: "1.1rem",
-                                    color: isDark
-                                        ? "common.white"
-                                        : "text.primary",
-                                    borderColor: isDark
-                                        ? "common.white"
-                                        : "text.secondary",
-                                    "&:hover": {
-                                        borderColor: "secondary.main",
-                                        color: "secondary.main",
-                                    },
                                 }}
                             >
                                 {secondaryCtaText}
