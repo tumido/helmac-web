@@ -11,7 +11,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { ListFilters } from "@/components/admin/list-filters";
-import { SelectableAlbumList } from "@/components/admin/selectable-album-list";
+import { AlbumList } from "@/components/admin/album-list";
 import { Prisma } from "@prisma/client";
 
 interface YearGalleryPageProps {
@@ -96,7 +96,7 @@ export default async function YearGalleryPage({ params, searchParams }: YearGall
                     </CardContent>
                 </Card>
             ) : (
-                <SelectableAlbumList
+                <AlbumList
                     albums={albums}
                     editBasePath={`/admin/rocniky/${id}/galerie`}
                     showYear={false}

@@ -11,7 +11,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { ListFilters } from "@/components/admin/list-filters";
-import { SelectableNewsList } from "@/components/admin/selectable-news-list";
+import { NewsList } from "@/components/admin/news-list";
 import { Prisma } from "@prisma/client";
 
 interface YearNewsPageProps {
@@ -100,7 +100,7 @@ export default async function YearNewsPage({ params, searchParams }: YearNewsPag
                     </CardContent>
                 </Card>
             ) : (
-                <SelectableNewsList
+                <NewsList
                     news={news}
                     editBasePath={`/admin/rocniky/${id}/novinky`}
                     showYear={false}

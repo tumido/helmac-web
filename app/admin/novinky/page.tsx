@@ -10,7 +10,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { ListFilters } from "@/components/admin/list-filters";
-import { SelectableNewsList } from "@/components/admin/selectable-news-list";
+import { NewsList } from "@/components/admin/news-list";
 import { Prisma } from "@prisma/client";
 
 interface NewsListPageProps {
@@ -115,7 +115,7 @@ export default async function NewsListPage({ searchParams }: NewsListPageProps) 
                     </CardContent>
                 </Card>
             ) : (
-                <SelectableNewsList news={news} />
+                <NewsList news={news} />
             )}
         </Container>
     );

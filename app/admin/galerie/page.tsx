@@ -10,7 +10,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { ListFilters } from "@/components/admin/list-filters";
-import { SelectableAlbumList } from "@/components/admin/selectable-album-list";
+import { AlbumList } from "@/components/admin/album-list";
 import { Prisma } from "@prisma/client";
 
 interface GalleryPageProps {
@@ -111,7 +111,7 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
                     </CardContent>
                 </Card>
             ) : (
-                <SelectableAlbumList albums={albums} />
+                <AlbumList albums={albums} />
             )}
         </Container>
     );

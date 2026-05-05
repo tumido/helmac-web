@@ -194,24 +194,3 @@ export async function deleteNews(newsId: string) {
         return { error: "Nepodařilo se smazat novinku" };
     }
 }
-
-// Bulk actions
-export async function bulkDeleteNews(newsIds: string[]) {
-    try {
-        await requireEditor();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    try {
-        await db.news.deleteMany({
-            where: { id: { in: newsIds } },
-        });
-
-        revalidatePath("/admin/novinky");
-        return { success: true, count: newsIds.length };
-    } catch (error) {
-        console.error("Failed to bulk delete news:", error);
-        return { error: "Nepodařilo se smazat novinky" };
-    }
-}

@@ -173,25 +173,3 @@ export async function deleteAlbum(albumId: string) {
         return { error: "Nepodařilo se smazat album" };
     }
 }
-
-// Bulk actions
-export async function bulkDeleteAlbums(albumIds: string[]) {
-    try {
-        await requireEditor();
-    } catch {
-        return { error: "Nemáte oprávnění" };
-    }
-
-    try {
-        await db.album.deleteMany({
-            where: { id: { in: albumIds } },
-        });
-
-        revalidatePath("/admin/galerie");
-        revalidatePath("/galerie");
-        return { success: true, count: albumIds.length };
-    } catch (error) {
-        console.error("Failed to bulk delete albums:", error);
-        return { error: "Nepodařilo se smazat alba" };
-    }
-}
