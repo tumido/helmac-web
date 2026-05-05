@@ -1,6 +1,6 @@
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
-import { NewsList } from "@/components/public/features/news/NewsList";
+import { NewsFeed } from "@/components/public/features/news/NewsFeed";
 import { getLatestNewsForActiveYear, getActiveYear } from "@/lib/services";
 
 export const metadata = {
@@ -21,8 +21,8 @@ export default async function NovinkyPage() {
                 subtitle="Sledujte nejnovější zprávy a aktualizace"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
-            <Container maxWidth="lg" sx={{ pb: 8 }}>
-                <NewsList news={news} />
+            <Container maxWidth="md" sx={{ pb: 8 }}>
+                <NewsFeed news={news} />
             </Container>
         </>
     );
