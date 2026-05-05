@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Container, Typography, Box, Chip } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
 import { ArrowBack, CalendarToday } from "@mui/icons-material";
 import { PageHeader } from "@/components/public/ui";
@@ -42,16 +42,52 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
     return (
         <>
-            <PageHeader title={news.title} backgroundImage={activeYear?.headerPhoto || undefined} />
+            <PageHeader
+                title={news.title}
+                backgroundImage={activeYear?.headerPhoto || undefined}
+            />
 
             <Container maxWidth="md" sx={{ pb: 8 }}>
-                <LinkButton
-                    href="/novinky"
-                    startIcon={<ArrowBack />}
-                    sx={{ mb: 4 }}
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        mb: 4,
+                    }}
                 >
-                    Zpět na novinky
-                </LinkButton>
+                    <LinkButton
+                        href="/novinky"
+                        variant="outlined"
+                        startIcon={<ArrowBack />}
+                    >
+                        Zpět na novinky
+                    </LinkButton>
+
+                    {formattedDate && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            <CalendarToday
+                                sx={{ color: "primary.main", mt: -0.5 }}
+                            />
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: 600,
+                                    color: "primary.main",
+                                    pl: 1.5,
+                                }}
+                            >
+                                {formattedDate}
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
 
                 {news.coverImage && (
                     <Box
@@ -68,25 +104,6 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                         }}
                     />
                 )}
-
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 2,
-                        mb: 4,
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                    }}
-                >
-                    {formattedDate && (
-                        <Chip
-                            icon={<CalendarToday />}
-                            label={formattedDate}
-                            variant="outlined"
-                            size="small"
-                        />
-                    )}
-                </Box>
 
                 {news.excerpt && (
                     <Typography
