@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Box, Typography } from "@mui/material";
-import { TocItem } from "@/lib/utils/toc-helpers";
+import { TocItem } from "@/lib/utils/markdown-toc-helpers";
 import { FilterChips } from "@/components/public/ui/FilterChips";
 
 interface TableOfContentsProps {

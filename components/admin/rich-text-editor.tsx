@@ -56,6 +56,7 @@ import {
     OndemandVideo,
     UnfoldMore,
 } from "@mui/icons-material";
+import { Markdown, type MarkdownStorage } from "tiptap-markdown";
 import { useCallback, useEffect, useState, type MutableRefObject } from "react";
 
 const COLOR_PALETTE = [
@@ -74,7 +75,8 @@ export type { Editor } from "@tiptap/react";
 
 interface RichTextEditorProps {
     value: string;
-    onChange: (html: string) => void;
+    onChange: (value: string) => void;
+    format?: "markdown" | "html";
     placeholder?: string;
     minHeight?: number;
     editorRef?: MutableRefObject<Editor | null>;
@@ -646,12 +648,26 @@ function MenuBar({
 export function RichTextEditor({
     value,
     onChange,
+    format = "markdown",
     placeholder = "Zacnete psat...",
     minHeight = 300,
     editorRef,
     editable = true,
     yearId,
 }: RichTextEditorProps) {
+    const isMarkdown = format === "markdown";
+
+    const getContent = useCallback(
+        (ed: Editor) => {
+            if (!isMarkdown) return ed.getHTML();
+            const md = ed.storage as unknown as {
+                markdown: MarkdownStorage;
+            };
+            return md.markdown.getMarkdown();
+        },
+        [isMarkdown],
+    );
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -691,12 +707,21 @@ export function RichTextEditor({
             Details,
             DetailsSummary,
             DetailsContent,
+            ...(isMarkdown
+                ? [
+                      Markdown.configure({
+                          html: true,
+                          transformCopiedText: true,
+                          transformPastedText: true,
+                      }),
+                  ]
+                : []),
         ],
         content: value,
         editable,
         immediatelyRender: false,
-        onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
+        onUpdate: ({ editor: ed }) => {
+            onChange(getContent(ed));
         },
         editorProps: {
             attributes: {
@@ -719,10 +744,10 @@ export function RichTextEditor({
 
     // Sync external value changes
     useEffect(() => {
-        if (editor && value !== editor.getHTML()) {
+        if (editor && value !== getContent(editor)) {
             editor.commands.setContent(value, { emitUpdate: false });
         }
-    }, [editor, value]);
+    }, [editor, value, getContent]);
 
     return (
         <Box

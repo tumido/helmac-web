@@ -1,17 +1,20 @@
 "use client";
 
 import { useMemo, useRef, useEffect, useState, useCallback } from "react";
-import { Box, Typography } from "@mui/material";
-import { richContentSx } from "@/lib/utils/rich-content-sx";
-import { injectHeadingIds, extractTocItems } from "@/lib/utils/toc-helpers";
+import { Box } from "@mui/material";
+import {
+    extractMarkdownToc,
+    buildTocIdMap,
+} from "@/lib/utils/markdown-toc-helpers";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { TableOfContents } from "./TableOfContents";
 
 interface ContentWithTocProps {
-    html: string;
+    content: string;
     showToc: boolean;
 }
 
-export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
+export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const mobileTocRef = useRef<HTMLDivElement>(null);
     const [visible, setVisible] = useState(false);
@@ -20,12 +23,11 @@ export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
     const [mobileTocHeight, setMobileTocHeight] = useState(0);
     const [mobileSticky, setMobileSticky] = useState(false);
 
-    const { processedHtml, tocItems } = useMemo(() => {
-        if (!showToc) return { processedHtml: html, tocItems: [] };
-        const processed = injectHeadingIds(html);
-        const items = extractTocItems(processed);
-        return { processedHtml: processed, tocItems: items };
-    }, [html, showToc]);
+    const { tocItems, tocIdMap } = useMemo(() => {
+        if (!showToc) return { tocItems: [], tocIdMap: undefined };
+        const items = extractMarkdownToc(content);
+        return { tocItems: items, tocIdMap: buildTocIdMap(items) };
+    }, [content, showToc]);
 
     const hasToc = showToc && tocItems.length >= 2;
 
@@ -42,12 +44,10 @@ export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
         setTocTop(Math.max(rect.top, headerH + 8));
         setVisible(rect.bottom > 0 && rect.top < window.innerHeight);
 
-        // Mobile: switch to fixed once the TOC's natural position scrolls above the header
         if (mobileTocRef.current) {
             const tocH = mobileTocRef.current.getBoundingClientRect().height;
             setMobileTocHeight(tocH);
         }
-        // Content top is above header bottom → TOC should be fixed
         setMobileSticky(rect.top < headerH);
     }, [getHeaderHeight]);
 
@@ -65,14 +65,7 @@ export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
     }, [hasToc, updatePosition]);
 
     if (!hasToc) {
-        return (
-            <Typography
-                variant="body1"
-                component="div"
-                sx={richContentSx}
-                dangerouslySetInnerHTML={{ __html: html }}
-            />
-        );
+        return <MarkdownContent content={content} />;
     }
 
     return (
@@ -113,13 +106,7 @@ export function ContentWithToc({ html, showToc }: ContentWithTocProps) {
                 />
             )}
 
-            {/* Single content render — heading IDs exist once in the DOM */}
-            <Typography
-                variant="body1"
-                component="div"
-                sx={richContentSx}
-                dangerouslySetInnerHTML={{ __html: processedHtml }}
-            />
+            <MarkdownContent content={content} tocIds={tocIdMap} />
 
             {/* Desktop: fixed TOC in right viewport margin */}
             <Box

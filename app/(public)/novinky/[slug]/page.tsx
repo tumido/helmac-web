@@ -116,7 +116,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                     </Typography>
                 )}
 
-                <ContentWithToc html={news.content} showToc={news.showToc} />
+                <ContentWithToc content={news.content} showToc={news.showToc} />
             </Container>
         </>
     );

@@ -278,6 +278,7 @@ export function EmailTemplateEditor({
                                 <RichTextEditor
                                     value={toEditorHtml(body)}
                                     onChange={setBody}
+                                    format="html"
                                     editorRef={editorRef}
                                     minHeight={200}
                                     placeholder="Zadejte text emailu..."

@@ -18,7 +18,8 @@
 | TypeScript | 5.x | Type safety (strict mode) |
 | MUI | 5.x | UI components (with Emotion styling) |
 | MUI X Date Pickers | 8.x | Date inputs |
-| Tiptap | 3.x | Rich text editor |
+| Tiptap | 3.x | Rich text editor (Markdown output via tiptap-markdown) |
+| react-markdown | 10.x | Markdown rendering on public pages |
 | dnd-kit | 6.x/10.x | Drag-and-drop sorting |
 | PostgreSQL | - | Database |
 | Prisma | 5.x | ORM, migrations |
@@ -105,6 +106,7 @@ lib/
 prisma/
 ├── schema.prisma       # Database schema
 ├── migrations/         # Migration files
+├── scripts/            # One-off migration scripts (e.g. HTML→Markdown)
 └── seed.ts             # Seed script
 
 styles/theme/           # MUI theme files (admin, public, publicLight, colors)
@@ -159,6 +161,10 @@ npm run db:studio          # Open Prisma Studio
 # Build & Lint
 npm run build              # Run migrations + production build
 npm run lint               # Run ESLint
+
+# Data Migration
+npm run migrate:html-to-md           # Convert HTML content to Markdown
+npm run migrate:html-to-md -- --dry-run  # Preview without writing
 
 # Testing
 npx playwright test        # Run E2E tests

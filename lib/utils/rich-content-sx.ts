@@ -1,8 +1,8 @@
 import type { SxProps, Theme } from "@mui/material";
 
 /**
- * Shared sx styles for rendering HTML produced by the Tiptap rich-text editor.
- * Use with `dangerouslySetInnerHTML` on a Typography component="div".
+ * Styles for email template HTML preview in the admin editor.
+ * Only used by email-template-editor.tsx — public pages use MarkdownContent.
  */
 export const richContentSx: SxProps<Theme> = {
     "& p": { mb: 2 },

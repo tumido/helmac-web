@@ -31,7 +31,8 @@
       "mcp__chrome-devtools",
       "mcp__ide__getDiagnostics",
       "mcp__next-devtools-mcp",
-      "mcp__playwright-parallel"
+      "mcp__playwright-parallel",
+      "Bash(npm view *)"
     ]
   },
   "enableAllProjectMcpServers": true,
