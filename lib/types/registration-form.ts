@@ -16,6 +16,10 @@ export type FieldType =
     | "description";
 
 // Input field (user fills in a value)
+export interface OptionMeta {
+    imageUrl?: string;
+}
+
 export interface InputField {
     type: Exclude<FieldType, "heading" | "description">;
     id: string;
@@ -26,6 +30,8 @@ export interface InputField {
     options?: string[]; // For select/radio
     pricingId?: string; // For pricing_select: references PricingDefinition.id
     includeForAdditionalPeople?: boolean; // Field shown for additional people in group registration
+    displayVariant?: "default" | "image_cards";
+    optionMeta?: Record<string, OptionMeta>;
 }
 
 // --- Group registration ---

@@ -139,6 +139,96 @@ export function DynamicFormField({
             const options = field.options || [];
             const isBinary = options.length === 2;
 
+            if (field.displayVariant === "image_cards" && options.length > 0) {
+                return (
+                    <Box>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            {label}
+                        </Typography>
+                        <Box
+                            role="radiogroup"
+                            sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 2,
+                                my: 1,
+                            }}
+                        >
+                            {options.map((opt) => {
+                                const isSelected = String(value) === opt;
+                                const isDisabled = disabledOptions?.has(opt) ?? false;
+                                const meta = field.optionMeta?.[opt];
+                                return (
+                                    <Box
+                                        key={opt}
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        tabIndex={0}
+                                        onClick={() => !isDisabled && onChange(field.name, opt)}
+                                        onKeyDown={(e) => {
+                                            if ((e.key === " " || e.key === "Enter") && !isDisabled) {
+                                                e.preventDefault();
+                                                onChange(field.name, opt);
+                                            }
+                                        }}
+                                        sx={{
+                                            flex: "1 1 0",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 1,
+                                            px: 2,
+                                            py: 3,
+                                            minHeight: 100,
+                                            border: "2px solid",
+                                            borderColor: isSelected ? "primary.main" : "divider",
+                                            borderRadius: 2,
+                                            backgroundColor: isSelected ? "primary.50" : "transparent",
+                                            cursor: isDisabled ? "not-allowed" : "pointer",
+                                            opacity: isDisabled ? 0.5 : 1,
+                                            transition: "all 0.2s ease",
+                                            userSelect: "none",
+                                            "&:hover": isDisabled ? {} : {
+                                                borderColor: "primary.main",
+                                                transform: "translateY(-2px)",
+                                            },
+                                        }}
+                                    >
+                                        {meta?.imageUrl && (
+                                            <Box
+                                                component="img"
+                                                src={meta.imageUrl}
+                                                alt={opt}
+                                                sx={{
+                                                    width: 64,
+                                                    height: 64,
+                                                    objectFit: "contain",
+                                                    borderRadius: 1,
+                                                }}
+                                            />
+                                        )}
+                                        <Typography
+                                            variant={meta?.imageUrl ? "body2" : "body1"}
+                                            fontWeight={isSelected ? 700 : 600}
+                                            sx={{
+                                                textAlign: "center",
+                                                fontFamily: meta?.imageUrl ? undefined : '"Cinzel", serif',
+                                                color: isSelected ? "primary.main" : "text.primary",
+                                            }}
+                                        >
+                                            {opt}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                        <input type="hidden" name={htmlName} value={String(value)} />
+                        {error && <FormHelperText error>{error}</FormHelperText>}
+                    </Box>
+                );
+            }
+
             if (isBinary) {
                 return (
                     <Box>

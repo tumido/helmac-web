@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -15,8 +15,13 @@ import {
     IconButton,
     Chip,
     Tooltip,
+    CircularProgress,
 } from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
+import {
+    Add,
+    Delete,
+    Image as ImageIcon,
+} from "@mui/icons-material";
 import type { FormField, FormCondition, InputField, HeadingField, DescriptionField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { getConditionsUsingOptionValue } from "@/lib/utils/condition-validation";
@@ -196,43 +201,66 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                         const optionUsedInCondition = opt && conditions
                                             ? getConditionsUsingOptionValue(field.id, opt, conditions).length > 0
                                             : false;
+                                        const meta = opt ? inputData.optionMeta?.[opt] : undefined;
+                                        const showMeta = inputData.displayVariant === "image_cards";
                                         return (
-                                            <Box key={idx} sx={{ display: "flex", gap: 1, mb: 1, alignItems: "center" }}>
-                                                <TextField
-                                                    value={opt}
-                                                    onChange={(e) => {
-                                                        const newOptions = [...(inputData.options || [])];
-                                                        newOptions[idx] = e.target.value;
-                                                        updateInput({ options: newOptions });
-                                                    }}
-                                                    size="small"
-                                                    fullWidth
-                                                    placeholder={`Možnost ${idx + 1}`}
-                                                />
-                                                {optionUsedInCondition && (
-                                                    <Chip
-                                                        label="Podmínka"
+                                            <Box key={idx} sx={{ mb: 1.5 }}>
+                                                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                                                    <TextField
+                                                        value={opt}
+                                                        onChange={(e) => {
+                                                            const oldVal = (inputData.options || [])[idx];
+                                                            const newOptions = [...(inputData.options || [])];
+                                                            newOptions[idx] = e.target.value;
+                                                            const newMeta = { ...(inputData.optionMeta || {}) };
+                                                            if (oldVal && newMeta[oldVal]) {
+                                                                newMeta[e.target.value] = newMeta[oldVal];
+                                                                delete newMeta[oldVal];
+                                                            }
+                                                            updateInput({ options: newOptions, optionMeta: newMeta });
+                                                        }}
                                                         size="small"
-                                                        variant="outlined"
-                                                        color="info"
-                                                        sx={{ fontSize: "0.7rem", height: 20, flexShrink: 0 }}
+                                                        fullWidth
+                                                        placeholder={`Možnost ${idx + 1}`}
+                                                    />
+                                                    {optionUsedInCondition && (
+                                                        <Chip
+                                                            label="Podmínka"
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="info"
+                                                            sx={{ fontSize: "0.7rem", height: 20, flexShrink: 0 }}
+                                                        />
+                                                    )}
+                                                    <Tooltip title={optionUsedInCondition ? "Možnost je používána v podmínce" : "Smazat"}>
+                                                        <span>
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => {
+                                                                    const removedOpt = (inputData.options || [])[idx];
+                                                                    const newOptions = (inputData.options || []).filter((_, i) => i !== idx);
+                                                                    const newMeta = { ...(inputData.optionMeta || {}) };
+                                                                    if (removedOpt) delete newMeta[removedOpt];
+                                                                    updateInput({ options: newOptions, optionMeta: Object.keys(newMeta).length > 0 ? newMeta : undefined });
+                                                                }}
+                                                                color="error"
+                                                                disabled={optionUsedInCondition}
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </span>
+                                                    </Tooltip>
+                                                </Box>
+                                                {showMeta && opt && (
+                                                    <OptionImageUploader
+                                                        imageUrl={meta?.imageUrl}
+                                                        onChange={(url) => {
+                                                            const newMeta = { ...(inputData.optionMeta || {}) };
+                                                            newMeta[opt] = { imageUrl: url || undefined };
+                                                            updateInput({ optionMeta: newMeta });
+                                                        }}
                                                     />
                                                 )}
-                                                <Tooltip title={optionUsedInCondition ? "Možnost je používána v podmínce" : "Smazat"}>
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => {
-                                                                const newOptions = (inputData.options || []).filter((_, i) => i !== idx);
-                                                                updateInput({ options: newOptions });
-                                                            }}
-                                                            color="error"
-                                                            disabled={optionUsedInCondition}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
                                             </Box>
                                         );
                                     })}
@@ -245,6 +273,20 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                     >
                                         Přidat možnost
                                     </Button>
+
+                                    <Box sx={{ mt: 2 }}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    checked={inputData.displayVariant === "image_cards"}
+                                                    onChange={(e) => updateInput({
+                                                        displayVariant: e.target.checked ? "image_cards" : undefined,
+                                                    })}
+                                                />
+                                            }
+                                            label="Zobrazit jako karty s obrázky"
+                                        />
+                                    </Box>
                                 </Box>
                             )}
                         </>
@@ -268,5 +310,133 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                 </Button>
             </DialogActions>
         </Dialog>
+    );
+}
+
+function OptionImageUploader({
+    imageUrl,
+    onChange,
+}: {
+    imageUrl?: string;
+    onChange: (url: string | undefined) => void;
+}) {
+    const [uploading, setUploading] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const handleUpload = useCallback(
+        async (file: File) => {
+            setUploading(true);
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+                const res = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+                if (!res.ok) throw new Error("Upload selhal");
+                const data = await res.json();
+                if (data.url) onChange(data.url);
+            } catch {
+                /* silently fail */
+            } finally {
+                setUploading(false);
+            }
+        },
+        [onChange]
+    );
+
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                gap: 1,
+                mt: 0.5,
+                ml: 1,
+                alignItems: "center",
+            }}
+        >
+            <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                hidden
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUpload(file);
+                    e.target.value = "";
+                }}
+            />
+            {imageUrl ? (
+                <Box
+                    sx={{
+                        width: 48,
+                        height: 48,
+                        flexShrink: 0,
+                        borderRadius: 1,
+                        overflow: "hidden",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        position: "relative",
+                        cursor: "pointer",
+                        "&:hover .remove-overlay": {
+                            opacity: 1,
+                        },
+                    }}
+                    onClick={() => fileRef.current?.click()}
+                >
+                    <Box
+                        component="img"
+                        src={imageUrl}
+                        alt=""
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                        }}
+                    />
+                    <IconButton
+                        className="remove-overlay"
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onChange(undefined);
+                        }}
+                        sx={{
+                            position: "absolute",
+                            top: -4,
+                            right: -4,
+                            bgcolor: "error.main",
+                            color: "white",
+                            opacity: 0,
+                            transition: "opacity 0.2s",
+                            width: 20,
+                            height: 20,
+                            "&:hover": {
+                                bgcolor: "error.dark",
+                            },
+                        }}
+                    >
+                        <Delete sx={{ fontSize: 14 }} />
+                    </IconButton>
+                </Box>
+            ) : (
+                <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={
+                        uploading ? (
+                            <CircularProgress size={16} />
+                        ) : (
+                            <ImageIcon />
+                        )
+                    }
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                    sx={{ textTransform: "none" }}
+                >
+                    {uploading ? "Nahrávám..." : "Nahrát obrázek"}
+                </Button>
+            )}
+        </Box>
     );
 }
