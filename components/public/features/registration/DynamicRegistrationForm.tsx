@@ -101,6 +101,7 @@ export function DynamicRegistrationForm({
         AdditionalPersonData[]
     >([]);
     const { visibleFields } = useConditionalFields(formData, values);
+    const [gdprConsent, setGdprConsent] = useState(false);
     const [previewSnackbar, setPreviewSnackbar] = useState(false);
 
     const [state, formAction, isPending] = useActionState<
@@ -234,6 +235,30 @@ export function DynamicRegistrationForm({
                 ).text,
             }));
     }, [sections]);
+
+    const allRequiredFilled = useMemo(() => {
+        for (const field of allInputFields) {
+            if (!field.required || !visibleFields.has(field.id))
+                continue;
+            const val = values[field.name];
+            if (
+                val === undefined ||
+                val === "" ||
+                val === false
+            )
+                return false;
+        }
+        if (!isLoggedIn && !previewMode && !gdprConsent)
+            return false;
+        return true;
+    }, [
+        allInputFields,
+        visibleFields,
+        values,
+        isLoggedIn,
+        previewMode,
+        gdprConsent,
+    ]);
 
     // Compute visible AP fields per person for price summary
     const visibleAPFieldsPerPerson = useMemo(() => {
@@ -417,9 +442,23 @@ export function DynamicRegistrationForm({
 
                 {!isLoggedIn && !previewMode && (
                     <Box sx={{ mt: 3 }}>
+                        {gdprConsent && (
+                            <input
+                                type="hidden"
+                                name="gdprConsent"
+                                value="on"
+                            />
+                        )}
                         <FormControlLabel
                             control={
-                                <Checkbox name="gdprConsent" />
+                                <Checkbox
+                                    checked={gdprConsent}
+                                    onChange={(e) =>
+                                        setGdprConsent(
+                                            e.target.checked
+                                        )
+                                    }
+                                />
                             }
                             label={
                                 <>
@@ -462,7 +501,10 @@ export function DynamicRegistrationForm({
                         variant="contained"
                         color="primary"
                         size="large"
-                        disabled={!previewMode && isPending}
+                        disabled={
+                            !previewMode &&
+                            (isPending || !allRequiredFilled)
+                        }
                         sx={{
                             px: 6,
                             py: 1.5,
@@ -531,7 +573,10 @@ export function DynamicRegistrationForm({
                         color="primary"
                         size="large"
                         fullWidth
-                        disabled={!previewMode && isPending}
+                        disabled={
+                            !previewMode &&
+                            (isPending || !allRequiredFilled)
+                        }
                         sx={{
                             mt: 2,
                             py: 1.5,
