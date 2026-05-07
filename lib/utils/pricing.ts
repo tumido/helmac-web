@@ -1,4 +1,8 @@
-import type { InputField, PricingDefinition, PricingSummaryData } from "@/lib/types/registration-form";
+import type {
+    InputField,
+    PricingDefinition,
+    PricingSummaryData,
+} from "@/lib/types/registration-form";
 
 /**
  * Returns the index of the currently applicable price tier.
@@ -19,7 +23,11 @@ export function getCurrentTierIndex(priceTiers: string[], date?: Date): number {
  * Returns the currently applicable price for a given option's prices array.
  * prices[i] corresponds to priceTiers[i]; prices[priceTiers.length] is the fallback.
  */
-export function getCurrentPrice(priceTiers: string[], prices: number[], date?: Date): number {
+export function getCurrentPrice(
+    priceTiers: string[],
+    prices: number[],
+    date?: Date
+): number {
     const idx = getCurrentTierIndex(priceTiers, date);
     return prices[idx] ?? prices[prices.length - 1] ?? 0;
 }
@@ -28,9 +36,6 @@ export function getCurrentPrice(priceTiers: string[], prices: number[], date?: D
  * Formats a price in Czech format, e.g. 1000 → "1 000 Kč".
  */
 export function formatPrice(price: number): string {
-    if (price < 0) {
-        return `Sleva ${Math.abs(price).toLocaleString("cs-CZ")} Kč`;
-    }
     return `${price.toLocaleString("cs-CZ")} Kč`;
 }
 
@@ -42,12 +47,17 @@ export function formatPrice(price: number): string {
  */
 export function getFieldOptionValues(
     field: InputField,
-    pricingDefinitions?: PricingDefinition[],
+    pricingDefinitions?: PricingDefinition[]
 ): string[] {
     if (field.type === "select" || field.type === "radio") {
         return field.options ?? [];
     }
-    if ((field.type === "pricing_select" || field.type === "pricing_multi_select") && field.pricingId && pricingDefinitions) {
+    if (
+        (field.type === "pricing_select" ||
+            field.type === "pricing_multi_select") &&
+        field.pricingId &&
+        pricingDefinitions
+    ) {
         const def = pricingDefinitions.find((d) => d.id === field.pricingId);
         return def ? def.options.map((o) => o.name) : [];
     }
@@ -62,9 +72,10 @@ export function getFieldOptionValues(
  * Walks the tiers by date (same logic as getCurrentTierIndex) but operates
  * on the pre-computed summary stored in the DB.
  */
-export function getApplicablePriceFromSummary(
-    summary: PricingSummaryData,
-): { totalPrice: number; applicableTierIndex: number } {
+export function getApplicablePriceFromSummary(summary: PricingSummaryData): {
+    totalPrice: number;
+    applicableTierIndex: number;
+} {
     const now = new Date();
     for (let i = 0; i < summary.tiers.length; i++) {
         const tier = summary.tiers[i];

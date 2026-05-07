@@ -12,19 +12,23 @@ import {
     Box,
     Button,
     Alert,
-    Paper,
     Snackbar,
+    Paper,
     FormControlLabel,
     Checkbox,
     FormHelperText,
+    Fade,
+    Typography,
 } from "@mui/material";
 import MuiLink from "@mui/material/Link";
 import NextLink from "next/link";
+import { DecorativeDivider, AnimatedSection } from "@/components/public/ui";
 import type {
     RegistrationFormData,
     SubmissionData,
     OptionCounts,
     AdditionalPersonData,
+    FormField,
 } from "@/lib/types/registration-form";
 import {
     isInputField,
@@ -42,6 +46,8 @@ import {
 } from "./useConditionalFields";
 import { AdditionalPeopleSection } from "./AdditionalPeopleSection";
 import { PriceSummary } from "./PriceSummary";
+import { FormProgress } from "./FormProgress";
+import { StickyPriceSummary } from "./StickyPriceSummary";
 import {
     buildMergedDataForAP,
     getAPFieldNames,
@@ -185,6 +191,50 @@ export function DynamicRegistrationForm({
     const showAPSection = hasAdditionalPeopleFields(formData.fields);
     const apFields = showAPSection ? getAPInputFields(formData.fields) : [];
 
+    // Group fields into sections based on heading fields
+    const sections = useMemo(() => {
+        const result: {
+            heading: FormField | null;
+            fields: FormField[];
+        }[] = [];
+        let current: { heading: FormField | null; fields: FormField[] } = {
+            heading: null,
+            fields: [],
+        };
+        for (const field of allFields) {
+            if (!visibleFields.has(field.id)) continue;
+            if (!isInputField(field) && field.type === "heading") {
+                if (current.fields.length > 0 || current.heading) {
+                    result.push(current);
+                }
+                current = { heading: field, fields: [] };
+            } else {
+                current.fields.push(field);
+            }
+        }
+        if (current.fields.length > 0 || current.heading) {
+            result.push(current);
+        }
+        return result;
+    }, [allFields, visibleFields]);
+
+    // Extract progress sections from headings
+    const progressSections = useMemo(() => {
+        return sections
+            .filter(
+                (s) =>
+                    s.heading &&
+                    !isInputField(s.heading) &&
+                    s.fields.length > 0
+            )
+            .map((s) => ({
+                id: `section-${s.heading!.id}`,
+                label: (
+                    s.heading as { type: "heading"; text: string }
+                ).text,
+            }));
+    }, [sections]);
+
     // Compute visible AP fields per person for price summary
     const visibleAPFieldsPerPerson = useMemo(() => {
         if (!showAPSection) return [];
@@ -206,63 +256,151 @@ export function DynamicRegistrationForm({
         );
     }
 
+    const hasPricing = formData.pricingDefinitions.length > 0;
+
+    const priceSummaryProps = {
+        pricingDefinitions: formData.pricingDefinitions,
+        priceTiers: formData.priceTiers ?? [],
+        allInputFields,
+        mainValues: values,
+        additionalPeople,
+        visibleMainFields: visibleFields,
+        visibleAPFieldsPerPerson,
+    };
+
     return (
-        <Paper sx={{ p: { xs: 3, md: 5 } }}>
-            <Box
-                component="form"
-                action={previewMode ? undefined : formAction}
-                onSubmit={previewMode ? handlePreviewSubmit : undefined}
-            >
-                {/* Include checkbox values as hidden inputs for FormData */}
-                {allInputFields.map((field) => {
-                    if (field.type === "checkbox") {
-                        return (
-                            <input
-                                key={`hidden-${field.name}`}
-                                type="hidden"
-                                name={field.name}
-                                value={String(values[field.name] ?? false)}
-                            />
-                        );
-                    }
-                    return null;
-                })}
+        <Box sx={{ display: { md: "flex" }, gap: 4 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ p: { xs: 0, md: 2 } }}>
+                    <FormProgress sections={progressSections} />
+                    <Box
+                        id="registration-form"
+                        component="form"
+                        action={previewMode ? undefined : formAction}
+                        onSubmit={
+                            previewMode
+                                ? handlePreviewSubmit
+                                : undefined
+                        }
+                    >
+                        {/* Include checkbox values as hidden inputs for FormData */}
+                        {allInputFields.map((field) => {
+                            if (field.type === "checkbox") {
+                                return (
+                                    <input
+                                        key={`hidden-${field.name}`}
+                                        type="hidden"
+                                        name={field.name}
+                                        value={String(
+                                            values[field.name] ??
+                                                false
+                                        )}
+                                    />
+                                );
+                            }
+                            return null;
+                        })}
 
                 <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 3,
+                    }}
                 >
-                    {allFields.map((field) => {
-                        if (!visibleFields.has(field.id)) return null;
+                    {sections.map((section, sectionIdx) => (
+                        <AnimatedSection
+                            key={
+                                section.heading?.id ??
+                                `section-${sectionIdx}`
+                            }
+                            delay={sectionIdx * 100}
+                        >
+                            {section.heading && (
+                                <DynamicFormField
+                                    field={section.heading}
+                                    value=""
+                                    onChange={handleChange}
+                                    pricingDefinitions={
+                                        formData.pricingDefinitions
+                                    }
+                                    priceTiers={formData.priceTiers}
+                                />
+                            )}
+                            {section.fields.length > 0 && (
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2.5,
+                                        p: { xs: 2, md: 3 },
+                                        borderRadius: 2,
+                                    }}
+                                >
+                                    {section.fields.map(
+                                        (field) => {
+                                            const value =
+                                                isInputField(field)
+                                                    ? (values[
+                                                          field.name
+                                                      ] ?? "")
+                                                    : "";
+                                            const disabledOpts =
+                                                isInputField(field)
+                                                    ? getDisabledOptionsForField(
+                                                          field.id,
+                                                          field.name,
+                                                          formData.capacityLimits,
+                                                          optionCounts
+                                                      )
+                                                    : undefined;
 
-                        const value = isInputField(field)
-                            ? (values[field.name] ?? "")
-                            : "";
-                        const disabledOpts = isInputField(field)
-                            ? getDisabledOptionsForField(
-                                  field.id,
-                                  field.name,
-                                  formData.capacityLimits,
-                                  optionCounts
-                              )
-                            : undefined;
-
-                        return (
-                            <DynamicFormField
-                                key={field.id}
-                                field={field}
-                                value={value}
-                                error={
-                                    isInputField(field)
-                                        ? getFieldError(field.name)
-                                        : undefined
-                                }
-                                onChange={handleChange}
-                                pricingDefinitions={formData.pricingDefinitions}
-                                priceTiers={formData.priceTiers}
-                                disabledOptions={disabledOpts}
-                            />
-                        );
-                    })}
+                                            return (
+                                                <Fade
+                                                    key={field.id}
+                                                    in
+                                                    timeout={300}
+                                                >
+                                                    <Box>
+                                                        <DynamicFormField
+                                                            field={
+                                                                field
+                                                            }
+                                                            value={
+                                                                value
+                                                            }
+                                                            error={
+                                                                isInputField(
+                                                                    field
+                                                                )
+                                                                    ? getFieldError(
+                                                                          field.name
+                                                                      )
+                                                                    : undefined
+                                                            }
+                                                            onChange={
+                                                                handleChange
+                                                            }
+                                                            pricingDefinitions={
+                                                                formData.pricingDefinitions
+                                                            }
+                                                            priceTiers={
+                                                                formData.priceTiers
+                                                            }
+                                                            disabledOptions={
+                                                                disabledOpts
+                                                            }
+                                                        />
+                                                    </Box>
+                                                </Fade>
+                                            );
+                                        }
+                                    )}
+                                </Paper>
+                            )}
+                        </AnimatedSection>
+                    ))}
                 </Box>
 
                 {showAPSection && (
@@ -277,22 +415,12 @@ export function DynamicRegistrationForm({
                     />
                 )}
 
-                {formData.pricingDefinitions.length > 0 && (
-                    <PriceSummary
-                        pricingDefinitions={formData.pricingDefinitions}
-                        priceTiers={formData.priceTiers ?? []}
-                        allInputFields={allInputFields}
-                        mainValues={values}
-                        additionalPeople={additionalPeople}
-                        visibleMainFields={visibleFields}
-                        visibleAPFieldsPerPerson={visibleAPFieldsPerPerson}
-                    />
-                )}
-
                 {!isLoggedIn && !previewMode && (
                     <Box sx={{ mt: 3 }}>
                         <FormControlLabel
-                            control={<Checkbox name="gdprConsent" />}
+                            control={
+                                <Checkbox name="gdprConsent" />
+                            }
                             label={
                                 <>
                                     Souhlasím se{" "}
@@ -314,7 +442,21 @@ export function DynamicRegistrationForm({
                     </Box>
                 )}
 
-                <Box sx={{ mt: 4, textAlign: "center" }}>
+                <DecorativeDivider variant="ornate" my={3} />
+
+                <Box
+                    sx={{
+                        textAlign: "center",
+                        pb: { xs: 10, md: 0 },
+                    }}
+                >
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2 }}
+                    >
+                        Po odeslání obdržíte potvrzení na email.
+                    </Typography>
                     <Button
                         type="submit"
                         variant="contained"
@@ -325,6 +467,12 @@ export function DynamicRegistrationForm({
                             px: 6,
                             py: 1.5,
                             fontSize: "1.1rem",
+                            boxShadow:
+                                "0 0 20px rgba(201, 162, 39, 0.3)",
+                            "&:hover": {
+                                boxShadow:
+                                    "0 0 30px rgba(201, 162, 39, 0.5)",
+                            },
                         }}
                     >
                         {!previewMode && isPending
@@ -342,20 +490,70 @@ export function DynamicRegistrationForm({
             </Box>
 
             {previewMode && (
-                <Snackbar
-                    open={previewSnackbar}
-                    autoHideDuration={4000}
-                    onClose={() => setPreviewSnackbar(false)}
-                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                >
-                    <Alert
-                        severity="info"
-                        onClose={() => setPreviewSnackbar(false)}
+                        <Snackbar
+                            open={previewSnackbar}
+                            autoHideDuration={4000}
+                            onClose={() =>
+                                setPreviewSnackbar(false)
+                            }
+                            anchorOrigin={{
+                                vertical: "bottom",
+                                horizontal: "center",
+                            }}
+                        >
+                            <Alert
+                                severity="info"
+                                onClose={() =>
+                                    setPreviewSnackbar(false)
+                                }
+                            >
+                                Toto je pouze náhled. Registrace
+                                nebyla odeslána.
+                            </Alert>
+                        </Snackbar>
+                    )}
+                </Box>
+            </Box>
+
+            <Box
+                sx={{
+                    display: { xs: "none", md: "block" },
+                    width: 320,
+                    flexShrink: 0,
+                }}
+            >
+                <Box sx={{ position: "sticky", top: 140 }}>
+                    <PriceSummary {...priceSummaryProps} />
+                    <Button
+                        type="submit"
+                        form="registration-form"
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        fullWidth
+                        disabled={!previewMode && isPending}
+                        sx={{
+                            mt: 2,
+                            py: 1.5,
+                            fontSize: "1rem",
+                            boxShadow:
+                                "0 0 20px rgba(201, 162, 39, 0.3)",
+                            "&:hover": {
+                                boxShadow:
+                                    "0 0 30px rgba(201, 162, 39, 0.5)",
+                            },
+                        }}
                     >
-                        Toto je pouze náhled. Registrace nebyla odeslána.
-                    </Alert>
-                </Snackbar>
+                        {!previewMode && isPending
+                            ? "Odesílám..."
+                            : "Odeslat registraci"}
+                    </Button>
+                </Box>
+            </Box>
+
+            {hasPricing && (
+                <StickyPriceSummary {...priceSummaryProps} />
             )}
-        </Paper>
+        </Box>
     );
 }

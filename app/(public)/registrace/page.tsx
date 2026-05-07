@@ -100,7 +100,7 @@ export default async function RegistracePage() {
                 subtitle={`Zaregistrujte se na ${status.year?.title}`}
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
-            <Container maxWidth="md" sx={{ pb: 8 }}>
+            <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <DynamicRegistrationForm formData={formData} optionCounts={optionCounts} isLoggedIn={!!publicSession} publicEmail={publicSession?.email} />
             </Container>
         </>

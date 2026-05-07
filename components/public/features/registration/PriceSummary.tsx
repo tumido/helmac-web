@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types/registration-form";
 import { getCurrentTierIndex, formatPrice } from "@/lib/utils/pricing";
 
-interface PriceSummaryProps {
+export interface PriceSummaryProps {
     pricingDefinitions: PricingDefinition[];
     priceTiers: string[];
     allInputFields: InputField[];
@@ -18,6 +18,7 @@ interface PriceSummaryProps {
     additionalPeople: AdditionalPersonData[];
     visibleMainFields: Set<string>;
     visibleAPFieldsPerPerson?: Set<string>[];
+    compact?: boolean;
 }
 
 interface PriceLineItem {
@@ -34,6 +35,7 @@ export function PriceSummary({
     additionalPeople,
     visibleMainFields,
     visibleAPFieldsPerPerson,
+    compact,
 }: PriceSummaryProps) {
     const summary = useMemo(() => {
         const pricingFields = allInputFields.filter(
@@ -42,7 +44,6 @@ export function PriceSummary({
 
         const mainLines: PriceLineItem[] = [];
         const apLines: { personIndex: number; lines: PriceLineItem[] }[] = [];
-        let grandTotal = 0;
 
         for (const field of pricingFields) {
             const def = pricingDefinitions.find((d) => d.id === field.pricingId);
@@ -59,7 +60,6 @@ export function PriceSummary({
                 if (qty > 0 && visibleMainFields.has(field.id)) {
                     const price = unitPrice * qty;
                     mainLines.push({ label: def.name, optionName: `${qty}x ${def.unitName || "ks"}`, price });
-                    grandTotal += price;
                 }
 
                 // Additional people
@@ -77,7 +77,6 @@ export function PriceSummary({
                             apLines.push(apEntry);
                         }
                         apEntry.lines.push({ label: def.name, optionName: `${personQty}x ${def.unitName || "ks"}`, price });
-                        grandTotal += price;
                     });
                 }
             } else if (field.type === "pricing_multi_select") {
@@ -96,7 +95,6 @@ export function PriceSummary({
                         if (opt) {
                             const price = opt.prices[tierIdx] ?? 0;
                             mainLines.push({ label: def.name, optionName: opt.name, price });
-                            grandTotal += price;
                         }
                     }
                 }
@@ -119,7 +117,6 @@ export function PriceSummary({
                                 apLines.push(apEntry);
                             }
                             apEntry.lines.push({ label: def.name, optionName: opt.name, price });
-                            grandTotal += price;
                         }
                     });
                 }
@@ -131,7 +128,6 @@ export function PriceSummary({
                     if (opt) {
                         const price = opt.prices[tierIdx] ?? 0;
                         mainLines.push({ label: def.name, optionName: opt.name, price });
-                        grandTotal += price;
                     }
                 }
 
@@ -152,76 +148,254 @@ export function PriceSummary({
                             apLines.push(apEntry);
                         }
                         apEntry.lines.push({ label: def.name, optionName: opt.name, price });
-                        grandTotal += price;
                     });
                 }
             }
         }
 
-        return { mainLines, apLines, grandTotal };
+        const mainTotal = Math.max(
+            0,
+            mainLines.reduce((sum, l) => sum + l.price, 0)
+        );
+        const apTotals = apLines.map((ap) => ({
+            ...ap,
+            total: Math.max(
+                0,
+                ap.lines.reduce((sum, l) => sum + l.price, 0)
+            ),
+        }));
+        const grandTotal =
+            mainTotal +
+            apTotals.reduce((sum, ap) => sum + ap.total, 0);
+
+        return { mainLines, apLines: apTotals, grandTotal };
     }, [pricingDefinitions, priceTiers, allInputFields, mainValues, additionalPeople, visibleMainFields, visibleAPFieldsPerPerson]);
 
-    // Show only when there's at least one price line
-    if (summary.mainLines.length === 0 && summary.apLines.length === 0) {
-        return null;
-    }
+    const isEmpty =
+        summary.mainLines.every((l) => l.price === 0) &&
+        summary.apLines.every((a) =>
+            a.lines.every((l) => l.price === 0)
+        );
 
-    return (
-        <Paper variant="outlined" sx={{ p: 3, mt: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-                Celková cena
-            </Typography>
+    const content = (
+        <>
+            {!compact && (
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                    Celková cena
+                </Typography>
+            )}
 
-            {summary.mainLines.length > 0 && (
+            {isEmpty && !compact && (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1.5, fontStyle: "italic" }}
+                >
+                    Zatím žádné položky
+                </Typography>
+            )}
+
+            {summary.mainLines.some((l) => l.price !== 0) && (
                 <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Hlavní osoba
-                    </Typography>
-                    {summary.mainLines.map((line, i) => (
-                        <Box key={i} sx={{ display: "flex", justifyContent: "space-between", mb: 0.25 }}>
-                            <Typography variant="body2">
+                    {summary.apLines.length > 0 && (
+                        <Typography
+                            variant="subtitle2"
+                            fontWeight={700}
+                            sx={{
+                                mb: 0.5,
+                                pb: 0.5,
+                                borderBottom: "1px solid",
+                                borderColor: "divider",
+                                color: "primary.main",
+                            }}
+                        >
+                            Hlavní osoba
+                        </Typography>
+                    )}
+                    {summary.mainLines.filter((l) => l.price !== 0).map((line, i) => (
+                        <Box
+                            key={i}
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "baseline",
+                                gap: 1,
+                                mb: 0.25,
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                noWrap
+                                sx={{ minWidth: 0 }}
+                            >
                                 {line.label}: {line.optionName}
                             </Typography>
                             {line.price !== 0 && (
-                                <Typography variant="body2" fontWeight={500}>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={500}
+                                    noWrap
+                                    sx={{ flexShrink: 0 }}
+                                >
                                     {formatPrice(line.price)}
                                 </Typography>
                             )}
                         </Box>
                     ))}
+                    {summary.apLines.length > 0 && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "baseline",
+                                gap: 1,
+                                mt: 0.5,
+                                pt: 0.5,
+                                borderTop: "1px dashed",
+                                borderColor: "divider",
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                noWrap
+                            >
+                                Celkem za osobu
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                noWrap
+                                sx={{ flexShrink: 0 }}
+                            >
+                                {formatPrice(
+                                    Math.max(
+                                        0,
+                                        summary.mainLines.reduce(
+                                            (s, l) => s + l.price,
+                                            0
+                                        )
+                                    )
+                                )}
+                            </Typography>
+                        </Box>
+                    )}
                 </Box>
             )}
 
             {summary.apLines.map((ap) => (
                 <Box key={ap.personIndex} sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={700}
+                        sx={{
+                            mb: 0.5,
+                            pb: 0.5,
+                            borderBottom: "1px solid",
+                            borderColor: "divider",
+                            color: "primary.main",
+                        }}
+                    >
                         Osoba č. {ap.personIndex + 2}
                     </Typography>
-                    {ap.lines.map((line, i) => (
-                        <Box key={i} sx={{ display: "flex", justifyContent: "space-between", mb: 0.25 }}>
-                            <Typography variant="body2">
+                    {ap.lines.filter((l) => l.price !== 0).map((line, i) => (
+                        <Box
+                            key={i}
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "baseline",
+                                gap: 1,
+                                mb: 0.25,
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                noWrap
+                                sx={{ minWidth: 0 }}
+                            >
                                 {line.label}: {line.optionName}
                             </Typography>
                             {line.price !== 0 && (
-                                <Typography variant="body2" fontWeight={500}>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={500}
+                                    noWrap
+                                    sx={{ flexShrink: 0 }}
+                                >
                                     {formatPrice(line.price)}
                                 </Typography>
                             )}
                         </Box>
                     ))}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "baseline",
+                            gap: 1,
+                            mt: 0.5,
+                            pt: 0.5,
+                            borderTop: "1px dashed",
+                            borderColor: "divider",
+                        }}
+                    >
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            noWrap
+                        >
+                            Mezisoučet
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            noWrap
+                            sx={{ flexShrink: 0 }}
+                        >
+                            {formatPrice(ap.total)}
+                        </Typography>
+                    </Box>
                 </Box>
             ))}
 
             <Divider sx={{ my: 1.5 }} />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="subtitle1" fontWeight={600}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    gap: 2,
+                }}
+            >
+                <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    noWrap
+                >
                     Celkem
                 </Typography>
-                <Typography variant="subtitle1" fontWeight={600}>
+                <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    noWrap
+                >
                     {formatPrice(summary.grandTotal)}
                 </Typography>
             </Box>
+        </>
+    );
+
+    if (compact) {
+        return content;
+    }
+
+    return (
+        <Paper variant="outlined" sx={{ p: 3, mt: 3 }}>
+            {content}
         </Paper>
     );
 }
+
+export { formatPrice } from "@/lib/utils/pricing";
