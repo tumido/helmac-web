@@ -9,54 +9,73 @@ const prisma = new PrismaClient();
 
 // Form field IDs
 const F = {
-    heading: "f-heading-1",
-    description: "f-desc-1",
+    heading1: "f-heading-1",
     name: "f-name",
+    nickname: "f-nickname",
     group: "f-group",
     email: "f-email",
     birthDate: "f-birth-date",
+    address: "f-address",
     memberMlarp: "f-member-mlarp",
+    heading2: "f-heading-2",
     typUcasti: "f-typ-ucasti",
-    zaKohoBojujes: "f-za-koho",
-    armadaTemna: "f-armada-temna",
-    armadaSvetla: "f-armada-svetla",
-    prijedesAutem: "f-prijedes-autem",
-    spz: "f-spz",
-    zaplatAuto: "f-zaplat-auto",
-    pole14: "f-pole-14",
-    gdpr: "f-gdpr",
-    bojujiNebo: "f-bojuji-nebo",
-    jakMocBohaty: "f-jak-moc-bohaty",
-    darovatVip: "f-darovat-vip",
-    komuVip: "f-komu-vip",
-    vipDar: "f-vip-dar",
+    vyberStrany: "f-vyber-strany",
+    vyberNaroduSvetla: "f-vyber-narodu-svetla",
+    vyberNaroduTemna: "f-vyber-narodu-temna",
+    zdravotniOmezeni: "f-zdravotni-omezeni",
+    zdravotniOmezeniJake: "f-zdravotni-jake",
+    zajemVypomoc: "f-zajem-vypomoc",
+    zajemZdravotnik: "f-zajem-zdravotnik",
+    heading3: "f-heading-3",
+    parkování: "f-parkovani",
+    chciParkovat: "f-chci-parkovat",
+    mazlicek: "f-mazlicek",
+    detiDo6: "f-deti-do-6",
+    detiDo6Kolik: "f-deti-do-6-kolik",
+    deti7az12: "f-deti-7-12",
+    deti7az12Kolik: "f-deti-7-12-kolik",
+    vzkaz: "f-vzkaz",
+    souhlasRules: "f-souhlas-pravidla",
+    bojujiciCena: "f-bojujici-cena",
+    nebojujiciCena: "f-nebojujici-cena",
+    predStredou: "f-pred-stredou",
 };
 
 // Condition IDs
 const C = {
     bojujici: "c-typ-ucasti-bojujici",
-    temna: "c-za-koho-temna",
-    svetla: "c-za-koho-svetla",
-    autemAno: "c-autem-ano",
-    darovatVipAno: "c-darovat-vip-ano",
+    nebojujici: "c-typ-ucasti-nebojujici",
+    svetla: "c-vyber-strany-svetla",
+    temna: "c-vyber-strany-temna",
+    zdravotniAno: "c-zdravotni-ano",
+    parkAno: "c-park-ano",
+    detiDo6Ano: "c-deti-do-6-ano",
+    deti7az12Ano: "c-deti-7-12-ano",
 };
 
 // Condition block IDs
 const CB = {
     bojujici: "cb-bojujici",
-    temna: "cb-temna",
+    nebojujici: "cb-nebojujici",
     svetla: "cb-svetla",
-    autemAno: "cb-autem-ano",
-    darovatVipAno: "cb-darovat-vip-ano",
+    temna: "cb-temna",
+    zdravotniAno: "cb-zdravotni-ano",
+    parkAno: "cb-park-ano",
+    detiDo6Ano: "cb-deti-do-6-ano",
+    deti7az12Ano: "cb-deti-7-12-ano",
+    bojujiciCena: "cb-bojujici-cena",
+    nebojujiciCena: "cb-nebojujici-cena",
 };
 
 // Pricing definition IDs
 const P = {
     memberMlarp: "p-member-mlarp",
-    vip: "p-vip",
-    masAuto: "p-mas-auto",
-    zaplatAuto: "p-zaplat-auto",
-    bojujiNebo: "p-bojuji-nebo",
+    parking: "p-parking",
+    pet: "p-pet",
+    children7to12: "p-children-7-12",
+    fighter: "p-fighter",
+    nonFighter: "p-non-fighter",
+    earlyArrival: "p-early-arrival",
 };
 
 // ============================================
@@ -64,70 +83,99 @@ const P = {
 // ============================================
 
 const registrationFormData = {
-    priceTiers: [
-        "2026-04-01",
-        "2026-04-08",
-        "2026-04-17",
-        "2026-04-18",
-        "2026-05-04",
-        "2026-07-01",
-    ],
+    priceTiers: [] as string[],
     conditions: [
         {
             id: C.bojujici,
-            name: "Typ ucasti je Bojujici",
+            name: "Typ účasti je Bojující",
             rules: [
                 {
                     type: "field_value" as const,
                     fieldId: F.typUcasti,
                     operator: "equals" as const,
-                    value: "Bojujici",
+                    value: "Bojující",
                 },
             ],
         },
         {
-            id: C.temna,
-            name: "Za koho bojujes je Temna",
+            id: C.nebojujici,
+            name: "Typ účasti je Nebojující",
             rules: [
                 {
                     type: "field_value" as const,
-                    fieldId: F.zaKohoBojujes,
+                    fieldId: F.typUcasti,
                     operator: "equals" as const,
-                    value: "Temna",
+                    value: "Nebojující",
                 },
             ],
         },
         {
             id: C.svetla,
-            name: "Za koho bojujes je Svetla",
+            name: "Výběr strany je Světlá",
             rules: [
                 {
                     type: "field_value" as const,
-                    fieldId: F.zaKohoBojujes,
+                    fieldId: F.vyberStrany,
                     operator: "equals" as const,
-                    value: "Svetla",
+                    value: "Světlá",
                 },
             ],
         },
         {
-            id: C.autemAno,
-            name: "Prijedes autem je Ano",
+            id: C.temna,
+            name: "Výběr strany je Temná",
             rules: [
                 {
                     type: "field_value" as const,
-                    fieldId: F.prijedesAutem,
+                    fieldId: F.vyberStrany,
+                    operator: "equals" as const,
+                    value: "Temná",
+                },
+            ],
+        },
+        {
+            id: C.zdravotniAno,
+            name: "Zdravotní omezení je Ano",
+            rules: [
+                {
+                    type: "field_value" as const,
+                    fieldId: F.zdravotniOmezeni,
                     operator: "equals" as const,
                     value: "Ano",
                 },
             ],
         },
         {
-            id: C.darovatVipAno,
-            name: "Chci nekomu darovat VIP balicek je Ano",
+            id: C.parkAno,
+            name: "Parkování auta je Ano",
             rules: [
                 {
                     type: "field_value" as const,
-                    fieldId: F.darovatVip,
+                    fieldId: F.parkování,
+                    operator: "equals" as const,
+                    value: "Ano",
+                },
+            ],
+        },
+        {
+            id: C.detiDo6Ano,
+            name: "Berete děti do 6 let (včetně)? je Ano",
+            rules: [
+                {
+                    type: "field_value" as const,
+                    fieldId: F.detiDo6,
+                    operator: "equals" as const,
+                    value: "Ano",
+                },
+            ],
+        },
+        {
+            id: C.deti7az12Ano,
+            name: "Berete děti 7–12 let (včetně)? je Ano",
+            rules: [
+                {
+                    type: "field_value" as const,
+                    fieldId: F.deti7az12,
                     operator: "equals" as const,
                     value: "Ano",
                 },
@@ -137,7 +185,7 @@ const registrationFormData = {
     pricingDefinitions: [
         {
             id: P.memberMlarp,
-            name: "Clen Moravian LARP, o.s.",
+            name: "Členství v Moravian LARP, o.s.",
             usePriceTiers: false,
             options: [
                 {
@@ -149,130 +197,164 @@ const registrationFormData = {
                 {
                     id: "po-mlarp-ano",
                     name: "Ano",
-                    description: "Sleva 200 Kc",
+                    description: "Sleva 200 Kč",
                     prices: [-200],
                 },
             ],
         },
         {
-            id: P.vip,
-            name: "Chces byt VIP",
-            usePriceTiers: true,
-            options: [
-                {
-                    id: "po-vip-ne",
-                    name: "Ne",
-                    description: "I tak te mame radi",
-                    prices: [0, 0, 0, 0, 0, 0, 0],
-                },
-                {
-                    id: "po-vip-ano",
-                    name: "Rad pomuzu",
-                    description: "Jsme radi ze pomuzes",
-                    prices: [1000, 1000, 1000, 1000, 1200, 1400, 1600],
-                },
-                {
-                    id: "po-vip-bohaty",
-                    name: "Jsem fakt bohaty",
-                    description:
-                        "No.... tak to uz si vyslouzi VIP kadibudku",
-                    prices: [2000, 2000, 2000, 2000, 2500, 3000, 5000],
-                },
-            ],
-        },
-        {
-            id: P.masAuto,
-            name: "Mas auto",
+            id: P.parking,
+            name: "Chci parkovat",
             usePriceTiers: false,
             options: [
                 {
-                    id: "po-auto-ne",
+                    id: "po-park-ano",
+                    name: "Ano, chci parkovat",
+                    description: "Poplatek za parkování na louce",
+                    prices: [200],
+                },
+            ],
+        },
+        {
+            id: P.pet,
+            name: "Domácí mazlíček",
+            usePriceTiers: false,
+            options: [
+                {
+                    id: "po-pet-ne",
                     name: "Ne",
                     description: "",
                     prices: [0],
                 },
                 {
-                    id: "po-auto-ano",
+                    id: "po-pet-ano",
                     name: "Ano",
+                    description: "Poplatek za mazlíčka",
+                    prices: [100],
+                },
+            ],
+        },
+        {
+            id: P.children7to12,
+            name: "Děti 7–12 let (včetně)",
+            usePriceTiers: false,
+            options: [
+                {
+                    id: "po-deti-1",
+                    name: "1 dítě",
+                    description: "",
+                    prices: [300],
+                },
+                {
+                    id: "po-deti-2",
+                    name: "2 děti",
+                    description: "",
+                    prices: [550],
+                },
+                {
+                    id: "po-deti-3",
+                    name: "3 děti",
+                    description: "",
+                    prices: [750],
+                },
+                {
+                    id: "po-deti-4",
+                    name: "4 děti",
+                    description: "",
+                    prices: [900],
+                },
+                {
+                    id: "po-deti-5",
+                    name: "5 dětí",
+                    description: "",
+                    prices: [1000],
+                },
+            ],
+        },
+        {
+            id: P.fighter,
+            name: "Bojujici ucastnik",
+            usePriceTiers: false,
+            options: [
+                {
+                    id: "po-fighter-std",
+                    name: "Bojující",
+                    description: "Standardní vstupné",
+                    prices: [600],
+                },
+                {
+                    id: "po-fighter-org",
+                    name: "Jsem org",
                     description: "",
                     prices: [0],
                 },
             ],
         },
         {
-            id: P.zaplatAuto,
-            name: "Zaplat auto",
-            usePriceTiers: true,
+            id: P.nonFighter,
+            name: "Nebojujici ucastnik",
+            usePriceTiers: false,
             options: [
                 {
-                    id: "po-zaplat-auto",
-                    name: "Parkovne",
-                    description: "Poplatek za parkovani na louce",
-                    prices: [100, 100, 100, 100, 150, 200, 300],
+                    id: "po-nonfighter-std",
+                    name: "Nebojující",
+                    description: "Standardní vstupné",
+                    prices: [400],
                 },
             ],
         },
         {
-            id: P.bojujiNebo,
-            name: "Bojuji nebo taky na",
-            usePriceTiers: true,
+            id: P.earlyArrival,
+            name: "Chci přijet před středou",
+            usePriceTiers: false,
             options: [
                 {
-                    id: "po-bojuji",
-                    name: "Bojuji",
+                    id: "po-early-ne",
+                    name: "Ne",
                     description: "",
-                    prices: [200, 200, 200, 200, 250, 300, 333],
+                    prices: [0],
                 },
                 {
-                    id: "po-nebojuji",
-                    name: "Nebojuji",
-                    description: "",
-                    prices: [100, 100, 100, 100, 150, 180, 200],
-                },
-                {
-                    id: "po-org",
-                    name: "jsem org",
-                    description: "",
-                    prices: [1, 2, 3, 3, 3, 3, 3],
+                    id: "po-early-ano",
+                    name: "Ano",
+                    description: "Příplatek za dřívější příjezd",
+                    prices: [700],
                 },
             ],
         },
     ],
     capacityLimits: [
         {
-            id: "cl-temna",
-            fieldId: F.zaKohoBojujes,
-            value: "Temna",
-            maxCount: 2,
-        },
-        {
             id: "cl-svetla",
-            fieldId: F.zaKohoBojujes,
-            value: "Svetla",
-            maxCount: 120,
+            fieldId: F.vyberStrany,
+            value: "Světlá",
+            maxCount: 100,
         },
         {
-            id: "cl-vip",
-            fieldId: F.vipDar,
-            value: "Rad pomuzu",
-            maxCount: 10,
+            id: "cl-temna",
+            fieldId: F.vyberStrany,
+            value: "Temná",
+            maxCount: 100,
         },
     ],
-    showOptionCounts: [F.armadaTemna, F.armadaSvetla],
+    showOptionCounts: [] as string[],
     infoStatsConfig: { enabled: false, stats: [] },
     fields: [
-        { type: "heading", id: F.heading, text: "Helmáč registrace" },
-        {
-            type: "description",
-            id: F.description,
-            text: "Jsme radi ze se jdete registrovat, bez vas by to neslo",
-        },
+        { type: "heading", id: F.heading1, text: "Základní údaje" },
         {
             type: "text",
             id: F.name,
-            name: "Jmeno a Prijmeni",
-            label: "Jmeno a Prijmeni",
+            name: "Jméno a Příjmení",
+            label: "Jméno a Příjmení",
             required: true,
+            includeForAdditionalPeople: true,
+        },
+        {
+            type: "text",
+            id: F.nickname,
+            name: "Přezdívka",
+            label: "Přezdívka",
+            required: false,
             includeForAdditionalPeople: true,
         },
         {
@@ -280,7 +362,7 @@ const registrationFormData = {
             id: F.group,
             name: "Skupina",
             label: "Skupina",
-            required: true,
+            required: false,
             includeForAdditionalPeople: true,
         },
         {
@@ -293,27 +375,35 @@ const registrationFormData = {
         {
             type: "birth_date",
             id: F.birthDate,
-            name: "Datum narozeni",
-            label: "Datum narozeni",
+            name: "Datum narození",
+            label: "Datum narození",
             required: true,
             includeForAdditionalPeople: true,
+        },
+        {
+            type: "text",
+            id: F.address,
+            name: "Trvalé bydliště",
+            label: "Trvalé bydliště",
+            required: true,
         },
         {
             type: "pricing_select",
             id: F.memberMlarp,
-            name: "Clen Moravian LARP, o.s.",
-            label: "Clen Moravian LARP, o.s.",
+            name: "Členství v Moravian LARP, o.s.",
+            label: "Členství v Moravian LARP, o.s.",
             required: true,
             pricingId: P.memberMlarp,
             includeForAdditionalPeople: true,
         },
+        { type: "heading", id: F.heading2, text: "Role na akci" },
         {
             type: "radio",
             id: F.typUcasti,
-            name: "Typ ucasti",
-            label: "Typ ucasti",
+            name: "Typ účasti",
+            label: "Typ účasti",
             required: true,
-            options: ["Bojujici", "Nebojujici"],
+            options: ["Bojující", "Nebojující"],
             includeForAdditionalPeople: true,
         },
         {
@@ -323,27 +413,11 @@ const registrationFormData = {
             children: [
                 {
                     type: "radio",
-                    id: F.zaKohoBojujes,
-                    name: "Za koho bojujes",
-                    label: "Za koho bojujes",
+                    id: F.vyberStrany,
+                    name: "Výběr strany",
+                    label: "Výběr strany",
                     required: true,
-                    options: ["Temna", "Svetla"],
-                    includeForAdditionalPeople: true,
-                },
-            ],
-        },
-        {
-            type: "condition",
-            id: CB.temna,
-            conditionId: C.temna,
-            children: [
-                {
-                    type: "radio",
-                    id: F.armadaTemna,
-                    name: "Za jakou armadu bojujes",
-                    label: "Za jakou armadu bojujes",
-                    required: true,
-                    options: ["Skret", "Harad", "Nekromant"],
+                    options: ["Světlá", "Temná"],
                     includeForAdditionalPeople: true,
                 },
             ],
@@ -355,107 +429,208 @@ const registrationFormData = {
             children: [
                 {
                     type: "radio",
-                    id: F.armadaSvetla,
-                    name: "Za jakou armadu bojujes",
-                    label: "Za jakou armadu bojujes",
+                    id: F.vyberNaroduSvetla,
+                    name: "Výběr národu",
+                    label: "Výběr národu",
                     required: true,
-                    options: ["Elf", "Clovek", "Trpaslik"],
+                    options: ["Elf", "Člověk", "Trpaslík"],
+                    includeForAdditionalPeople: true,
+                },
+            ],
+        },
+        {
+            type: "condition",
+            id: CB.temna,
+            conditionId: C.temna,
+            children: [
+                {
+                    type: "radio",
+                    id: F.vyberNaroduTemna,
+                    name: "Výběr strany",
+                    label: "Výběr strany",
+                    required: true,
+                    options: ["Skřet", "Harad", "Nemrtví"],
                     includeForAdditionalPeople: true,
                 },
             ],
         },
         {
             type: "radio",
-            id: F.prijedesAutem,
-            name: "Prijedes autem",
-            label: "Prijedes autem",
+            id: F.zdravotniOmezeni,
+            name: "Zdravotní omezení",
+            label: "Zdravotní omezení",
             required: true,
             options: ["Ano", "Ne"],
             includeForAdditionalPeople: true,
         },
         {
             type: "condition",
-            id: CB.autemAno,
-            conditionId: C.autemAno,
+            id: CB.zdravotniAno,
+            conditionId: C.zdravotniAno,
             children: [
                 {
                     type: "text",
-                    id: F.spz,
-                    name: "SPZ",
-                    label: "SPZ",
+                    id: F.zdravotniOmezeniJake,
+                    name: "Jaké?",
+                    label: "Jaké?",
                     required: true,
-                },
-                {
-                    type: "pricing_select",
-                    id: F.zaplatAuto,
-                    name: "Zaplat auto",
-                    label: "Zaplat auto",
-                    required: true,
-                    pricingId: P.zaplatAuto,
+                    includeForAdditionalPeople: true,
                 },
             ],
         },
         {
-            type: "checkbox",
-            id: F.pole14,
-            name: "Pole 14",
-            label: "Pole 14",
-            required: false,
-        },
-        {
-            type: "checkbox",
-            id: F.gdpr,
-            name: "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr",
-            label: "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr",
+            type: "radio",
+            id: F.zajemVypomoc,
+            name: "Máte zájem o výpomoc? (budete kontaktování mailem)",
+            label: "Máte zájem o výpomoc? (budete kontaktování mailem)",
             required: true,
-        },
-        {
-            type: "pricing_select",
-            id: F.bojujiNebo,
-            name: "Bojuji nebo taky na",
-            label: "Bojuji nebo taky na",
-            required: true,
-            pricingId: P.bojujiNebo,
-            includeForAdditionalPeople: true,
-        },
-        {
-            type: "pricing_select",
-            id: F.jakMocBohaty,
-            name: "Jak moc bohaty se citis?",
-            label: "Jak moc bohaty se citis?",
-            required: true,
-            pricingId: P.vip,
+            options: ["Ano", "Ne"],
             includeForAdditionalPeople: true,
         },
         {
             type: "radio",
-            id: F.darovatVip,
-            name: "Chci nekomu darovat VIP balicek",
-            label: "Chci nekomu darovat VIP balicek",
-            required: false,
-            options: ["Ne", "Ano"],
+            id: F.zajemZdravotnik,
+            name: "Máte zájem o pozici zdravotníka",
+            label: "Máte zájem o pozici zdravotníka",
+            required: true,
+            options: ["Ano", "Ne"],
+            includeForAdditionalPeople: true,
+        },
+        {
+            type: "heading",
+            id: F.heading3,
+            text: "Děti, mazlíčci a auta",
+        },
+        {
+            type: "radio",
+            id: F.parkování,
+            name: "Parkování auta",
+            label: "Parkování auta",
+            required: true,
+            options: ["Ano", "Ne"],
         },
         {
             type: "condition",
-            id: CB.darovatVipAno,
-            conditionId: C.darovatVipAno,
+            id: CB.parkAno,
+            conditionId: C.parkAno,
             children: [
                 {
-                    type: "text",
-                    id: F.komuVip,
-                    name: "Komu VIP",
-                    label: "Komu VIP",
-                    required: true,
-                },
-                {
                     type: "pricing_select",
-                    id: F.vipDar,
-                    name: "Chces byt VIP",
-                    label: "Chces byt VIP",
+                    id: F.chciParkovat,
+                    name: "Chci parkovat",
+                    label: "Chci parkovat",
                     required: true,
-                    pricingId: P.vip,
+                    pricingId: P.parking,
                 },
             ],
+        },
+        {
+            type: "pricing_select",
+            id: F.mazlicek,
+            name: "Domácí mazlíček",
+            label: "Domácí mazlíček",
+            required: true,
+            pricingId: P.pet,
+        },
+        {
+            type: "radio",
+            id: F.detiDo6,
+            name: "Berete děti do 6 let (včetně)?",
+            label: "Berete děti do 6 let (včetně)?",
+            required: true,
+            options: ["Ano", "Ne"],
+        },
+        {
+            type: "condition",
+            id: CB.detiDo6Ano,
+            conditionId: C.detiDo6Ano,
+            children: [
+                {
+                    type: "number",
+                    id: F.detiDo6Kolik,
+                    name: "Kolik?",
+                    label: "Kolik?",
+                    required: true,
+                },
+            ],
+        },
+        {
+            type: "radio",
+            id: F.deti7az12,
+            name: "Berete děti 7–12 let (včetně)?",
+            label: "Berete děti 7–12 let (včetně)?",
+            required: true,
+            options: ["Ano", "Ne"],
+        },
+        {
+            type: "condition",
+            id: CB.deti7az12Ano,
+            conditionId: C.deti7az12Ano,
+            children: [
+                {
+                    type: "pricing_select",
+                    id: F.deti7az12Kolik,
+                    name: "Kolik?",
+                    label: "Kolik?",
+                    required: true,
+                    pricingId: P.children7to12,
+                },
+            ],
+        },
+        {
+            type: "textarea",
+            id: F.vzkaz,
+            name: "Vzkaz pro organizátory",
+            label: "Vzkaz pro organizátory",
+            required: false,
+        },
+        {
+            type: "checkbox",
+            id: F.souhlasRules,
+            name: "Souhlas s pravidly",
+            label: "Souhlas s pravidly",
+            required: true,
+        },
+        {
+            type: "condition",
+            id: CB.bojujiciCena,
+            conditionId: C.bojujici,
+            children: [
+                {
+                    type: "pricing_select",
+                    id: F.bojujiciCena,
+                    name: "Bojujici ucastnik",
+                    label: "Bojujici ucastnik",
+                    required: true,
+                    pricingId: P.fighter,
+                    includeForAdditionalPeople: true,
+                },
+            ],
+        },
+        {
+            type: "condition",
+            id: CB.nebojujiciCena,
+            conditionId: C.nebojujici,
+            children: [
+                {
+                    type: "pricing_select",
+                    id: F.nebojujiciCena,
+                    name: "Nebojujici ucastnik",
+                    label: "Nebojujici ucastnik",
+                    required: true,
+                    pricingId: P.nonFighter,
+                    includeForAdditionalPeople: true,
+                },
+            ],
+        },
+        {
+            type: "pricing_select",
+            id: F.predStredou,
+            name: "Chci přijet před středou",
+            label: "Chci přijet před středou",
+            required: true,
+            pricingId: P.earlyArrival,
+            includeForAdditionalPeople: true,
         },
     ],
 };
@@ -478,45 +653,36 @@ async function seedAdmin() {
     return admin;
 }
 
-async function seedYears() {
+async function seedYear() {
     const year2026 = await prisma.year.create({
         data: {
             year: 2026,
             title: "Helmáč 2026",
-            subtitle: "vyzeneme zleho pana",
+            subtitle: "Bitva o Dol Guldur",
             isActive: true,
             startDate: new Date("2026-07-29"),
             endDate: new Date("2026-08-02"),
-            registrationOpen: true,
-            registrationStartDate: new Date("2026-03-12"),
+            registrationOpen: false,
+            registrationStartDate: new Date("2026-05-14"),
+            headerPhoto:
+                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1773960844595-idebyi.webp",
+            heroPhoto:
+                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1773960850206-tuiuf3.webp",
         },
     });
     console.log("Year 2026:", year2026.title);
-
-    const year2025 = await prisma.year.create({
-        data: {
-            year: 2025,
-            title: "Helmáč 2025",
-            subtitle: "Navrat kralovstvi",
-            isActive: false,
-            isArchived: true,
-            startDate: new Date("2025-07-30"),
-            endDate: new Date("2025-08-02"),
-        },
-    });
-    console.log("Year 2025 (archived):", year2025.title);
-
-    return { year2026, year2025 };
+    return year2026;
 }
 
 async function seedPages(yearId: string) {
     const pages = [
-        { slug: "uvod", title: "Uvod", sortOrder: 0 },
+        { slug: "uvod", title: "Úvod", sortOrder: 0 },
         { slug: "program", title: "Program", sortOrder: 1 },
-        { slug: "registrace", title: "Registrace", sortOrder: 2 },
-        { slug: "pravidla", title: "Pravidla", sortOrder: 3 },
-        { slug: "galerie", title: "Galerie", sortOrder: 4 },
-        { slug: "na-pamatku", title: "Na pamatku", sortOrder: 5 },
+        { slug: "co-nabizime", title: "Co nabízíme", sortOrder: 2 },
+        { slug: "info", title: "Info", sortOrder: 3 },
+        { slug: "pravidla", title: "Pravidla", sortOrder: 4 },
+        { slug: "galerie", title: "Galerie", sortOrder: 5 },
+        { slug: "novinky", title: "Novinky", sortOrder: 6 },
     ];
     for (const page of pages) {
         await prisma.page.create({
@@ -528,214 +694,433 @@ async function seedPages(yearId: string) {
             },
         });
     }
-    console.log("Pages created (6)");
+    console.log("Pages created (7)");
 }
 
 async function seedProgram(yearId: string) {
-    // Day 1: Patek
+    // Day 1: Středa
+    const streda = await prisma.programDay.create({
+        data: {
+            yearId,
+            date: new Date("2026-07-29"),
+            label: "Středa",
+            sortOrder: 0,
+        },
+    });
+    const stredaEvents = [
+        {
+            startTime: "13:00",
+            title: "1v1",
+            description: "Souboj jednotlivců 1v1",
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 0,
+        },
+        {
+            startTime: "15:00",
+            title: "Jugger",
+            description:
+                "Jugger je rychlý týmový sport, ve kterém proti sobě stojí dva týmy a každý se snaží získat co nejvíce bodů umístěním míče do soupeřovy branky.",
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 1,
+        },
+        {
+            startTime: "18:00",
+            title: "Workshop - Kekel",
+            description:
+                'Jde o boj na blízko, který bývá velmi dynamický, někdy označovaný jako "bezhlavá bitka". Bojuje se s měkčenými zbraněmi, ale s důrazem na plný kontakt (full-kontakt).',
+            location: "Louka",
+            tags: ["Workshop"],
+            sortOrder: 2,
+        },
+        {
+            startTime: "19:00",
+            title: "Workshop - Irské tance",
+            description:
+                "Pod vedením zkušené Melkie se nejprve naučíš základní kroky irského tance, které pak využiješ v rámci tzv. ceílí tanců, což jsou irské “společenské” tance.",
+            location: "Pódium",
+            tags: ["Workshop"],
+            sortOrder: 3,
+        },
+        {
+            startTime: "20:00",
+            title: "Rituál",
+            description:
+                "Bílá rada\n\nRada byla svolána, protože stín v Temném hvozdu sílí.\nDol Guldur už není jen šeptem ve větru.",
+            location: "Pódium",
+            tags: [],
+            sortOrder: 4,
+        },
+        {
+            startTime: "21:00",
+            title: "Přednáška Tam a zase zpátky",
+            description:
+                "Svět Středozemě na Helmáči ožívá každý rok a letos k němu přibude i hlas, který ho umí skvěle vyprávět. Podcast Tam a zase zpátky, známý mezi fanoušky Tolkiena svými hlubšími rozbory a nadšeným povídáním, dorazí přímo mezi nás!",
+            location: "Pódium",
+            tags: [],
+            sortOrder: 5,
+        },
+    ];
+    for (const event of stredaEvents) {
+        await prisma.programEvent.create({
+            data: { dayId: streda.id, ...event, isPublished: true },
+        });
+    }
+
+    // Day 2: Čtvrtek
+    const ctvrtek = await prisma.programDay.create({
+        data: {
+            yearId,
+            date: new Date("2026-07-30"),
+            label: "Čtvrtek",
+            sortOrder: 1,
+        },
+    });
+    const ctvrtekEvents = [
+        {
+            startTime: "10:00",
+            title: "Arénka 1v1",
+            description: "Souboj jednotlivců 1v1",
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 0,
+        },
+        {
+            startTime: "11:00",
+            title: "Arénka dýky",
+            description: "Souboj jednotlivců na dýky",
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 1,
+        },
+        {
+            startTime: "14:00",
+            title: "Workshop - Pomaluj se henou",
+            description:
+                "Chceš mít originální malování do bitvy či jen zkrášlit svůj zevnějšek? Přijď do Harému, tamější ženy tě to rády naučí.",
+            location: "Harém",
+            tags: ["Workshop"],
+            sortOrder: 2,
+        },
+        {
+            startTime: "15:00",
+            title: "Arénka All for one",
+            description:
+                "Souboj 1v1 v rámci skupin o 3 lidech (případně jeden náhradník)",
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 3,
+        },
+        {
+            startTime: "15:00",
+            title: "Workshop - Dřevěná dílna",
+            description:
+                "Voní ti dřevo? Máš chuť se naučit se pracovat se dřevem? Chceš vytvořit a zanechat za sebou něco hmatatelného? Ať už jsi pokročilý nebo naprostý začátečník, tak tenhle workshop je přímo stvořený pro tebe, vše o dřevě ti vysvětlí mistr Wooden.",
+            location: "Bude upřesněno",
+            tags: ["Workshop"],
+            sortOrder: 4,
+        },
+        {
+            startTime: "17:00",
+            title: "Workshop - Párová masáž",
+            description:
+                "Toužíš po odpočinku, po uvolnění bolavých svalů a zároveň se chceš něčemu přiučit? Nabízíme ti workshop, kde se pod taktovkou zkušené Merry naučíš, jak správně namasírovat, uvolnit svého drahého, milou či osobu tobě blízkou.",
+            location: "Harém",
+            tags: ["Workshop"],
+            sortOrder: 5,
+        },
+        {
+            startTime: "18:00",
+            title: "Arénka Kekel",
+            description:
+                'Jde o boj na blízko, který bývá velmi dynamický, někdy označovaný jako "bezhlavá bitka". Bojuje se s měkčenými zbraněmi, ale s důrazem na plný kontakt (full-kontakt).',
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 6,
+        },
+        {
+            startTime: "18:00",
+            title: "Diskuse o zbraních",
+            description:
+                "Chceš si popovídat o měkčených zbraních? O tom, jaké jsou na Helmáči povolené a proč? Máš pocit, že některým pravidlům vůbec nerozumíš? To jsi tady správně! My také ne! A proto si o tom můžeme společně erudovaně popovídat.",
+            location: "Bude upřesněno",
+            tags: [],
+            sortOrder: 7,
+        },
+        {
+            startTime: "21:00",
+            title: "Lucrezia Borgia",
+            description:
+                "Soubor se od roku 2000 zaobírá hudbou inspirovanou středověkými či renesančními motivy, moravsko-keltskou melodikou i balkánskými rytmy, k jejichž interpretaci používá repliky dobových nástrojů.",
+            location: "Pódium",
+            tags: ["Koncert"],
+            sortOrder: 8,
+        },
+    ];
+    for (const event of ctvrtekEvents) {
+        await prisma.programEvent.create({
+            data: { dayId: ctvrtek.id, ...event, isPublished: true },
+        });
+    }
+
+    // Day 3: Pátek
     const patek = await prisma.programDay.create({
         data: {
             yearId,
             date: new Date("2026-07-31"),
-            label: "Patek",
-            sortOrder: 0,
+            label: "Pátek",
+            sortOrder: 2,
         },
     });
-
     const patekEvents = [
         {
-            startTime: "12:01",
-            title: "Jidlo",
-            description: "Obed pro vsechny ucastniky. Na vyber bude tradicni ceska kuchyne.",
-            location: "Jidelna",
+            startTime: "10:00",
+            title: "Arénka 1v1",
+            description: "Souboj jednotlivců 1v1",
+            location: "Náměstí",
             tags: [],
             sortOrder: 0,
         },
         {
-            startTime: "13:00",
-            title: "Chill time",
-            description: "Volny cas pro odpoledni odpocinek, hry a seznamovani.",
-            location: "Kdekoliv",
-            tags: ["Chill"],
+            startTime: "11:00",
+            title: "Workshop - Tajemný Workshop",
+            description:
+                "Umíš něco, co ostatní ne? Chceš se ukázat? Máš chuť ostatním předat svoje dovednosti ať už jsou jakékoliv? Chceš svůj vlastní workshop? Napiš nám na helmac@email.cz s poznámkou “Workshopy”.",
+            location: "Bude upřesněno",
+            tags: ["Workshop"],
             sortOrder: 1,
         },
         {
-            startTime: "15:59",
-            title: "Drevarnicka arenka",
-            description: "Turnaj v drevarnicke arene. Prijdte si zasoutezit v soubojich jeden na jednoho.",
-            location: "Namesti",
+            startTime: "14:00",
+            title: "Arénka 1v1 - Finále",
+            description: "Finále souboje jednotlivců 1v1",
+            location: "Náměstí",
             tags: [],
             sortOrder: 2,
         },
+        {
+            startTime: "14:00",
+            title: "Arénka dýky - finále",
+            description: "Finále souboje na dýky",
+            location: "Náměstí",
+            tags: [],
+            sortOrder: 3,
+        },
+        {
+            startTime: "14:00",
+            title: "Workshop - Pojkování",
+            description:
+                "Chceš si to hodit? Myslíš si, že tři jsou moc? Máme pro tebe řešení. Přijď na žonglovací workshop!\nU poi se budeme věnovat především pendulums, kde si projdeme tuto techniku od základů postupně k složitějším trikům.",
+            location: "Louka",
+            tags: ["Workshop"],
+            sortOrder: 4,
+        },
+        {
+            startTime: "15:00",
+            title: "Domination",
+            description:
+                "Hráči jsou rozmístění u hradby ve dvou týmech. Bojují o vládu nad vlajkami.",
+            location: "Hradba",
+            tags: [],
+            sortOrder: 5,
+        },
+        {
+            startTime: "18:00",
+            title: "Arénka Brutálek",
+            description:
+                "Brutálek je turnaj založený na zápasech beze zbraní. Cílem je donutit soupeře se vzdát, nebo jej 3x dostat mimo prostor hřiště v daném časovém limitu a to za pomocí škrcení (případně páčení).",
+            location: "Hradba",
+            tags: [],
+            sortOrder: 6,
+        },
+        {
+            startTime: "20:00",
+            title: "Rituál",
+            description:
+                "Říká se, že každá cesta má svůj konec.\nA každé rozhodnutí svůj okamžik, kdy už jej nelze vzít zpět.\nSpojené síly elfů, lidí a trpaslíků kráčely.",
+            location: "Hradba",
+            tags: [],
+            sortOrder: 7,
+        },
+        {
+            startTime: "21:00",
+            title: "Aukce",
+            description: "Aukce kde je možné utratit své Helmíky.",
+            location: "Pódium",
+            tags: [],
+            sortOrder: 8,
+        },
     ];
-
     for (const event of patekEvents) {
         await prisma.programEvent.create({
             data: { dayId: patek.id, ...event, isPublished: true },
         });
     }
 
-    // Day 2: Sobota
+    // Day 4: Sobota
     const sobota = await prisma.programDay.create({
         data: {
             yearId,
             date: new Date("2026-08-01"),
             label: "Sobota",
-            sortOrder: 1,
+            sortOrder: 3,
         },
     });
-
     const sobotaEvents = [
         {
-            startTime: "00:00",
-            title: "Vecerka",
-            description: "Nocni posezeni v hospode. Pivo, medovina a dobre historky.",
-            location: "Hospoda",
+            startTime: "12:00",
+            title: "Schvalování zbrojí a kostýmů",
+            description: "Schvalování zbrojí a kostýmů",
+            location: "Hradba",
             tags: [],
             sortOrder: 0,
         },
         {
-            startTime: "09:30",
-            title: "Registrace, schvalovani zbrani",
-            description:
-                "Prezencni registrace ucastniku a kontrola bezpecnosti vsech zbrani organizatory.",
-            location: "Podium",
+            startTime: "13:00",
+            title: "Bitva",
+            description: "Bitva o Dol Guldur",
+            location: "Hradba",
             tags: [],
             sortOrder: 1,
         },
         {
-            startTime: "11:00",
-            title: "Brzky predbitevni obed",
-            description: "Lehky obed pred bitvou. Naplnte si zaludek, bude to dlouhe odpoledne!",
-            location: "Kdekoliv",
-            tags: [],
+            startTime: "21:00",
+            title: "Koncert Marta a Rasputin",
+            description:
+                "Tříčlenné hudební těleso z Trutnova hrající folkovou a lidovou muziku výhradně na akustické nástroje. Hudba je to velmi živá a energická, protože máme rádi tanec a zábavu.",
+            location: "Pódium",
+            tags: ["Koncert"],
             sortOrder: 2,
         },
-        {
-            startTime: "12:00",
-            title: "Odchod na bojiste",
-            description: "Spolecny presun na bojiste. Sraz u hlavni brany.",
-            location: "Hradba",
-            tags: [],
-            sortOrder: 3,
-        },
-        {
-            startTime: "12:59",
-            title: "Bitva",
-            description:
-                "Hlavni bitva rocniku! Temna strana vs. Svetla strana. Bojujte za svou armadu a prinesite ji slavne vitezstvi.",
-            location: "Hradba",
-            tags: [],
-            sortOrder: 4,
-            storyContent: {
-                paragraphs: [
-                    "Hlavni bitva Helmáč 2026 bude probíhat na legendární hradbe u Rozkoše.",
-                    "Utkaji se dve velke armady — Temna strana (Skreti, Harad, Nekromanti) proti Svetle strane (Elfove, Lide, Trpaslici).",
-                    "Bojuje se dle pravidel uvedenych v sekci Pravidla. Nezapomente si proverene zbrane a ochrannou vystroj!",
-                ],
-            },
-        },
-        {
-            startTime: "21:00",
-            title: "Koncert Valar",
-            description: "Vecerni koncert kapely Valar. Stredoveky folk a fantasy hudba pod hvezdami.",
-            location: "Podium",
-            tags: ["Koncert"],
-            sortOrder: 5,
-        },
     ];
-
     for (const event of sobotaEvents) {
         await prisma.programEvent.create({
             data: { dayId: sobota.id, ...event, isPublished: true },
         });
     }
 
-    console.log("Program: 2 days, 9 events");
+    // Day 5: Neděle
+    const nedele = await prisma.programDay.create({
+        data: {
+            yearId,
+            date: new Date("2026-08-02"),
+            label: "Neděle",
+            sortOrder: 4,
+        },
+    });
+    await prisma.programEvent.create({
+        data: {
+            dayId: nedele.id,
+            startTime: "10:00",
+            title: "Odjezd",
+            description: "Odjezd z Helmáče",
+            location: "Kdekoliv",
+            tags: [],
+            sortOrder: 0,
+            isPublished: true,
+        },
+    });
+
+    console.log("Program: 5 days, 28 events");
 }
 
 async function seedOffers(yearId: string) {
     const offers = [
         {
-            title: "Workshopy",
+            title: "Bitva",
             sortOrder: 0,
-            content: `<p>Na Helmáči si muzete vyzkouset ruzne workshopy vedene zkusenymi lektory.</p>
-<h3>Vyroba zbrani</h3>
-<p>Naucte se zaklady vyroby LARP zbrani z penovych materialu. Workshop je vhodny pro uplne zacatecniky i pokrocile, kteri si chteji zdokonalit techniku. K dispozici budou vsechny potrebne materialy a nastroje.</p>
-<h3>Tvorba kostymu</h3>
-<p>Chcete si vylepsit svuj kostym? Pod vedenim zkusenych kostymeru se naucite zakladni siti techniky, barveni latek a vyrobu doplnku. Privestte si svuj kostym a my vam poradime, jak ho posunout na dalsi uroven.</p>
-<h3>Zaklady historickeho semu</h3>
-<p>Workshop zamereny na bezpecne techniky boje s mecem, stitem a dalsi vyzbroji. Zbrane budou k dispozici na miste.</p>`,
+            content: `<h3><strong>Bitva</strong></h3><p>Bitva u nás není jen o tom, že si hradbu představujeme. Je to prostor, který vznikl tak, aby působil skutečně, a aby vás vtáhl.</p><p>Dominantou Helmáče je reálná hradba, která dává střetům jasný směr i napětí. Kolem ní se odehrávají útoky, obrany i momenty, kdy se rozhoduje o každém kroku. Do akce se zapojuje i dobývací věž, která boji přidává nový rozměr.</p><p>Celý prostor je navržený tak, aby v něm každý našel svoje. Najdete tu takzvanou „funky" louku — místo, kde se potkává nadsázka, kreativita a zábava.</p><p>A pak jsou tu stroje. Trebuchet, balisty i vrhací balvany dodávají celé scéně sílu a autenticitu.</p>`,
         },
         {
-            title: "Prednasky",
+            title: "Arénky",
             sortOrder: 1,
-            content: `<p>Behem akce se muzete zucastnit prednasek na ruzna temata spojena se svetem LARP a fantasy.</p>
-<h3>Historie a inspirace</h3>
-<p>Prezentace o historickych bitvach a udalostech, ktere nas inspirovaly pri tvorbe pribehove linie Helmáče. Dozvite se, jak skutecne stredoveke valecnictvi ovlivnilo nase pravidla a scenare.</p>
-<h3>LARP strategie a taktika</h3>
-<p>Jak efektivne vest armadu na LARP bitvisci? Zkuseni velitele se podeli o sve zkusenosti s organizaci formaci, komunikaci v boji a taktikami, ktere rozhoduji bitvy.</p>
-<h3>Svet Helmáče</h3>
-<p>Prednaska o lore a svete, ve kterem se Helmáč odehrava. Poznejte pribeh Temne a Svetle strany, jejich historii a motivace.</p>`,
+            content: `<h3><strong>Arénky</strong></h3><p>Na Helmáči si můžeš vyzkoušet různé typy soubojů — od klasických duelů až po skupinové turnaje. Ať už chceš poměřit síly, nebo si jen vyzkoušet něco nového, arénky jsou otevřené všem, kdo mají chuť bojovat.</p><h2>1 vs 1</h2><p>Klasický duel jeden na jednoho, který prověří tvoje bojové schopnosti i taktiku.</p><h2>Souboj na dýky</h2><p>Rychlá a kontaktní varianta duelu, kde se bojuje s umělými dýkami.</p><h2>Kekel</h2><p>Souboj v plné zbroji pro ty, kteří chtějí otestovat výdrž i sílu.</p><h2>Brutálek</h2><p>Zápasnický turnaj inspirovaný historickými styly boje.</p>`,
         },
         {
-            title: "Prvni pomoc",
+            title: "Rituál",
             sortOrder: 2,
-            content: `<p>Bezpecnost nasi ucastniku je pro nas prioritou.</p>
-<h3>Zdravotni stanoviste</h3>
-<p>Po celou dobu akce bude k dispozici zdravotni stanoviste s vyskolenym personalem. V pripade zraneni nebo zdravotnich potizi se obracejte na zdravotniky oznacene cervenym krizem.</p>
-<h3>Kde nas najdete</h3>
-<p>Zdravotni stan se nachazi vedle hlavniho stanu, hned u vstupu do tabora. Je oznacen velkym cervenym krizem a je pristupny 24 hodin denne.</p>
-<h3>Co delat v pripade zraneni</h3>
-<p>Pri jakmkoliv zraneni behem bitvy okamzite ukoncete boj a vyhledejte nejblizsiho organizatora nebo zdravotnika. Nezapomente — bezpecnost je vzdy na prvnim miste!</p>`,
+            content: `<h3><strong>Rituál</strong></h3><p>Dva večery v průběhu akce nepatří jen programu. Jsou vyhrazeny představení a rituálu, které otevřou bránu do světa, ve kterém se po zbytek času budeme pohybovat. Nejde jen o to dívat se. Jde o to vstoupit.</p><p>Každé z těchto vystoupení je pečlivě vystavěné jako začátek kapitoly se svou atmosférou, napětím i příběhem. Světla, hudba, postavy i prostor se propojí v jeden celek, který vás vtáhne dřív, než si to stihnete uvědomit.</p><p>Tahle představení nejsou jen úchvatná na pohled — jsou to vstupní brány. A jakmile jimi projdete, příběh už vás nepustí.</p>`,
+        },
+        {
+            title: "Workshopy",
+            sortOrder: 3,
+            content: `<p>Jednou z novinek ročníku 2026 jsou Helmáčovské workshopy. Pro bojující i nebojující jsme si připravili nabídku rozličných aktivit k vyzkoušení či osvojení. Zapojit se budete moci do taneční zábavy v hobitím (až irském) stylu, zdokonalit své zásahy pod vedením organizátorů turnajů, nebo tvořit při malování henou či v dřevěné dílně.</p><p>Na workshopy bude možné se registrovat. Pro pohodlí mistrů svého řemesla i všech účastníků budou nastavené početní stropy. Registrace bude probíhat přes registrační systém.</p>`,
+        },
+        {
+            title: "Kapely",
+            sortOrder: 4,
+            content: `<h3><strong>Lucrezia Borgia</strong></h3><p>Kapela <strong>Lucrezia Borgia</strong> se od roku 2000 zaobírá hudbou inspirovanou středověkými či renesančními motivy, moravsko-keltskou melodikou i balkánskými rytmy, k jejichž interpretaci používá repliky dobových nástrojů. Písně jsou v češtině, ale i v němčině, latině a španělštině.</p><h3><strong>Marta a Rasputin</strong></h3><p>Letošní čerstvou novinkou sobotního koncertování bude kapela Marta a Rasputin. Tříčlenné hudební těleso z Trutnova hrající folkovou a lidovou muziku výhradně na akustické nástroje.</p>`,
+        },
+        {
+            title: "Harém",
+            sortOrder: 5,
+            content: `<h3><strong>Harém — Helmáčovská oáza klidu</strong></h3><p>Harém je místem odpočinku, pohodlí a bezpečí, kde můžeš na chvíli odložit zbroj, starosti i únavu z bitev. V tlumeném světle, mezi polštáři, krásnými bytostmi a vůní bylin zde najdeš prostor pro zklidnění, regeneraci i příjemnou společnost.</p><p>Harém je určen účastníkům ve věku <strong>16+</strong> a funguje výhradně jako prostor klidu a komfortu.</p><p><strong>Nabídka obsahuje:</strong></p><ul><li><p>Masáže</p></li><li><p>Malování henou</p></li><li><p>Kvalitní čaj/káva</p></li><li><p>Šachy, karty</p></li><li><p>Dýmky od profesionálů</p></li></ul>`,
+        },
+        {
+            title: "Podcast talk",
+            sortOrder: 6,
+            content: `<p><strong>Podcast talk</strong></p><p>Svět Středozemě na Helmáči ožívá každý rok a letos k němu přibude i hlas, který ho umí skvěle vyprávět. Podcast <strong>Tam a zase zpátky</strong>, známý mezi fanoušky Tolkiena svými hlubšími rozbory a nadšeným povídáním, dorazí přímo mezi nás!</p><p>Na Helmáči se můžete těšit na jejich povídání o <strong>bitvě v Dol Gulduru</strong>, kde se ponoří do kontextu, souvislostí i zajímavostí, které běžně nezazní.</p>`,
+        },
+        {
+            title: "Stánky",
+            sortOrder: 7,
+            content: `<p>Seznam letošních stánkařů dáváme ještě dohromady, brzy vás budeme informovat.</p>`,
+        },
+        {
+            title: "Elrondův dům - program pro děti",
+            sortOrder: 8,
+            content: `<h3><strong>Elrondův dům - program pro děti</strong></h3><p><em>Zatímco Elfí muži a ženy bojují s temnými silami na jihu u pevnosti Dol Guldur, ti, kteří ještě do boje nemohou, se rozhodli přesunout dále od nepokojů směrem na sever.</em></p><p>Jsme Elfové ze skupinky s názvem <strong>Avari</strong> a už několik let se na Helmáči staráme o ty nejmladší. Letos jsme se rozhodli své dveře otevřít i pro děti účastníků.</p><p>Aktuálně se zvládneme postarat až o <strong>12 dětí</strong> ve věku <strong>3 až 12 let</strong>. Otevřeno máme od středy do soboty.</p>`,
+        },
+        {
+            title: "Vodní dýmky",
+            sortOrder: 9,
+            content: `<h3><strong>Vodní dýmky</strong></h3><p>Helmáč není jen o bitvě, turnaji anebo ruchu na louce. Je to místo, kde se setkávají lidé, přátelé, skupiny lidí. K něčemu takovému by mohla přijít vhod vodní dýmka.</p><p>Pozvali jsme dva šikovné mládence, kteří spolupracují s Cloud Brno (bar s vodními dýmkami). Můžete se těšit na pečlivě připravené dýmky, zajímavé kombinace chutí i servis.</p><ul><li><p>Dýmka tmavá 450,-</p></li><li><p>Dýmka šedá 450,-</p></li><li><p>Vaše dýmka, náš tabák 350,-</p></li><li><p>Váš tabák, naše dýmka 300,-</p></li></ul>`,
         },
     ];
 
     for (const offer of offers) {
         await prisma.offer.create({ data: { yearId, ...offer } });
     }
-    console.log("Offers: 3 sections");
+    console.log("Offers: 10 sections");
 }
 
 async function seedInfoSections(yearId: string) {
     const sections = [
         {
-            title: "Organizační",
+            title: "Organizační věci",
             sortOrder: 0,
-            content: `<h3>Kdy?</h3>
-<p>Helmáč 2026 se kona od 29. cervence do 2. srpna 2026. Akce nema pevne stanoveny zacatek ani konec — prijedte, kdy vam to vyhovuje. Zavisí jen na vás, kolik si toho z cele akce budete chtit uzit. 🙂</p>
-<h3>Kde?</h3>
-<p>Misto konani je velice rozkosne krasou sve krajiny. Hradba je postavena na louce blizko vesnicky nesouci nazev ROZKOS. Je to na hranicich Znojemského a Trebicského okresu.</p>
-<p><strong>POZOR letos se stanuje o louku vedle!</strong></p>
-<h3>Jak se tam dostat?</h3>
-<p>GPS souradnice: 49.0847N, 15.9456E. Z Brna smerem na Znojmo, odbocka na Rozkos. Sledujte znaceni „HELMÁČ" od hlavni silnice.</p>`,
-        },
-        {
-            title: "O vybavení účastníka",
-            sortOrder: 1,
-            content: `<h3>Povinne vybaveni</h3>
-<p>Kazdy ucastnik musi mit vlastni spacak, karimatku a stan (nebo se domluvit na sdileni). Dale je nutne mit pitnou vodu a osobni hygienu.</p>
-<h3>Zbrane a vystroj</h3>
-<p>Vsechny zbrane musi projit schvalovacim procesem organizatoru. Detailni pravidla pro zbrane naleznete v sekci Pravidla. Doporucujeme lehci vyzbroj — v cervenci byva horko!</p>
-<h3>Co se hodi</h3>
-<p>Svitilna, opalovaci krem, repelent, pohodlna obuv na presun po loukach, teplé obleceni na vecer, destniky nebo pláštěnky pro pripad deste.</p>`,
+            content: `<h3><strong>Vítejte,</strong></h3><p><strong>u informačního souhrnu pro nadcházející ročník bitvy Helmáč.</strong></p><h2><strong>1. Termín a časový harmonogram</strong></h2><ol><li><p><strong>Oficiální délka akce:</strong> Středa 29. 7. 2026 – neděle 2. 8. 2026.</p></li><li><p><strong>Hlavní program:</strong> Středa až pátek jsou věnovány turnajům a doprovodnému programu.</p></li><li><p><strong>Koncerty</strong>: Budou ve čtvrtek a sobotu večer.</p></li><li><p><strong>Hlavní bitva</strong> proběhne v <strong>sobotu odpoledne</strong>.</p></li></ol><h2><strong>2. Doprava a lokalita</strong></h2><ul><li><p><strong>Místo:</strong> Louka u vesnice <strong>Rozkoš</strong> (pomezí Znojemska a Třebíčska).</p></li><li><p><strong>Navigace:</strong> Cesta z vesnice bude značena šipkami.</p></li><li><p><strong>Parkování:</strong> Vyhrazená louka u Pulkovského mlýna.</p></li></ul><h2><strong>3. Podmínky účasti</strong></h2><ul><li><p><strong>Věk:</strong> Minimální věk pro účast je <strong>13 let</strong>. Účastníci ve věku 13–15 let musí mít doprovod osoby starší 18 let.</p></li></ul>`,
         },
         {
             title: "Kontakt",
-            sortOrder: 2,
-            content: `<h3>Organizacni tym</h3>
-<p>Email: <a href="mailto:info@helmac.cz">info@helmac.cz</a></p>
-<p>Facebook: <a href="https://www.facebook.com/helmac">facebook.com/helmac</a></p>
-<p>Instagram: <a href="https://www.instagram.com/helmac_larp">@helmac_larp</a></p>
-<h3>V pripade nouze na akci</h3>
-<p>Obracejte se na kohokoliv z organizacniho tymu — budou oznaceni specialnim trikem s logem HELMÁČ a napisem ORG.</p>`,
+            sortOrder: 1,
+            content: `<p>Oficiální email akce – <a href="mailto:helmac@email.cz">helmac@email.cz</a></p><p>Koordinátor akce – <a href="mailto:helmac@email.cz">helmac@email.cz</a></p><p>Registrace – <a href="mailto:helmac.registrace@email.cz">helmac.registrace@email.cz</a></p><p>Dobrovolníci – <a href="mailto:helmac.otrokar@email.cz">helmac.otrokar@email.cz</a></p>`,
         },
         {
-            title: "Donatori",
+            title: "Podpoř Helmáč",
+            sortOrder: 2,
+            content: `<h3><strong>Podpoř Helmáč</strong></h3><p>Helmáč už dávno není jen bitva, pomalu se rozrůstá do větších měřítek. Stal se z něho festival, který se snaží mít nabitý program. Připravili jsme pro vás <strong>donorské</strong> (podporovatelské) a <strong>zážitkové balíčky</strong>, díky kterým se můžete stát součástí Helmáče o něco víc.</p><p><strong>Donorské balíčky</strong> jsou pro ty, kdo chtějí Helmáči pomoct a zároveň si odnést něco navíc.</p><p><strong>Zážitkové balíčky</strong> pak otevírají dveře tam, kam se běžně nedostanete.</p>`,
+        },
+        {
+            title: "Bojující strany",
             sortOrder: 3,
-            content: `<h3>Dekujeme nasim podporovatelum!</h3>
-<p>Helmáč by se neobešel bez podpory skvělých lidi a organizaci, kteri nám pomahaji akci kazdy rok uskutecnit.</p>
-<p>Chcete se stat donatorem nebo partnerem akce? Kontaktujte nas na <a href="mailto:info@helmac.cz">info@helmac.cz</a>.</p>`,
+            content: `<h2><strong>Světlá strana</strong></h2><h3><strong>Gondor</strong></h3><p>Bílý strom stále vlaje na praporech Gondoru a jeho stráž bdí nad západními zeměmi lidí. Na výzvu proti stínu v Dol Gulduru odpověděli nejen Gondorští, ale i jejich spojenci.</p><h3><strong>Trpaslíci</strong></h3><p>Trpasličí říše utrpěly mnohé rány. Staré dluhy budou splaceny ocelí a ohněm.</p><h3><strong>Elfové</strong></h3><p>Výpravu proti Dol Gulduru vedou elfové z Lothlórienu pod vedením Galadriel.</p><h2><strong>Temná strana</strong></h2><h3><strong>Skřeti</strong></h3><p>V hlubinách Mlžných hor přežívají skřeti. Nekromant z Dol Gulduru začíná svolávat své služebníky.</p><h3><strong>Nemrtví</strong></h3><p>Z hrobek a stínů vystupují ti, kteří měli dávno spočinout.</p><h3><strong>Harad</strong></h3><p>Z dalekého jihu přicházejí válečníci Haradu, vedení slibem moci a odměny.</p>`,
+        },
+        {
+            title: "Zdravotníci",
+            sortOrder: 4,
+            content: `<h3><strong>Zdravotní pomoc</strong></h3><p>Na festivalu bude po celou dobu zajištěna přítomnost zdravotníků, kteří jsou připraveni pomoci v případě zdravotních obtíží. Obrátit se na ně můžete při úrazech, kolapsech, dehydrataci, alergických reakcích nebo jiných náhlých potížích.</p><p>Doporučujeme vzít si s sebou osobní lékárničku s nejzákladnějšími věcmi – rukavice, náplast, dezinfekce na kůži, obvaz, elastické obinadlo, pinzeta, gázové čtverce.</p>`,
+        },
+        {
+            title: "Psychická pomoc - krizový intervent",
+            sortOrder: 5,
+            content: `<h3><strong>První psychická pomoc</strong></h3><p>Helmáč je plný hudby, energie, lidí a silných zážitků. Někdy ale může být všeho moc. Právě proto je na festivalu k dispozici psychická první pomoc.</p><p>Tým tvoří proškolení dobrovolníci (interventi), kteří vědí, jak naslouchat bez hodnocení a pomoci ti najít zpět pocit klidu a bezpečí. Vše je diskrétní a respektující.</p><p>Neboj se přijít či napsat zprávu. Pamatuj si, že k tomu přijít nemusíš mít „vážný problém". Stačí, že se necítíš dobře.</p>`,
+        },
+        {
+            title: "Poděkování",
+            sortOrder: 6,
+            content: `<p>Během pořádání všech ročníků Helmáče jsme se neobešli bez pomoci všeho druhu. Tímto bychom chtěli poděkovat těm, kteří poskytli součinnost, zboží, služby a nebo jinou hodnotu. Jsou to:</p><ul><li><p>Všichni organizátoři, spoluorganizátoři a účastníci</p></li><li><p>Zemědělské družstvo Biskupice</p></li><li><p>obec Radkovice</p></li><li><p>město Jevišovice</p></li><li><p>Turistický oddíl mládeže „Čtverka"</p></li><li><p>Moravian LARP, z.s.</p></li></ul>`,
         },
     ];
 
@@ -744,7 +1129,7 @@ async function seedInfoSections(yearId: string) {
             data: { yearId, ...section },
         });
     }
-    console.log("Info sections: 4");
+    console.log("Info sections: 7");
 }
 
 async function seedRules(yearId: string) {
@@ -753,114 +1138,94 @@ async function seedRules(yearId: string) {
             title: "Bitva",
             sortOrder: 0,
             showToc: true,
-            content: `<h3>1) Zakladni pravidla</h3>
-<p>Organizator ma vzdycky hlavni slovo a ma vzdy pravdu. Nehádejte se s nim! Hraje a bojuje se fair-play.</p>
-<p>Hráči jsou povinni přečíst si pravidla a řídit se jimi. Za jejich porušování můžete být z bitvy vyřazeni.</p>
-<p>Je zakázáno před bitvou a v průběhu bitvy požívat jakékoliv omamné látky.</p>
-
-<h3>2) Zbrane</h3>
-<p>Každá zbraň musí projít schvalováním a musí být od ORGů označena jako schválená.</p>
-<p><strong>Jednoruční</strong> — do 90 cm, lze kombinovat se štítem nebo druhou jednoruční zbraní.</p>
-<p><strong>Jedenapůlruční</strong> — 90-110 cm, nelze kombinovat s ničím.</p>
-<p><strong>Obouruční</strong> — 110-130 cm, musí být držena oběma rukama.</p>
-<p><strong>Štít standardní</strong> — vejde se do obdélníku 60×50 cm.</p>
-
-<h3>3) Boj</h3>
-<p><strong>Útočit na hlavu, krk a rozkrok je ZAKÁZÁNO!</strong></p>
-<p>Zásahy musí být vedeny se zřetelným nápřahem a musí se před dopadem tlumit.</p>
-<p>Zásahy uznává vždy zasažený!</p>
-<p>Platný zásah od zbraně na blízko ubírá <strong>-1 život</strong>.</p>
-<p>Platný zásah střelou ze střelné zbraně ubírá <strong>-2 životy</strong>.</p>
-
-<h3>4) Životy</h3>
-<p>Základní počet jsou <strong>2 životy</strong>.</p>
-<p>Za helmu: <strong>+1 život</strong>.</p>
-<p>Za zbroj: <strong>až +3 životy</strong> (prošívaná +1, kroužková +2, plátová +3).</p>
-<p>Maximální dosažitelný životový strop je <strong>6 životů</strong>.</p>
-
-<h3>5) Smrt a oživování</h3>
-<p>Jakmile máte 0 životů, jste mrtví. Jděte jako duch (s rukou na hlavě) ke standartě a oživte se.</p>`,
+            content: `<h3>PRAVIDLA PRO ROČNÍK 2026</h3><p><em><u>„vyhrazujeme si právo v případě potřeby následující pravidla jakkoliv a kdykoliv poupravit pro vyvážení hry"</u></em></p><p>-> 1,0) ORGanizátor má vždycky hlavní slovo a má vždy pravdu. Nehádejte se s ním!</p><p>-> 1,1) Hraje a bojuje se fair-play.</p><p>-> 1,2) Hráči jsou povinni přečíst si pravidla a řídit se jimi.</p><p>-> 1,3) Je zakázáno před bitvou a v průběhu bitvy požívat jakékoliv omamné látky.</p><p>-> 2,0) <em><u>NESENÁ VÝZBROJ A VÝSTROJ</u></em> – JE ZAKÁZÁNO NÉST S SEBOU DO BITVY NOŽE A DALŠÍ OSTRÉ PŘEDMĚTY.</p><p>-> 2,1) <em><u>BEZPEČNOST a SCHVALOVÁNÍ ZBRANÍ</u></em> -> každá zbraň musí projít schvalováním a musí být od ORGů označena jako schválená.</p>`,
         },
         {
-            title: "Dřevárnická arénka",
+            title: "1 v 1",
             sortOrder: 1,
-            content: `<h3>Pravidla drevarnicke arenky</h3>
-<p>Drevarnicka arenka je turnaj v soubojich jeden na jednoho s drevenymi zbranemi.</p>
-
-<h3>Format</h3>
-<p>Souboje probiha formou eliminacniho turnaje. Kazdy zapas trva maximalne 3 minuty. Vitezi hrac s vice platnych zasahu.</p>
-
-<h3>Zbrane</h3>
-<p>Pouzivaji se pouze standardni jednoruci drevarnicke zbrane do 90 cm. Stity nejsou povoleny.</p>
-
-<h3>Zasahy</h3>
-<p>Plati stejna zasahova pravidla jako ve velke bitve. Kazdy platny zasah = 1 bod. Vyhra na 3 body nebo vice bodu po uplynuti casu.</p>`,
+            content: `<h2>Souboj 1v1</h2><p>Typ: Souboj jednotlivců, 1v1</p><p>Cíl: Třikrát zasáhnout soupeře.</p><p>Místo: Kruhová aréna</p><p>Maximální počet účastníků: 64</p><p>Potřebné vybavení:</p><ul><li><p>Zbraň (viz bod 3 pravidel)</p></li></ul><p>Pravidla:</p><ol><li><p>Soubojový systém v aréně je stejný jako v pravidlech pro bitvu.</p></li><li><p>Po platném uděleném zásahu od sebe soupeři odstupují.</p></li><li><p>Na začátku souboje má účastník přesně 3 životy.</p></li></ol>`,
         },
         {
             title: "Souboj na dýky",
             sortOrder: 2,
-            content: `<h3>Pravidla souboje na dyky</h3>
-<p>Specialni disciplina pro odvazne — souboj na kratke zbrane (dyky) do 40 cm.</p>
-
-<h3>Bezpecnost</h3>
-<p>Dyky musi byt rádně vyměkčené a schválené organizátory. Bodné útoky jsou zakázány — pouze sečné údery.</p>
-
-<h3>Format</h3>
-<p>Souboj na 1 zivot. Prvni platny zasah rozhoduje. Zasahy do hlavy, krku a rozkroku jsou zakazany.</p>
-
-<h3>Registrace</h3>
-<p>Do turnaje se muzete registrovat na miste u organizatoru arenky. Pocet mist je omezen.</p>`,
+            content: `<h2>Souboj na dýky</h2><p>Typ: Souboj jednotlivců, 1v1</p><p>Cíl: Třikrát zasáhnout soupeře.</p><p>Místo: Kruhová aréna</p><p>Maximální počet účastníků: 32</p><p>Potřebné vybavení:</p><ul><li><p>Dýka (účastníkům budou zapůjčeny)</p></li></ul><p>Pravidla:</p><ol><li><p>Soubojový systém v aréně je stejný jako v pravidlech pro bitvu.</p></li><li><p>Je povoleno používat pouze dýky dodané organizátory.</p></li><li><p>Na začátku souboje má účastník přesně 3 životy.</p></li></ol>`,
+        },
+        {
+            title: "Kekel",
+            sortOrder: 3,
+            content: `<h2>Kekel</h2><p>Typ: Souboj jednotlivců, 1v1</p><p>Souboj v plné zbroji. Na rozdíl od jiných arének zde nerozhoduje jeden zásah — počítá se jejich množství.</p><p>Účastníci se snaží zasáhnout soupeře co nejvíckrát v daném čase.</p>`,
         },
         {
             title: "Brutálek",
-            sortOrder: 3,
-            content: `<h3>Pravidla Brutalku</h3>
-<p>Brutalek je specialni bojovy format zaméreny na skupinovy boj v uzavrenem prostoru.</p>
-
-<h3>Jak to funguje</h3>
-<p>Dve skupiny (5-10 hracu) se utkaji v male arene. Boj probiha na eliminaci — kdo padne, odchazi z areny. Posledni stojici tym vitezi.</p>
-
-<h3>Pravidla</h3>
-<p>Kazdy hrac ma 2 zivoty (bez bonusu za zbroj). Povoleny jsou pouze jednoruci zbrane. Stity nejsou povoleny. Plati standardni zasahova pravidla.</p>
-
-<h3>Specialni pravidla</h3>
-<p>V Brutalku plati pravidlo „posledniho stojiciho" — pokud zustane posledni hrac z tymu, ziska navic +1 zivot jako bonus za odvahu.</p>`,
+            sortOrder: 4,
+            content: `<h2>Brutálek</h2><p>Maximální počet účastníků: muži 32, ženy 16</p><p>Typ: Souboj jednotlivců, 1v1.</p><p>Cíl: Dát soupeři K.O. v časovém limitu.</p><p>Místo: Písková aréna o velikosti cca 2 x 2 metrů.</p><p>Brutálek je turnaj založený na zápasech beze zbraní. Cílem je donutit soupeře se vzdát, nebo jej 3x dostat mimo prostor hřiště.</p><p>Pravidla:</p><ol><li><p>Jednotlivci jsou rozděleni do skupin podle váhy a pohlaví.</p></li><li><p>Boj trvá jedno kolo = 3 minuty</p></li><li><p>Škrcení je povoleno</p></li></ol>`,
+        },
+        {
+            title: "Lukostřelba",
+            sortOrder: 5,
+            content: `<h2>Lukostřelba</h2><p>Maximální počet účastníků: 64</p><p>Typ: Souboj jednotlivců</p><p>Cíl: Trefit co nejvíce terčů v co nejkratším čase</p><p>Místo: Střelecká dráha</p><p>Hráči postupně prochází střeleckou dráhou a snaží se trefit co nejvíce terčů. Na každý terč mají právě jeden pokus.</p><p>Potřebné vybavení:</p><ul><li><p>Luk a šípy</p></li></ul>`,
+        },
+        {
+            title: "Domination",
+            sortOrder: 6,
+            content: `<h2>Domination</h2><p>Typ: Souboj týmů</p><p>Cíl: Získat co nejvíce bodů</p><p>Místo: Hradba</p><p>Maximální počet účastníků: neomezeno</p><p>Hráči jsou rozmístění u hradby ve dvou týmech. Bojují o vládu nad vlajkami.</p><p>Pravidla:</p><ol><li><p>Jakýkoliv platný zásah ubírá přesně 1 život (bez ohledu na zbroj).</p></li><li><p>Každý bojující jednotlivec má přesně 2 životy.</p></li><li><p>Cílem hry je přetáčet vlajky na vlajky své barvy.</p></li></ol>`,
+        },
+        {
+            title: "Jugger",
+            sortOrder: 7,
+            content: `<h2>Jugger</h2><p>Typ: Souboj týmů o minimálně 5 členech a maximálně 10 členech.</p><p>Cíl: Získat více juggů (bodů) za herní dobu.</p><p>Místo: Hřiště o velikosti cca 20 x 40 metrů.</p><p>Vybavení pro tuto disciplínu máme k dispozici a bude možné si jej zapůjčit přímo na místě.</p>`,
+        },
+        {
+            title: "All for one - one for all",
+            sortOrder: 8,
+            content: `<h2>All for one - one for all</h2><p>Typ: Souboj 1v1 v rámci skupin o 3 lidech (případně jeden náhradník)</p><p>Cíl: Získat 26 bodů (za zásah je jeden bod).</p><p>Místo: Aréna cca 5 metrů v průměru.</p><p>Maximální počet skupin: 16</p><p>Skupině je vybraná druhá skupina. Dále se bojuje 1v1 každý s každým. Boj probíhá 90 vteřin nebo do limitu zásahů.</p>`,
         },
     ];
 
     for (const rule of rules) {
         await prisma.rule.create({ data: { yearId, ...rule } });
     }
-    console.log("Rules: 4 sections");
+    console.log("Rules: 9 sections");
 }
 
 async function seedNews(yearId: string, authorId: string) {
     const articles = [
         {
-            slug: "web-funguje",
-            title: "Web funguje",
-            excerpt: "Tohle se opravdu deje",
-            content: "<p>Tada</p>",
+            slug: "podcast-talk",
+            title: "Podcast talk",
+            excerpt: "Na Helmáč dorazí tvůrci podcastu Tam a zase zpátky",
+            content:
+                "<p><strong>PODCAST TALK</strong></p><p>Na Helmáč dorazí tvůrci podcastu <strong>Tam a zase zpátky</strong>, kteří vás vezmou hlouběji do světa Středozemě. Těšit se můžete na povídání o bitvě v Dol Guldur i prostor pro vlastní otázky a diskusi.</p>",
             isPublished: true,
-            publishedAt: new Date("2026-02-27"),
+            publishedAt: new Date("2026-05-02"),
         },
         {
-            slug: "datum-helmace",
-            title: "Datum Helmáče",
-            excerpt: "Helmáč letos bude a bude od 29.7 do 1.8",
+            slug: "elronduv-dum-program-pro-deti",
+            title: "Elrondův dům - program pro děti",
+            excerpt: "Elrondův dům otevírá své brány dětem účastníků",
             content:
-                "<p>Letos se Helmáč kona od <strong>29. cervence do 2. srpna 2026</strong>. Tak si to zapiste do kalendaru a zacnete se pripravovat!</p><p>Taboreni bude jako obvykle na louce u Rozkoše. Letos se stanuje o louku vedle, takze bude vice prostoru.</p>",
+                "<p><strong>ELRONDŮV DŮM – PROGRAM PRO DĚTI</strong></p><p>Elrondův dům otevírá své brány dětem účastníků! Elfové se postarají o vaše ratolesti hravou a tematickou formou, zatímco si vy užijete Helmáč naplno.</p><p>Čeká je pestrý program inspirovaný Pánem prstenů, spousta her, tvoření i dobrodružství pod vedením zkušených elfů. Kapacita je omezená.</p>",
             isPublished: true,
-            publishedAt: new Date("2026-03-11"),
+            publishedAt: new Date("2026-05-02"),
         },
         {
-            slug: "spoustime-registraci",
-            title: "Spoustime registraci",
-            excerpt: "Je to tak",
+            slug: "workshopy",
+            title: "Workshopy",
+            excerpt: "Na Helmáči 2026 poprvé rozjíždíme workshopy",
             content:
-                "<p>Registrace na Helmáč 2026 je oficialně otevrena! 🎉</p><p>Neváhejte a zaregistrujte se co nejdrive — vcasná registrace znamena nizsi cenu. Detaily o ceniku najdete primo v registracnim formulari.</p><p>Tesime se na vas!</p>",
+                "<p><strong>WORKSHOPY</strong></p><p>Na Helmáči 2026 poprvé rozjíždíme workshopy – a je z čeho vybírat. Čekají vás tance, bojové dovednosti, kejklířství, tvoření i odpočinek, ať už jste akční, nebo spíš kreativní duše.</p><p>Chcete se něco naučit, vyzkoušet nebo rovnou ukázat, co ve vás je? Mrkněte na nabídku a zarezervujte si své místo včas.</p>",
             isPublished: true,
-            publishedAt: new Date("2026-03-11"),
+            publishedAt: new Date("2026-05-02"),
+        },
+        {
+            slug: "podpor-helmac",
+            title: "Podpoř Helmáč",
+            excerpt:
+                "Helmáč stojí hlavně na lidech a teď můžete být jeho součástí ještě o něco víc",
+            content:
+                "<p>Helmáč stojí hlavně na lidech a teď můžete být jeho součástí ještě o něco víc i Vy. Připravili jsme pro vás podporovatelské a zážitkové balíčky, díky kterým ho můžete podpořit a zároveň si odnést nebo zažít něco navíc.</p><p>Vyberte si svou cestu – přiložte kámen do hradby, nebo si otevřete dveře k unikátním zážitkům.</p>",
+            isPublished: true,
+            publishedAt: new Date("2026-05-02"),
         },
     ];
 
@@ -869,47 +1234,50 @@ async function seedNews(yearId: string, authorId: string) {
             data: { yearId, authorId, ...article },
         });
     }
-    console.log("News: 3 articles");
+    console.log("News: 4 articles");
 }
 
-async function seedAlbums(
-    yearId2026: string,
-    yearId2025: string
-) {
+async function seedAlbums(yearId: string) {
     const albums = [
         {
-            yearId: yearId2026,
-            title: "Kalendar",
-            slug: "kalendar",
-            description: "Lokace 2024",
-            externalUrl: "https://photos.google.com",
+            yearId,
+            title: "Helmáč 2025 - Fraglin Fraglinovič",
+            slug: "helmac-2025-fraglin",
+            description: "Fotogalerie od Fraglina Fraglinoviče",
+            externalUrl: "https://www.rajce.idnes.cz/fraglin/album/helmac-2025",
+            coverImage:
+                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1777836163116-8rj5js.png",
             isPublished: true,
             sortOrder: 0,
         },
         {
-            yearId: yearId2026,
-            title: "Helmáč 2025 fotky",
-            slug: "helmac-2025-fotky",
-            description: "Fotogalerie z minuleho rocniku",
-            externalUrl: "https://photos.google.com",
+            yearId,
+            title: "Helmáč 2025 - Jakub Drachmáč Řezníček",
+            slug: "helmac-2025-jakub",
+            description: "Fotogalerie od Jakuba Drachmáče Řezníčka",
+            externalUrl: "https://photos.app.goo.gl/hxhESsTYCZhLM25U8",
+            coverImage:
+                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1777835692484-dv4s3s.jpg",
             isPublished: true,
             sortOrder: 1,
         },
         {
-            yearId: yearId2025,
-            title: "Helmáč 2025",
-            slug: "helmac-2025",
-            description: "Oficialni fotogalerie rocniku 2025",
-            externalUrl: "https://photos.google.com",
+            yearId,
+            title: "Helmáč 2025 - Libor Ječný",
+            slug: "helmac-2025-libor",
+            description: "Fotogalerie od Libora Ječného",
+            externalUrl: "https://eu.zonerama.com/Bitvy/Album/13659000",
+            coverImage:
+                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1777836068372-cu85su.jpg",
             isPublished: true,
-            sortOrder: 0,
+            sortOrder: 2,
         },
     ];
 
     for (const album of albums) {
         await prisma.album.create({ data: album });
     }
-    console.log("Albums: 3 (2 for 2026, 1 for 2025)");
+    console.log("Albums: 3");
 }
 
 async function seedRegistrationForm(yearId: string) {
@@ -922,302 +1290,34 @@ async function seedRegistrationForm(yearId: string) {
     console.log("Registration form created");
 }
 
-async function seedPublicUsersAndSubmissions(yearId: string) {
-    const form = await prisma.registrationForm.findUnique({
-        where: { yearId },
-    });
-    if (!form) {
-        console.log("Skipping submissions — no registration form");
-        return;
-    }
-
-    const passwordHash = await argon2.hash("test123456");
-
-    const users = [
-        {
-            email: "test1@helmac.cz",
-            passwordHash,
-            emailVerified: true,
-            emailVerifiedAt: new Date("2026-03-01"),
-            gdprConsentAt: new Date("2026-03-01"),
-        },
-        {
-            email: "test2@helmac.cz",
-            passwordHash,
-            emailVerified: true,
-            emailVerifiedAt: new Date("2026-03-05"),
-            gdprConsentAt: new Date("2026-03-05"),
-        },
-        {
-            email: "test3@helmac.cz",
-            passwordHash,
-            emailVerified: true,
-            emailVerifiedAt: new Date("2026-03-10"),
-            gdprConsentAt: new Date("2026-03-10"),
-        },
-    ];
-
-    const publicUsers = [];
-    for (const u of users) {
-        const pu = await prisma.publicUser.create({ data: u });
-        publicUsers.push(pu);
-    }
-    console.log("Public users: 3");
-
-    const submissions = [
-        {
-            yearId,
-            formId: form.id,
-            publicUserId: publicUsers[0].id,
-            status: "CONFIRMED" as const,
-            variableSymbol: "1234567890",
-            totalPrice: 1200,
-            isPaid: true,
-            paidAt: new Date("2026-03-15"),
-            gdprConsentAt: new Date("2026-03-10"),
-            createdAt: new Date("2026-03-10"),
-            data: {
-                "Jmeno a Prijmeni": "Jan Novak",
-                "Skupina": "Druzina mecu",
-                "Email": "test1@helmac.cz",
-                "Datum narozeni": "1995-06-15",
-                "Clen Moravian LARP, o.s.": "Ne",
-                "Typ ucasti": "Bojujici",
-                "Za koho bojujes": "Svetla",
-                "Za jakou armadu bojujes": "Elf",
-                "Prijedes autem": "Ne",
-                "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr":
-                    true,
-                "Bojuji nebo taky na": "Bojuji",
-                "Jak moc bohaty se citis?": "Rad pomuzu",
-            },
-            pricingSummary: {
-                tiers: [
-                    { tierDate: "2026-04-01", totalPrice: 1200 },
-                    { tierDate: "2026-04-08", totalPrice: 1200 },
-                    { tierDate: "2026-04-17", totalPrice: 1200 },
-                    { tierDate: "2026-04-18", totalPrice: 1200 },
-                    { tierDate: "2026-05-04", totalPrice: 1450 },
-                    { tierDate: "2026-07-01", totalPrice: 1700 },
-                    { tierDate: null, totalPrice: 1933 },
-                ],
-                applicableTierIndex: 0,
-                totalPrice: 1200,
-            },
-        },
-        {
-            yearId,
-            formId: form.id,
-            publicUserId: publicUsers[1].id,
-            status: "CONFIRMED" as const,
-            variableSymbol: "2345678901",
-            totalPrice: 200,
-            isPaid: true,
-            paidAt: new Date("2026-03-18"),
-            gdprConsentAt: new Date("2026-03-12"),
-            createdAt: new Date("2026-03-12"),
-            data: {
-                "Jmeno a Prijmeni": "Petra Svobodova",
-                "Skupina": "Lesni elfove",
-                "Email": "test2@helmac.cz",
-                "Datum narozeni": "1998-11-22",
-                "Clen Moravian LARP, o.s.": "Ano",
-                "Typ ucasti": "Nebojujici",
-                "Prijedes autem": "Ne",
-                "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr":
-                    true,
-                "Bojuji nebo taky na": "Nebojuji",
-                "Jak moc bohaty se citis?": "Ne",
-            },
-            pricingSummary: {
-                tiers: [
-                    { tierDate: "2026-04-01", totalPrice: -100 },
-                    { tierDate: "2026-04-08", totalPrice: -100 },
-                    { tierDate: "2026-04-17", totalPrice: -100 },
-                    { tierDate: "2026-04-18", totalPrice: -100 },
-                    { tierDate: "2026-05-04", totalPrice: -50 },
-                    { tierDate: "2026-07-01", totalPrice: -20 },
-                    { tierDate: null, totalPrice: 0 },
-                ],
-                applicableTierIndex: 0,
-                totalPrice: -100,
-            },
-        },
-        {
-            yearId,
-            formId: form.id,
-            publicUserId: publicUsers[2].id,
-            status: "PENDING" as const,
-            variableSymbol: "3456789012",
-            totalPrice: 2200,
-            isPaid: false,
-            gdprConsentAt: new Date("2026-03-20"),
-            createdAt: new Date("2026-03-20"),
-            data: {
-                "Jmeno a Prijmeni": "Tomas Kral",
-                "Skupina": "BaaTor",
-                "Email": "test3@helmac.cz",
-                "Datum narozeni": "1992-03-08",
-                "Clen Moravian LARP, o.s.": "Ne",
-                "Typ ucasti": "Bojujici",
-                "Za koho bojujes": "Temna",
-                "Za jakou armadu bojujes": "Harad",
-                "Prijedes autem": "Ano",
-                "SPZ": "2B4 1234",
-                "Zaplat auto": "Parkovne",
-                "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr":
-                    true,
-                "Bojuji nebo taky na": "Bojuji",
-                "Jak moc bohaty se citis?": "Jsem fakt bohaty",
-            },
-            pricingSummary: {
-                tiers: [
-                    { tierDate: "2026-04-01", totalPrice: 2300 },
-                    { tierDate: "2026-04-08", totalPrice: 2300 },
-                    { tierDate: "2026-04-17", totalPrice: 2300 },
-                    { tierDate: "2026-04-18", totalPrice: 2300 },
-                    { tierDate: "2026-05-04", totalPrice: 2900 },
-                    { tierDate: "2026-07-01", totalPrice: 3500 },
-                    { tierDate: null, totalPrice: 5633 },
-                ],
-                applicableTierIndex: 0,
-                totalPrice: 2300,
-            },
-        },
-        {
-            yearId,
-            formId: form.id,
-            publicUserId: publicUsers[0].id,
-            status: "PENDING" as const,
-            variableSymbol: "4567890123",
-            totalPrice: 800,
-            isPaid: false,
-            gdprConsentAt: new Date("2026-03-25"),
-            createdAt: new Date("2026-03-25"),
-            data: {
-                "Jmeno a Prijmeni": "Lucie Kralova",
-                "Skupina": "Druzina mecu",
-                "Email": "test1@helmac.cz",
-                "Datum narozeni": "1997-01-30",
-                "Clen Moravian LARP, o.s.": "Ano",
-                "Typ ucasti": "Bojujici",
-                "Za koho bojujes": "Svetla",
-                "Za jakou armadu bojujes": "Clovek",
-                "Prijedes autem": "Ne",
-                "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr":
-                    true,
-                "Bojuji nebo taky na": "Bojuji",
-                "Jak moc bohaty se citis?": "Rad pomuzu",
-            },
-            pricingSummary: {
-                tiers: [
-                    { tierDate: "2026-04-01", totalPrice: 1000 },
-                    { tierDate: "2026-04-08", totalPrice: 1000 },
-                    { tierDate: "2026-04-17", totalPrice: 1000 },
-                    { tierDate: "2026-04-18", totalPrice: 1000 },
-                    { tierDate: "2026-05-04", totalPrice: 1250 },
-                    { tierDate: "2026-07-01", totalPrice: 1500 },
-                    { tierDate: null, totalPrice: 1733 },
-                ],
-                applicableTierIndex: 0,
-                totalPrice: 1000,
-            },
-        },
-        {
-            yearId,
-            formId: form.id,
-            publicUserId: publicUsers[1].id,
-            status: "CONFIRMED" as const,
-            variableSymbol: "5678901234",
-            totalPrice: 400,
-            isPaid: true,
-            paidAt: new Date("2026-04-01"),
-            gdprConsentAt: new Date("2026-03-28"),
-            createdAt: new Date("2026-03-28"),
-            data: {
-                "Jmeno a Prijmeni": "Martin Dvorak",
-                "Skupina": "Nocni vlci",
-                "Email": "test2@helmac.cz",
-                "Datum narozeni": "2000-07-14",
-                "Clen Moravian LARP, o.s.": "Ne",
-                "Typ ucasti": "Bojujici",
-                "Za koho bojujes": "Svetla",
-                "Za jakou armadu bojujes": "Trpaslik",
-                "Prijedes autem": "Ne",
-                "Souhlasim s GDPR https://registracka.cz/index.php?fm=gdpr":
-                    true,
-                "Bojuji nebo taky na": "Bojuji",
-                "Jak moc bohaty se citis?": "Ne",
-            },
-            pricingSummary: {
-                tiers: [
-                    { tierDate: "2026-04-01", totalPrice: 200 },
-                    { tierDate: "2026-04-08", totalPrice: 200 },
-                    { tierDate: "2026-04-17", totalPrice: 200 },
-                    { tierDate: "2026-04-18", totalPrice: 200 },
-                    { tierDate: "2026-05-04", totalPrice: 250 },
-                    { tierDate: "2026-07-01", totalPrice: 300 },
-                    { tierDate: null, totalPrice: 333 },
-                ],
-                applicableTierIndex: 0,
-                totalPrice: 200,
-            },
-        },
-    ];
-
-    for (const sub of submissions) {
-        await prisma.registrationSubmission.create({ data: sub });
-    }
-    console.log("Registration submissions: 5");
-}
-
 async function seedGdpr() {
     await prisma.siteSetting.create({
         data: {
             key: "gdpr_text",
-            value: `<h2>Zpracování osobních údajů</h2>
-<p>Správcem osobních údajů je organizační tým akce Helmáč. Vaše osobní údaje (jméno, email, datum narození) zpracováváme za účelem organizace akce a komunikace s účastníky.</p>
-<p>Údaje jsou uchovávány po dobu nezbytnou pro organizaci akce a následně po dobu stanovenou právními předpisy. Máte právo na přístup ke svým údajům, jejich opravu, výmaz a další práva dle GDPR.</p>
-<p>Kontakt pro dotazy ohledně zpracování osobních údajů: <a href="mailto:info@helmac.cz">info@helmac.cz</a></p>`,
+            value: `<p>Zásady ochrany osobních údajů</p>
+<p>Správce osobních údajů:</p>
+<p>BaaTorské Království z.s.</p>
+<p>IČO: 04050754</p>
+<p>E-mail: <a href="mailto:helmac@email.cz">helmac@email.cz</a></p>
+<p>(dále jen „správce")</p>
+<p>Tyto zásady ochrany osobních údajů popisují, jakým způsobem správce zpracovává osobní údaje v souvislosti s provozem webových stránek www.helmac.cz a organizací akce HELMAC.</p>
+<p>---</p>
+<p>1. Jaké osobní údaje zpracováváme</p>
+<p>a) Registrace na akci: e-mailová adresa, jméno a příjmení, datum narození, další údaje vyplněné ve formuláři.</p>
+<p>b) Uživatelský účet: e-mailová adresa, heslo (uloženo výhradně v zahashované podobě pomocí algoritmu Argon2).</p>
+<p>c) Platební údaje: celková cena registrace, variabilní symbol platby, stav platby, datum zaplacení.</p>
+<p>d) Technické údaje (cookies): Relace přihlášeného uživatele (30 dní), Relace administrátora (24 hodin), Souhlas s cookies (1 rok). Všechny cookies jsou nezbytné pro fungování webu.</p>
+<p>---</p>
+<p>2. Účely zpracování: Registrace a organizace akce, Správa uživatelského účtu, Zasílání potvrzovacích e-mailů, Vedení účetních dokladů, Zajištění bezpečnosti webu.</p>
+<p>---</p>
+<p>3. Doba uchovávání: Registrační údaje nejdéle 3 roky od konání ročníku. Uživatelský účet po dobu jeho existence. Platební údaje dle daňových předpisů (zpravidla 5 let).</p>
+<p>---</p>
+<p>4. Vaše práva: Právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost údajů a právo podat stížnost u ÚOOÚ.</p>
+<p>---</p>
+<p>5. Kontakt: helmac@email.cz</p>`,
         },
     });
     console.log("GDPR site setting created");
-}
-
-async function seedArchivedYearContent(yearId: string, authorId: string) {
-    // Pages for archived year
-    const pages = [
-        { slug: "uvod", title: "Uvod", sortOrder: 0 },
-        { slug: "program", title: "Program", sortOrder: 1 },
-        { slug: "galerie", title: "Galerie", sortOrder: 2 },
-    ];
-    for (const page of pages) {
-        await prisma.page.create({
-            data: {
-                ...page,
-                yearId,
-                content: { sections: [] },
-                isPublished: true,
-            },
-        });
-    }
-
-    // News for archived year
-    await prisma.news.create({
-        data: {
-            yearId,
-            authorId,
-            slug: "helmac-2025-se-konal",
-            title: "Helmáč 2025 se konal!",
-            excerpt: "Dekujeme vsem ucastnikum za skvely rocnik",
-            content:
-                "<p>Helmáč 2025 je za nami! Dekujeme vsem, kteri prisjeli a udelali z letosniho rocniku nezapomenutelny zazitek. Tesime se na vas zase pristi rok!</p>",
-            isPublished: true,
-            publishedAt: new Date("2025-08-05"),
-        },
-    });
-
-    console.log("Archived year 2025: 3 pages, 1 news");
 }
 
 // ============================================
@@ -1254,7 +1354,7 @@ async function main() {
     await cleanDatabase();
 
     const admin = await seedAdmin();
-    const { year2026, year2025 } = await seedYears();
+    const year2026 = await seedYear();
 
     await seedPages(year2026.id);
     await seedProgram(year2026.id);
@@ -1262,12 +1362,9 @@ async function main() {
     await seedInfoSections(year2026.id);
     await seedRules(year2026.id);
     await seedNews(year2026.id, admin.id);
-    await seedAlbums(year2026.id, year2025.id);
+    await seedAlbums(year2026.id);
     await seedRegistrationForm(year2026.id);
-    await seedPublicUsersAndSubmissions(year2026.id);
     await seedGdpr();
-
-    await seedArchivedYearContent(year2025.id, admin.id);
 
     console.log("\nSeeding completed!");
 }
