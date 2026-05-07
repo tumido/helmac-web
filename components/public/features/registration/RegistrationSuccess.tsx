@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box, Typography, Paper, Divider } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
-import { CheckCircle } from "@mui/icons-material";
+import { Check } from "@mui/icons-material";
 import { formatPrice } from "@/lib/utils/pricing";
 import { QRCodeSVG } from "qrcode.react";
+import { DecorativeDivider } from "@/components/public/ui";
 import type { PaymentData } from "@/lib/actions/public/registration";
 
 interface RegistrationSuccessProps {
@@ -15,7 +16,28 @@ interface RegistrationSuccessProps {
     paymentData?: PaymentData;
 }
 
-export function RegistrationSuccess({ message, variableSymbol, totalPrice, paymentData }: RegistrationSuccessProps) {
+export function RegistrationSuccess({
+    message,
+    variableSymbol,
+    totalPrice,
+    paymentData,
+}: RegistrationSuccessProps) {
+    const detailsRef = useRef<HTMLDivElement>(null);
+    const [detailsHeight, setDetailsHeight] = useState<number>(0);
+
+    useEffect(() => {
+        if (!detailsRef.current) return;
+        const measure = () => {
+            setDetailsHeight(
+                detailsRef.current?.offsetHeight ?? 0
+            );
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () =>
+            window.removeEventListener("resize", measure);
+    }, []);
+
     useEffect(() => {
         if (!paymentData) return;
         const trigger = () => {
@@ -24,124 +46,287 @@ export function RegistrationSuccess({ message, variableSymbol, totalPrice, payme
         window.addEventListener("beforeunload", trigger);
         return () => {
             window.removeEventListener("beforeunload", trigger);
-            // Cleanup runs on client-side navigation (Next.js Link clicks);
-            // beforeunload only covers full-page unloads.
             trigger();
         };
     }, [paymentData]);
+
+    const hasPaymentSection =
+        paymentData || totalPrice != null || variableSymbol;
+
     return (
-        <Paper
-            sx={{
-                p: 6,
-                textAlign: "center",
-                backgroundColor: "background.paper",
-            }}
-        >
-            <CheckCircle
+        <Box>
+            <Box
                 sx={{
-                    fontSize: 80,
-                    color: "success.main",
-                    mb: 3,
+                    display: { md: "flex" },
+                    gap: 6,
+                    alignItems: "center",
+                    py: { xs: 4, md: 6 },
                 }}
-            />
-            <Typography variant="h4" gutterBottom>
-                Registrace úspěšná!
-            </Typography>
-            <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mb: 3, maxWidth: 500, mx: "auto" }}
             >
-                {message}
-            </Typography>
-
-            {paymentData ? (
-                <>
-                    <Divider sx={{ mb: 3 }} />
-                    <Typography variant="h6" gutterBottom>
-                        Platební údaje
-                    </Typography>
-                    <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                        <QRCodeSVG
-                            value={paymentData.spaydString}
-                            size={200}
-                            level="M"
-                        />
-                    </Box>
-                    <Paper
-                        variant="outlined"
-                        sx={{ p: 3, mb: 3, maxWidth: 400, mx: "auto", textAlign: "left" }}
-                    >
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Částka:
-                            </Typography>
-                            <Typography variant="h5" fontWeight={600}>
-                                {formatPrice(paymentData.totalAmount)}
-                            </Typography>
-                        </Box>
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Číslo účtu:
-                            </Typography>
-                            <Typography
-                                variant="h6"
-                                fontWeight={600}
-                                sx={{ fontFamily: "monospace" }}
-                            >
-                                {paymentData.bankAccount}
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary">
-                                Variabilní symbol:
-                            </Typography>
-                            <Typography
-                                variant="h6"
-                                fontWeight={600}
-                                sx={{ fontFamily: "monospace", letterSpacing: 2 }}
-                            >
-                                {paymentData.variableSymbol}
-                            </Typography>
-                        </Box>
-                    </Paper>
-                </>
-            ) : (totalPrice != null || variableSymbol) ? (
-                <Paper
-                    variant="outlined"
-                    sx={{ p: 3, mb: 3, maxWidth: 400, mx: "auto", textAlign: "left" }}
+                <Box
+                    sx={{
+                        flex: "1 1 0",
+                        textAlign: "center",
+                    }}
                 >
-                    {totalPrice != null && (
-                        <Box sx={{ mb: variableSymbol ? 2 : 0 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Celková cena:
-                            </Typography>
-                            <Typography variant="h5" fontWeight={600}>
-                                {formatPrice(totalPrice)}
-                            </Typography>
-                        </Box>
-                    )}
-                    {variableSymbol && (
-                        <Box>
-                            <Typography variant="body2" color="text.secondary">
-                                Variabilní symbol pro platbu:
-                            </Typography>
-                            <Typography
-                                variant="h5"
-                                fontWeight={600}
-                                sx={{ fontFamily: "monospace", letterSpacing: 2 }}
-                            >
-                                {variableSymbol}
-                            </Typography>
-                        </Box>
-                    )}
-                </Paper>
-            ) : null}
+                    <Check
+                        sx={{
+                            fontSize: 64,
+                            color: "primary.main",
+                            mb: 2,
+                        }}
+                    />
+                    <Typography
+                        variant="h3"
+                        sx={{
+                            color: "primary.main",
+                            mb: 1,
+                        }}
+                    >
+                        Registrace úspěšná!
+                    </Typography>
+                    <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{ mb: 3 }}
+                    >
+                        {message}
+                    </Typography>
 
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                Potvrzení o registraci jsme vám zaslali na email. Potvrzení platby může trvat až jeden den.
-            </Typography>
-            <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                    >
+                        Potvrzení o registraci jsme vám zaslali
+                        na email. Potvrzení platby může trvat až
+                        jeden den.
+                    </Typography>
+                </Box>
+
+                {hasPaymentSection && (
+                <Box
+                    sx={{
+                        flex: "1 1 0",
+                        mt: { xs: 4, md: 0 },
+                    }}
+                >
+                    {paymentData ? (
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                            }}
+                        >
+                            <Typography
+                                variant="h4"
+                                sx={{
+                                    color: "primary.main",
+                                    mb: 1,
+                                    textAlign: "center",
+                                }}
+                            >
+                                Platební údaje
+                            </Typography>
+                            <DecorativeDivider
+                                variant="ornate"
+                                my={2}
+                            />
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexDirection: {
+                                        xs: "column",
+                                        sm: "row",
+                                    },
+                                    gap: 3,
+                                    alignItems: "center",
+                                }}
+                            >
+                            <Box
+                                sx={{
+                                    backgroundColor: "white",
+                                    borderRadius: 2,
+                                    flexShrink: 0,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    p: 2,
+                                    width: detailsHeight > 0 ? detailsHeight : "auto",
+                                    height: detailsHeight > 0 ? detailsHeight : "auto",
+                                }}
+                            >
+                                <QRCodeSVG
+                                    value={
+                                        paymentData.spaydString
+                                    }
+                                    size={detailsHeight > 40 ? detailsHeight - 40 : 140}
+                                    level="M"
+                                />
+                            </Box>
+                            <Box
+                                ref={detailsRef}
+                                sx={{
+                                    textAlign: "left",
+                                    flex: 1,
+                                }}
+                            >
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Částka:
+                                    </Typography>
+                                    <Typography
+                                        variant="h5"
+                                        fontWeight={700}
+                                        sx={{
+                                            color: "primary.main",
+                                        }}
+                                    >
+                                        {formatPrice(
+                                            paymentData.totalAmount
+                                        )}
+                                    </Typography>
+                                </Box>
+                                <Divider sx={{ my: 1.5 }} />
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Číslo účtu:
+                                    </Typography>
+                                    <Typography
+                                        variant="h6"
+                                        fontWeight={600}
+                                        sx={{
+                                            fontFamily:
+                                                "monospace",
+                                        }}
+                                    >
+                                        {paymentData.bankAccount}
+                                    </Typography>
+                                </Box>
+                                <Divider sx={{ my: 1.5 }} />
+                                <Box>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Variabilní symbol:
+                                    </Typography>
+                                    <Typography
+                                        variant="h6"
+                                        fontWeight={600}
+                                        sx={{
+                                            fontFamily:
+                                                "monospace",
+                                            letterSpacing: 2,
+                                        }}
+                                    >
+                                        {
+                                            paymentData.variableSymbol
+                                        }
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            </Box>
+                        </Paper>
+                    ) : (
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 3,
+                                textAlign: "left",
+                                borderRadius: 2,
+                            }}
+                        >
+                            <Typography
+                                variant="h4"
+                                sx={{
+                                    color: "primary.main",
+                                    mb: 1,
+                                    textAlign: "center",
+                                }}
+                            >
+                                Platební údaje
+                            </Typography>
+                            <DecorativeDivider
+                                variant="ornate"
+                                my={2}
+                            />
+                            {totalPrice != null && (
+                                <Box
+                                    sx={{
+                                        mb: variableSymbol
+                                            ? 2
+                                            : 0,
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Celková cena:
+                                    </Typography>
+                                    <Typography
+                                        variant="h5"
+                                        fontWeight={700}
+                                        sx={{
+                                            color: "primary.main",
+                                        }}
+                                    >
+                                        {formatPrice(
+                                            totalPrice
+                                        )}
+                                    </Typography>
+                                </Box>
+                            )}
+                            {variableSymbol && (
+                                <>
+                                    {totalPrice != null && (
+                                        <Divider
+                                            sx={{ my: 1.5 }}
+                                        />
+                                    )}
+                                    <Box>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Variabilní symbol
+                                            pro platbu:
+                                        </Typography>
+                                        <Typography
+                                            variant="h5"
+                                            fontWeight={600}
+                                            sx={{
+                                                fontFamily:
+                                                    "monospace",
+                                                letterSpacing: 2,
+                                            }}
+                                        >
+                                            {variableSymbol}
+                                        </Typography>
+                                    </Box>
+                                </>
+                            )}
+                        </Paper>
+                    )}
+                </Box>
+            )}
+            </Box>
+
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 2,
+                    justifyContent: "center",
+                    mt: 5,
+                }}
+            >
                 <LinkButton href="/" variant="contained">
                     Zpět na hlavní stránku
                 </LinkButton>
@@ -149,6 +334,6 @@ export function RegistrationSuccess({ message, variableSymbol, totalPrice, payme
                     Sledovat novinky
                 </LinkButton>
             </Box>
-        </Paper>
+        </Box>
     );
 }
