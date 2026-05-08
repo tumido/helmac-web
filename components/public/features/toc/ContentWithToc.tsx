@@ -7,10 +7,13 @@ import {
     buildTocIdMap,
 } from "@/lib/utils/markdown-toc-helpers";
 import { MarkdownContent } from "@/components/ui/markdown-content";
+import { BlockRenderer } from "@/components/public/features/content-blocks";
 import { TableOfContents } from "./TableOfContents";
+import type { ContentBlock } from "@/lib/types/content-blocks";
+import { blocksToMarkdown } from "@/lib/types/content-blocks";
 
 interface ContentWithTocProps {
-    content: string;
+    content: ContentBlock[] | string;
     showToc: boolean;
 }
 
@@ -23,11 +26,14 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
     const [mobileTocHeight, setMobileTocHeight] = useState(0);
     const [mobileSticky, setMobileSticky] = useState(false);
 
+    const isBlocks = Array.isArray(content);
+    const markdownForToc = isBlocks ? blocksToMarkdown(content) : content;
+
     const { tocItems, tocIdMap } = useMemo(() => {
         if (!showToc) return { tocItems: [], tocIdMap: undefined };
-        const items = extractMarkdownToc(content);
+        const items = extractMarkdownToc(markdownForToc);
         return { tocItems: items, tocIdMap: buildTocIdMap(items) };
-    }, [content, showToc]);
+    }, [markdownForToc, showToc]);
 
     const hasToc = showToc && tocItems.length >= 2;
 
@@ -65,6 +71,9 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
     }, [hasToc, updatePosition]);
 
     if (!hasToc) {
+        if (isBlocks) {
+            return <BlockRenderer blocks={content} />;
+        }
         return <MarkdownContent content={content} />;
     }
 
@@ -106,7 +115,11 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
                 />
             )}
 
-            <MarkdownContent content={content} tocIds={tocIdMap} />
+            {isBlocks ? (
+                <BlockRenderer blocks={content} tocIds={tocIdMap} />
+            ) : (
+                <MarkdownContent content={content} tocIds={tocIdMap} />
+            )}
 
             {/* Desktop: fixed TOC in right viewport margin */}
             <Box

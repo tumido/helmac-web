@@ -149,7 +149,7 @@ export function TableOfContents({ items, variant }: TableOfContentsProps) {
                         }
                         sx={{
                             display: "block",
-                            pl: item.level === 3 ? 2 : 0,
+                            pl: item.level === 3 ? 3 : 1,
                             py: 0.5,
                             pr: 1,
                             borderLeft: "2px solid",

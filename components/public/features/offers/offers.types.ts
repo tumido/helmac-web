@@ -1,7 +1,10 @@
+import type { ContentBlock } from "@/lib/types/content-blocks";
+
 export interface OfferItem {
     id: string;
     title: string;
-    content: string;
+    subtitle: string | null;
+    content: ContentBlock[];
     showToc: boolean;
     sortOrder: number;
 }

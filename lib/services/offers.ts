@@ -12,6 +12,7 @@ export const getOffersForYear = cache(async (yearId: string) => {
         select: {
             id: true,
             title: true,
+            subtitle: true,
             content: true,
             sortOrder: true,
             createdAt: true,
@@ -27,6 +28,7 @@ export const getOfferById = cache(async (offerId: string) => {
             id: true,
             yearId: true,
             title: true,
+            subtitle: true,
             content: true,
             showToc: true,
             sortOrder: true,
@@ -52,6 +54,7 @@ export const getOffersForActiveYear = cache(async () => {
         select: {
             id: true,
             title: true,
+            subtitle: true,
             content: true,
             showToc: true,
             sortOrder: true,
