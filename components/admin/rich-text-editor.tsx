@@ -57,7 +57,12 @@ import {
     UnfoldMore,
 } from "@mui/icons-material";
 import { Markdown, type MarkdownStorage } from "tiptap-markdown";
-import { useCallback, useEffect, useState, type MutableRefObject } from "react";
+import {
+    useCallback,
+    useEffect,
+    useState,
+    type MutableRefObject,
+} from "react";
 
 const COLOR_PALETTE = [
     { label: "Cervena", value: "#E53935" },
@@ -109,6 +114,16 @@ function MenuBar({
     const [showLinkTextField, setShowLinkTextField] = useState(false);
     const [linkTargets, setLinkTargets] = useState<LinkTarget[] | null>(null);
     const [linkTargetsLoading, setLinkTargetsLoading] = useState(false);
+
+    const [, forceRender] = useState(0);
+    useEffect(() => {
+        if (!editor) return;
+        const handler = () => forceRender((n) => n + 1);
+        editor.on("transaction", handler);
+        return () => {
+            editor.off("transaction", handler);
+        };
+    }, [editor]);
 
     const openLinkDialog = useCallback(() => {
         if (!editor) return;
@@ -681,6 +696,8 @@ export function RichTextEditor({
                 openOnClick: false,
                 HTMLAttributes: {
                     class: "text-link",
+                    target: null,
+                    rel: null,
                 },
             }),
             Image.configure({
@@ -823,6 +840,9 @@ export function RichTextEditor({
                         "& a": {
                             color: "primary.main",
                             textDecoration: "underline",
+                            ...(editable && {
+                                pointerEvents: "none",
+                            }),
                         },
                         "& img": {
                             maxWidth: "100%",
