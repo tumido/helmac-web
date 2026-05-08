@@ -71,13 +71,20 @@ export function EmailTemplateEditor({
         return text.replace(/\n/g, "<br>");
     };
 
-    const insertPlaceholder = (placeholder: string) => {
+    const insertPlaceholder = (p: { key: string; label: string }) => {
         const editor = editorRef.current;
         if (!editor) {
-            setBody((prev) => prev + `{${placeholder}}`);
+            setBody((prev) => prev + `{${p.key}}`);
             return;
         }
-        editor.chain().focus().insertContent(`{${placeholder}}`).run();
+        editor
+            .chain()
+            .focus()
+            .insertContent({
+                type: "placeholder",
+                attrs: { key: p.key, label: p.label },
+            })
+            .run();
     };
 
     const handleCancel = () => {
@@ -282,6 +289,7 @@ export function EmailTemplateEditor({
                                     editorRef={editorRef}
                                     minHeight={200}
                                     placeholder="Zadejte text emailu..."
+                                    placeholders={availablePlaceholders}
                                 />
                                 {fieldErrors.confirmationEmailBody && (
                                     <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", flexShrink: 0 }}>
@@ -297,9 +305,9 @@ export function EmailTemplateEditor({
                                 {availablePlaceholders.map((p) => (
                                     <Chip
                                         key={p.key}
-                                        label={`${p.label} ({${p.key}})`}
+                                        label={p.label}
                                         size="small"
-                                        onClick={() => insertPlaceholder(p.key)}
+                                        onClick={() => insertPlaceholder(p)}
                                         variant="outlined"
                                         sx={{ cursor: "pointer" }}
                                     />

@@ -57,7 +57,11 @@ import {
     UnfoldMore,
 } from "@mui/icons-material";
 import { Markdown, type MarkdownStorage } from "tiptap-markdown";
-import { useCallback, useEffect, useState, type MutableRefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
+import {
+    PlaceholderExtension,
+    type PlaceholderOption,
+} from "@/components/admin/extensions/placeholder-extension";
 
 const COLOR_PALETTE = [
     { label: "Cervena", value: "#E53935" },
@@ -82,6 +86,13 @@ interface RichTextEditorProps {
     editorRef?: MutableRefObject<Editor | null>;
     editable?: boolean;
     yearId?: string;
+    /**
+     * Placeholder definitions for the chip extension. The host reads this
+     * prop live via `placeholderMap` (re-memoized on change), so updates
+     * propagate to tokenization. The `PlaceholderExtension` itself is
+     * registered unconditionally so adding placeholders at runtime is safe.
+     */
+    placeholders?: PlaceholderOption[];
 }
 
 function normalizeLinkHref(url: string): string {
@@ -654,8 +665,73 @@ export function RichTextEditor({
     editorRef,
     editable = true,
     yearId,
+    placeholders,
 }: RichTextEditorProps) {
     const isMarkdown = format === "markdown";
+
+    const placeholderMap = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const p of placeholders ?? []) {
+            map.set(p.key, p.label);
+        }
+        return map;
+    }, [placeholders]);
+
+    const tokenizePlaceholders = useCallback(
+        (ed: Editor) => {
+            if (!placeholders || placeholders.length === 0) return;
+            const placeholderType = ed.schema.nodes.placeholder;
+            if (!placeholderType) return;
+
+            const pattern = /\{([A-Za-z0-9_]+)\}/g;
+            const replacements: {
+                from: number;
+                to: number;
+                key: string;
+                label: string;
+            }[] = [];
+
+            ed.state.doc.descendants((node, pos) => {
+                // Skip code blocks entirely — `{firstName}` inside a fenced
+                // block should be treated as code, not a token.
+                if (node.type.name === "codeBlock") return false;
+
+                if (!node.isText || !node.text) return;
+                // Skip inline `code` mark for the same reason.
+                if (node.marks.some((m) => m.type.name === "code")) return;
+
+                // Tokens split across mark boundaries (e.g. `{first**Name**}`)
+                // won't tokenize — text nodes split on each mark transition.
+                // Acceptable edge case.
+                let match: RegExpExecArray | null;
+                pattern.lastIndex = 0;
+                while ((match = pattern.exec(node.text)) !== null) {
+                    const key = match[1];
+                    const label = placeholderMap.get(key);
+                    if (!label) continue;
+                    const from = pos + match.index;
+                    const to = from + match[0].length;
+                    replacements.push({ from, to, key, label });
+                }
+            });
+
+            if (replacements.length === 0) return;
+
+            const tr = ed.state.tr;
+            for (let i = replacements.length - 1; i >= 0; i--) {
+                const { from, to, key, label } = replacements[i];
+                tr.replaceWith(
+                    from,
+                    to,
+                    placeholderType.create({ key, label }),
+                );
+            }
+            ed.view.dispatch(
+                tr.setMeta("addToHistory", false).setMeta("preventUpdate", true),
+            );
+        },
+        [placeholders, placeholderMap],
+    );
 
     const getContent = useCallback(
         (ed: Editor) => {
@@ -716,10 +792,14 @@ export function RichTextEditor({
                       }),
                   ]
                 : []),
+            PlaceholderExtension.configure({ placeholders: placeholders ?? [] }),
         ],
         content: value,
         editable,
         immediatelyRender: false,
+        onCreate: ({ editor: ed }) => {
+            tokenizePlaceholders(ed);
+        },
         onUpdate: ({ editor: ed }) => {
             onChange(getContent(ed));
         },
@@ -746,8 +826,9 @@ export function RichTextEditor({
     useEffect(() => {
         if (editor && value !== getContent(editor)) {
             editor.commands.setContent(value, { emitUpdate: false });
+            tokenizePlaceholders(editor);
         }
-    }, [editor, value, getContent]);
+    }, [editor, value, getContent, tokenizePlaceholders]);
 
     return (
         <Box
@@ -880,6 +961,19 @@ export function RichTextEditor({
                                 borderRadius: "8px",
                                 margin: "1em 0",
                             },
+                        },
+                        "& .placeholder-chip": {
+                            display: "inline-block",
+                            backgroundColor: "primary.light",
+                            color: "primary.contrastText",
+                            padding: "0 0.45em",
+                            borderRadius: "4px",
+                            fontSize: "0.9em",
+                            lineHeight: 1.4,
+                            margin: "0 1px",
+                            cursor: "default",
+                            userSelect: "all",
+                            whiteSpace: "nowrap",
                         },
                         "& p.is-editor-empty:first-child::before": {
                             content: `"${placeholder}"`,
