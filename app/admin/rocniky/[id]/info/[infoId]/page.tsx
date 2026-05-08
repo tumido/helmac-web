@@ -4,6 +4,7 @@ import { getYearById } from "@/lib/services/years";
 import { getInfoSectionById } from "@/lib/services/info";
 import { InfoForm } from "@/components/forms/info-form";
 import { PageHeader } from "@/components/admin/page-header";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface EditInfoPageProps {
     params: Promise<{ id: string; infoId: string }>;
@@ -21,7 +22,7 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },
@@ -43,7 +44,8 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
                 infoId={infoSection.id}
                 defaultValues={{
                     title: infoSection.title,
-                    content: infoSection.content,
+                    subtitle: infoSection.subtitle,
+                    content: infoSection.content as unknown as ContentBlock[],
                     showToc: infoSection.showToc,
                 }}
             />

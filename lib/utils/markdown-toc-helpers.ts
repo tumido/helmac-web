@@ -8,6 +8,17 @@ export interface TocItem {
 
 const HEADING_RE = /^(#{2,3})\s+(.+)$/;
 
+function stripInlineMarkdown(text: string): string {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, "$1")
+        .replace(/__(.+?)__/g, "$1")
+        .replace(/\*(.+?)\*/g, "$1")
+        .replace(/_(.+?)_/g, "$1")
+        .replace(/~~(.+?)~~/g, "$1")
+        .replace(/`(.+?)`/g, "$1")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+}
+
 export function extractMarkdownToc(markdown: string): TocItem[] {
     const items: TocItem[] = [];
     const usedIds = new Map<string, number>();
@@ -17,7 +28,7 @@ export function extractMarkdownToc(markdown: string): TocItem[] {
         if (!match) continue;
 
         const level = match[1].length as 2 | 3;
-        const text = match[2].trim();
+        const text = stripInlineMarkdown(match[2].trim());
         const baseId = generateSlug(text) || `heading-${level}`;
 
         const count = usedIds.get(baseId) ?? 0;

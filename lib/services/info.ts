@@ -12,6 +12,7 @@ export const getInfoSectionsForYear = cache(async (yearId: string) => {
         select: {
             id: true,
             title: true,
+            subtitle: true,
             content: true,
             sortOrder: true,
             createdAt: true,
@@ -27,6 +28,7 @@ export const getInfoSectionById = cache(async (infoId: string) => {
             id: true,
             yearId: true,
             title: true,
+            subtitle: true,
             content: true,
             showToc: true,
             sortOrder: true,
@@ -52,6 +54,7 @@ export const getInfoSectionsForActiveYear = cache(async () => {
         select: {
             id: true,
             title: true,
+            subtitle: true,
             content: true,
             showToc: true,
             sortOrder: true,

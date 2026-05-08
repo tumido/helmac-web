@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import type { Components } from "react-markdown";
 import { generateSlug } from "@/lib/utils/slugify";
 
@@ -18,11 +18,22 @@ const sanitizeSchema = {
         "details",
         "summary",
         "iframe",
+        "dl",
+        "dt",
+        "dd",
     ],
     attributes: {
         ...defaultSchema.attributes,
         span: [...(defaultSchema.attributes?.span ?? []), "style"],
         p: [...(defaultSchema.attributes?.p ?? []), "style"],
+        h2: [...(defaultSchema.attributes?.h2 ?? []), "style"],
+        h3: [...(defaultSchema.attributes?.h3 ?? []), "style"],
+        a: [
+            ...(defaultSchema.attributes?.a ?? []),
+            "data-button",
+            "className",
+            "class",
+        ],
         iframe: ["src", "allowFullScreen", "allow", "frameBorder"],
     },
 };
@@ -38,7 +49,7 @@ export function MarkdownContent({
 }: MarkdownContentProps) {
     const components = useMemo<Components>(
         () => ({
-            h2: ({ children }) => {
+            h2: ({ children, style }) => {
                 const text =
                     typeof children === "string"
                         ? children
@@ -51,6 +62,7 @@ export function MarkdownContent({
                         variant="h5"
                         component="h2"
                         id={id}
+                        style={style}
                         sx={{
                             fontSize: "1.5rem",
                             fontWeight: 600,
@@ -63,7 +75,7 @@ export function MarkdownContent({
                     </Typography>
                 );
             },
-            h3: ({ children }) => {
+            h3: ({ children, style }) => {
                 const text =
                     typeof children === "string"
                         ? children
@@ -76,6 +88,7 @@ export function MarkdownContent({
                         variant="h6"
                         component="h3"
                         id={id}
+                        style={style}
                         sx={{
                             fontSize: "1.25rem",
                             fontWeight: 600,
@@ -98,18 +111,45 @@ export function MarkdownContent({
                     {children}
                 </Typography>
             ),
-            a: ({ children, href }) => (
-                <Box
-                    component="a"
-                    href={href}
-                    sx={{
-                        color: "primary.main",
-                        textDecoration: "underline",
-                    }}
-                >
-                    {children}
-                </Box>
-            ),
+            a: ({ children, href, node }) => {
+                const dataButton = node?.properties?.dataButton as
+                    | string
+                    | undefined;
+                if (dataButton) {
+                    const variant = (
+                        ["contained", "outlined", "text"] as const
+                    ).includes(
+                        dataButton as "contained" | "outlined" | "text"
+                    )
+                        ? (dataButton as
+                              | "contained"
+                              | "outlined"
+                              | "text")
+                        : "contained";
+                    return (
+                        <Button
+                            variant={variant}
+                            href={href}
+                            size="small"
+                            sx={{ my: 1 }}
+                        >
+                            {children}
+                        </Button>
+                    );
+                }
+                return (
+                    <Box
+                        component="a"
+                        href={href}
+                        sx={{
+                            color: "primary.main",
+                            textDecoration: "underline",
+                        }}
+                    >
+                        {children}
+                    </Box>
+                );
+            },
             img: ({ src, alt }) => (
                 <Box
                     component="img"
@@ -173,6 +213,43 @@ export function MarkdownContent({
                         border: "1px solid",
                         borderColor: "divider",
                         p: 1,
+                    }}
+                >
+                    {children}
+                </Box>
+            ),
+            dl: ({ children }) => (
+                <Box
+                    component="dl"
+                    sx={{
+                        my: 2,
+                        display: "grid",
+                        gridTemplateColumns: "auto 1fr",
+                        gap: 0.5,
+                        columnGap: 3,
+                    }}
+                >
+                    {children}
+                </Box>
+            ),
+            dt: ({ children }) => (
+                <Box
+                    component="dt"
+                    sx={{
+                        fontWeight: 600,
+                        gridColumn: 1,
+                    }}
+                >
+                    {children}
+                </Box>
+            ),
+            dd: ({ children }) => (
+                <Box
+                    component="dd"
+                    sx={{
+                        m: 0,
+                        gridColumn: 2,
+                        color: "text.secondary",
                     }}
                 >
                     {children}

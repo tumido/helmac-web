@@ -55,7 +55,19 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                 {infoSections.map((info) => (
                     <Tab
                         key={info.id}
-                        label={info.title}
+                        label={
+                            info.subtitle ? (
+                                <>
+                                    {info.title}
+                                    <br />
+                                    <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
+                                        {info.subtitle}
+                                    </span>
+                                </>
+                            ) : (
+                                info.title
+                            )
+                        }
                         value={info.id}
                     />
                 ))}
