@@ -41,7 +41,7 @@ export function RulesContent({ rules }: RulesContentProps) {
                 selectedRuleId={selectedRule.id}
                 onRuleChange={handleRuleChange}
             />
-            <ContentWithToc html={selectedRule.content} showToc={selectedRule.showToc} />
+            <ContentWithToc content={selectedRule.content} showToc={selectedRule.showToc} />
         </Box>
     );
 }

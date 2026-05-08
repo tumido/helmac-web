@@ -41,7 +41,7 @@ export function OffersContent({ offers }: OffersContentProps) {
                 selectedOfferId={selectedOffer.id}
                 onOfferChange={handleOfferChange}
             />
-            <ContentWithToc html={selectedOffer.content} showToc={selectedOffer.showToc} />
+            <ContentWithToc content={selectedOffer.content} showToc={selectedOffer.showToc} />
         </Box>
     );
 }

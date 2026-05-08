@@ -58,7 +58,7 @@ export function InfoContent({ infoSections, statsContent }: InfoContentProps) {
             {isStatsTab ? (
                 <Box>{statsContent}</Box>
             ) : selectedInfo ? (
-                <ContentWithToc html={selectedInfo.content} showToc={selectedInfo.showToc} />
+                <ContentWithToc content={selectedInfo.content} showToc={selectedInfo.showToc} />
             ) : null}
         </Box>
     );
