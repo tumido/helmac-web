@@ -193,8 +193,11 @@ export function computePricingSummary({
     }
 
     return {
-        tiers,
+        tiers: tiers.map((t) => ({
+            ...t,
+            totalPrice: Math.max(0, t.totalPrice),
+        })),
         applicableTierIndex,
-        totalPrice: tiers[applicableTierIndex].totalPrice,
+        totalPrice: Math.max(0, tiers[applicableTierIndex].totalPrice),
     };
 }

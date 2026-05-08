@@ -30,6 +30,15 @@ const inputFieldSchema = z.object({
     options: z.array(z.string().min(1)).optional(),
     pricingId: z.string().optional(),
     includeForAdditionalPeople: z.boolean().optional(),
+    displayVariant: z.enum(["default", "image_cards"]).optional(),
+    optionMeta: z
+        .record(
+            z.string(),
+            z.object({
+                imageUrl: z.string().min(1).optional(),
+            })
+        )
+        .optional(),
 });
 
 const pricedOptionSchema = z.object({

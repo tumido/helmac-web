@@ -5,7 +5,6 @@ import {
     Box,
     Button,
     Typography,
-    IconButton,
     Paper,
 } from "@mui/material";
 import { Add, Close } from "@mui/icons-material";
@@ -116,13 +115,28 @@ export function AdditionalPeopleSection({
 
     return (
         <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
                 Další osoby
+            </Typography>
+            <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 2 }}
+            >
+                Můžete přidat další osoby, které registrujete
+                společně s vámi.
             </Typography>
 
             {people.map((person, personIndex) => {
-                const mergedData = buildMergedDataForAP(mainValues, person, apFieldNames);
-                const visibleFieldIds = evaluateAPVisibleFields(formData, mergedData);
+                const mergedData = buildMergedDataForAP(
+                    mainValues,
+                    person,
+                    apFieldNames
+                );
+                const visibleFieldIds = evaluateAPVisibleFields(
+                    formData,
+                    mergedData
+                );
                 const personErrors = errors?.[personIndex];
 
                 return (
@@ -131,37 +145,112 @@ export function AdditionalPeopleSection({
                         variant="outlined"
                         sx={{ p: 3, mb: 2 }}
                     >
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                            <Typography variant="subtitle1" fontWeight={600}>
-                                Osoba č. {personIndex + 2}
-                            </Typography>
-                            <IconButton
-                                size="small"
-                                onClick={() => handleRemovePerson(personIndex)}
-                                color="error"
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mb: 2,
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1.5,
+                                }}
                             >
-                                <Close fontSize="small" />
-                            </IconButton>
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: "50%",
+                                        backgroundColor:
+                                            "primary.main",
+                                        color: "primary.contrastText",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontWeight: 700,
+                                        fontSize: "0.875rem",
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {personIndex + 2}
+                                </Box>
+                                <Typography
+                                    variant="subtitle1"
+                                    fontWeight={600}
+                                >
+                                    Osoba č. {personIndex + 2}
+                                </Typography>
+                            </Box>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                startIcon={<Close />}
+                                onClick={() =>
+                                    handleRemovePerson(personIndex)
+                                }
+                                sx={{
+                                    borderWidth: 2,
+                                    textTransform: "none",
+                                    fontFamily: "inherit",
+                                    letterSpacing: 0,
+                                }}
+                            >
+                                Odebrat
+                            </Button>
                         </Box>
 
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2.5,
+                            }}
+                        >
                             {apFields.map((field) => {
-                                if (!visibleFieldIds.has(field.id)) return null;
+                                if (!visibleFieldIds.has(field.id))
+                                    return null;
 
-                                const value = person[field.name] ?? (field.type === "checkbox" ? false : "");
-                                const disabledOpts = getDisabledOptionsForField(
-                                    field.id, field.name, formData.capacityLimits, optionCounts,
-                                );
+                                const value =
+                                    person[field.name] ??
+                                    (field.type === "checkbox"
+                                        ? false
+                                        : "");
+                                const disabledOpts =
+                                    getDisabledOptionsForField(
+                                        field.id,
+                                        field.name,
+                                        formData.capacityLimits,
+                                        optionCounts
+                                    );
 
                                 return (
                                     <DynamicFormField
                                         key={field.id}
                                         field={field}
                                         value={value}
-                                        error={personErrors?.[field.name]?.[0]}
-                                        onChange={(name, val) => handleFieldChange(personIndex, name, val)}
-                                        pricingDefinitions={formData.pricingDefinitions}
-                                        priceTiers={formData.priceTiers}
+                                        error={
+                                            personErrors?.[
+                                                field.name
+                                            ]?.[0]
+                                        }
+                                        onChange={(name, val) =>
+                                            handleFieldChange(
+                                                personIndex,
+                                                name,
+                                                val
+                                            )
+                                        }
+                                        pricingDefinitions={
+                                            formData.pricingDefinitions
+                                        }
+                                        priceTiers={
+                                            formData.priceTiers
+                                        }
                                         namePrefix={`ap_${personIndex}_`}
                                         disabledOptions={disabledOpts}
                                     />
@@ -172,14 +261,56 @@ export function AdditionalPeopleSection({
                 );
             })}
 
-            <Button
-                startIcon={<Add />}
-                variant="outlined"
-                onClick={handleAddPerson}
-                disabled={people.length >= MAX_ADDITIONAL_PEOPLE}
-            >
-                Přidat osobu
-            </Button>
+            {people.length === 0 ? (
+                <Box
+                    onClick={handleAddPerson}
+                    sx={{
+                        p: 3,
+                        border: "2px dashed",
+                        borderColor: "divider",
+                        borderRadius: 2,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                            borderColor: "primary.main",
+                            backgroundColor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(201, 162, 39, 0.05)"
+                                    : "rgba(201, 162, 39, 0.08)",
+                        },
+                    }}
+                >
+                    <Add
+                        sx={{
+                            fontSize: 32,
+                            color: "primary.main",
+                            mb: 1,
+                        }}
+                    />
+                    <Typography variant="body1" fontWeight={600}>
+                        Přidat další osobu
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                    >
+                        Registrujte další účastníky v rámci jedné
+                        registrace
+                    </Typography>
+                </Box>
+            ) : (
+                <Button
+                    startIcon={<Add />}
+                    variant="outlined"
+                    onClick={handleAddPerson}
+                    disabled={
+                        people.length >= MAX_ADDITIONAL_PEOPLE
+                    }
+                >
+                    Přidat další osobu
+                </Button>
+            )}
 
             {/* Hidden input to send AP data to server */}
             <input
