@@ -204,6 +204,11 @@ export const publicTheme = createTheme(
                         },
                         "& .MuiInputBase-input": {
                             color: medievalColors.text.primary,
+                            "&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus": {
+                                WebkitBoxShadow: `0 0 0 100px ${medievalColors.dark.light} inset`,
+                                WebkitTextFillColor: medievalColors.text.primary,
+                                caretColor: medievalColors.text.primary,
+                            },
                         },
                     },
                 },

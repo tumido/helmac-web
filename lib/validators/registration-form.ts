@@ -35,7 +35,7 @@ const inputFieldSchema = z.object({
         .record(
             z.string(),
             z.object({
-                imageUrl: z.string().url().optional(),
+                imageUrl: z.string().min(1).optional(),
             })
         )
         .optional(),

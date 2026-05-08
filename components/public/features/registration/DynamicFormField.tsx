@@ -92,7 +92,11 @@ export function DynamicFormField({
                                 }
                             />
                         }
-                        label={label}
+                        label={
+                            <Typography variant="body2">
+                                {label}
+                            </Typography>
+                        }
                     />
                     <input
                         type="hidden"
@@ -175,12 +179,7 @@ export function DynamicFormField({
                                             flex: "1 1 0",
                                             display: "flex",
                                             flexDirection: "column",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            gap: 1,
-                                            px: 2,
-                                            py: 3,
-                                            minHeight: 100,
+                                            overflow: "hidden",
                                             border: "2px solid",
                                             borderColor: isSelected ? "primary.main" : "divider",
                                             borderRadius: 2,
@@ -191,7 +190,6 @@ export function DynamicFormField({
                                             userSelect: "none",
                                             "&:hover": isDisabled ? {} : {
                                                 borderColor: "primary.main",
-                                                transform: "translateY(-2px)",
                                             },
                                         }}
                                     >
@@ -201,19 +199,19 @@ export function DynamicFormField({
                                                 src={meta.imageUrl}
                                                 alt={opt}
                                                 sx={{
-                                                    width: 64,
-                                                    height: 64,
-                                                    objectFit: "contain",
-                                                    borderRadius: 1,
+                                                    width: "100%",
+                                                    height: 160,
+                                                    objectFit: "cover",
                                                 }}
                                             />
                                         )}
                                         <Typography
-                                            variant={meta?.imageUrl ? "body2" : "body1"}
+                                            variant="body1"
                                             fontWeight={isSelected ? 700 : 600}
                                             sx={{
                                                 textAlign: "center",
-                                                fontFamily: meta?.imageUrl ? undefined : '"Cinzel", serif',
+                                                py: 1.5,
+                                                px: 1,
                                                 color: isSelected ? "primary.main" : "text.primary",
                                             }}
                                         >
@@ -398,6 +396,21 @@ export function DynamicFormField({
                             onChange(field.name, v?.format("YYYY-MM-DD") ?? "")
                         }
                         format="DD.MM.YYYY"
+                        sx={{
+                            "& .MuiPickersInputBase-root": {
+                                backgroundColor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "#2A2A2A"
+                                        : "#DED9CE",
+                                borderRadius: "4px",
+                            },
+                            "& .MuiPickersInputBase-input": {
+                                color: "text.primary",
+                            },
+                            "& .MuiInputLabel-root": {
+                                color: "text.secondary",
+                            },
+                        }}
                         slotProps={{
                             textField: {
                                 error: !!error,
