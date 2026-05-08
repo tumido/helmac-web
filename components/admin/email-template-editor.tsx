@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
     Alert,
     Box,
@@ -19,6 +19,7 @@ import { Edit, Save, Close } from "@mui/icons-material";
 import { updateEmailTemplate } from "@/lib/actions/years";
 import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor";
 import { richContentSx } from "@/lib/utils/rich-content-sx";
+import { renderPlaceholderChipsInHtml } from "@/lib/utils/placeholder-html";
 
 type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
 
@@ -64,6 +65,11 @@ export function EmailTemplateEditor({
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
     const [success, setSuccess] = useState(false);
     const editorRef = useRef<Editor | null>(null);
+
+    const displayBody = useMemo(
+        () => renderPlaceholderChipsInHtml(savedBody),
+        [savedBody],
+    );
 
     // Convert plain text body (no HTML tags) to HTML for backward compatibility
     const toEditorHtml = (text: string) => {
@@ -197,7 +203,7 @@ export function EmailTemplateEditor({
                                                 mb: 2,
                                                 ...richContentSx,
                                             }}
-                                            dangerouslySetInnerHTML={{ __html: savedBody }}
+                                            dangerouslySetInnerHTML={{ __html: displayBody }}
                                         />
                                     ) : (
                                         <Typography sx={{ mb: 2 }}>—</Typography>
