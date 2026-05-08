@@ -518,7 +518,6 @@ export function DynamicFormField({
                                             <Typography
                                                 variant="body2"
                                                 color="text.secondary"
-                                                noWrap
                                             >
                                                 {opt.description}
                                             </Typography>
@@ -948,7 +947,6 @@ export function DynamicFormField({
                                                 <Typography
                                                     variant="body2"
                                                     color="text.secondary"
-                                                    noWrap
                                                 >
                                                     {opt.description}
                                                 </Typography>
