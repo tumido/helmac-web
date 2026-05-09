@@ -67,8 +67,8 @@ export function EmailTemplateEditor({
     const editorRef = useRef<Editor | null>(null);
 
     const displayBody = useMemo(
-        () => renderPlaceholderChipsInHtml(savedBody),
-        [savedBody],
+        () => renderPlaceholderChipsInHtml(savedBody, availablePlaceholders),
+        [savedBody, availablePlaceholders],
     );
 
     // Convert plain text body (no HTML tags) to HTML for backward compatibility
