@@ -36,11 +36,8 @@ export async function saveCapacityLimits(
 
         const formData = migrateFormData(form.fields);
         const dataToStore = {
-            conditions: formData.conditions,
-            pricingDefinitions: formData.pricingDefinitions,
+            ...formData,
             capacityLimits: validated.data,
-            showOptionCounts: formData.showOptionCounts,
-            fields: formData.fields,
         };
 
         await db.registrationForm.update({

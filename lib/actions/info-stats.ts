@@ -36,12 +36,8 @@ export async function saveInfoStatsConfig(
 
         const formData = migrateFormData(form.fields);
         const dataToStore = {
-            conditions: formData.conditions,
-            pricingDefinitions: formData.pricingDefinitions,
-            capacityLimits: formData.capacityLimits,
-            showOptionCounts: formData.showOptionCounts,
+            ...formData,
             infoStatsConfig: validated.data,
-            fields: formData.fields,
         };
 
         await db.registrationForm.update({

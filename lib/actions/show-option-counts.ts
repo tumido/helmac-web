@@ -35,11 +35,8 @@ export async function saveShowOptionCounts(
 
         const formData = migrateFormData(form.fields);
         const dataToStore = {
-            conditions: formData.conditions,
-            pricingDefinitions: formData.pricingDefinitions,
-            capacityLimits: formData.capacityLimits,
+            ...formData,
             showOptionCounts: validated.data,
-            fields: formData.fields,
         };
 
         await db.registrationForm.update({
