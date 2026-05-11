@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Tab, Tabs } from "@mui/material";
+import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
 import { RuleItem } from "./rules.types";
 
 interface RuleTabsProps {
@@ -28,6 +29,7 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                 variant="scrollable"
                 scrollButtons="auto"
                 allowScrollButtonsMobile
+                ScrollButtonComponent={TabScrollButton}
                 sx={{
                     "& .MuiTab-root": {
                         fontFamily: '"Cinzel", serif',

@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Tab, Tabs } from "@mui/material";
+import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
 import { InfoItem } from "./info.types";
 
 export interface ExtraTab {
@@ -34,6 +35,7 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                 variant="scrollable"
                 scrollButtons="auto"
                 allowScrollButtonsMobile
+                ScrollButtonComponent={TabScrollButton}
                 sx={{
                     "& .MuiTab-root": {
                         fontFamily: '"Cinzel", serif',

@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Tab, Tabs } from "@mui/material";
+import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
 import { OfferItem } from "./offers.types";
 
 interface OfferTabsProps {
@@ -28,6 +29,7 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 variant="scrollable"
                 scrollButtons="auto"
                 allowScrollButtonsMobile
+                ScrollButtonComponent={TabScrollButton}
                 sx={{
                     "& .MuiTab-root": {
                         fontFamily: '"Cinzel", serif',
