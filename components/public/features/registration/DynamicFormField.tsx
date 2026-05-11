@@ -174,7 +174,11 @@ export function DynamicFormField({
                                             }
                                         }}
                                         sx={{
-                                            flex: "1 1 0",
+                                            flex: {
+                                                xs: "1 1 calc(25% - 12px)",
+                                                md: "1 1 0",
+                                            },
+                                            minWidth: "fit-content",
                                             display: "flex",
                                             flexDirection: "column",
                                             overflow: "hidden",
@@ -471,8 +475,8 @@ export function DynamicFormField({
                                     }
                                     sx={{
                                         flex: {
-                                            xs: "1 1 100%",
-                                            sm: "1 1 0",
+                                            xs: "1 1 calc(50% - 4px)",
+                                            md: "1 1 0",
                                         },
                                         minWidth: "fit-content",
                                         display: "flex",
@@ -511,7 +515,20 @@ export function DynamicFormField({
                                         <Typography
                                             variant="body1"
                                             fontWeight={600}
-                                            noWrap
+                                            sx={{
+                                                whiteSpace: {
+                                                    xs: "normal",
+                                                    md: "nowrap",
+                                                },
+                                                overflow: {
+                                                    xs: "visible",
+                                                    md: "hidden",
+                                                },
+                                                textOverflow: {
+                                                    xs: "clip",
+                                                    md: "ellipsis",
+                                                },
+                                            }}
                                         >
                                             {opt.name}
                                         </Typography>
@@ -723,8 +740,8 @@ export function DynamicFormField({
                                     key={opt.id}
                                     sx={{
                                         flex: {
-                                            xs: "1 1 100%",
-                                            sm: "1 1 0",
+                                            xs: "1 1 calc(50% - 4px)",
+                                            md: "1 1 0",
                                         },
                                         minWidth: "fit-content",
                                         display: "flex",
@@ -757,7 +774,20 @@ export function DynamicFormField({
                                         <Typography
                                             variant="body1"
                                             fontWeight={600}
-                                            noWrap
+                                            sx={{
+                                                whiteSpace: {
+                                                    xs: "normal",
+                                                    md: "nowrap",
+                                                },
+                                                overflow: {
+                                                    xs: "visible",
+                                                    md: "hidden",
+                                                },
+                                                textOverflow: {
+                                                    xs: "clip",
+                                                    md: "ellipsis",
+                                                },
+                                            }}
                                         >
                                             {opt.name}
                                         </Typography>
@@ -991,8 +1021,8 @@ export function DynamicFormField({
                                     }
                                     sx={{
                                         flex: {
-                                            xs: "1 1 100%",
-                                            sm: "1 1 0",
+                                            xs: "1 1 calc(50% - 4px)",
+                                            md: "1 1 0",
                                         },
                                         minWidth: "fit-content",
                                         display: "flex",
@@ -1062,7 +1092,20 @@ export function DynamicFormField({
                                             <Typography
                                                 variant="body1"
                                                 fontWeight={600}
-                                                noWrap
+                                                sx={{
+                                                    whiteSpace: {
+                                                        xs: "normal",
+                                                        md: "nowrap",
+                                                    },
+                                                    overflow: {
+                                                        xs: "visible",
+                                                        md: "hidden",
+                                                    },
+                                                    textOverflow: {
+                                                        xs: "clip",
+                                                        md: "ellipsis",
+                                                    },
+                                                }}
                                             >
                                                 {opt.name}
                                             </Typography>
