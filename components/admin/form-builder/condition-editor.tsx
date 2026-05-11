@@ -398,23 +398,27 @@ function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, o
             </Box>
 
             <Box sx={{ display: "flex", gap: 1 }}>
-                <FormControl size="small" sx={{ minWidth: 130 }}>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
                     <InputLabel>Operátor</InputLabel>
                     <Select
                         value={rule.operator || "equals"}
-                        onChange={(e) => onUpdate({ operator: e.target.value as "equals" | "not_equals" })}
+                        onChange={(e) => onUpdate({ operator: e.target.value as ConditionRule["operator"] })}
                         label="Operátor"
                     >
                         <MenuItem value="equals">se rovná</MenuItem>
                         <MenuItem value="not_equals">se nerovná</MenuItem>
+                        <MenuItem value="is_set">je vyplněno</MenuItem>
+                        <MenuItem value="is_not_set">není vyplněno</MenuItem>
                     </Select>
                 </FormControl>
-                <FieldValuePicker
-                    targetField={targetInput}
-                    pricingDefinitions={pricingDefinitions}
-                    value={rule.value || ""}
-                    onChange={(value) => onUpdate({ value })}
-                />
+                {rule.operator !== "is_set" && rule.operator !== "is_not_set" && (
+                    <FieldValuePicker
+                        targetField={targetInput}
+                        pricingDefinitions={pricingDefinitions}
+                        value={rule.value || ""}
+                        onChange={(value) => onUpdate({ value })}
+                    />
+                )}
             </Box>
         </Box>
     );

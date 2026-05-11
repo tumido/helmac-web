@@ -53,12 +53,26 @@ function evaluateCondition(
             } else {
                 const currentValue = String(rawData[targetField.name] ?? "");
 
+                let parsedArr: unknown[] | null = null;
                 if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
-                    let includes = false;
                     try {
                         const arr = JSON.parse(currentValue);
-                        includes = Array.isArray(arr) && arr.includes(rule.value);
+                        if (Array.isArray(arr)) parsedArr = arr;
                     } catch { /* ignore */ }
+                }
+
+                if (rule.operator === "is_set" || rule.operator === "is_not_set") {
+                    let isSet: boolean;
+                    if (parsedArr !== null) {
+                        isSet = parsedArr.length > 0;
+                    } else if (targetField.type === "checkbox") {
+                        isSet = currentValue === "true";
+                    } else {
+                        isSet = currentValue.trim() !== "";
+                    }
+                    passes = rule.operator === "is_set" ? isSet : !isSet;
+                } else if (parsedArr !== null) {
+                    const includes = parsedArr.includes(rule.value);
                     passes = rule.operator === "equals" ? includes : !includes;
                 } else {
                     passes = rule.operator === "equals"

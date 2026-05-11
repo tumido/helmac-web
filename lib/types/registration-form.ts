@@ -79,8 +79,8 @@ export type FormField = InputField | HeadingField | DescriptionField;
 export interface ConditionRule {
     type: "field_value";
     fieldId?: string;
-    operator?: "equals" | "not_equals";
-    value?: string;
+    operator?: "equals" | "not_equals" | "is_set" | "is_not_set";
+    value?: string; // ignored when operator is "is_set" or "is_not_set"
     connector?: "AND" | "OR"; // joins this rule to the previous one; ignored on rules[0]; defaults to "AND"
 }
 

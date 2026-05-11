@@ -3,7 +3,7 @@ import { z } from "zod";
 const conditionRuleSchema = z.object({
     type: z.literal("field_value"),
     fieldId: z.string().min(1),
-    operator: z.enum(["equals", "not_equals"]),
+    operator: z.enum(["equals", "not_equals", "is_set", "is_not_set"]),
     value: z.string(),
     connector: z.enum(["AND", "OR"]).optional(),
 });
