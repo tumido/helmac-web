@@ -81,6 +81,7 @@ export interface ConditionRule {
     fieldId?: string;
     operator?: "equals" | "not_equals";
     value?: string;
+    connector?: "AND" | "OR"; // joins this rule to the previous one; ignored on rules[0]; defaults to "AND"
 }
 
 export interface CapacityLimit {
@@ -93,7 +94,7 @@ export interface CapacityLimit {
 export interface FormCondition {
     id: string;
     name: string;                  // admin-defined label, e.g. "Děti"
-    rules: ConditionRule[];        // AND logic — all must pass for block to be visible
+    rules: ConditionRule[];        // mixed AND/OR via per-rule connector; evaluated left-to-right
 }
 
 export interface ConditionBlock {

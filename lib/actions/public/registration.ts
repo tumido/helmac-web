@@ -34,36 +34,48 @@ export interface RegistrationState {
     paymentData?: PaymentData;
 }
 
-/**
- * Evaluate whether a condition passes (all rules must be true = AND logic).
- */
 function evaluateCondition(
     condition: FormCondition,
     rawData: Record<string, unknown>,
     allFields: FormField[],
 ): boolean {
-    for (const rule of condition.rules) {
-        if (!rule.fieldId || rule.operator === undefined) return false;
-        const targetField = allFields.find((f) => f.id === rule.fieldId);
-        if (!targetField || !isInputField(targetField)) return false;
+    let result: boolean | null = null;
+    for (let i = 0; i < condition.rules.length; i++) {
+        const rule = condition.rules[i];
+        let passes: boolean;
 
-        const currentValue = String(rawData[targetField.name] ?? "");
-
-        // For multi-select fields, check if the option is included in the JSON array
-        if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
-            let includes = false;
-            try {
-                const arr = JSON.parse(currentValue);
-                includes = Array.isArray(arr) && arr.includes(rule.value);
-            } catch { /* ignore */ }
-            if (rule.operator === "equals" && !includes) return false;
-            if (rule.operator === "not_equals" && includes) return false;
+        if (!rule.fieldId || rule.operator === undefined) {
+            passes = false;
         } else {
-            if (rule.operator === "equals" && currentValue !== rule.value) return false;
-            if (rule.operator === "not_equals" && currentValue === rule.value) return false;
+            const targetField = allFields.find((f) => f.id === rule.fieldId);
+            if (!targetField || !isInputField(targetField)) {
+                passes = false;
+            } else {
+                const currentValue = String(rawData[targetField.name] ?? "");
+
+                if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
+                    let includes = false;
+                    try {
+                        const arr = JSON.parse(currentValue);
+                        includes = Array.isArray(arr) && arr.includes(rule.value);
+                    } catch { /* ignore */ }
+                    passes = rule.operator === "equals" ? includes : !includes;
+                } else {
+                    passes = rule.operator === "equals"
+                        ? currentValue === rule.value
+                        : currentValue !== rule.value;
+                }
+            }
+        }
+
+        if (result === null) {
+            result = passes;
+        } else {
+            const connector = rule.connector ?? "AND";
+            result = connector === "OR" ? (result || passes) : (result && passes);
         }
     }
-    return true;
+    return result ?? false;
 }
 
 /**

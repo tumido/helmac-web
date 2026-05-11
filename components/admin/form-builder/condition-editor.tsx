@@ -9,6 +9,8 @@ import {
     CardActions,
     Chip,
     Collapse,
+    ToggleButton,
+    ToggleButtonGroup,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -97,8 +99,17 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
             if (c.id !== conditionId) return c;
             return {
                 ...c,
-                rules: [...c.rules, { type: "field_value" as const, fieldId: "", operator: "equals" as const, value: "" }],
+                rules: [...c.rules, { type: "field_value" as const, fieldId: "", operator: "equals" as const, value: "", connector: "AND" as const }],
             };
+        }));
+    };
+
+    const handleUpdateConnector = (conditionId: string, ruleIndex: number, connector: "AND" | "OR") => {
+        onChange(conditions.map((c) => {
+            if (c.id !== conditionId) return c;
+            const newRules = [...c.rules];
+            newRules[ruleIndex] = { ...newRules[ruleIndex], connector };
+            return { ...c, rules: newRules };
         }));
     };
 
@@ -190,7 +201,7 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                                     />
 
                                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                        Pravidla (všechna musí platit)
+                                        Pravidla
                                     </Typography>
 
                                     {/* Column labels */}
@@ -210,13 +221,28 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
                                         <Box key={ruleIdx}>
                                             {ruleIdx > 0 && (
                                                 <Box sx={{ display: "flex", justifyContent: "center", my: 0.5 }}>
-                                                    <Chip
-                                                        label="AND"
+                                                    <ToggleButtonGroup
+                                                        value={rule.connector ?? "AND"}
+                                                        exclusive
                                                         size="small"
-                                                        color="primary"
-                                                        variant="outlined"
-                                                        sx={{ fontSize: "0.65rem", height: 20 }}
-                                                    />
+                                                        onChange={(_, val) => {
+                                                            if (val === "AND" || val === "OR") {
+                                                                handleUpdateConnector(condition.id, ruleIdx, val);
+                                                            }
+                                                        }}
+                                                        sx={{
+                                                            "& .MuiToggleButton-root": {
+                                                                fontSize: "0.65rem",
+                                                                height: 20,
+                                                                px: 1,
+                                                                py: 0,
+                                                                lineHeight: 1,
+                                                            },
+                                                        }}
+                                                    >
+                                                        <ToggleButton value="AND" color="primary">AND</ToggleButton>
+                                                        <ToggleButton value="OR" color="warning">OR</ToggleButton>
+                                                    </ToggleButtonGroup>
                                                 </Box>
                                             )}
                                             <RuleRow

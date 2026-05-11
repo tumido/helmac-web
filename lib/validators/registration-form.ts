@@ -5,6 +5,7 @@ const conditionRuleSchema = z.object({
     fieldId: z.string().min(1),
     operator: z.enum(["equals", "not_equals"]),
     value: z.string(),
+    connector: z.enum(["AND", "OR"]).optional(),
 });
 
 const capacityLimitSchema = z.object({
