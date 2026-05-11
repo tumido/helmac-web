@@ -144,13 +144,14 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                     <FormControlLabel
                         control={
                             <Switch
+                                name="showToc"
+                                value="true"
                                 checked={showToc}
                                 onChange={(e) => setShowToc(e.target.checked)}
                             />
                         }
-                        label="Zobrazit obsah (TOC)"
+                        label="Zobrazit obsah"
                     />
-                    <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
                 </CardContent>
 
                 <CardActions sx={{ px: 2, pb: 2 }}>

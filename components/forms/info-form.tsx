@@ -108,12 +108,14 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
                 <FormControlLabel
                     control={
                         <Switch
+                            name="showToc"
+                            value="true"
                             size="small"
                             checked={showToc}
                             onChange={(e) => setShowToc(e.target.checked)}
                         />
                     }
-                    label="TOC"
+                    label="Zobrazit obsah"
                 />
                 <SubmitButton mode={mode} />
                 <LinkButton
@@ -137,7 +139,6 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
             )}
 
             <input type="hidden" name="content" value={JSON.stringify(blocks)} />
-            <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
 
             <BlockEditor
                 value={blocks}
