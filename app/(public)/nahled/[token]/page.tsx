@@ -22,7 +22,7 @@ export default async function PublicFormPreviewPage({ params }: Props) {
     const formData = preview.data as unknown as RegistrationFormData;
 
     return (
-        <Container maxWidth="md" sx={{ py: 4 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
             <Alert severity="info" sx={{ mb: 3 }}>
                 Toto je náhled formuláře. Odeslání formuláře nebude zaregistrováno.
             </Alert>

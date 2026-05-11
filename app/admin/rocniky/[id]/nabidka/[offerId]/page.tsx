@@ -4,6 +4,7 @@ import { getYearById } from "@/lib/services/years";
 import { getOfferById } from "@/lib/services/offers";
 import { OfferForm } from "@/components/forms/offer-form";
 import { PageHeader } from "@/components/admin/page-header";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface EditOfferPageProps {
     params: Promise<{ id: string; offerId: string }>;
@@ -21,7 +22,7 @@ export default async function EditOfferPage({ params }: EditOfferPageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -43,7 +44,8 @@ export default async function EditOfferPage({ params }: EditOfferPageProps) {
                 offerId={offer.id}
                 defaultValues={{
                     title: offer.title,
-                    content: offer.content,
+                    subtitle: offer.subtitle,
+                    content: offer.content as unknown as ContentBlock[],
                     showToc: offer.showToc,
                 }}
             />

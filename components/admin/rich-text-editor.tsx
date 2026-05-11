@@ -55,7 +55,15 @@ import {
     TableChart,
     OndemandVideo,
     UnfoldMore,
+    SmartButton,
+    Delete,
+    Subject,
 } from "@mui/icons-material";
+import { Fragment } from "@tiptap/pm/model";
+import { getHTMLFromFragment, Node as TiptapNode, mergeAttributes } from "@tiptap/core";
+import Paragraph from "@tiptap/extension-paragraph";
+import Heading from "@tiptap/extension-heading";
+import { defaultMarkdownSerializer } from "prosemirror-markdown";
 import { Markdown, type MarkdownStorage } from "tiptap-markdown";
 import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
 import {
@@ -95,6 +103,249 @@ interface RichTextEditorProps {
     placeholders?: PlaceholderOption[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function serializeAlignedNode(defaultSerialize: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return function (state: any, node: any, parent: any, index: number) {
+        const align = node.attrs?.textAlign;
+        if (align && align !== "left") {
+            const html = getHTMLFromFragment(
+                Fragment.from(node),
+                node.type.schema
+            );
+            state.write(html);
+            state.closeBlock(node);
+        } else {
+            defaultSerialize(state, node, parent, index);
+        }
+    };
+}
+
+const AlignedParagraph = Paragraph.extend({
+    addStorage() {
+        return {
+            markdown: {
+                serialize: serializeAlignedNode(
+                    defaultMarkdownSerializer.nodes.paragraph
+                ),
+                parse: {},
+            },
+        };
+    },
+});
+
+const AlignedHeading = Heading.extend({
+    addStorage() {
+        return {
+            markdown: {
+                serialize: serializeAlignedNode(
+                    defaultMarkdownSerializer.nodes.heading
+                ),
+                parse: {},
+            },
+        };
+    },
+});
+
+const DefinitionList = TiptapNode.create({
+    name: "definitionList",
+    group: "block",
+    content: "(definitionTerm | definitionDescription)+",
+
+    parseHTML() {
+        return [{ tag: "dl" }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ["dl", mergeAttributes(HTMLAttributes), 0];
+    },
+
+    addStorage() {
+        return {
+            markdown: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                serialize(state: any, node: any) {
+                    const html = getHTMLFromFragment(
+                        Fragment.from(node),
+                        node.type.schema
+                    );
+                    state.write(html);
+                    state.closeBlock(node);
+                },
+                parse: {},
+            },
+        };
+    },
+
+    addKeyboardShortcuts() {
+        return {
+            Enter: ({ editor: ed }) => {
+                const { $from } = ed.state.selection;
+                for (let d = $from.depth; d >= 1; d--) {
+                    const node = $from.node(d);
+                    const parentNode = d > 1 ? $from.node(d - 1) : null;
+                    if (
+                        parentNode?.type.name !== "definitionList"
+                    ) {
+                        continue;
+                    }
+                    if (node.type.name === "definitionTerm") {
+                        return ed.commands.insertContentAt(
+                            $from.after(d),
+                            {
+                                type: "definitionDescription",
+                                content: [
+                                    { type: "paragraph" },
+                                ],
+                            }
+                        );
+                    }
+                    if (node.type.name === "definitionDescription") {
+                        if (node.textContent === "") {
+                            return false;
+                        }
+                        return ed.commands.insertContentAt(
+                            $from.after(d),
+                            {
+                                type: "definitionTerm",
+                                content: [
+                                    { type: "paragraph" },
+                                ],
+                            }
+                        );
+                    }
+                }
+                return false;
+            },
+        };
+    },
+});
+
+const DefinitionTerm = TiptapNode.create({
+    name: "definitionTerm",
+    content: "paragraph",
+    defining: true,
+
+    parseHTML() {
+        return [{ tag: "dt" }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ["dt", mergeAttributes(HTMLAttributes), 0];
+    },
+});
+
+const DefinitionDescription = TiptapNode.create({
+    name: "definitionDescription",
+    content: "paragraph+",
+    defining: true,
+
+    parseHTML() {
+        return [{ tag: "dd" }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ["dd", mergeAttributes(HTMLAttributes), 0];
+    },
+});
+
+type ButtonVariant = "contained" | "outlined" | "text";
+
+const ButtonNode = TiptapNode.create({
+    name: "buttonNode",
+    group: "block",
+    atom: true,
+
+    addAttributes() {
+        return {
+            label: { default: "Tlačítko" },
+            href: { default: "" },
+            variant: { default: "contained" as ButtonVariant },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: "a[data-button]" }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        const { label, href, variant, ...rest } = HTMLAttributes;
+        return [
+            "a",
+            mergeAttributes(rest, {
+                "data-button": variant || "contained",
+                href: href || "#",
+                class: `editor-button editor-button--${variant || "contained"}`,
+            }),
+            label || "Tlačítko",
+        ];
+    },
+
+    addStorage() {
+        return {
+            markdown: {
+                serialize(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    state: any,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    node: any,
+                ) {
+                    const { label, href, variant } = node.attrs;
+                    state.write(
+                        `<a data-button="${variant || "contained"}" href="${href || "#"}" class="editor-button editor-button--${variant || "contained"}">${label || "Tlačítko"}</a>`
+                    );
+                    state.closeBlock(node);
+                },
+                parse: {},
+            },
+        };
+    },
+
+    addNodeView() {
+        return ({ node, getPos, editor: ed }) => {
+            const dom = document.createElement("div");
+            dom.style.padding = "4px 0";
+
+            const btn = document.createElement("a");
+            btn.textContent = node.attrs.label || "Tlačítko";
+            btn.href = node.attrs.href || "#";
+            btn.setAttribute(
+                "data-button",
+                node.attrs.variant || "contained"
+            );
+            btn.className = `editor-button editor-button--${node.attrs.variant || "contained"}`;
+            btn.style.cssText =
+                "display:inline-block;padding:6px 16px;border-radius:4px;text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;";
+
+            const v = node.attrs.variant || "contained";
+            if (v === "contained") {
+                btn.style.backgroundColor = "#1976d2";
+                btn.style.color = "#fff";
+                btn.style.border = "none";
+            } else if (v === "outlined") {
+                btn.style.backgroundColor = "transparent";
+                btn.style.color = "#1976d2";
+                btn.style.border = "1px solid #1976d2";
+            } else {
+                btn.style.backgroundColor = "transparent";
+                btn.style.color = "#1976d2";
+                btn.style.border = "none";
+            }
+
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const pos = typeof getPos === "function" ? getPos() : null;
+                if (pos !== null && pos !== undefined) {
+                    ed.commands.setNodeSelection(pos);
+                }
+            });
+
+            dom.appendChild(btn);
+            return { dom };
+        };
+    },
+});
+
 function normalizeLinkHref(url: string): string {
     const trimmed = url.trim();
     if (trimmed === "") return trimmed;
@@ -120,6 +371,21 @@ function MenuBar({
     const [showLinkTextField, setShowLinkTextField] = useState(false);
     const [linkTargets, setLinkTargets] = useState<LinkTarget[] | null>(null);
     const [linkTargetsLoading, setLinkTargetsLoading] = useState(false);
+
+    const [btnDialogOpen, setBtnDialogOpen] = useState(false);
+    const [btnLabel, setBtnLabel] = useState("Tlačítko");
+    const [btnHref, setBtnHref] = useState("");
+    const [btnVariant, setBtnVariant] = useState<ButtonVariant>("contained");
+
+    const [, forceRender] = useState(0);
+    useEffect(() => {
+        if (!editor) return;
+        const handler = () => forceRender((n) => n + 1);
+        editor.on("transaction", handler);
+        return () => {
+            editor.off("transaction", handler);
+        };
+    }, [editor]);
 
     const openLinkDialog = useCallback(() => {
         if (!editor) return;
@@ -219,6 +485,38 @@ function MenuBar({
             editor.chain().focus().setYoutubeVideo({ src: url }).run();
         }
     }, [editor]);
+
+    const openBtnDialog = useCallback(() => {
+        if (!editor) return;
+        const node = editor.state.selection.$from.parent;
+        if (node.type.name === "buttonNode") {
+            setBtnLabel(node.attrs.label || "");
+            setBtnHref(node.attrs.href || "");
+            setBtnVariant(node.attrs.variant || "contained");
+        } else {
+            setBtnLabel("Tlačítko");
+            setBtnHref("");
+            setBtnVariant("contained");
+        }
+        setBtnDialogOpen(true);
+    }, [editor]);
+
+    const submitBtn = useCallback(() => {
+        if (!editor) return;
+        editor
+            .chain()
+            .focus()
+            .insertContent({
+                type: "buttonNode",
+                attrs: {
+                    label: btnLabel,
+                    href: normalizeLinkHref(btnHref),
+                    variant: btnVariant,
+                },
+            })
+            .run();
+        setBtnDialogOpen(false);
+    }, [editor, btnLabel, btnHref, btnVariant]);
 
     if (!editor) {
         return null;
@@ -526,6 +824,70 @@ function MenuBar({
                 </IconButton>
             </Tooltip>
 
+            {editor.isActive("table") && (
+                <>
+                    <Tooltip title="Pridat sloupec za">
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                editor.chain().focus().addColumnAfter().run()
+                            }
+                        >
+                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
+                                +C
+                            </Box>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Smazat sloupec">
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                editor.chain().focus().deleteColumn().run()
+                            }
+                        >
+                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
+                                −C
+                            </Box>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Pridat radek pod">
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                editor.chain().focus().addRowAfter().run()
+                            }
+                        >
+                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
+                                +R
+                            </Box>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Smazat radek">
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                editor.chain().focus().deleteRow().run()
+                            }
+                        >
+                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
+                                −R
+                            </Box>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Smazat tabulku">
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                editor.chain().focus().deleteTable().run()
+                            }
+                            sx={{ color: "error.main" }}
+                        >
+                            <Delete fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </>
+            )}
+
             <Tooltip title="Vlozit YouTube video">
                 <IconButton size="small" onClick={addYoutubeVideo}>
                     <OndemandVideo fontSize="small" />
@@ -539,6 +901,64 @@ function MenuBar({
                     color={editor.isActive("details") ? "primary" : "default"}
                 >
                     <UnfoldMore fontSize="small" />
+                </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Vlozit tlacitko">
+                <IconButton size="small" onClick={openBtnDialog}>
+                    <SmartButton fontSize="small" />
+                </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Definiční seznam">
+                <IconButton
+                    size="small"
+                    onClick={() =>
+                        editor
+                            .chain()
+                            .focus()
+                            .insertContent({
+                                type: "definitionList",
+                                content: [
+                                    {
+                                        type: "definitionTerm",
+                                        content: [
+                                            {
+                                                type: "paragraph",
+                                                content: [
+                                                    {
+                                                        type: "text",
+                                                        text: "Pojem",
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        type: "definitionDescription",
+                                        content: [
+                                            {
+                                                type: "paragraph",
+                                                content: [
+                                                    {
+                                                        type: "text",
+                                                        text: "Definice",
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            })
+                            .run()
+                    }
+                    color={
+                        editor.isActive("definitionList")
+                            ? "primary"
+                            : "default"
+                    }
+                >
+                    <Subject fontSize="small" />
                 </IconButton>
             </Tooltip>
 
@@ -652,6 +1072,60 @@ function MenuBar({
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Button dialog */}
+            <Dialog
+                open={btnDialogOpen}
+                onClose={() => setBtnDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle>Vložit tlačítko</DialogTitle>
+                <DialogContent
+                    sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}
+                >
+                    <TextField
+                        autoFocus
+                        label="Text tlačítka"
+                        value={btnLabel}
+                        onChange={(e) => setBtnLabel(e.target.value)}
+                        fullWidth
+                        size="small"
+                    />
+                    <TextField
+                        label="Odkaz (URL)"
+                        value={btnHref}
+                        onChange={(e) => setBtnHref(e.target.value)}
+                        fullWidth
+                        size="small"
+                    />
+                    <ToggleButtonGroup
+                        exclusive
+                        value={btnVariant}
+                        onChange={(_, v) => {
+                            if (v) setBtnVariant(v);
+                        }}
+                        size="small"
+                        fullWidth
+                    >
+                        <ToggleButton value="contained">Vyplněné</ToggleButton>
+                        <ToggleButton value="outlined">Obrysové</ToggleButton>
+                        <ToggleButton value="text">Textové</ToggleButton>
+                    </ToggleButtonGroup>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setBtnDialogOpen(false)}>
+                        Zrušit
+                    </Button>
+                    <Button
+                        onClick={submitBtn}
+                        variant="contained"
+                        disabled={!btnLabel.trim()}
+                    >
+                        Vložit
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
@@ -747,9 +1221,12 @@ export function RichTextEditor({
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                heading: {
-                    levels: [2, 3],
-                },
+                paragraph: false,
+                heading: false,
+            }),
+            AlignedParagraph,
+            AlignedHeading.configure({
+                levels: [2, 3],
             }),
             TextStyle,
             Color,
@@ -757,6 +1234,8 @@ export function RichTextEditor({
                 openOnClick: false,
                 HTMLAttributes: {
                     class: "text-link",
+                    target: null,
+                    rel: null,
                 },
             }),
             Image.configure({
@@ -783,6 +1262,10 @@ export function RichTextEditor({
             Details,
             DetailsSummary,
             DetailsContent,
+            ButtonNode,
+            DefinitionList,
+            DefinitionTerm,
+            DefinitionDescription,
             ...(isMarkdown
                 ? [
                       Markdown.configure({
@@ -904,6 +1387,9 @@ export function RichTextEditor({
                         "& a": {
                             color: "primary.main",
                             textDecoration: "underline",
+                            ...(editable && {
+                                pointerEvents: "none",
+                            }),
                         },
                         "& img": {
                             maxWidth: "100%",
@@ -915,6 +1401,22 @@ export function RichTextEditor({
                             backgroundColor: "#fef08a",
                             padding: "0.1em 0.25em",
                             borderRadius: "2px",
+                        },
+                        "& dl": {
+                            display: "grid",
+                            gridTemplateColumns: "auto 1fr",
+                            gap: "4px",
+                            columnGap: "24px",
+                            margin: "0.5em 0",
+                        },
+                        "& dt": {
+                            fontWeight: 600,
+                            gridColumn: 1,
+                        },
+                        "& dd": {
+                            margin: 0,
+                            gridColumn: 2,
+                            color: "text.secondary",
                         },
                         "& hr": {
                             border: "none",

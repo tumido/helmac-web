@@ -49,7 +49,19 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 {offers.map((offer) => (
                     <Tab
                         key={offer.id}
-                        label={offer.title}
+                        label={
+                            offer.subtitle ? (
+                                <>
+                                    {offer.title}
+                                    <br />
+                                    <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
+                                        {offer.subtitle}
+                                    </span>
+                                </>
+                            ) : (
+                                offer.title
+                            )
+                        }
                         value={offer.id}
                     />
                 ))}

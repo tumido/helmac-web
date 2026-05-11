@@ -64,7 +64,7 @@ export function FormProgress({ sections }: FormProgressProps) {
             component="nav"
             sx={{
                 position: "sticky",
-                top: 64,
+                top: { xs: 56, sm: 64 },
                 zIndex: 10,
                 backgroundColor: "background.default",
                 py: 3,

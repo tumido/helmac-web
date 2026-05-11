@@ -28,6 +28,7 @@ export async function createOffer(
 
     const rawData = {
         title: formData.get("title"),
+        subtitle: formData.get("subtitle") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
     };
@@ -49,6 +50,7 @@ export async function createOffer(
             data: {
                 yearId,
                 title: validated.data.title,
+                subtitle: validated.data.subtitle ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc ?? false,
                 sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
@@ -78,6 +80,7 @@ export async function updateOffer(
 
     const rawData = {
         title: formData.get("title"),
+        subtitle: formData.get("subtitle") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
     };
@@ -106,6 +109,7 @@ export async function updateOffer(
             where: { id: offerId },
             data: {
                 title: validated.data.title,
+                subtitle: validated.data.subtitle ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc,
             },

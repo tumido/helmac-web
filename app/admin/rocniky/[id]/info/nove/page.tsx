@@ -17,7 +17,7 @@ export default async function NewInfoPage({ params }: NewInfoPageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Rocniky", href: "/admin/rocniky" },

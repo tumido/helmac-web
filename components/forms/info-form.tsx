@@ -8,17 +8,15 @@ import {
     TextField,
     Alert,
     CircularProgress,
-    Card,
-    CardContent,
-    CardActions,
-    Typography,
+    Paper,
     Switch,
     FormControlLabel,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createInfoSection, updateInfoSection, InfoSectionActionState } from "@/lib/actions/info";
-import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { BlockEditor } from "@/components/admin/block-editor";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface InfoFormProps {
     mode: "create" | "edit";
@@ -26,7 +24,8 @@ interface InfoFormProps {
     infoId?: string;
     defaultValues?: {
         title?: string;
-        content?: string;
+        subtitle?: string | null;
+        content?: ContentBlock[];
         showToc?: boolean;
     };
 }
@@ -53,7 +52,9 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 }
 
 export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps) {
-    const [content, setContent] = useState(defaultValues?.content || "");
+    const [blocks, setBlocks] = useState<ContentBlock[]>(
+        defaultValues?.content || []
+    );
     const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
 
     const action =
@@ -67,99 +68,82 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
     );
 
     return (
-        <Card
-            sx={{
-                height: "calc(100dvh - 180px)",
-                display: "flex",
-                flexDirection: "column",
-            }}
+        <Box
+            component="form"
+            action={formAction}
         >
-            <Box
-                component="form"
-                action={formAction}
+            {/* Toolbar */}
+            <Paper
+                variant="outlined"
                 sx={{
                     display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
-                    minHeight: 0,
+                    alignItems: "center",
+                    gap: 2,
+                    px: 2,
+                    py: 1,
+                    mb: 3,
+                    flexWrap: "wrap",
+                    borderRadius: 2,
                 }}
             >
-                <CardContent
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 3,
-                        flex: 1,
-                        overflow: "auto",
-                        minHeight: 0,
-                    }}
-                >
-                    {state?.error?._form && (
-                        <Alert severity="error">{state.error._form[0]}</Alert>
-                    )}
-
-                    <TextField
-                        required
-                        fullWidth
-                        id="title"
-                        name="title"
-                        label="Název info sekce"
-                        defaultValue={defaultValues?.title || ""}
-                        error={!!state?.error?.title}
-                        helperText={state?.error?.title?.[0]}
-                    />
-
-                    <Box
-                        sx={{
-                            flex: 1,
-                            minHeight: 200,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        <Typography
-                            variant="subtitle2"
-                            sx={{ mb: 1, flexShrink: 0 }}
-                        >
-                            Obsah *
-                        </Typography>
-                        <RichTextEditor
-                            value={content}
-                            onChange={setContent}
-                            minHeight={200}
-                            yearId={yearId}
+                <TextField
+                    required
+                    size="small"
+                    id="title"
+                    name="title"
+                    label="Název info sekce"
+                    defaultValue={defaultValues?.title || ""}
+                    error={!!state?.error?.title}
+                    helperText={state?.error?.title?.[0]}
+                    sx={{ minWidth: 200, flex: 1 }}
+                />
+                <TextField
+                    size="small"
+                    id="subtitle"
+                    name="subtitle"
+                    label="Podtitulek"
+                    defaultValue={defaultValues?.subtitle || ""}
+                    sx={{ minWidth: 150, flex: 1 }}
+                />
+                <FormControlLabel
+                    control={
+                        <Switch
+                            size="small"
+                            checked={showToc}
+                            onChange={(e) => setShowToc(e.target.checked)}
                         />
-                        <input type="hidden" name="content" value={content} />
-                        {state?.error?.content && (
-                            <Typography
-                                variant="caption"
-                                color="error"
-                                sx={{ mt: 0.5, flexShrink: 0 }}
-                            >
-                                {state.error.content[0]}
-                            </Typography>
-                        )}
-                    </Box>
+                    }
+                    label="TOC"
+                />
+                <SubmitButton mode={mode} />
+                <LinkButton
+                    href={`/admin/rocniky/${yearId}/info`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Zrušit
+                </LinkButton>
+            </Paper>
 
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={showToc}
-                                onChange={(e) => setShowToc(e.target.checked)}
-                            />
-                        }
-                        label="Zobrazit obsah (TOC)"
-                    />
-                    <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
-                </CardContent>
+            {state?.error?._form && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error._form[0]}
+                </Alert>
+            )}
+            {state?.error?.content && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error.content[0]}
+                </Alert>
+            )}
 
-                <CardActions sx={{ px: 2, pb: 2 }}>
-                    <SubmitButton mode={mode} />
-                    <LinkButton href={`/admin/rocniky/${yearId}/info`}>
-                        Zrušit
-                    </LinkButton>
-                </CardActions>
-            </Box>
-        </Card>
+            <input type="hidden" name="content" value={JSON.stringify(blocks)} />
+            <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
+
+            <BlockEditor
+                value={blocks}
+                onChange={setBlocks}
+                yearId={yearId}
+            />
+        </Box>
     );
 }
