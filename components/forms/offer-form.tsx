@@ -16,6 +16,7 @@ import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createOffer, updateOffer, OfferActionState } from "@/lib/actions/offers";
 import { BlockEditor } from "@/components/admin/block-editor";
+import { IconPicker } from "@/components/admin/icon-picker";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface OfferFormProps {
@@ -27,6 +28,7 @@ interface OfferFormProps {
         subtitle?: string | null;
         content?: ContentBlock[];
         showToc?: boolean;
+        icon?: string | null;
     };
 }
 
@@ -56,6 +58,7 @@ export function OfferForm({ mode, yearId, offerId, defaultValues }: OfferFormPro
         defaultValues?.content || []
     );
     const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
+    const [icon, setIcon] = useState<string | null>(defaultValues?.icon || null);
 
     const action =
         mode === "create"
@@ -105,6 +108,7 @@ export function OfferForm({ mode, yearId, offerId, defaultValues }: OfferFormPro
                     defaultValue={defaultValues?.subtitle || ""}
                     sx={{ minWidth: 150, flex: 1 }}
                 />
+                <IconPicker value={icon} onChange={setIcon} />
                 <FormControlLabel
                     control={
                         <Switch

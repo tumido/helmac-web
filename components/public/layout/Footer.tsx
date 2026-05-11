@@ -168,15 +168,46 @@ export function Footer({ dates }: FooterProps) {
                         py: 2,
                     }}
                 >
-                    <Typography
-                        variant="caption"
+                    <Box
                         sx={{
-                            color: "text.secondary",
-                            opacity: 0.6,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-start",
                         }}
                     >
-                        {`© ${currentYear} HELMAC`}
-                    </Typography>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "text.secondary",
+                                opacity: 0.6,
+                            }}
+                        >
+                            {`© ${currentYear} HELMAC`}
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "text.secondary",
+                                opacity: 0.4,
+                            }}
+                        >
+                            {"Ikony: "}
+                            <MuiLink
+                                href="https://game-icons.net"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{
+                                    color: "inherit",
+                                    "&:hover": {
+                                        color: "primary.main",
+                                    },
+                                }}
+                            >
+                                game-icons.net
+                            </MuiLink>
+                            {" (CC BY 3.0)"}
+                        </Typography>
+                    </Box>
                     <Box
                         sx={{
                             display: "flex",

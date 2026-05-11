@@ -45,6 +45,7 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
                     title: rule.title,
                     content: rule.content,
                     showToc: rule.showToc,
+                    icon: rule.icon,
                 }}
             />
         </Container>

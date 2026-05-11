@@ -47,6 +47,7 @@ export default async function EditOfferPage({ params }: EditOfferPageProps) {
                     subtitle: offer.subtitle,
                     content: offer.content as unknown as ContentBlock[],
                     showToc: offer.showToc,
+                    icon: offer.icon,
                 }}
             />
         </Container>

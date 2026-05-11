@@ -47,6 +47,7 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
                     subtitle: infoSection.subtitle,
                     content: infoSection.content as unknown as ContentBlock[],
                     showToc: infoSection.showToc,
+                    icon: infoSection.icon,
                 }}
             />
         </Container>

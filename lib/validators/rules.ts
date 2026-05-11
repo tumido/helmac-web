@@ -5,6 +5,7 @@ export const createRuleSchema = z.object({
         .string()
         .min(1, "Nazev je povinny")
         .max(200, "Nazev je prilis dlouhy"),
+    icon: z.string().optional(),
     content: z.string().min(1, "Obsah je povinny"),
     showToc: z.coerce.boolean().optional(),
 });

@@ -2,6 +2,7 @@
 
 import { Box, Tab, Tabs } from "@mui/material";
 import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
+import { GameIcon } from "@/lib/icons";
 import { InfoItem } from "./info.types";
 
 export interface ExtraTab {
@@ -57,6 +58,8 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                 {infoSections.map((info) => (
                     <Tab
                         key={info.id}
+                        icon={info.icon ? <GameIcon name={info.icon} sx={{ fontSize: "1.2em" }} /> : undefined}
+                        iconPosition="start"
                         label={
                             info.subtitle ? (
                                 <>

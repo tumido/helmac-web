@@ -2,6 +2,7 @@
 
 import { Box, Tab, Tabs } from "@mui/material";
 import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
+import { GameIcon } from "@/lib/icons";
 import { RuleItem } from "./rules.types";
 
 interface RuleTabsProps {
@@ -51,6 +52,8 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                 {rules.map((rule) => (
                     <Tab
                         key={rule.id}
+                        icon={rule.icon ? <GameIcon name={rule.icon} sx={{ fontSize: "1.2em" }} /> : undefined}
+                        iconPosition="start"
                         label={rule.title}
                         value={rule.id}
                     />

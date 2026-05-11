@@ -2,6 +2,7 @@
 
 import { Box, Tab, Tabs } from "@mui/material";
 import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
+import { GameIcon } from "@/lib/icons";
 import { OfferItem } from "./offers.types";
 
 interface OfferTabsProps {
@@ -51,6 +52,8 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 {offers.map((offer) => (
                     <Tab
                         key={offer.id}
+                        icon={offer.icon ? <GameIcon name={offer.icon} sx={{ fontSize: "1.2em" }} /> : undefined}
+                        iconPosition="start"
                         label={
                             offer.subtitle ? (
                                 <>

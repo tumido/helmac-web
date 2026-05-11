@@ -30,6 +30,7 @@ export async function createRule(
         title: formData.get("title"),
         content: formData.get("content"),
         showToc: formData.get("showToc"),
+        icon: formData.get("icon") || undefined,
     };
 
     const validated = createRuleSchema.safeParse(rawData);
@@ -51,6 +52,7 @@ export async function createRule(
                 title: validated.data.title,
                 content: validated.data.content,
                 showToc: validated.data.showToc ?? false,
+                icon: validated.data.icon ?? null,
                 sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
             },
         });
@@ -80,6 +82,7 @@ export async function updateRule(
         title: formData.get("title"),
         content: formData.get("content"),
         showToc: formData.get("showToc"),
+        icon: formData.get("icon") || undefined,
     };
 
     const validated = updateRuleSchema.safeParse(rawData);
@@ -108,6 +111,7 @@ export async function updateRule(
                 title: validated.data.title,
                 content: validated.data.content,
                 showToc: validated.data.showToc,
+                icon: validated.data.icon ?? null,
             },
         });
 

@@ -19,6 +19,7 @@ import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createRule, updateRule, RuleActionState } from "@/lib/actions/rules";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { IconPicker } from "@/components/admin/icon-picker";
 
 interface RuleFormProps {
     mode: "create" | "edit";
@@ -28,6 +29,7 @@ interface RuleFormProps {
         title?: string;
         content?: string;
         showToc?: boolean;
+        icon?: string | null;
     };
 }
 
@@ -55,6 +57,7 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps) {
     const [content, setContent] = useState(defaultValues?.content || "");
     const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
+    const [icon, setIcon] = useState<string | null>(defaultValues?.icon || null);
 
     const action =
         mode === "create"
@@ -108,6 +111,8 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                         error={!!state?.error?.title}
                         helperText={state?.error?.title?.[0]}
                     />
+
+                    <IconPicker value={icon} onChange={setIcon} />
 
                     <Box
                         sx={{
