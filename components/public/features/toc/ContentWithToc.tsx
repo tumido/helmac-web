@@ -20,8 +20,6 @@ interface ContentWithTocProps {
 export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const mobileTocRef = useRef<HTMLDivElement>(null);
-    const [visible, setVisible] = useState(false);
-    const [tocTop, setTocTop] = useState(0);
     const [headerHeight, setHeaderHeight] = useState(64);
     const [mobileTocHeight, setMobileTocHeight] = useState(0);
     const [mobileSticky, setMobileSticky] = useState(false);
@@ -47,8 +45,6 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
         const rect = contentRef.current.getBoundingClientRect();
         const headerH = getHeaderHeight();
         setHeaderHeight(headerH);
-        setTocTop(Math.max(rect.top, headerH + 8));
-        setVisible(rect.bottom > 0 && rect.top < window.innerHeight);
 
         if (mobileTocRef.current) {
             const tocH = mobileTocRef.current.getBoundingClientRect().height;
@@ -97,8 +93,6 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
                           }),
                     backgroundColor: "background.default",
                     mb: mobileSticky ? 0 : 3,
-                    opacity: visible ? 1 : 0,
-                    pointerEvents: visible ? "auto" : "none",
                     transition: "opacity 0.2s ease",
                 }}
             >
@@ -115,30 +109,40 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
                 />
             )}
 
-            {isBlocks ? (
-                <BlockRenderer blocks={content} tocIds={tocIdMap} />
-            ) : (
-                <MarkdownContent content={content} tocIds={tocIdMap} />
-            )}
-
-            {/* Desktop: fixed TOC in right viewport margin */}
+            {/* Desktop: flex layout with sticky sidebar */}
             <Box
                 sx={{
-                    position: "fixed",
-                    top: tocTop,
-                    right: 24,
-                    width: 200,
-                    maxHeight: `calc(100vh - ${tocTop + 30}px)`,
-                    overflowY: "auto",
-                    scrollbarWidth: "none",
-                    "&::-webkit-scrollbar": { display: "none" },
-                    display: { xs: "none", lg: "block" },
-                    opacity: visible ? 1 : 0,
-                    pointerEvents: visible ? "auto" : "none",
-                    transition: "opacity 0.2s ease",
+                    display: { xs: "block", lg: "flex" },
+                    gap: 4,
+                    alignItems: "flex-start",
                 }}
             >
-                <TableOfContents items={tocItems} variant="sidebar" />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {isBlocks ? (
+                        <BlockRenderer blocks={content} tocIds={tocIdMap} />
+                    ) : (
+                        <MarkdownContent content={content} tocIds={tocIdMap} />
+                    )}
+                </Box>
+
+                <Box
+                    sx={{
+                        display: { xs: "none", lg: "block" },
+                        width: 200,
+                        flexShrink: 0,
+                        borderLeft: "1px solid",
+                        borderColor: "divider",
+                        pl: 3,
+                        position: "sticky",
+                        top: headerHeight + 16,
+                        maxHeight: `calc(100vh - ${headerHeight + 32}px)`,
+                        overflowY: "auto",
+                        scrollbarWidth: "none",
+                        "&::-webkit-scrollbar": { display: "none" },
+                    }}
+                >
+                    <TableOfContents items={tocItems} variant="sidebar" />
+                </Box>
             </Box>
         </Box>
     );
