@@ -4,6 +4,7 @@ import { getYearById } from "@/lib/services/years";
 import { getRuleById } from "@/lib/services/rules";
 import { RuleForm } from "@/components/forms/rule-form";
 import { PageHeader } from "@/components/admin/page-header";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface EditRulePageProps {
     params: Promise<{ id: string; ruleId: string }>;
@@ -21,10 +22,10 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
-                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Pravidla", href: `/admin/rocniky/${year.id}/pravidla` },
                     { label: rule.title },
@@ -43,7 +44,8 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
                 ruleId={rule.id}
                 defaultValues={{
                     title: rule.title,
-                    content: rule.content,
+                    subtitle: rule.subtitle,
+                    content: rule.content as unknown as ContentBlock[],
                     showToc: rule.showToc,
                     icon: rule.icon,
                 }}

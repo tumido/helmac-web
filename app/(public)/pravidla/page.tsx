@@ -3,6 +3,7 @@ import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { RulesContent } from "@/components/public/features/rules";
 import { getRulesForActiveYear, getActiveYear } from "@/lib/services";
+import type { RuleItem } from "@/components/public/features/rules";
 
 export const metadata = {
     title: "Pravidla | Helmáč",
@@ -22,9 +23,9 @@ export default async function PravidlaPage() {
                 subtitle="Herní pravidla a pokyny pro účastníky"
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
-            <Container maxWidth="md" sx={{ pb: 8 }}>
+            <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <Suspense>
-                    <RulesContent rules={rules} />
+                    <RulesContent rules={rules as unknown as RuleItem[]} />
                 </Suspense>
             </Container>
         </>

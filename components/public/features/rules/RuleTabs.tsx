@@ -54,7 +54,19 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                         key={rule.id}
                         icon={rule.icon ? <GameIcon name={rule.icon} sx={{ fontSize: "1.2em" }} /> : undefined}
                         iconPosition="start"
-                        label={rule.title}
+                        label={
+                            rule.subtitle ? (
+                                <>
+                                    {rule.title}
+                                    <br />
+                                    <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
+                                        {rule.subtitle}
+                                    </span>
+                                </>
+                            ) : (
+                                rule.title
+                            )
+                        }
                         value={rule.id}
                     />
                 ))}

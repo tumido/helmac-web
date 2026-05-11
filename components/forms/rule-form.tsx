@@ -8,18 +8,16 @@ import {
     TextField,
     Alert,
     CircularProgress,
-    Card,
-    CardContent,
-    CardActions,
-    Typography,
+    Paper,
     Switch,
     FormControlLabel,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createRule, updateRule, RuleActionState } from "@/lib/actions/rules";
-import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { BlockEditor } from "@/components/admin/block-editor";
 import { IconPicker } from "@/components/admin/icon-picker";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface RuleFormProps {
     mode: "create" | "edit";
@@ -27,7 +25,8 @@ interface RuleFormProps {
     ruleId?: string;
     defaultValues?: {
         title?: string;
-        content?: string;
+        subtitle?: string | null;
+        content?: ContentBlock[];
         showToc?: boolean;
         icon?: string | null;
     };
@@ -55,7 +54,9 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 }
 
 export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps) {
-    const [content, setContent] = useState(defaultValues?.content || "");
+    const [blocks, setBlocks] = useState<ContentBlock[]>(
+        defaultValues?.content || []
+    );
     const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
     const [icon, setIcon] = useState<string | null>(defaultValues?.icon || null);
 
@@ -70,102 +71,84 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
     );
 
     return (
-        <Card
-            sx={{
-                height: "calc(100dvh - 180px)",
-                display: "flex",
-                flexDirection: "column",
-            }}
+        <Box
+            component="form"
+            action={formAction}
         >
-            <Box
-                component="form"
-                action={formAction}
+            {/* Toolbar */}
+            <Paper
+                variant="outlined"
                 sx={{
                     display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
-                    minHeight: 0,
+                    alignItems: "center",
+                    gap: 2,
+                    px: 2,
+                    py: 1,
+                    mb: 3,
+                    flexWrap: "wrap",
+                    borderRadius: 2,
                 }}
             >
-                <CardContent
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 3,
-                        flex: 1,
-                        overflow: "auto",
-                        minHeight: 0,
-                    }}
-                >
-                    {state?.error?._form && (
-                        <Alert severity="error">{state.error._form[0]}</Alert>
-                    )}
-
-                    <TextField
-                        required
-                        fullWidth
-                        id="title"
-                        name="title"
-                        label="Název pravidla"
-                        defaultValue={defaultValues?.title || ""}
-                        error={!!state?.error?.title}
-                        helperText={state?.error?.title?.[0]}
-                    />
-
-                    <IconPicker value={icon} onChange={setIcon} />
-
-                    <Box
-                        sx={{
-                            flex: 1,
-                            minHeight: 200,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        <Typography
-                            variant="subtitle2"
-                            sx={{ mb: 1, flexShrink: 0 }}
-                        >
-                            Obsah *
-                        </Typography>
-                        <RichTextEditor
-                            value={content}
-                            onChange={setContent}
-                            minHeight={200}
-                            yearId={yearId}
+                <TextField
+                    required
+                    size="small"
+                    id="title"
+                    name="title"
+                    label="Název pravidla"
+                    defaultValue={defaultValues?.title || ""}
+                    error={!!state?.error?.title}
+                    helperText={state?.error?.title?.[0]}
+                    sx={{ minWidth: 200, flex: 1 }}
+                />
+                <TextField
+                    size="small"
+                    id="subtitle"
+                    name="subtitle"
+                    label="Podtitulek"
+                    defaultValue={defaultValues?.subtitle || ""}
+                    sx={{ minWidth: 150, flex: 1 }}
+                />
+                <IconPicker value={icon} onChange={setIcon} />
+                <FormControlLabel
+                    control={
+                        <Switch
+                            name="showToc"
+                            value="true"
+                            size="small"
+                            checked={showToc}
+                            onChange={(e) => setShowToc(e.target.checked)}
                         />
-                        <input type="hidden" name="content" value={content} />
-                        {state?.error?.content && (
-                            <Typography
-                                variant="caption"
-                                color="error"
-                                sx={{ mt: 0.5, flexShrink: 0 }}
-                            >
-                                {state.error.content[0]}
-                            </Typography>
-                        )}
-                    </Box>
+                    }
+                    label="Zobrazit obsah"
+                />
+                <SubmitButton mode={mode} />
+                <LinkButton
+                    href={`/admin/rocniky/${yearId}/pravidla`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Zrušit
+                </LinkButton>
+            </Paper>
 
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                name="showToc"
-                                value="true"
-                                checked={showToc}
-                                onChange={(e) => setShowToc(e.target.checked)}
-                            />
-                        }
-                        label="Zobrazit obsah"
-                    />
-                </CardContent>
+            {state?.error?._form && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error._form[0]}
+                </Alert>
+            )}
+            {state?.error?.content && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error.content[0]}
+                </Alert>
+            )}
 
-                <CardActions sx={{ px: 2, pb: 2 }}>
-                    <SubmitButton mode={mode} />
-                    <LinkButton href={`/admin/rocniky/${yearId}/pravidla`}>
-                        Zrušit
-                    </LinkButton>
-                </CardActions>
-            </Box>
-        </Card>
+            <input type="hidden" name="content" value={JSON.stringify(blocks)} />
+
+            <BlockEditor
+                value={blocks}
+                onChange={setBlocks}
+                yearId={yearId}
+            />
+        </Box>
     );
 }

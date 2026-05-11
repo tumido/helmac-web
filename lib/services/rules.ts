@@ -12,6 +12,7 @@ export const getRulesForYear = cache(async (yearId: string) => {
         select: {
             id: true,
             title: true,
+            subtitle: true,
             icon: true,
             content: true,
             sortOrder: true,
@@ -28,6 +29,7 @@ export const getRuleById = cache(async (ruleId: string) => {
             id: true,
             yearId: true,
             title: true,
+            subtitle: true,
             icon: true,
             content: true,
             showToc: true,
@@ -54,6 +56,7 @@ export const getRulesForActiveYear = cache(async () => {
         select: {
             id: true,
             title: true,
+            subtitle: true,
             icon: true,
             content: true,
             showToc: true,

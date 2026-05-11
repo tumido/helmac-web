@@ -17,15 +17,15 @@ export default async function NewRulePage({ params }: NewRulePageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
-                    { label: "Rocniky", href: "/admin/rocniky" },
+                    { label: "Ročníky", href: "/admin/rocniky" },
                     { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
                     { label: "Pravidla", href: `/admin/rocniky/${year.id}/pravidla` },
-                    { label: "Nove pravidlo" },
+                    { label: "Nové pravidlo" },
                 ]}
-                title="Nove pravidlo"
+                title="Nové pravidlo"
             />
             <Box sx={{ mb: 4 }}>
                 <Typography color="text.secondary">
