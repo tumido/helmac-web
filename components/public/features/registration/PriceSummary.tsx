@@ -51,32 +51,47 @@ export function PriceSummary({
             const tierIdx = getCurrentTierIndex(def.usePriceTiers ? priceTiers : []);
 
             if (field.type === "pricing_quantity") {
-                const unitOpt = def.options[0];
-                if (!unitOpt) continue;
-                const unitPrice = unitOpt.prices[tierIdx] ?? 0;
+                const parseQuantities = (val: unknown): Record<string, number> => {
+                    try {
+                        const parsed = typeof val === "string" ? JSON.parse(val || "{}") : val;
+                        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                            return parsed as Record<string, number>;
+                        }
+                    } catch { /* empty */ }
+                    return {};
+                };
 
                 // Main person
-                const qty = Number(mainValues[field.name] ?? 0);
-                if (qty > 0 && visibleMainFields.has(field.id)) {
-                    const price = unitPrice * qty;
-                    mainLines.push({ label: def.name, optionName: `${qty}x ${def.unitName || "ks"}`, price });
+                const mainQty = parseQuantities(mainValues[field.name]);
+                if (visibleMainFields.has(field.id)) {
+                    for (const opt of def.options) {
+                        const qty = Number(mainQty[opt.name]) || 0;
+                        if (qty <= 0) continue;
+                        const unitPrice = opt.prices[tierIdx] ?? 0;
+                        const price = unitPrice * qty;
+                        mainLines.push({ label: field.label, optionName: `${opt.name} ${qty}x${def.unitName ? ` ${def.unitName}` : ""}`, price });
+                    }
                 }
 
                 // Additional people
                 if (field.includeForAdditionalPeople) {
                     additionalPeople.forEach((person, idx) => {
-                        const personQty = Number(person[field.name] ?? 0);
-                        if (personQty <= 0) return;
+                        const personQty = parseQuantities(person[field.name]);
                         if (visibleAPFieldsPerPerson && visibleAPFieldsPerPerson[idx]) {
                             if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
                         }
-                        const price = unitPrice * personQty;
-                        let apEntry = apLines.find((a) => a.personIndex === idx);
-                        if (!apEntry) {
-                            apEntry = { personIndex: idx, lines: [] };
-                            apLines.push(apEntry);
+                        for (const opt of def.options) {
+                            const qty = Number(personQty[opt.name]) || 0;
+                            if (qty <= 0) continue;
+                            const unitPrice = opt.prices[tierIdx] ?? 0;
+                            const price = unitPrice * qty;
+                            let apEntry = apLines.find((a) => a.personIndex === idx);
+                            if (!apEntry) {
+                                apEntry = { personIndex: idx, lines: [] };
+                                apLines.push(apEntry);
+                            }
+                            apEntry.lines.push({ label: field.label, optionName: `${opt.name} ${qty}x${def.unitName ? ` ${def.unitName}` : ""}`, price });
                         }
-                        apEntry.lines.push({ label: def.name, optionName: `${personQty}x ${def.unitName || "ks"}`, price });
                     });
                 }
             } else if (field.type === "pricing_multi_select") {
@@ -94,7 +109,7 @@ export function PriceSummary({
                         const opt = def.options.find((o) => o.name === optName);
                         if (opt) {
                             const price = opt.prices[tierIdx] ?? 0;
-                            mainLines.push({ label: def.name, optionName: opt.name, price });
+                            mainLines.push({ label: field.label, optionName: opt.name, price });
                         }
                     }
                 }
@@ -116,7 +131,7 @@ export function PriceSummary({
                                 apEntry = { personIndex: idx, lines: [] };
                                 apLines.push(apEntry);
                             }
-                            apEntry.lines.push({ label: def.name, optionName: opt.name, price });
+                            apEntry.lines.push({ label: field.label, optionName: opt.name, price });
                         }
                     });
                 }
@@ -127,7 +142,7 @@ export function PriceSummary({
                     const opt = def.options.find((o) => o.name === mainVal);
                     if (opt) {
                         const price = opt.prices[tierIdx] ?? 0;
-                        mainLines.push({ label: def.name, optionName: opt.name, price });
+                        mainLines.push({ label: field.label, optionName: opt.name, price });
                     }
                 }
 
@@ -147,7 +162,7 @@ export function PriceSummary({
                             apEntry = { personIndex: idx, lines: [] };
                             apLines.push(apEntry);
                         }
-                        apEntry.lines.push({ label: def.name, optionName: opt.name, price });
+                        apEntry.lines.push({ label: field.label, optionName: opt.name, price });
                     });
                 }
             }
@@ -171,11 +186,8 @@ export function PriceSummary({
         return { mainLines, apLines: apTotals, grandTotal };
     }, [pricingDefinitions, priceTiers, allInputFields, mainValues, additionalPeople, visibleMainFields, visibleAPFieldsPerPerson]);
 
-    const isEmpty =
-        summary.mainLines.every((l) => l.price === 0) &&
-        summary.apLines.every((a) =>
-            a.lines.every((l) => l.price === 0)
-        );
+    const isEmpty = summary.mainLines.length === 0 &&
+        summary.apLines.every((a) => a.lines.length === 0);
 
     const content = (
         <>
@@ -195,7 +207,7 @@ export function PriceSummary({
                 </Typography>
             )}
 
-            {summary.mainLines.some((l) => l.price !== 0) && (
+            {summary.mainLines.length > 0 && (
                 <Box sx={{ mb: 1.5 }}>
                     {summary.apLines.length > 0 && (
                         <Typography
@@ -212,7 +224,7 @@ export function PriceSummary({
                             Hlavní osoba
                         </Typography>
                     )}
-                    {summary.mainLines.filter((l) => l.price !== 0).map((line, i) => (
+                    {summary.mainLines.map((line, i) => (
                         <Box
                             key={i}
                             sx={{
@@ -220,26 +232,20 @@ export function PriceSummary({
                                 justifyContent: "space-between",
                                 alignItems: "baseline",
                                 gap: 1,
-                                mb: 0.25,
+                                mb: 0.75,
                             }}
                         >
-                            <Typography
-                                variant="body2"
-                                noWrap
-                                sx={{ minWidth: 0 }}
-                            >
+                            <Typography variant="body2">
                                 {line.label}: {line.optionName}
                             </Typography>
-                            {line.price !== 0 && (
-                                <Typography
-                                    variant="body2"
-                                    fontWeight={500}
-                                    noWrap
-                                    sx={{ flexShrink: 0 }}
-                                >
-                                    {formatPrice(line.price)}
-                                </Typography>
-                            )}
+                            <Typography
+                                variant="body2"
+                                fontWeight={500}
+                                noWrap
+                                sx={{ flexShrink: 0 }}
+                            >
+                                {formatPrice(line.price)}
+                            </Typography>
                         </Box>
                     ))}
                     {summary.apLines.length > 0 && (
@@ -298,7 +304,7 @@ export function PriceSummary({
                     >
                         Osoba č. {ap.personIndex + 2}
                     </Typography>
-                    {ap.lines.filter((l) => l.price !== 0).map((line, i) => (
+                    {ap.lines.map((line, i) => (
                         <Box
                             key={i}
                             sx={{
@@ -306,26 +312,20 @@ export function PriceSummary({
                                 justifyContent: "space-between",
                                 alignItems: "baseline",
                                 gap: 1,
-                                mb: 0.25,
+                                mb: 0.75,
                             }}
                         >
-                            <Typography
-                                variant="body2"
-                                noWrap
-                                sx={{ minWidth: 0 }}
-                            >
+                            <Typography variant="body2">
                                 {line.label}: {line.optionName}
                             </Typography>
-                            {line.price !== 0 && (
-                                <Typography
-                                    variant="body2"
-                                    fontWeight={500}
-                                    noWrap
-                                    sx={{ flexShrink: 0 }}
-                                >
-                                    {formatPrice(line.price)}
-                                </Typography>
-                            )}
+                            <Typography
+                                variant="body2"
+                                fontWeight={500}
+                                noWrap
+                                sx={{ flexShrink: 0 }}
+                            >
+                                {formatPrice(line.price)}
+                            </Typography>
                         </Box>
                     ))}
                     <Box

@@ -29,21 +29,28 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
             );
 
             if (field.type === "pricing_quantity") {
-                const unitOpt = def.options[0];
-                if (!unitOpt) continue;
-                const unitPrice = unitOpt.prices[tierIdx] ?? 0;
-                const qty = Number(
-                    props.mainValues[field.name] ?? 0
-                );
-                if (qty > 0 && props.visibleMainFields.has(field.id)) {
-                    total += unitPrice * qty;
+                const parseQty = (val: unknown): Record<string, number> => {
+                    try {
+                        const parsed = typeof val === "string" ? JSON.parse(val || "{}") : val;
+                        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                            return parsed as Record<string, number>;
+                        }
+                    } catch { /* empty */ }
+                    return {};
+                };
+
+                const mainQty = parseQty(props.mainValues[field.name]);
+                if (props.visibleMainFields.has(field.id)) {
+                    for (const opt of def.options) {
+                        const qty = Number(mainQty[opt.name]) || 0;
+                        if (qty <= 0) continue;
+                        const unitPrice = opt.prices[tierIdx] ?? 0;
+                        total += unitPrice * qty;
+                    }
                 }
                 if (field.includeForAdditionalPeople) {
                     props.additionalPeople.forEach((person, idx) => {
-                        const pQty = Number(
-                            person[field.name] ?? 0
-                        );
-                        if (pQty <= 0) return;
+                        const personQty = parseQty(person[field.name]);
                         if (
                             props.visibleAPFieldsPerPerson?.[idx] &&
                             !props.visibleAPFieldsPerPerson[idx].has(
@@ -51,7 +58,12 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                             )
                         )
                             return;
-                        total += unitPrice * pQty;
+                        for (const opt of def.options) {
+                            const qty = Number(personQty[opt.name]) || 0;
+                            if (qty <= 0) continue;
+                            const unitPrice = opt.prices[tierIdx] ?? 0;
+                            total += unitPrice * qty;
+                        }
                     });
                 }
             } else if (field.type === "pricing_multi_select") {
