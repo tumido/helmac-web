@@ -21,22 +21,96 @@ const sanitizeSchema = {
         "dl",
         "dt",
         "dd",
+        "div",
     ],
     attributes: {
         ...defaultSchema.attributes,
-        span: [...(defaultSchema.attributes?.span ?? []), "style"],
-        p: [...(defaultSchema.attributes?.p ?? []), "style"],
-        h2: [...(defaultSchema.attributes?.h2 ?? []), "style"],
-        h3: [...(defaultSchema.attributes?.h3 ?? []), "style"],
+        span: [
+            ...(defaultSchema.attributes?.span ?? []),
+            "style",
+        ],
+        p: [
+            ...(defaultSchema.attributes?.p ?? []),
+            "style",
+        ],
+        h2: [
+            ...(defaultSchema.attributes?.h2 ?? []),
+            "style",
+        ],
+        h3: [
+            ...(defaultSchema.attributes?.h3 ?? []),
+            "style",
+        ],
         a: [
             ...(defaultSchema.attributes?.a ?? []),
-            "data-button",
+            "dataButton",
+            "dataAlign",
             "className",
-            "class",
         ],
-        iframe: ["src", "allowFullScreen", "allow", "frameBorder"],
+        div: [
+            ...(defaultSchema.attributes?.div ?? []),
+            "className",
+            "dataAlign",
+            "dataButton",
+            "dataHref",
+        ],
+        iframe: [
+            "src",
+            "allowFullScreen",
+            "allow",
+            "frameBorder",
+        ],
     },
 };
+
+const ALIGN_MAP: Record<
+    string,
+    "flex-start" | "center" | "flex-end"
+> = {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end",
+};
+
+function groupConsecutiveButtons(md: string): string {
+    const btnRe =
+        /^<(?:div|a)\s+data-button="[^"]*"(?:\s+data-align="([^"]*)")?(?:\s+data-href="[^"]*")?(?:\s+href="[^"]*")?(?:\s+class="[^"]*")?>[^<]*<\/(?:div|a)>\s*$/;
+    const lines = md.split("\n");
+    const result: string[] = [];
+    let group: string[] = [];
+    let groupAlign = "center";
+
+    function flushGroup() {
+        if (group.length === 0) return;
+        result.push(
+            `<div class="button-row" data-align="${groupAlign}">`,
+        );
+        result.push(...group);
+        result.push("</div>");
+        group = [];
+        groupAlign = "center";
+    }
+
+    for (const line of lines) {
+        const match = btnRe.exec(line);
+        if (match) {
+            if (group.length === 0) {
+                groupAlign = match[1] || "center";
+            }
+            group.push(line);
+        } else if (
+            line.trim() === "" &&
+            group.length > 0
+        ) {
+            continue;
+        } else {
+            flushGroup();
+            result.push(line);
+        }
+    }
+    flushGroup();
+    return result.join("\n");
+}
 
 interface MarkdownContentProps {
     content: string;
@@ -47,6 +121,11 @@ export function MarkdownContent({
     content,
     tocIds,
 }: MarkdownContentProps) {
+    const processed = useMemo(
+        () => groupConsecutiveButtons(content),
+        [content],
+    );
+
     const components = useMemo<Components>(
         () => ({
             h2: ({ children, style }) => {
@@ -112,14 +191,20 @@ export function MarkdownContent({
                 </Typography>
             ),
             a: ({ children, href, node }) => {
-                const dataButton = node?.properties?.dataButton as
-                    | string
-                    | undefined;
+                const dataButton = node?.properties
+                    ?.dataButton as string | undefined;
                 if (dataButton) {
                     const variant = (
-                        ["contained", "outlined", "text"] as const
+                        [
+                            "contained",
+                            "outlined",
+                            "text",
+                        ] as const
                     ).includes(
-                        dataButton as "contained" | "outlined" | "text"
+                        dataButton as
+                            | "contained"
+                            | "outlined"
+                            | "text",
                     )
                         ? (dataButton as
                               | "contained"
@@ -131,7 +216,7 @@ export function MarkdownContent({
                             variant={variant}
                             href={href}
                             size="small"
-                            sx={{ my: 1 }}
+                            sx={{ mx: 0.5, my: 0.5 }}
                         >
                             {children}
                         </Button>
@@ -149,6 +234,66 @@ export function MarkdownContent({
                         {children}
                     </Box>
                 );
+            },
+            div: ({ children, node }) => {
+                const className = node?.properties
+                    ?.className as string[] | undefined;
+                const dataButton = node?.properties
+                    ?.dataButton as string | undefined;
+                if (className?.includes("button-row")) {
+                    const align = (node?.properties
+                        ?.dataAlign ||
+                        "center") as string;
+                    return (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent:
+                                    ALIGN_MAP[align] ||
+                                    "center",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                my: 1,
+                            }}
+                        >
+                            {children}
+                        </Box>
+                    );
+                }
+                if (dataButton) {
+                    const variant = (
+                        [
+                            "contained",
+                            "outlined",
+                            "text",
+                        ] as const
+                    ).includes(
+                        dataButton as
+                            | "contained"
+                            | "outlined"
+                            | "text",
+                    )
+                        ? (dataButton as
+                              | "contained"
+                              | "outlined"
+                              | "text")
+                        : "contained";
+                    const href = node?.properties
+                        ?.dataHref as
+                        | string
+                        | undefined;
+                    return (
+                        <Button
+                            variant={variant}
+                            href={href}
+                            size="small"
+                            sx={{ mx: 0.5, my: 0.5 }}
+                        >
+                            {children}
+                        </Button>
+                    );
+                }
+                return <div>{children}</div>;
             },
             img: ({ src, alt }) => (
                 <Box
@@ -361,7 +506,7 @@ export function MarkdownContent({
                 ]}
                 components={components}
             >
-                {content}
+                {processed}
             </ReactMarkdown>
         </Box>
     );
@@ -370,7 +515,8 @@ export function MarkdownContent({
 function extractText(node: unknown): string {
     if (typeof node === "string") return node;
     if (typeof node === "number") return String(node);
-    if (Array.isArray(node)) return node.map(extractText).join("");
+    if (Array.isArray(node))
+        return node.map(extractText).join("");
     if (
         node &&
         typeof node === "object" &&
@@ -378,8 +524,8 @@ function extractText(node: unknown): string {
         (node as { props?: { children?: unknown } }).props
     ) {
         return extractText(
-            (node as { props: { children?: unknown } }).props
-                .children,
+            (node as { props: { children?: unknown } })
+                .props.children,
         );
     }
     return "";

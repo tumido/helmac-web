@@ -294,10 +294,19 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                     ) : editData.type === "description" ? (
                         <RichTextEditor
                             value={layoutData.text}
-                            onChange={(val) => updateLayout({ text: val })}
+                            onChange={(val: string) =>
+                                updateLayout({
+                                    text: val,
+                                })
+                            }
                             format="markdown"
                             minHeight={150}
                             placeholder="Text popisu..."
+                            allowedTools={[
+                                "formatting",
+                                "inserts",
+                                "undo",
+                            ]}
                         />
                     ) : (
                         <TextField

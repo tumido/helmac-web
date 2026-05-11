@@ -62,9 +62,18 @@ export function CardBlockEditor({
             <Box sx={{ flex: 1, minHeight: 60 }}>
                 <RichTextEditor
                     value={block.text}
-                    onChange={(text) => onChange({ ...block, text })}
+                    onChange={(text) =>
+                        onChange({ ...block, text })
+                    }
                     minHeight={60}
                     yearId={yearId}
+                    allowedTools={[
+                        "formatting",
+                        "h3",
+                        "lists",
+                        "inserts",
+                        "undo",
+                    ]}
                 />
             </Box>
             <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
