@@ -28,7 +28,7 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                 value={selectedRuleId}
                 onChange={handleChange}
                 variant="scrollable"
-                scrollButtons="auto"
+                scrollButtons
                 allowScrollButtonsMobile
                 ScrollButtonComponent={TabScrollButton}
                 sx={{

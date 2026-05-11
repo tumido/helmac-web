@@ -17,6 +17,8 @@ import {
 import { Close, Search } from "@mui/icons-material";
 import { GameIcon, GAME_ICONS, ICON_CATEGORIES } from "@/lib/icons";
 
+const BATCH_SIZE = 60;
+
 interface IconPickerProps {
     value: string | null;
     onChange: (icon: string | null) => void;
@@ -26,6 +28,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState<string | null>(null);
+    const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
     const filtered = useMemo(() => {
         return GAME_ICONS.filter((icon) => {
@@ -40,6 +43,10 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
             return true;
         });
     }, [search, category]);
+
+    const visible = filtered.slice(0, visibleCount);
+    const hasMore = visibleCount < filtered.length;
+
 
     const handleSelect = (name: string) => {
         onChange(name);
@@ -157,10 +164,12 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                             overflowY: "auto",
                         }}
                     >
-                        {filtered.map((icon) => (
+                        {visible.map((icon) => (
                             <Box
                                 key={icon.name}
-                                onClick={() => handleSelect(icon.name)}
+                                onClick={() =>
+                                    handleSelect(icon.name)
+                                }
                                 sx={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -196,6 +205,28 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                                 </Typography>
                             </Box>
                         ))}
+                        {hasMore && (
+                            <Box
+                                sx={{
+                                    gridColumn: "1 / -1",
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    py: 1,
+                                }}
+                            >
+                                <Button
+                                    size="small"
+                                    onClick={() =>
+                                        setVisibleCount(
+                                            (prev) =>
+                                                prev + BATCH_SIZE
+                                        )
+                                    }
+                                >
+                                    Načíst další {Math.min(BATCH_SIZE, filtered.length - visibleCount)} z {filtered.length - visibleCount}
+                                </Button>
+                            </Box>
+                        )}
                     </Box>
                 </DialogContent>
                 <DialogActions>

@@ -28,7 +28,7 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 value={selectedOfferId}
                 onChange={handleChange}
                 variant="scrollable"
-                scrollButtons="auto"
+                scrollButtons
                 allowScrollButtonsMobile
                 ScrollButtonComponent={TabScrollButton}
                 sx={{

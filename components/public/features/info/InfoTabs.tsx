@@ -34,7 +34,7 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                 value={selectedInfoId}
                 onChange={handleChange}
                 variant="scrollable"
-                scrollButtons="auto"
+                scrollButtons
                 allowScrollButtonsMobile
                 ScrollButtonComponent={TabScrollButton}
                 sx={{
