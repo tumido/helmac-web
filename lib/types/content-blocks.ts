@@ -103,9 +103,14 @@ export function createBlock(type: ContentBlockType): ContentBlock {
 }
 
 export function blocksToMarkdown(blocks: ContentBlock[]): string {
+    const sorted = [...blocks].sort((a, b) => {
+        if (a.layout.y !== b.layout.y) return a.layout.y - b.layout.y;
+        return a.layout.x - b.layout.x;
+    });
+
     const parts: string[] = [];
 
-    for (const block of blocks) {
+    for (const block of sorted) {
         if (block.type === "richtext") {
             parts.push(block.content);
         }

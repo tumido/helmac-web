@@ -9,14 +9,23 @@ export interface TocItem {
 const HEADING_RE = /^(#{2,3})\s+(.+)$/;
 
 function stripInlineMarkdown(text: string): string {
-    return text
-        .replace(/\*\*(.+?)\*\*/g, "$1")
-        .replace(/__(.+?)__/g, "$1")
-        .replace(/\*(.+?)\*/g, "$1")
-        .replace(/_(.+?)_/g, "$1")
-        .replace(/~~(.+?)~~/g, "$1")
-        .replace(/`(.+?)`/g, "$1")
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    return (
+        text
+            .replace(/<[^>]+>/g, "")
+            .replace(/\*\*(.+?)\*\*/g, "$1")
+            .replace(/__(.+?)__/g, "$1")
+            .replace(/\*(.+?)\*/g, "$1")
+            .replace(/_(.+?)_/g, "$1")
+            .replace(/~~(.+?)~~/g, "$1")
+            .replace(/`(.+?)`/g, "$1")
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&nbsp;/g, " ")
+    );
 }
 
 export function extractMarkdownToc(markdown: string): TocItem[] {
