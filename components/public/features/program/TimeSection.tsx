@@ -4,6 +4,7 @@ import { TimeOfDay, getTimeOfDayLabel } from "./program.types";
 
 interface TimeSectionProps {
     timeOfDay: TimeOfDay;
+    isFirst?: boolean;
 }
 
 function getTimeIcon(timeOfDay: TimeOfDay) {
@@ -17,7 +18,7 @@ function getTimeIcon(timeOfDay: TimeOfDay) {
     }
 }
 
-export function TimeSection({ timeOfDay }: TimeSectionProps) {
+export function TimeSection({ timeOfDay, isFirst }: TimeSectionProps) {
     return (
         <Box
             sx={{
@@ -25,10 +26,7 @@ export function TimeSection({ timeOfDay }: TimeSectionProps) {
                 alignItems: "center",
                 gap: 1.5,
                 mb: 2,
-                mt: 4,
-                "&:first-of-type": {
-                    mt: 0,
-                },
+                mt: isFirst ? 0 : 4,
             }}
         >
             <Box sx={{ display: "flex", alignItems: "center" }}>

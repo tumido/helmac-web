@@ -112,9 +112,12 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
                 </Box>
             ) : (
                 <Box>
-                    {nonEmptyGroups.map((timeOfDay) => (
+                    {nonEmptyGroups.map((timeOfDay, index) => (
                         <Box key={timeOfDay}>
-                            <TimeSection timeOfDay={timeOfDay} />
+                            <TimeSection
+                                timeOfDay={timeOfDay}
+                                isFirst={index === 0}
+                            />
                             <Box
                                 sx={{
                                     display: "flex",
