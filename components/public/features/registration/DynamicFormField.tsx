@@ -882,13 +882,13 @@ export function DynamicFormField({
                                         borderColor: isDisabled
                                             ? "action.disabled"
                                             : isSelected
-                                              ? "secondary.main"
+                                              ? "primary.main"
                                               : "divider",
                                         borderRadius: 1,
                                         backgroundColor: isDisabled
                                             ? "action.disabledBackground"
                                             : isSelected
-                                              ? "secondary.50"
+                                              ? "primary.50"
                                               : "transparent",
                                         cursor: isDisabled
                                             ? "not-allowed"
@@ -899,7 +899,7 @@ export function DynamicFormField({
                                             ? {}
                                             : {
                                                   borderColor: isSelected
-                                                      ? "secondary.main"
+                                                      ? "primary.main"
                                                       : "action.selected",
                                               },
                                     }}
@@ -919,10 +919,10 @@ export function DynamicFormField({
                                                 borderRadius: 0.5,
                                                 border: "2px solid",
                                                 borderColor: isSelected
-                                                    ? "secondary.main"
+                                                    ? "primary.main"
                                                     : "action.disabled",
                                                 backgroundColor: isSelected
-                                                    ? "secondary.main"
+                                                    ? "primary.main"
                                                     : "transparent",
                                                 display: "flex",
                                                 alignItems: "center",
