@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { Add, Remove, ExpandMore } from "@mui/icons-material";
 import { DecorativeDivider } from "@/components/public/ui";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import type {
@@ -70,11 +71,7 @@ export function DynamicFormField({
                 </Box>
             );
         }
-        return (
-            <Typography variant="body1" color="text.secondary">
-                {field.text}
-            </Typography>
-        );
+        return <MarkdownContent content={field.text} />;
     }
 
     const label = `${field.label}${field.required ? " *" : ""}`;
