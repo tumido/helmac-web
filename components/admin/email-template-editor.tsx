@@ -15,11 +15,12 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { Edit, Save, Close } from "@mui/icons-material";
+import { Edit, Save, Close, Send } from "@mui/icons-material";
 import { updateEmailTemplate } from "@/lib/actions/years";
 import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor";
 import { richContentSx } from "@/lib/utils/rich-content-sx";
 import { renderPlaceholderChipsInHtml } from "@/lib/utils/placeholder-html";
+import { TestEmailDialog } from "@/components/admin/test-email-dialog";
 
 type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
 
@@ -64,12 +65,38 @@ export function EmailTemplateEditor({
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
     const [success, setSuccess] = useState(false);
+    const [testOpen, setTestOpen] = useState(false);
     const editorRef = useRef<Editor | null>(null);
 
     const displayBody = useMemo(
         () => renderPlaceholderChipsInHtml(savedBody, availablePlaceholders),
         [savedBody, availablePlaceholders],
     );
+
+    const testSource = editing
+        ? { subject, body, bcc, emailAccountId }
+        : {
+              subject: savedSubject,
+              body: savedBody,
+              bcc: savedBcc,
+              emailAccountId: savedEmailAccountId,
+          };
+
+    const usedPlaceholders = useMemo(() => {
+        const haystack = `${testSource.subject}\n${testSource.body}`;
+        const keys = new Set<string>();
+        for (const match of haystack.matchAll(/\{(\w+)\}/g)) {
+            keys.add(match[1]);
+        }
+        const labelByKey = new Map(
+            availablePlaceholders.map((p) => [p.key, p.label]),
+        );
+        return Array.from(keys)
+            .filter((k) => k !== "qrPlatba")
+            .map((k) => ({ key: k, label: labelByKey.get(k) ?? k }));
+    }, [testSource.subject, testSource.body, availablePlaceholders]);
+
+    const canTest = !!testSource.subject || !!testSource.body;
 
     // Convert plain text body (no HTML tags) to HTML for backward compatibility
     const toEditorHtml = (text: string) => {
@@ -242,13 +269,23 @@ export function EmailTemplateEditor({
                                 </Alert>
                             )}
 
-                            <Button
-                                variant="outlined"
-                                startIcon={<Edit />}
-                                onClick={() => setEditing(true)}
-                            >
-                                Upravit
-                            </Button>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Edit />}
+                                    onClick={() => setEditing(true)}
+                                >
+                                    Upravit
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Send />}
+                                    onClick={() => setTestOpen(true)}
+                                    disabled={!canTest}
+                                >
+                                    Testovací odeslání
+                                </Button>
+                            </Box>
                         </Box>
                     ) : (
                         // Edit mode
@@ -354,11 +391,28 @@ export function EmailTemplateEditor({
                                 >
                                     Zrušit
                                 </Button>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Send />}
+                                    onClick={() => setTestOpen(true)}
+                                    disabled={saving || !canTest}
+                                >
+                                    Testovací odeslání
+                                </Button>
                             </Box>
                         </Box>
                     )}
                 </CardContent>
             </Card>
+            <TestEmailDialog
+                open={testOpen}
+                onClose={() => setTestOpen(false)}
+                subject={testSource.subject}
+                body={testSource.body}
+                bcc={testSource.bcc || null}
+                emailAccountId={testSource.emailAccountId || null}
+                usedPlaceholders={usedPlaceholders}
+            />
         </Box>
     );
 }
