@@ -55,6 +55,10 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
 
+    const fieldNameToLabel = new Map(allFormInputFields.map((f) => [f.name, f.label]));
+    const conditionFieldLabel =
+        fieldNameToLabel.get(conditionalEmail.conditionFieldName) ?? conditionalEmail.conditionFieldName;
+
     const availablePlaceholders = [
         ...allFormInputFields.map((f) => ({ key: f.name, label: f.label })),
         { key: "variabilniSymbol", label: "Variabilní symbol" },
@@ -78,8 +82,8 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
             />
 
             <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                    Podmínka: pole <Chip label={conditionalEmail.conditionFieldName} size="small" sx={{ mx: 0.5 }} /> = <Chip label={conditionalEmail.conditionValue} size="small" sx={{ mx: 0.5 }} />
+                <Typography variant="body2" color="text.secondary" component="div">
+                    Podmínka: pole <Chip label={conditionFieldLabel} size="small" sx={{ mx: 0.5 }} /> = <Chip label={conditionalEmail.conditionValue} size="small" sx={{ mx: 0.5 }} />
                 </Typography>
             </Box>
 

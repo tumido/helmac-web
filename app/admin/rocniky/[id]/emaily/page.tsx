@@ -97,6 +97,7 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const fieldNameToLabel = new Map(allInputFields.map((f) => [f.name, f.label]));
     const availableFields = allInputFields
         .filter((f) => OPTION_FIELD_TYPES.has(f.type) && f.options && f.options.length > 0)
         .map((f) => ({
@@ -233,7 +234,11 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                         <ConditionalEmailCard
                             key={email.id}
                             yearId={year.id}
-                            email={email}
+                            email={{
+                                ...email,
+                                conditionFieldLabel:
+                                    fieldNameToLabel.get(email.conditionFieldName) ?? email.conditionFieldName,
+                            }}
                         />
                     ))}
                 </>

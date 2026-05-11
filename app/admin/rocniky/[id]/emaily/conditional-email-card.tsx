@@ -27,6 +27,7 @@ interface ConditionalEmailCardProps {
         name: string;
         enabled: boolean;
         conditionFieldName: string;
+        conditionFieldLabel: string;
         conditionValue: string;
         subject: string | null;
         body: string | null;
@@ -85,7 +86,7 @@ export function ConditionalEmailCard({ yearId, email }: ConditionalEmailCardProp
                                 {email.name}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Podmínka: {email.conditionFieldName} = &quot;{email.conditionValue}&quot;
+                                Podmínka: {email.conditionFieldLabel} = &quot;{email.conditionValue}&quot;
                             </Typography>
                         </Box>
                         <Button
