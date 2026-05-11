@@ -62,13 +62,13 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                         iconPosition="start"
                         label={
                             info.subtitle ? (
-                                <>
+                                <span>
                                     {info.title}
                                     <br />
                                     <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
                                         {info.subtitle}
                                     </span>
-                                </>
+                                </span>
                             ) : (
                                 info.title
                             )

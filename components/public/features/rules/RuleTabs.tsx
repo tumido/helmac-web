@@ -56,13 +56,13 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                         iconPosition="start"
                         label={
                             rule.subtitle ? (
-                                <>
+                                <span>
                                     {rule.title}
                                     <br />
                                     <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
                                         {rule.subtitle}
                                     </span>
-                                </>
+                                </span>
                             ) : (
                                 rule.title
                             )

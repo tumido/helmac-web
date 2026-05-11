@@ -56,13 +56,13 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                         iconPosition="start"
                         label={
                             offer.subtitle ? (
-                                <>
+                                <span>
                                     {offer.title}
                                     <br />
                                     <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
                                         {offer.subtitle}
                                     </span>
-                                </>
+                                </span>
                             ) : (
                                 offer.title
                             )
