@@ -31,9 +31,7 @@ export function NewsFeedItem({ news }: NewsFeedItemProps) {
                             alignItems: "center",
                         }}
                     >
-                        <CalendarToday
-                            sx={{ color: "primary.main" }}
-                        />
+                        <CalendarToday sx={{ color: "primary.main" }} />
                         <Typography
                             variant="h6"
                             sx={{
@@ -94,10 +92,8 @@ export function NewsFeedItem({ news }: NewsFeedItemProps) {
                             transition:
                                 "background-color 0.2s ease, box-shadow 0.2s ease",
                             "&:hover": {
-                                backgroundColor:
-                                    "rgba(201, 162, 39, 0.06)",
-                                boxShadow:
-                                    "0 0 0 1px rgba(201, 162, 39, 0.1)",
+                                backgroundColor: "background.paper",
+                                boxShadow: "0 0 0 1px background.paper",
                             },
                         }}
                     >
@@ -137,10 +133,7 @@ export function NewsFeedItem({ news }: NewsFeedItemProps) {
                         </Typography>
 
                         {news.excerpt && (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                            >
+                            <Typography variant="body2" color="text.secondary">
                                 {news.excerpt}
                             </Typography>
                         )}
