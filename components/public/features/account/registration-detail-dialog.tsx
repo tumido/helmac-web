@@ -431,14 +431,12 @@ export function RegistrationHistoryTable({ registrations }: RegistrationHistoryT
                         <TableRow>
                             <TableCell>Ročník</TableCell>
                             <TableCell>Datum</TableCell>
-                            <TableCell>Stav</TableCell>
                             <TableCell align="right">Cena</TableCell>
                             <TableCell>Platba</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {registrations.map((reg) => {
-                            const statusInfo = statusLabels[reg.status] || { label: reg.status, color: "default" as const };
                             return (
                                 <TableRow
                                     key={reg.id}
@@ -453,13 +451,6 @@ export function RegistrationHistoryTable({ registrations }: RegistrationHistoryT
                                     </TableCell>
                                     <TableCell>
                                         {formatDate(reg.createdAt)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={statusInfo.label}
-                                            color={statusInfo.color}
-                                            size="small"
-                                        />
                                     </TableCell>
                                     <TableCell align="right">
                                         {reg.totalPrice ? `${reg.totalPrice} Kč` : "–"}
