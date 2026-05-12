@@ -96,6 +96,7 @@ export async function processTransactions(
                             id: true,
                             year: true,
                             title: true,
+                            subtitle: true,
                             paymentEmailEnabled: true,
                             paymentEmailSubject: true,
                             paymentEmailBody: true,
@@ -192,6 +193,7 @@ export async function processTransactions(
                             bankAccount: bankAccountFormatted,
                             yearNumber: year.year,
                             yearTitle: year.title,
+                            yearSubtitle: year.subtitle,
                         });
 
                         placeholders.prijataCastka = `${tx.amount} Kč`;

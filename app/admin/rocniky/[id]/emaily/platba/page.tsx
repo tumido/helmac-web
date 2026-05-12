@@ -58,6 +58,7 @@ export default async function PlatbaPage({ params }: PlatbaPageProps) {
         { key: "cisloUctu", label: "Číslo účtu" },
         { key: "rok", label: "Rok" },
         { key: "nazevRocniku", label: "Název ročníku" },
+        { key: "podtitulek", label: "Podtitulek" },
     ];
 
     return (

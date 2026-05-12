@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
                 select: {
                     year: true,
                     title: true,
+                    subtitle: true,
                     priceChangeEmailEnabled: true,
                     priceChangeEmailSubject: true,
                     priceChangeEmailBody: true,
@@ -133,6 +134,7 @@ export async function GET(request: NextRequest) {
                             bankAccount: bankAccountFormatted,
                             yearNumber: year.year,
                             yearTitle: year.title,
+                            yearSubtitle: year.subtitle,
                         });
 
                         // Add price change specific placeholders

@@ -131,6 +131,7 @@ export function buildPlaceholders(opts: {
     bankAccount: string | null;
     yearNumber: number;
     yearTitle: string;
+    yearSubtitle: string | null;
 }): Record<string, string> {
     const placeholders: Record<string, string> = {};
 
@@ -165,6 +166,7 @@ export function buildPlaceholders(opts: {
     placeholders.cisloUctu = opts.bankAccount ?? "";
     placeholders.rok = String(opts.yearNumber);
     placeholders.nazevRocniku = opts.yearTitle;
+    placeholders.podtitulek = opts.yearSubtitle ?? "";
 
     return placeholders;
 }

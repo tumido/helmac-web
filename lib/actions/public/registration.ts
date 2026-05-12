@@ -96,6 +96,7 @@ export async function submitDynamicRegistration(
         select: {
             id: true,
             title: true,
+            subtitle: true,
             year: true,
             confirmationEmailEnabled: true,
             confirmationEmailSubject: true,
@@ -448,6 +449,7 @@ export async function submitDynamicRegistration(
             bankAccount,
             yearNumber: activeYear.year,
             yearTitle: activeYear.title,
+            yearSubtitle: activeYear.subtitle,
         });
 
         // Generate QR payment image if payment data is available

@@ -68,6 +68,7 @@ export async function sendPreviewConfirmation(
             id: true,
             year: true,
             title: true,
+            subtitle: true,
             confirmationEmailEnabled: true,
             confirmationEmailSubject: true,
             confirmationEmailBody: true,
@@ -164,6 +165,7 @@ export async function sendPreviewConfirmation(
         bankAccount,
         yearNumber: year.year,
         yearTitle: year.title,
+        yearSubtitle: year.subtitle,
     });
 
     const renderedSubject = replacePlaceholders(

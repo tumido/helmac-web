@@ -100,6 +100,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                     select: {
                         year: true,
                         title: true,
+                        subtitle: true,
                         confirmationEmailEnabled: true,
                         confirmationEmailSubject: true,
                         confirmationEmailBody: true,
@@ -148,6 +149,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             bankAccount,
             yearNumber: submission.year.year,
             yearTitle: submission.year.title,
+            yearSubtitle: submission.year.subtitle,
         });
 
         const subject = replacePlaceholders(submission.year.confirmationEmailSubject, placeholders);

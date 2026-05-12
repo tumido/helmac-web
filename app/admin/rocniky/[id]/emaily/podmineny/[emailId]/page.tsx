@@ -70,6 +70,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
         { key: "cisloUctu", label: "Číslo účtu" },
         { key: "rok", label: "Rok" },
         { key: "nazevRocniku", label: "Název ročníku" },
+        { key: "podtitulek", label: "Podtitulek" },
         { key: "qrPlatba", label: "QR platba" },
     ];
 
