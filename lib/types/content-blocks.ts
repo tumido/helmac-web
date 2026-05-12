@@ -93,7 +93,7 @@ export function createBlock(type: ContentBlockType): ContentBlock {
             return {
                 type: "divider",
                 id,
-                layout: { x: 0, y: Infinity, w: 12, h: 2 },
+                layout: { x: 0, y: Infinity, w: 12, h: 4 },
                 variant: "simple",
             };
         case "card":
