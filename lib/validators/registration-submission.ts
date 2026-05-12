@@ -86,8 +86,35 @@ function buildFieldSchema(field: InputField): z.ZodTypeAny {
         }
 
         case "pricing_quantity": {
-            const schema = z.coerce.number({ message: "Zadejte platné číslo" }).int("Zadejte celé číslo").min(0, "Hodnota nesmí být záporná");
-            return field.required ? schema : schema.optional().or(z.literal(""));
+            // Value is a JSON-serialized object of quantities, e.g. '{"Opt1":2,"Opt2":1}'
+            const parseValue = (val: string): Record<string, number> | null => {
+                try {
+                    const parsed = JSON.parse(val || "{}");
+                    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+                        return null;
+                    }
+                    for (const v of Object.values(parsed as Record<string, unknown>)) {
+                        if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+                            return null;
+                        }
+                    }
+                    return parsed as Record<string, number>;
+                } catch {
+                    return null;
+                }
+            };
+            const qSchema = z.string().refine(
+                (val) => val === "" || parseValue(val) !== null,
+                { message: "Neplatná hodnota" },
+            );
+            if (field.required) {
+                return qSchema.refine((val) => {
+                    const parsed = parseValue(val);
+                    if (!parsed) return false;
+                    return Object.values(parsed).some((n) => n > 0);
+                }, { message: "Vyberte alespoň jednu možnost" });
+            }
+            return qSchema;
         }
 
         case "text":

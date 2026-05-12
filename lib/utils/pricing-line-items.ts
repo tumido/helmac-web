@@ -11,6 +11,7 @@ import {
 } from "@/lib/types/registration-form";
 import { getCurrentTierIndex } from "@/lib/utils/pricing";
 import { evaluateCondition } from "@/lib/utils/condition-evaluation";
+import { parseQuantities, parseSelected } from "@/lib/utils/pricing-field-values";
 
 function evaluateVisibleFields(
     formData: RegistrationFormData,
@@ -51,29 +52,6 @@ export interface PricingLineSummary {
     mainLines: PricingLineItem[];
     apLines: PricingLineGroup[];
     grandTotal: number;
-}
-
-function parseQuantities(val: unknown): Record<string, number> {
-    try {
-        const parsed = typeof val === "string" ? JSON.parse(val || "{}") : val;
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-            return parsed as Record<string, number>;
-        }
-    } catch {
-        /* empty */
-    }
-    return {};
-}
-
-function parseSelected(val: unknown): string[] {
-    try {
-        const arr = JSON.parse(String(val ?? "[]"));
-        return Array.isArray(arr)
-            ? arr.filter((v): v is string => typeof v === "string")
-            : [];
-    } catch {
-        return [];
-    }
 }
 
 function addLine(

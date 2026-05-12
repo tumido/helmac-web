@@ -6,6 +6,7 @@ import type {
     PricingTier,
 } from "@/lib/types/registration-form";
 import { getCurrentTierIndex } from "@/lib/utils/pricing";
+import { parseQuantities, parseSelected } from "@/lib/utils/pricing-field-values";
 
 interface ComputePricingSummaryParams {
     pricingDefinitions: PricingDefinition[];
@@ -56,11 +57,12 @@ export function computePricingSummary({
         if (!def) continue;
 
         if (field.type === "pricing_quantity") {
-            // Quantity-based pricing: value is a number, single option in definition
-            const qty = Number(submissionData[field.name] ?? 0);
-            if (qty > 0 && visibleFieldIds.has(field.id)) {
-                const opt = def.options[0]; // Quantity definitions have exactly 1 option
-                if (opt) {
+            // Quantity-based pricing: value is a JSON object { optionName: quantity }
+            if (visibleFieldIds.has(field.id)) {
+                const mainQty = parseQuantities(submissionData[field.name]);
+                for (const opt of def.options) {
+                    const qty = Number(mainQty[opt.name]) || 0;
+                    if (qty <= 0) continue;
                     selections.push({ def, optionName: opt.name, quantity: qty });
                 }
             }
@@ -68,28 +70,18 @@ export function computePricingSummary({
             // Additional people
             if (field.includeForAdditionalPeople) {
                 additionalPeople.forEach((person, idx) => {
-                    const personQty = Number(person[field.name] ?? 0);
-                    if (personQty <= 0) return;
                     if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
                         return;
                     }
-                    const opt = def.options[0];
-                    if (opt) {
-                        selections.push({ def, optionName: opt.name, quantity: personQty });
+                    const personQty = parseQuantities(person[field.name]);
+                    for (const opt of def.options) {
+                        const qty = Number(personQty[opt.name]) || 0;
+                        if (qty <= 0) continue;
+                        selections.push({ def, optionName: opt.name, quantity: qty });
                     }
                 });
             }
         } else if (field.type === "pricing_multi_select") {
-            // Multi-select pricing: value is JSON array of option names
-            const parseSelected = (val: unknown): string[] => {
-                try {
-                    const arr = JSON.parse(String(val ?? "[]"));
-                    return Array.isArray(arr) ? arr.filter((v): v is string => typeof v === "string") : [];
-                } catch {
-                    return [];
-                }
-            };
-
             const mainSelected = parseSelected(submissionData[field.name]);
             if (mainSelected.length > 0 && visibleFieldIds.has(field.id)) {
                 for (const optName of mainSelected) {
