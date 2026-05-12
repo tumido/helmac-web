@@ -23,6 +23,7 @@ import { createNews, updateNews, NewsActionState } from "@/lib/actions/news";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { generateSlug } from "@/lib/utils/slugify";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { TocPreview } from "@/components/admin/toc-preview";
 
 interface NewsFormProps {
     mode: "create" | "edit";
@@ -220,37 +221,39 @@ export function NewsForm({ mode, years, newsId, defaultValues, cancelHref = "/ad
                         inputProps={{ maxLength: 500 }}
                     />
 
-                    <Box
-                        sx={{
-                            flex: 1,
-                            minHeight: 200,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        <Typography
-                            variant="subtitle2"
-                            sx={{ mb: 1, flexShrink: 0 }}
+                    <TocPreview show={showToc} content={content}>
+                        <Box
+                            sx={{
+                                flex: 1,
+                                minHeight: 200,
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
                         >
-                            Obsah *
-                        </Typography>
-                        <RichTextEditor
-                            value={content}
-                            onChange={setContent}
-                            minHeight={200}
-                            yearId={selectedYearId}
-                        />
-                        <input type="hidden" name="content" value={content} />
-                        {state?.error?.content && (
                             <Typography
-                                variant="caption"
-                                color="error"
-                                sx={{ mt: 0.5, flexShrink: 0 }}
+                                variant="subtitle2"
+                                sx={{ mb: 1, flexShrink: 0 }}
                             >
-                                {state.error.content[0]}
+                                Obsah *
                             </Typography>
-                        )}
-                    </Box>
+                            <RichTextEditor
+                                value={content}
+                                onChange={setContent}
+                                minHeight={200}
+                                yearId={selectedYearId}
+                            />
+                            <input type="hidden" name="content" value={content} />
+                            {state?.error?.content && (
+                                <Typography
+                                    variant="caption"
+                                    color="error"
+                                    sx={{ mt: 0.5, flexShrink: 0 }}
+                                >
+                                    {state.error.content[0]}
+                                </Typography>
+                            )}
+                        </Box>
+                    </TocPreview>
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>

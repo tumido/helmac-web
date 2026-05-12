@@ -16,6 +16,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { createRule, updateRule, RuleActionState } from "@/lib/actions/rules";
 import { BlockEditor } from "@/components/admin/block-editor";
 import { IconPicker } from "@/components/admin/icon-picker";
+import { TocPreview } from "@/components/admin/toc-preview";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface RuleFormProps {
@@ -159,11 +160,13 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
 
             <input type="hidden" name="content" value={JSON.stringify(blocks)} />
 
-            <BlockEditor
-                value={blocks}
-                onChange={setBlocks}
-                yearId={yearId}
-            />
+            <TocPreview show={showToc} blocks={blocks}>
+                <BlockEditor
+                    value={blocks}
+                    onChange={setBlocks}
+                    yearId={yearId}
+                />
+            </TocPreview>
         </Box>
     );
 }

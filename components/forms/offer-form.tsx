@@ -16,6 +16,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { createOffer, updateOffer, OfferActionState } from "@/lib/actions/offers";
 import { BlockEditor } from "@/components/admin/block-editor";
 import { IconPicker } from "@/components/admin/icon-picker";
+import { TocPreview } from "@/components/admin/toc-preview";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface OfferFormProps {
@@ -159,11 +160,13 @@ export function OfferForm({ mode, yearId, offerId, defaultValues }: OfferFormPro
 
             <input type="hidden" name="content" value={JSON.stringify(blocks)} />
 
-            <BlockEditor
-                value={blocks}
-                onChange={setBlocks}
-                yearId={yearId}
-            />
+            <TocPreview show={showToc} blocks={blocks}>
+                <BlockEditor
+                    value={blocks}
+                    onChange={setBlocks}
+                    yearId={yearId}
+                />
+            </TocPreview>
         </Box>
     );
 }
