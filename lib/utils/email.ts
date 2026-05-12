@@ -141,6 +141,19 @@ export function buildPlaceholders(opts: {
             placeholders[key] = "";
         } else if (typeof value === "boolean") {
             placeholders[key] = value ? "Ano" : "Ne";
+        } else if (
+            typeof value === "string" &&
+            value.startsWith("[") &&
+            value.endsWith("]")
+        ) {
+            try {
+                const parsed = JSON.parse(value);
+                placeholders[key] = Array.isArray(parsed)
+                    ? parsed.map((v) => String(v)).join(", ")
+                    : value;
+            } catch {
+                placeholders[key] = value;
+            }
         } else {
             placeholders[key] = String(value);
         }
