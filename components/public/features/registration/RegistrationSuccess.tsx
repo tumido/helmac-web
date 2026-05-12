@@ -7,6 +7,7 @@ import { Check } from "@mui/icons-material";
 import { formatPrice } from "@/lib/utils/pricing";
 import { QRCodeSVG } from "qrcode.react";
 import { DecorativeDivider } from "@/components/public/ui";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import type { PaymentData } from "@/lib/actions/public/registration";
 
 interface RegistrationSuccessProps {
@@ -14,6 +15,7 @@ interface RegistrationSuccessProps {
     variableSymbol?: string;
     totalPrice?: number;
     paymentData?: PaymentData;
+    successContent?: string | null;
 }
 
 export function RegistrationSuccess({
@@ -21,6 +23,7 @@ export function RegistrationSuccess({
     variableSymbol,
     totalPrice,
     paymentData,
+    successContent,
 }: RegistrationSuccessProps) {
     const detailsRef = useRef<HTMLDivElement>(null);
     const [detailsHeight, setDetailsHeight] = useState<number>(0);
@@ -69,38 +72,44 @@ export function RegistrationSuccess({
                         textAlign: "center",
                     }}
                 >
-                    <Check
-                        sx={{
-                            fontSize: 64,
-                            color: "primary.main",
-                            mb: 2,
-                        }}
-                    />
-                    <Typography
-                        variant="h3"
-                        sx={{
-                            color: "primary.main",
-                            mb: 1,
-                        }}
-                    >
-                        Registrace úspěšná!
-                    </Typography>
-                    <Typography
-                        variant="body1"
-                        color="text.secondary"
-                        sx={{ mb: 3 }}
-                    >
-                        {message}
-                    </Typography>
+                    {successContent ? (
+                        <MarkdownContent content={successContent} />
+                    ) : (
+                        <>
+                            <Check
+                                sx={{
+                                    fontSize: 64,
+                                    color: "primary.main",
+                                    mb: 2,
+                                }}
+                            />
+                            <Typography
+                                variant="h3"
+                                sx={{
+                                    color: "primary.main",
+                                    mb: 1,
+                                }}
+                            >
+                                Registrace úspěšná!
+                            </Typography>
+                            <Typography
+                                variant="body1"
+                                color="text.secondary"
+                                sx={{ mb: 3 }}
+                            >
+                                {message}
+                            </Typography>
 
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                    >
-                        Potvrzení o registraci jsme vám zaslali
-                        na email. Potvrzení platby může trvat až
-                        jeden den.
-                    </Typography>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Potvrzení o registraci jsme vám zaslali
+                                na email. Potvrzení platby může trvat až
+                                jeden den.
+                            </Typography>
+                        </>
+                    )}
                 </Box>
 
                 {hasPaymentSection && (

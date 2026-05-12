@@ -23,6 +23,7 @@ import {
     Description,
     People,
     Receipt,
+    CheckCircleOutline,
     Email,
     MarkEmailRead,
     PriceChange,
@@ -74,6 +75,7 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
         { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
         { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
         { text: "Transakce", href: `${base}/registrace/transakce`, icon: Receipt, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
+        { text: "Úspěšná registrace", href: `${base}/registrace/success-page`, icon: CheckCircleOutline, indented: true },
     ].filter((item) => !item.roles || (userRole && item.roles.includes(userRole)));
 
     const emailItems: { text: string; href: string; icon: typeof Email; exact?: boolean; indented?: boolean }[] = [

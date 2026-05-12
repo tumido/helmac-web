@@ -1,5 +1,5 @@
 import { Container, Box, Divider } from "@mui/material";
-import { Description, People } from "@mui/icons-material";
+import { Description, People, CheckCircleOutline } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -146,6 +146,13 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
                     startIcon={<People />}
                 >
                     Zobrazit přihlášky
+                </LinkButton>
+                <LinkButton
+                    href={`/admin/rocniky/${year.id}/registrace/success-page`}
+                    variant="outlined"
+                    startIcon={<CheckCircleOutline />}
+                >
+                    Úspěšná registrace
                 </LinkButton>
             </Box>
         </Container>

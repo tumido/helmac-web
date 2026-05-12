@@ -13,6 +13,7 @@ export const getRegistrationStatus = cache(async () => {
             endDate: true,
             registrationOpen: true,
             registrationStartDate: true,
+            registrationSuccessContent: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },

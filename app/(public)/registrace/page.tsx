@@ -101,7 +101,13 @@ export default async function RegistracePage() {
                 backgroundImage={activeYear?.headerPhoto || undefined}
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
-                <DynamicRegistrationForm formData={formData} optionCounts={optionCounts} isLoggedIn={!!publicSession} publicEmail={publicSession?.email} />
+                <DynamicRegistrationForm
+                    formData={formData}
+                    optionCounts={optionCounts}
+                    isLoggedIn={!!publicSession}
+                    publicEmail={publicSession?.email}
+                    successContent={status.year?.registrationSuccessContent ?? null}
+                />
             </Container>
         </>
     );

@@ -63,6 +63,7 @@ interface DynamicRegistrationFormProps {
     previewMode?: boolean;
     isLoggedIn?: boolean;
     publicEmail?: string;
+    successContent?: string | null;
 }
 
 function buildInitialValues(
@@ -93,6 +94,7 @@ export function DynamicRegistrationForm({
     previewMode,
     isLoggedIn,
     publicEmail,
+    successContent,
 }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() =>
         buildInitialValues(formData, publicEmail)
@@ -277,6 +279,7 @@ export function DynamicRegistrationForm({
                 variableSymbol={state.variableSymbol}
                 totalPrice={state.totalPrice}
                 paymentData={state.paymentData}
+                successContent={successContent}
             />
         );
     }

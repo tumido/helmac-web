@@ -364,6 +364,34 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
     }
 }
 
+export async function updateRegistrationSuccessContent(
+    yearId: string,
+    formData: FormData,
+) {
+    try {
+        await requireAdmin();
+    } catch {
+        return { error: "Nemáte oprávnění" };
+    }
+
+    const content = (formData.get("content") as string | null) ?? "";
+
+    try {
+        await db.year.update({
+            where: { id: yearId },
+            data: { registrationSuccessContent: content || null },
+        });
+
+        revalidatePath(`/admin/rocniky/${yearId}/registrace`);
+        revalidatePath(`/admin/rocniky/${yearId}/registrace/success-page`);
+        revalidatePath(`/registrace`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update registration success content:", error);
+        return { error: "Nepodařilo se uložit obsah" };
+    }
+}
+
 export async function toggleConfirmationEmail(yearId: string, enabled: boolean) {
     try {
         await requireAdmin();
