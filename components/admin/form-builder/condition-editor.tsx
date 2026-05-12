@@ -353,11 +353,97 @@ export interface RuleRowProps {
     onUpdate: (updates: Partial<ConditionRule>) => void;
     onDelete: () => void;
     canDelete: boolean;
+    /** When true, lays out field/operator/value/delete on a single row. Defaults to false (two-row layout). */
+    compact?: boolean;
 }
 
-export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onDelete, canDelete }: RuleRowProps) {
+export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onDelete, canDelete, compact = false }: RuleRowProps) {
     const targetField = allFields.find((f) => f.id === rule.fieldId);
     const targetInput = targetField && isInputField(targetField) ? targetField : null;
+    const showValue = rule.operator !== "is_set" && rule.operator !== "is_not_set";
+
+    const fieldSelect = (
+        <FormControl size="small" sx={{ flex: 1, minWidth: compact ? 140 : undefined }}>
+            <InputLabel>Pole</InputLabel>
+            <Select
+                value={rule.fieldId || ""}
+                onChange={(e) => onUpdate({ fieldId: e.target.value, value: "" })}
+                label="Pole"
+            >
+                {inputFields.map((f) => (
+                    <MenuItem key={f.id} value={f.id}>
+                        {f.label}
+                    </MenuItem>
+                ))}
+            </Select>
+        </FormControl>
+    );
+
+    const operatorSelect = (
+        <FormControl size="small" sx={{ minWidth: compact ? 150 : 160 }}>
+            <InputLabel>Operátor</InputLabel>
+            <Select
+                value={rule.operator || "equals"}
+                onChange={(e) => onUpdate({ operator: e.target.value as ConditionRule["operator"] })}
+                label="Operátor"
+            >
+                <MenuItem value="equals">se rovná</MenuItem>
+                <MenuItem value="not_equals">se nerovná</MenuItem>
+                <MenuItem value="is_set">je vyplněno</MenuItem>
+                <MenuItem value="is_not_set">není vyplněno</MenuItem>
+            </Select>
+        </FormControl>
+    );
+
+    const valuePicker = showValue && (
+        compact ? (
+            <Box sx={{ flex: 1, minWidth: 140 }}>
+                <FieldValuePicker
+                    targetField={targetInput}
+                    pricingDefinitions={pricingDefinitions}
+                    value={rule.value || ""}
+                    onChange={(value) => onUpdate({ value })}
+                />
+            </Box>
+        ) : (
+            <FieldValuePicker
+                targetField={targetInput}
+                pricingDefinitions={pricingDefinitions}
+                value={rule.value || ""}
+                onChange={(value) => onUpdate({ value })}
+            />
+        )
+    );
+
+    const deleteButton = canDelete && (
+        <Tooltip title="Smazat pravidlo">
+            <IconButton size="small" color="error" onClick={onDelete}>
+                <Delete fontSize="small" />
+            </IconButton>
+        </Tooltip>
+    );
+
+    if (compact) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 1,
+                    alignItems: "center",
+                    p: 1,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    backgroundColor: "action.hover",
+                }}
+            >
+                {fieldSelect}
+                {operatorSelect}
+                {valuePicker}
+                {deleteButton}
+            </Box>
+        );
+    }
 
     return (
         <Box
@@ -373,58 +459,19 @@ export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUp
             }}
         >
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                <FormControl size="small" sx={{ flex: 1 }}>
-                    <InputLabel>Pole</InputLabel>
-                    <Select
-                        value={rule.fieldId || ""}
-                        onChange={(e) => onUpdate({ fieldId: e.target.value, value: "" })}
-                        label="Pole"
-                    >
-                        {inputFields.map((f) => (
-                            <MenuItem key={f.id} value={f.id}>
-                                {f.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
-                {canDelete && (
-                    <Tooltip title="Smazat pravidlo">
-                        <IconButton size="small" color="error" onClick={onDelete}>
-                            <Delete fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                )}
+                {fieldSelect}
+                {deleteButton}
             </Box>
 
             <Box sx={{ display: "flex", gap: 1 }}>
-                <FormControl size="small" sx={{ minWidth: 160 }}>
-                    <InputLabel>Operátor</InputLabel>
-                    <Select
-                        value={rule.operator || "equals"}
-                        onChange={(e) => onUpdate({ operator: e.target.value as ConditionRule["operator"] })}
-                        label="Operátor"
-                    >
-                        <MenuItem value="equals">se rovná</MenuItem>
-                        <MenuItem value="not_equals">se nerovná</MenuItem>
-                        <MenuItem value="is_set">je vyplněno</MenuItem>
-                        <MenuItem value="is_not_set">není vyplněno</MenuItem>
-                    </Select>
-                </FormControl>
-                {rule.operator !== "is_set" && rule.operator !== "is_not_set" && (
-                    <FieldValuePicker
-                        targetField={targetInput}
-                        pricingDefinitions={pricingDefinitions}
-                        value={rule.value || ""}
-                        onChange={(value) => onUpdate({ value })}
-                    />
-                )}
+                {operatorSelect}
+                {valuePicker}
             </Box>
         </Box>
     );
 }
 
-function FieldValuePicker({
+export function FieldValuePicker({
     targetField,
     pricingDefinitions,
     value,

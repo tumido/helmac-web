@@ -73,45 +73,48 @@ export function SingleConditionEditor({
                 </Typography>
             )}
 
-            {condition.rules.map((rule, ruleIdx) => (
-                <Box key={ruleIdx}>
-                    {ruleIdx > 0 && (
-                        <Box sx={{ display: "flex", justifyContent: "center", my: 0.5 }}>
-                            <ToggleButtonGroup
-                                value={rule.connector ?? "AND"}
-                                exclusive
-                                size="small"
-                                onChange={(_, val) => {
-                                    if (val === "AND" || val === "OR") {
-                                        updateConnector(ruleIdx, val);
-                                    }
-                                }}
-                                sx={{
-                                    "& .MuiToggleButton-root": {
-                                        fontSize: "0.65rem",
-                                        height: 20,
-                                        px: 1,
-                                        py: 0,
-                                        lineHeight: 1,
-                                    },
-                                }}
-                            >
-                                <ToggleButton value="AND" color="primary">AND</ToggleButton>
-                                <ToggleButton value="OR" color="warning">OR</ToggleButton>
-                            </ToggleButtonGroup>
-                        </Box>
-                    )}
-                    <RuleRow
-                        rule={rule}
-                        inputFields={inputFields}
-                        allFields={allFields}
-                        pricingDefinitions={pricingDefinitions}
-                        onUpdate={(updates) => updateRule(ruleIdx, updates)}
-                        onDelete={() => deleteRule(ruleIdx)}
-                        canDelete
-                    />
-                </Box>
-            ))}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                {condition.rules.map((rule, ruleIdx) => (
+                    <Box key={ruleIdx}>
+                        {ruleIdx > 0 && (
+                            <Box sx={{ display: "flex", justifyContent: "center", my: 0.5 }}>
+                                <ToggleButtonGroup
+                                    value={rule.connector ?? "AND"}
+                                    exclusive
+                                    size="small"
+                                    onChange={(_, val) => {
+                                        if (val === "AND" || val === "OR") {
+                                            updateConnector(ruleIdx, val);
+                                        }
+                                    }}
+                                    sx={{
+                                        "& .MuiToggleButton-root": {
+                                            fontSize: "0.65rem",
+                                            height: 20,
+                                            px: 1,
+                                            py: 0,
+                                            lineHeight: 1,
+                                        },
+                                    }}
+                                >
+                                    <ToggleButton value="AND" color="primary">AND</ToggleButton>
+                                    <ToggleButton value="OR" color="warning">OR</ToggleButton>
+                                </ToggleButtonGroup>
+                            </Box>
+                        )}
+                        <RuleRow
+                            rule={rule}
+                            inputFields={inputFields}
+                            allFields={allFields}
+                            pricingDefinitions={pricingDefinitions}
+                            onUpdate={(updates) => updateRule(ruleIdx, updates)}
+                            onDelete={() => deleteRule(ruleIdx)}
+                            canDelete
+                            compact
+                        />
+                    </Box>
+                ))}
+            </Box>
 
             <Box sx={{ mt: 1 }}>
                 <Button size="small" startIcon={<Add />} onClick={addRule}>
