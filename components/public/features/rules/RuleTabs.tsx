@@ -1,6 +1,8 @@
 "use client";
 
 import { Box, Tab, Tabs } from "@mui/material";
+import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
+import { GameIcon } from "@/lib/icons";
 import { RuleItem } from "./rules.types";
 
 interface RuleTabsProps {
@@ -26,8 +28,9 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                 value={selectedRuleId}
                 onChange={handleChange}
                 variant="scrollable"
-                scrollButtons="auto"
+                scrollButtons
                 allowScrollButtonsMobile
+                ScrollButtonComponent={TabScrollButton}
                 sx={{
                     "& .MuiTab-root": {
                         fontFamily: '"Cinzel", serif',
@@ -36,6 +39,7 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                         textTransform: "none",
                         minWidth: { xs: "auto", sm: 120 },
                         px: { xs: 2, sm: 3 },
+                        gap: 1.5,
                     },
                     "& .Mui-selected": {
                         color: "primary.main",
@@ -49,7 +53,21 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                 {rules.map((rule) => (
                     <Tab
                         key={rule.id}
-                        label={rule.title}
+                        icon={rule.icon ? <GameIcon name={rule.icon} sx={{ fontSize: "1.5em" }} /> : undefined}
+                        iconPosition="start"
+                        label={
+                            rule.subtitle ? (
+                                <span>
+                                    {rule.title}
+                                    <br />
+                                    <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
+                                        {rule.subtitle}
+                                    </span>
+                                </span>
+                            ) : (
+                                rule.title
+                            )
+                        }
                         value={rule.id}
                     />
                 ))}

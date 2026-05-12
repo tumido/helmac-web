@@ -8,17 +8,15 @@ import {
     TextField,
     Alert,
     CircularProgress,
-    Card,
-    CardContent,
-    CardActions,
-    Typography,
     Switch,
     FormControlLabel,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createRule, updateRule, RuleActionState } from "@/lib/actions/rules";
-import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { BlockEditor } from "@/components/admin/block-editor";
+import { IconPicker } from "@/components/admin/icon-picker";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface RuleFormProps {
     mode: "create" | "edit";
@@ -26,8 +24,10 @@ interface RuleFormProps {
     ruleId?: string;
     defaultValues?: {
         title?: string;
-        content?: string;
+        subtitle?: string | null;
+        content?: ContentBlock[];
         showToc?: boolean;
+        icon?: string | null;
     };
 }
 
@@ -53,8 +53,11 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 }
 
 export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps) {
-    const [content, setContent] = useState(defaultValues?.content || "");
+    const [blocks, setBlocks] = useState<ContentBlock[]>(
+        defaultValues?.content || []
+    );
     const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
+    const [icon, setIcon] = useState<string | null>(defaultValues?.icon || null);
 
     const action =
         mode === "create"
@@ -67,40 +70,30 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
     );
 
     return (
-        <Card
-            sx={{
-                height: "calc(100dvh - 180px)",
-                display: "flex",
-                flexDirection: "column",
-            }}
+        <Box
+            component="form"
+            action={formAction}
         >
+            {/* Header */}
             <Box
-                component="form"
-                action={formAction}
                 sx={{
                     display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
-                    minHeight: 0,
+                    gap: 2,
+                    mb: 2,
                 }}
             >
-                <CardContent
+                <IconPicker value={icon} onChange={setIcon} />
+                <Box
                     sx={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 3,
-                        flex: 1,
-                        overflow: "auto",
-                        minHeight: 0,
+                        gap: 1,
+                        width: 360,
                     }}
                 >
-                    {state?.error?._form && (
-                        <Alert severity="error">{state.error._form[0]}</Alert>
-                    )}
-
                     <TextField
                         required
-                        fullWidth
+                        size="small"
                         id="title"
                         name="title"
                         label="Název pravidla"
@@ -108,58 +101,69 @@ export function RuleForm({ mode, yearId, ruleId, defaultValues }: RuleFormProps)
                         error={!!state?.error?.title}
                         helperText={state?.error?.title?.[0]}
                     />
-
-                    <Box
-                        sx={{
-                            flex: 1,
-                            minHeight: 200,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        <Typography
-                            variant="subtitle2"
-                            sx={{ mb: 1, flexShrink: 0 }}
+                    <TextField
+                        size="small"
+                        id="subtitle"
+                        name="subtitle"
+                        label="Podtitulek"
+                        defaultValue={defaultValues?.subtitle || ""}
+                    />
+                </Box>
+                <Box sx={{ flex: 1 }} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        alignItems: "flex-end",
+                    }}
+                >
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <LinkButton
+                            href={`/admin/rocniky/${yearId}/pravidla`}
+                            variant="outlined"
                         >
-                            Obsah *
-                        </Typography>
-                        <RichTextEditor
-                            value={content}
-                            onChange={setContent}
-                            minHeight={200}
-                            yearId={yearId}
-                        />
-                        <input type="hidden" name="content" value={content} />
-                        {state?.error?.content && (
-                            <Typography
-                                variant="caption"
-                                color="error"
-                                sx={{ mt: 0.5, flexShrink: 0 }}
-                            >
-                                {state.error.content[0]}
-                            </Typography>
-                        )}
+                            Zrušit
+                        </LinkButton>
+                        <SubmitButton mode={mode} />
                     </Box>
-
                     <FormControlLabel
+                        labelPlacement="start"
                         control={
                             <Switch
+                                name="showToc"
+                                value="true"
+                                size="small"
                                 checked={showToc}
-                                onChange={(e) => setShowToc(e.target.checked)}
+                                onChange={(e) =>
+                                    setShowToc(e.target.checked)
+                                }
                             />
                         }
-                        label="Zobrazit obsah (TOC)"
+                        label="Zobrazit obsah"
+                        sx={{ py: 0.75, mr: 0 }}
                     />
-                    <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
-                </CardContent>
-
-                <CardActions sx={{ px: 2, pb: 2 }}>
-                    <SubmitButton mode={mode} />
-                    <LinkButton href={`/admin/rocniky/${yearId}/pravidla`}>
-                        Zrušit
-                    </LinkButton>
-                </CardActions>
+                </Box>
             </Box>
-        </Card>
+
+            {state?.error?._form && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error._form[0]}
+                </Alert>
+            )}
+            {state?.error?.content && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error.content[0]}
+                </Alert>
+            )}
+
+            <input type="hidden" name="content" value={JSON.stringify(blocks)} />
+
+            <BlockEditor
+                value={blocks}
+                onChange={setBlocks}
+                yearId={yearId}
+            />
+        </Box>
     );
 }

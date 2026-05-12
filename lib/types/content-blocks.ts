@@ -30,6 +30,15 @@ export interface DividerBlock {
     variant: DividerVariant;
 }
 
+export type CardButtonVariant = "contained" | "outlined" | "text";
+
+export interface CardButton {
+    id: string;
+    label: string;
+    href: string;
+    variant: CardButtonVariant;
+}
+
 export interface CardBlock {
     type: "card";
     id: string;
@@ -37,8 +46,7 @@ export interface CardBlock {
     imageUrl: string;
     title: string;
     text: string;
-    buttonLabel: string;
-    buttonUrl: string;
+    buttons: CardButton[];
 }
 
 export type ContentBlock =
@@ -85,7 +93,7 @@ export function createBlock(type: ContentBlockType): ContentBlock {
             return {
                 type: "divider",
                 id,
-                layout: { x: 0, y: Infinity, w: 12, h: 2 },
+                layout: { x: 0, y: Infinity, w: 12, h: 4 },
                 variant: "simple",
             };
         case "card":
@@ -96,16 +104,60 @@ export function createBlock(type: ContentBlockType): ContentBlock {
                 imageUrl: "",
                 title: "",
                 text: "",
-                buttonLabel: "",
-                buttonUrl: "",
+                buttons: [],
             };
     }
 }
 
+interface LegacyCardBlock {
+    type: "card";
+    id: string;
+    layout: BlockLayout;
+    imageUrl: string;
+    title: string;
+    text: string;
+    buttonLabel?: string;
+    buttonUrl?: string;
+    buttons?: CardButton[];
+}
+
+export function normalizeBlocks(blocks: unknown[]): ContentBlock[] {
+    return blocks.map((block) => {
+        const b = block as Record<string, unknown>;
+        if (b.type === "card" && !Array.isArray(b.buttons)) {
+            const legacy = b as unknown as LegacyCardBlock;
+            const buttons: CardButton[] = [];
+            if (legacy.buttonLabel && legacy.buttonUrl) {
+                buttons.push({
+                    id: crypto.randomUUID(),
+                    label: legacy.buttonLabel,
+                    href: legacy.buttonUrl,
+                    variant: "contained",
+                });
+            }
+            return {
+                type: legacy.type,
+                id: legacy.id,
+                layout: legacy.layout,
+                imageUrl: legacy.imageUrl,
+                title: legacy.title,
+                text: legacy.text,
+                buttons,
+            } satisfies CardBlock;
+        }
+        return block as ContentBlock;
+    });
+}
+
 export function blocksToMarkdown(blocks: ContentBlock[]): string {
+    const sorted = [...blocks].sort((a, b) => {
+        if (a.layout.y !== b.layout.y) return a.layout.y - b.layout.y;
+        return a.layout.x - b.layout.x;
+    });
+
     const parts: string[] = [];
 
-    for (const block of blocks) {
+    for (const block of sorted) {
         if (block.type === "richtext") {
             parts.push(block.content);
         }

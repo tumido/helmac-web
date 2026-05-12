@@ -1,6 +1,8 @@
 "use client";
 
 import { Box, Tab, Tabs } from "@mui/material";
+import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
+import { GameIcon } from "@/lib/icons";
 import { OfferItem } from "./offers.types";
 
 interface OfferTabsProps {
@@ -26,8 +28,9 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 value={selectedOfferId}
                 onChange={handleChange}
                 variant="scrollable"
-                scrollButtons="auto"
+                scrollButtons
                 allowScrollButtonsMobile
+                ScrollButtonComponent={TabScrollButton}
                 sx={{
                     "& .MuiTab-root": {
                         fontFamily: '"Cinzel", serif',
@@ -36,6 +39,7 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                         textTransform: "none",
                         minWidth: { xs: "auto", sm: 120 },
                         px: { xs: 2, sm: 3 },
+                        gap: 1.5,
                     },
                     "& .Mui-selected": {
                         color: "primary.main",
@@ -49,15 +53,17 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 {offers.map((offer) => (
                     <Tab
                         key={offer.id}
+                        icon={offer.icon ? <GameIcon name={offer.icon} sx={{ fontSize: "1.5em" }} /> : undefined}
+                        iconPosition="start"
                         label={
                             offer.subtitle ? (
-                                <>
+                                <span>
                                     {offer.title}
                                     <br />
                                     <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
                                         {offer.subtitle}
                                     </span>
-                                </>
+                                </span>
                             ) : (
                                 offer.title
                             )

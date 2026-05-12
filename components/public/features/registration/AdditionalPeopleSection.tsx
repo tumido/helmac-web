@@ -93,7 +93,7 @@ export function AdditionalPeopleSection({
             if (field.type === "checkbox") {
                 newPerson[field.name] = false;
             } else if (field.type === "pricing_quantity") {
-                newPerson[field.name] = 0;
+                newPerson[field.name] = "{}";
             } else if (field.type === "pricing_multi_select") {
                 newPerson[field.name] = "[]";
             } else {

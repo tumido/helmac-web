@@ -75,7 +75,7 @@ function buildInitialValues(
         if (field.type === "checkbox") {
             values[field.name] = false;
         } else if (field.type === "pricing_quantity") {
-            values[field.name] = 0;
+            values[field.name] = "{}";
         } else if (field.type === "pricing_multi_select") {
             values[field.name] = "[]";
         } else if (field.type === "email" && publicEmail) {

@@ -1,4 +1,4 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { InfoForm } from "@/components/forms/info-form";
@@ -27,12 +27,6 @@ export default async function NewInfoPage({ params }: NewInfoPageProps) {
                 ]}
                 title="Nova info sekce"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
-            </Box>
-
             <InfoForm mode="create" yearId={year.id} />
         </Container>
     );

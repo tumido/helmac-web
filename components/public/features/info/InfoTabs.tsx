@@ -1,6 +1,8 @@
 "use client";
 
 import { Box, Tab, Tabs } from "@mui/material";
+import { TabScrollButton } from "@/components/public/ui/TabScrollButton";
+import { GameIcon } from "@/lib/icons";
 import { InfoItem } from "./info.types";
 
 export interface ExtraTab {
@@ -32,8 +34,9 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                 value={selectedInfoId}
                 onChange={handleChange}
                 variant="scrollable"
-                scrollButtons="auto"
+                scrollButtons
                 allowScrollButtonsMobile
+                ScrollButtonComponent={TabScrollButton}
                 sx={{
                     "& .MuiTab-root": {
                         fontFamily: '"Cinzel", serif',
@@ -42,6 +45,7 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                         textTransform: "none",
                         minWidth: { xs: "auto", sm: 120 },
                         px: { xs: 2, sm: 3 },
+                        gap: 1.5,
                     },
                     "& .Mui-selected": {
                         color: "primary.main",
@@ -55,15 +59,17 @@ export function InfoTabs({ infoSections, selectedInfoId, onInfoChange, extraTabs
                 {infoSections.map((info) => (
                     <Tab
                         key={info.id}
+                        icon={info.icon ? <GameIcon name={info.icon} sx={{ fontSize: "1.5em" }} /> : undefined}
+                        iconPosition="start"
                         label={
                             info.subtitle ? (
-                                <>
+                                <span>
                                     {info.title}
                                     <br />
                                     <span style={{ fontSize: "0.75em", fontWeight: 400, opacity: 0.7 }}>
                                         {info.subtitle}
                                     </span>
-                                </>
+                                </span>
                             ) : (
                                 info.title
                             )

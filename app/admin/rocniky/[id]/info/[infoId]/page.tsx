@@ -1,4 +1,4 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getInfoSectionById } from "@/lib/services/info";
@@ -32,12 +32,6 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
                 ]}
                 title="Upravit info sekci"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
-            </Box>
-
             <InfoForm
                 mode="edit"
                 yearId={year.id}
@@ -47,6 +41,7 @@ export default async function EditInfoPage({ params }: EditInfoPageProps) {
                     subtitle: infoSection.subtitle,
                     content: infoSection.content as unknown as ContentBlock[],
                     showToc: infoSection.showToc,
+                    icon: infoSection.icon,
                 }}
             />
         </Container>

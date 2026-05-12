@@ -232,7 +232,9 @@ model Rule {
     year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
     title     String
-    content   String   @db.Text
+    subtitle  String?
+    icon      String?
+    content   Json     @default("[]")
     showToc   Boolean  @default(false)
     sortOrder Int      @default(0)
 
@@ -253,6 +255,7 @@ model Offer {
 
     title     String
     subtitle  String?
+    icon      String?
     content   Json     @default("[]")
     showToc   Boolean  @default(false)
     sortOrder Int      @default(0)
@@ -274,6 +277,7 @@ model InfoSection {
 
     title     String
     subtitle  String?
+    icon      String?
     content   Json     @default("[]")
     showToc   Boolean  @default(false)
     sortOrder Int      @default(0)

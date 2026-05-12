@@ -31,6 +31,7 @@ export async function createOffer(
         subtitle: formData.get("subtitle") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
+        icon: formData.get("icon") || undefined,
     };
 
     const validated = createOfferSchema.safeParse(rawData);
@@ -53,6 +54,7 @@ export async function createOffer(
                 subtitle: validated.data.subtitle ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc ?? false,
+                icon: validated.data.icon ?? null,
                 sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
             },
         });
@@ -83,6 +85,7 @@ export async function updateOffer(
         subtitle: formData.get("subtitle") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
+        icon: formData.get("icon") || undefined,
     };
 
     const validated = updateOfferSchema.safeParse(rawData);
@@ -112,6 +115,7 @@ export async function updateOffer(
                 subtitle: validated.data.subtitle ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc,
+                icon: validated.data.icon ?? null,
             },
         });
 

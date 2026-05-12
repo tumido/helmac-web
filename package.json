@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
+    "build": "prisma migrate deploy && node lib/icons/build-registry.mjs && next build",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint .",
@@ -14,7 +14,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "migrate:html-to-md": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-html-to-markdown.ts",
-    "migrate:content-to-blocks": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-content-to-blocks.ts"
+    "migrate:content-to-blocks": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-content-to-blocks.ts",
+    "icons:build": "node lib/icons/build-registry.mjs"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

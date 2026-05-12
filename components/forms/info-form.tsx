@@ -8,7 +8,6 @@ import {
     TextField,
     Alert,
     CircularProgress,
-    Paper,
     Switch,
     FormControlLabel,
 } from "@mui/material";
@@ -16,6 +15,7 @@ import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createInfoSection, updateInfoSection, InfoSectionActionState } from "@/lib/actions/info";
 import { BlockEditor } from "@/components/admin/block-editor";
+import { IconPicker } from "@/components/admin/icon-picker";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface InfoFormProps {
@@ -27,6 +27,7 @@ interface InfoFormProps {
         subtitle?: string | null;
         content?: ContentBlock[];
         showToc?: boolean;
+        icon?: string | null;
     };
 }
 
@@ -56,6 +57,7 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
         defaultValues?.content || []
     );
     const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
+    const [icon, setIcon] = useState<string | null>(defaultValues?.icon || null);
 
     const action =
         mode === "create"
@@ -72,58 +74,77 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
             component="form"
             action={formAction}
         >
-            {/* Toolbar */}
-            <Paper
-                variant="outlined"
+            {/* Header */}
+            <Box
                 sx={{
                     display: "flex",
-                    alignItems: "center",
                     gap: 2,
-                    px: 2,
-                    py: 1,
-                    mb: 3,
-                    flexWrap: "wrap",
-                    borderRadius: 2,
+                    mb: 2,
                 }}
             >
-                <TextField
-                    required
-                    size="small"
-                    id="title"
-                    name="title"
-                    label="Název info sekce"
-                    defaultValue={defaultValues?.title || ""}
-                    error={!!state?.error?.title}
-                    helperText={state?.error?.title?.[0]}
-                    sx={{ minWidth: 200, flex: 1 }}
-                />
-                <TextField
-                    size="small"
-                    id="subtitle"
-                    name="subtitle"
-                    label="Podtitulek"
-                    defaultValue={defaultValues?.subtitle || ""}
-                    sx={{ minWidth: 150, flex: 1 }}
-                />
-                <FormControlLabel
-                    control={
-                        <Switch
-                            size="small"
-                            checked={showToc}
-                            onChange={(e) => setShowToc(e.target.checked)}
-                        />
-                    }
-                    label="TOC"
-                />
-                <SubmitButton mode={mode} />
-                <LinkButton
-                    href={`/admin/rocniky/${yearId}/info`}
-                    variant="outlined"
-                    size="small"
+                <IconPicker value={icon} onChange={setIcon} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        width: 360,
+                    }}
                 >
-                    Zrušit
-                </LinkButton>
-            </Paper>
+                    <TextField
+                        required
+                        size="small"
+                        id="title"
+                        name="title"
+                        label="Název info sekce"
+                        defaultValue={defaultValues?.title || ""}
+                        error={!!state?.error?.title}
+                        helperText={state?.error?.title?.[0]}
+                    />
+                    <TextField
+                        size="small"
+                        id="subtitle"
+                        name="subtitle"
+                        label="Podtitulek"
+                        defaultValue={defaultValues?.subtitle || ""}
+                    />
+                </Box>
+                <Box sx={{ flex: 1 }} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        alignItems: "flex-end",
+                    }}
+                >
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <LinkButton
+                            href={`/admin/rocniky/${yearId}/info`}
+                            variant="outlined"
+                        >
+                            Zrušit
+                        </LinkButton>
+                        <SubmitButton mode={mode} />
+                    </Box>
+                    <FormControlLabel
+                        labelPlacement="start"
+                        control={
+                            <Switch
+                                name="showToc"
+                                value="true"
+                                size="small"
+                                checked={showToc}
+                                onChange={(e) =>
+                                    setShowToc(e.target.checked)
+                                }
+                            />
+                        }
+                        label="Zobrazit obsah"
+                        sx={{ py: 0.75, mr: 0 }}
+                    />
+                </Box>
+            </Box>
 
             {state?.error?._form && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -137,7 +158,6 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
             )}
 
             <input type="hidden" name="content" value={JSON.stringify(blocks)} />
-            <input type="hidden" name="showToc" value={showToc ? "true" : "false"} />
 
             <BlockEditor
                 value={blocks}

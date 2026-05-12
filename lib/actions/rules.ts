@@ -28,8 +28,10 @@ export async function createRule(
 
     const rawData = {
         title: formData.get("title"),
+        subtitle: formData.get("subtitle") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
+        icon: formData.get("icon") || undefined,
     };
 
     const validated = createRuleSchema.safeParse(rawData);
@@ -49,8 +51,10 @@ export async function createRule(
             data: {
                 yearId,
                 title: validated.data.title,
+                subtitle: validated.data.subtitle ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc ?? false,
+                icon: validated.data.icon ?? null,
                 sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
             },
         });
@@ -78,8 +82,10 @@ export async function updateRule(
 
     const rawData = {
         title: formData.get("title"),
+        subtitle: formData.get("subtitle") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
+        icon: formData.get("icon") || undefined,
     };
 
     const validated = updateRuleSchema.safeParse(rawData);
@@ -106,8 +112,10 @@ export async function updateRule(
             where: { id: ruleId },
             data: {
                 title: validated.data.title,
+                subtitle: validated.data.subtitle ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc,
+                icon: validated.data.icon ?? null,
             },
         });
 

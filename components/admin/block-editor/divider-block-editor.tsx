@@ -4,7 +4,6 @@ import {
     Box,
     ToggleButton,
     ToggleButtonGroup,
-    Tooltip,
     Typography,
 } from "@mui/material";
 import { DecorativeDivider } from "@/components/public/ui/Divider";
@@ -29,36 +28,62 @@ export function DividerBlockEditor({
             sx={{
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
                 height: "100%",
-                gap: 1,
             }}
         >
-            <Box sx={{ width: "100%", flex: 1, display: "flex", alignItems: "center" }}>
-                <Box sx={{ width: "100%" }}>
-                    <DecorativeDivider variant={block.variant} my={0} />
-                </Box>
-            </Box>
-            <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={block.variant}
-                onChange={(_, v) => {
-                    if (v) onChange({ ...block, variant: v });
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    px: 1,
+                    py: 0.5,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    backgroundColor: "action.hover",
+                    flexShrink: 0,
                 }}
-                sx={{ flexShrink: 0 }}
             >
-                {VARIANTS.map(({ value, label }) => (
-                    <ToggleButton key={value} value={value}>
-                        <Tooltip title={label}>
-                            <Typography variant="caption" sx={{ px: 0.5 }}>
+                <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={block.variant}
+                    onChange={(_, v) => {
+                        if (v) onChange({ ...block, variant: v });
+                    }}
+                    sx={{
+                        "& .MuiToggleButton-root": {
+                            py: 0.25,
+                            px: 1,
+                            textTransform: "none",
+                        },
+                    }}
+                >
+                    {VARIANTS.map(({ value, label }) => (
+                        <ToggleButton key={value} value={value}>
+                            <Typography variant="caption">
                                 {label}
                             </Typography>
-                        </Tooltip>
-                    </ToggleButton>
-                ))}
-            </ToggleButtonGroup>
+                        </ToggleButton>
+                    ))}
+                </ToggleButtonGroup>
+            </Box>
+            <Box
+                sx={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    px: 2,
+                    minHeight: 60,
+                }}
+            >
+                <Box sx={{ width: "100%" }}>
+                    <DecorativeDivider
+                        variant={block.variant}
+                        my={0}
+                    />
+                </Box>
+            </Box>
         </Box>
     );
 }

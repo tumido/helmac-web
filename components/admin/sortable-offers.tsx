@@ -5,12 +5,14 @@ import { Edit, LocalOffer } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { SortableList } from "@/components/admin/sortable-list";
 import { OfferActions } from "@/components/admin/offer-actions";
+import { GameIcon } from "@/lib/icons";
 import { reorderOffers } from "@/lib/actions/offers";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface Offer {
     id: string;
     title: string;
+    icon: string | null;
 }
 
 interface SortableOffersProps {
@@ -46,7 +48,11 @@ export function SortableOffers({ yearId, offers }: SortableOffersProps) {
                         pr: 1,
                     }}
                 >
-                    <LocalOffer sx={{ color: "text.disabled" }} />
+                    {offer.icon ? (
+                        <GameIcon name={offer.icon} sx={{ color: "text.secondary" }} />
+                    ) : (
+                        <LocalOffer sx={{ color: "text.disabled" }} />
+                    )}
                     <Box sx={{ flex: 1 }}>
                         <Typography fontWeight="medium">
                             {offer.title}

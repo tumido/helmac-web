@@ -26,6 +26,7 @@ import type { FormField, FormCondition, InputField, HeadingField, DescriptionFie
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { getConditionsUsingOptionValue } from "@/lib/utils/condition-validation";
 import { formatPrice } from "@/lib/utils/pricing";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 interface FieldEditorProps {
     open: boolean;
@@ -82,7 +83,7 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
     const layoutData = editData as HeadingField | DescriptionField;
 
     return (
-        <Dialog open={open} maxWidth="sm" fullWidth>
+        <Dialog open={open} maxWidth={editData.type === "description" ? "md" : "sm"} fullWidth>
             <DialogTitle>
                 Upravit pole — {FIELD_TYPE_META[editData.type].label}
             </DialogTitle>
@@ -290,15 +291,30 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                 </Box>
                             )}
                         </>
+                    ) : editData.type === "description" ? (
+                        <RichTextEditor
+                            value={layoutData.text}
+                            onChange={(val: string) =>
+                                updateLayout({
+                                    text: val,
+                                })
+                            }
+                            format="markdown"
+                            minHeight={150}
+                            placeholder="Text popisu..."
+                            allowedTools={[
+                                "formatting",
+                                "inserts",
+                                "undo",
+                            ]}
+                        />
                     ) : (
                         <TextField
-                            label={editData.type === "heading" ? "Text nadpisu" : "Text popisu"}
+                            label="Text nadpisu"
                             value={layoutData.text}
                             onChange={(e) => updateLayout({ text: e.target.value })}
                             fullWidth
                             required
-                            multiline={editData.type === "description"}
-                            rows={editData.type === "description" ? 3 : 1}
                         />
                     )}
                 </Box>

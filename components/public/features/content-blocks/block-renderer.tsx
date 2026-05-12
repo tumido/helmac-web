@@ -2,6 +2,7 @@
 
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type { ContentBlock } from "@/lib/types/content-blocks";
+import { normalizeBlocks } from "@/lib/types/content-blocks";
 import { RichTextBlockRenderer } from "./richtext-block";
 import { ImageBlockRenderer } from "./image-block";
 import { DividerBlockRenderer } from "./divider-block";
@@ -34,7 +35,8 @@ export function BlockRenderer({ blocks, tocIds }: BlockRendererProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-    const sorted = [...blocks].sort((a, b) => {
+    const normalized = normalizeBlocks(blocks);
+    const sorted = [...normalized].sort((a, b) => {
         if (a.layout.y !== b.layout.y) return a.layout.y - b.layout.y;
         return a.layout.x - b.layout.x;
     });

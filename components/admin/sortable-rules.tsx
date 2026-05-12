@@ -5,12 +5,14 @@ import { Edit, Gavel } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { SortableList } from "@/components/admin/sortable-list";
 import { RuleActions } from "@/components/admin/rule-actions";
+import { GameIcon } from "@/lib/icons";
 import { reorderRules } from "@/lib/actions/rules";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface Rule {
     id: string;
     title: string;
+    icon: string | null;
 }
 
 interface SortableRulesProps {
@@ -46,7 +48,11 @@ export function SortableRules({ yearId, rules }: SortableRulesProps) {
                         pr: 1,
                     }}
                 >
-                    <Gavel sx={{ color: "text.disabled" }} />
+                    {rule.icon ? (
+                        <GameIcon name={rule.icon} sx={{ color: "text.secondary" }} />
+                    ) : (
+                        <Gavel sx={{ color: "text.disabled" }} />
+                    )}
                     <Box sx={{ flex: 1 }}>
                         <Typography fontWeight="medium">
                             {rule.title}

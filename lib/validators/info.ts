@@ -7,6 +7,7 @@ export const createInfoSectionSchema = z.object({
         .min(1, "Nazev je povinny")
         .max(200, "Nazev je prilis dlouhy"),
     subtitle: z.string().max(200, "Podtitulek je prilis dlouhy").optional(),
+    icon: z.string().optional(),
     content: z
         .string()
         .min(2, "Obsah je povinny")
@@ -32,6 +33,7 @@ export const updateInfoSectionSchema = z.object({
         .max(200, "Nazev je prilis dlouhy")
         .optional(),
     subtitle: z.string().max(200, "Podtitulek je prilis dlouhy").optional(),
+    icon: z.string().optional(),
     content: z
         .string()
         .min(2, "Obsah je povinny")

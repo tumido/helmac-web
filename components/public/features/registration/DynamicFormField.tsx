@@ -14,9 +14,11 @@ import {
     Typography,
     Box,
     Collapse,
+    IconButton,
 } from "@mui/material";
-import { ExpandMore } from "@mui/icons-material";
+import { Add, Remove, ExpandMore } from "@mui/icons-material";
 import { DecorativeDivider } from "@/components/public/ui";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import type {
@@ -69,11 +71,7 @@ export function DynamicFormField({
                 </Box>
             );
         }
-        return (
-            <Typography variant="body1" color="text.secondary">
-                {field.text}
-            </Typography>
-        );
+        return <MarkdownContent content={field.text} />;
     }
 
     const label = `${field.label}${field.required ? " *" : ""}`;
@@ -176,7 +174,11 @@ export function DynamicFormField({
                                             }
                                         }}
                                         sx={{
-                                            flex: "1 1 0",
+                                            flex: {
+                                                xs: "1 1 calc(25% - 12px)",
+                                                md: "1 1 0",
+                                            },
+                                            minWidth: "fit-content",
                                             display: "flex",
                                             flexDirection: "column",
                                             overflow: "hidden",
@@ -472,8 +474,11 @@ export function DynamicFormField({
                                         onChange(field.name, opt.name)
                                     }
                                     sx={{
-                                        flex: { xs: "1 1 100%", sm: "1 1 0" },
-                                        minWidth: 0,
+                                        flex: {
+                                            xs: "1 1 calc(50% - 4px)",
+                                            md: "1 1 0",
+                                        },
+                                        minWidth: "fit-content",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "space-between",
@@ -510,7 +515,20 @@ export function DynamicFormField({
                                         <Typography
                                             variant="body1"
                                             fontWeight={600}
-                                            noWrap
+                                            sx={{
+                                                whiteSpace: {
+                                                    xs: "normal",
+                                                    md: "nowrap",
+                                                },
+                                                overflow: {
+                                                    xs: "visible",
+                                                    md: "hidden",
+                                                },
+                                                textOverflow: {
+                                                    xs: "clip",
+                                                    md: "ellipsis",
+                                                },
+                                            }}
                                         >
                                             {opt.name}
                                         </Typography>
@@ -659,133 +677,273 @@ export function DynamicFormField({
         }
 
         case "pricing_quantity": {
-            const def = pricingDefinitions?.find(
+            const qDef = pricingDefinitions?.find(
                 (d) => d.id === field.pricingId
             );
-            if (!def) return null;
-            const unitOpt = def.options[0];
-            if (!unitOpt) return null;
-            const defTiersQ = def.usePriceTiers ? (priceTiers ?? []) : [];
-            const currentTier = getCurrentTierIndex(defTiersQ);
-            const unitPrice = unitOpt.prices[currentTier] ?? 0;
-            const qty = Number(value) || 0;
-            const totalPrice = qty * unitPrice;
-            const currentLabelQ =
-                currentTier < defTiersQ.length
-                    ? `do ${formatDate(defTiersQ[currentTier])}`
-                    : defTiersQ.length > 0
-                      ? "na místě"
-                      : "";
+            if (!qDef) return null;
+            const qDefTiers = qDef.usePriceTiers
+                ? (priceTiers ?? [])
+                : [];
+            const qCurrentTier = getCurrentTierIndex(qDefTiers);
+
+            let qQuantities: Record<string, number> = {};
+            try {
+                const parsed =
+                    typeof value === "string"
+                        ? JSON.parse(value || "{}")
+                        : typeof value === "number"
+                          ? {}
+                          : value;
+                if (
+                    parsed &&
+                    typeof parsed === "object" &&
+                    !Array.isArray(parsed)
+                ) {
+                    qQuantities = parsed as Record<string, number>;
+                }
+            } catch {
+                /* empty */
+            }
+
+            const handleQtyChange = (
+                optName: string,
+                delta: number
+            ) => {
+                const current = Number(qQuantities[optName]) || 0;
+                const next = Math.max(0, current + delta);
+                const updated = { ...qQuantities, [optName]: next };
+                onChange(field.name, JSON.stringify(updated));
+            };
+
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                         {label}
                     </Typography>
-                    {unitOpt.description && (
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mb: 1 }}
-                        >
-                            {unitOpt.description}
-                        </Typography>
-                    )}
                     <Box
                         sx={{
                             display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            mb: 1,
+                            flexWrap: "wrap",
+                            gap: 1,
                         }}
                     >
-                        <TextField
-                            name={htmlName}
-                            type="number"
-                            value={String(qty)}
-                            onChange={(e) =>
-                                onChange(
-                                    field.name,
-                                    Math.max(
-                                        0,
-                                        Math.floor(Number(e.target.value) || 0)
-                                    )
-                                )
-                            }
-                            error={!!error}
-                            helperText={error}
-                            inputProps={{ min: 0, step: 1 }}
-                            size="small"
-                            sx={{ width: 120 }}
-                        />
-                        {def.unitName && (
-                            <Typography variant="body2" color="text.secondary">
-                                {def.unitName}
-                            </Typography>
-                        )}
-                    </Box>
-                    {unitPrice !== 0 && (
-                        <Typography
-                            variant="body1"
-                            sx={{ fontWeight: 700, color: "primary.main" }}
-                        >
-                            {currentLabelQ
-                                ? `Cena za ${def.unitName || "jednotku"} (${currentLabelQ}): `
-                                : `Cena za ${def.unitName || "jednotku"}: `}
-                            {formatPrice(unitPrice)}
-                        </Typography>
-                    )}
-                    {defTiersQ.length > 1 && (
-                        <>
-                            <Collapse in={showAllTiers}>
+                        {qDef.options.map((opt) => {
+                            const qty =
+                                Number(qQuantities[opt.name]) || 0;
+                            const unitPrice =
+                                opt.prices[qCurrentTier] ??
+                                opt.prices[opt.prices.length - 1] ??
+                                0;
+                            const priceTag = `${unitPrice > 0 ? "+" : ""}${formatPrice(unitPrice)}`;
+                            return (
                                 <Box
+                                    key={opt.id}
                                     sx={{
+                                        flex: {
+                                            xs: "1 1 calc(50% - 4px)",
+                                            md: "1 1 0",
+                                        },
+                                        minWidth: "fit-content",
                                         display: "flex",
-                                        flexDirection: "column",
-                                        gap: 0.25,
-                                        mt: 0.5,
+                                        alignItems: "center",
+                                        justifyContent:
+                                            "space-between",
+                                        gap: 1.5,
+                                        px: 2,
+                                        py: 1,
+                                        border: "2px solid",
+                                        borderColor:
+                                            qty > 0
+                                                ? "primary.main"
+                                                : "divider",
+                                        borderRadius: 1,
+                                        backgroundColor:
+                                            qty > 0
+                                                ? "primary.50"
+                                                : "transparent",
+                                        transition:
+                                            "all 0.2s ease",
                                     }}
                                 >
-                                    {defTiersQ.map((tier, idx) => {
-                                        if (
-                                            idx === currentTier ||
-                                            unitOpt.prices[idx] === 0
-                                        )
-                                            return null;
-                                        return (
+                                    <Box
+                                        sx={{
+                                            minWidth: 0,
+                                            flex: 1,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body1"
+                                            fontWeight={600}
+                                            sx={{
+                                                whiteSpace: {
+                                                    xs: "normal",
+                                                    md: "nowrap",
+                                                },
+                                                overflow: {
+                                                    xs: "visible",
+                                                    md: "hidden",
+                                                },
+                                                textOverflow: {
+                                                    xs: "clip",
+                                                    md: "ellipsis",
+                                                },
+                                            }}
+                                        >
+                                            {opt.name}
+                                        </Typography>
+                                        {opt.description && (
                                             <Typography
-                                                key={idx}
                                                 variant="body2"
                                                 color="text.secondary"
                                             >
-                                                do {formatDate(tier)}:{" "}
-                                                {formatPrice(
-                                                    unitOpt.prices[idx]
-                                                )}
-                                            </Typography>
-                                        );
-                                    })}
-                                    {currentTier !== defTiersQ.length &&
-                                        unitOpt.prices[defTiersQ.length] !==
-                                            0 && (
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                            >
-                                                {defTiersQ.length > 0
-                                                    ? "na místě: "
-                                                    : ""}
-                                                {formatPrice(
-                                                    unitOpt.prices[
-                                                        defTiersQ.length
-                                                    ]
-                                                )}
+                                                {opt.description}
                                             </Typography>
                                         )}
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {qty > 0 && (
+                                            <IconButton
+                                                size="small"
+                                                onClick={() =>
+                                                    handleQtyChange(
+                                                        opt.name,
+                                                        -1
+                                                    )
+                                                }
+                                                sx={{
+                                                    color: "primary.main",
+                                                    border: "1px solid",
+                                                    borderColor:
+                                                        "primary.main",
+                                                    width: 28,
+                                                    height: 28,
+                                                }}
+                                            >
+                                                <Remove
+                                                    sx={{
+                                                        fontSize: 16,
+                                                    }}
+                                                />
+                                            </IconButton>
+                                        )}
+                                        <Typography
+                                            sx={{
+                                                fontWeight: 800,
+                                                fontSize: "1.1rem",
+                                                minWidth: 24,
+                                                textAlign: "center",
+                                                color: "text.primary",
+                                            }}
+                                        >
+                                            {qty}
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                                handleQtyChange(
+                                                    opt.name,
+                                                    1
+                                                )
+                                            }
+                                            sx={{
+                                                color: "primary.main",
+                                                border: "1px solid",
+                                                borderColor:
+                                                    "primary.main",
+                                                width: 28,
+                                                height: 28,
+                                            }}
+                                        >
+                                            <Add
+                                                sx={{ fontSize: 16 }}
+                                            />
+                                        </IconButton>
+                                    </Box>
+                                    {unitPrice !== 0 && (
+                                        <Typography
+                                            sx={{
+                                                fontWeight: 800,
+                                                fontSize: "1.25rem",
+                                                color: "primary.main",
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            {priceTag}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                    {error && (
+                        <FormHelperText error>
+                            {error}
+                        </FormHelperText>
+                    )}
+                    {qDefTiers.length > 1 && (
+                        <>
+                            <Collapse in={showAllTiers}>
+                                <Box sx={{ mt: 1, pl: 1 }}>
+                                    {qDef.options.map((opt) => (
+                                        <Box
+                                            key={opt.id}
+                                            sx={{ mb: 0.5 }}
+                                        >
+                                            <Typography
+                                                variant="caption"
+                                                fontWeight={600}
+                                            >
+                                                {opt.name}:
+                                            </Typography>
+                                            {qDefTiers.map(
+                                                (tier, idx) => {
+                                                    if (
+                                                        idx ===
+                                                            qCurrentTier ||
+                                                        opt.prices[
+                                                            idx
+                                                        ] === 0
+                                                    )
+                                                        return null;
+                                                    return (
+                                                        <Typography
+                                                            key={idx}
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{
+                                                                ml: 1,
+                                                            }}
+                                                        >
+                                                            do{" "}
+                                                            {formatDate(
+                                                                tier
+                                                            )}
+                                                            :{" "}
+                                                            {formatPrice(
+                                                                opt.prices[
+                                                                    idx
+                                                                ]
+                                                            )}
+                                                        </Typography>
+                                                    );
+                                                }
+                                            )}
+                                        </Box>
+                                    ))}
                                 </Box>
                             </Collapse>
                             <Typography
                                 variant="body2"
-                                onClick={() => setShowAllTiers((prev) => !prev)}
+                                onClick={() =>
+                                    setShowAllTiers((prev) => !prev)
+                                }
                                 sx={{
                                     cursor: "pointer",
                                     color: "primary.main",
@@ -793,7 +951,9 @@ export function DynamicFormField({
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 0.5,
-                                    "&:hover": { textDecoration: "underline" },
+                                    "&:hover": {
+                                        textDecoration: "underline",
+                                    },
                                 }}
                             >
                                 {showAllTiers
@@ -810,16 +970,6 @@ export function DynamicFormField({
                                 />
                             </Typography>
                         </>
-                    )}
-                    {qty > 0 && unitPrice !== 0 && (
-                        <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            sx={{ mt: 1, color: "primary.main" }}
-                        >
-                            {qty} x {formatPrice(unitPrice)} ={" "}
-                            {formatPrice(totalPrice)}
-                        </Typography>
                     )}
                 </Box>
             );
@@ -870,8 +1020,11 @@ export function DynamicFormField({
                                         handleToggleOption(opt.name)
                                     }
                                     sx={{
-                                        flex: { xs: "1 1 100%", sm: "1 1 0" },
-                                        minWidth: 0,
+                                        flex: {
+                                            xs: "1 1 calc(50% - 4px)",
+                                            md: "1 1 0",
+                                        },
+                                        minWidth: "fit-content",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "space-between",
@@ -882,13 +1035,13 @@ export function DynamicFormField({
                                         borderColor: isDisabled
                                             ? "action.disabled"
                                             : isSelected
-                                              ? "secondary.main"
+                                              ? "primary.main"
                                               : "divider",
                                         borderRadius: 1,
                                         backgroundColor: isDisabled
                                             ? "action.disabledBackground"
                                             : isSelected
-                                              ? "secondary.50"
+                                              ? "primary.50"
                                               : "transparent",
                                         cursor: isDisabled
                                             ? "not-allowed"
@@ -899,7 +1052,7 @@ export function DynamicFormField({
                                             ? {}
                                             : {
                                                   borderColor: isSelected
-                                                      ? "secondary.main"
+                                                      ? "primary.main"
                                                       : "action.selected",
                                               },
                                     }}
@@ -919,10 +1072,10 @@ export function DynamicFormField({
                                                 borderRadius: 0.5,
                                                 border: "2px solid",
                                                 borderColor: isSelected
-                                                    ? "secondary.main"
+                                                    ? "primary.main"
                                                     : "action.disabled",
                                                 backgroundColor: isSelected
-                                                    ? "secondary.main"
+                                                    ? "primary.main"
                                                     : "transparent",
                                                 display: "flex",
                                                 alignItems: "center",
@@ -939,7 +1092,20 @@ export function DynamicFormField({
                                             <Typography
                                                 variant="body1"
                                                 fontWeight={600}
-                                                noWrap
+                                                sx={{
+                                                    whiteSpace: {
+                                                        xs: "normal",
+                                                        md: "nowrap",
+                                                    },
+                                                    overflow: {
+                                                        xs: "visible",
+                                                        md: "hidden",
+                                                    },
+                                                    textOverflow: {
+                                                        xs: "clip",
+                                                        md: "ellipsis",
+                                                    },
+                                                }}
                                             >
                                                 {opt.name}
                                             </Typography>

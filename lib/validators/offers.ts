@@ -7,6 +7,7 @@ export const createOfferSchema = z.object({
         .min(1, "Název je povinný")
         .max(200, "Název je příliš dlouhý"),
     subtitle: z.string().max(200, "Podtitulek je příliš dlouhý").optional(),
+    icon: z.string().optional(),
     content: z
         .string()
         .min(2, "Obsah je povinný")
@@ -32,6 +33,7 @@ export const updateOfferSchema = z.object({
         .max(200, "Název je příliš dlouhý")
         .optional(),
     subtitle: z.string().max(200, "Podtitulek je příliš dlouhý").optional(),
+    icon: z.string().optional(),
     content: z
         .string()
         .min(2, "Obsah je povinný")
