@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Box, Typography, Paper, Divider } from "@mui/material";
-import { LinkButton } from "@/components/ui/link-button";
 import { Check } from "@mui/icons-material";
 import { formatPrice } from "@/lib/utils/pricing";
 import { QRCodeSVG } from "qrcode.react";
@@ -327,22 +326,6 @@ export function RegistrationSuccess({
                     )}
                 </Box>
             )}
-            </Box>
-
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 2,
-                    justifyContent: "center",
-                    mt: 5,
-                }}
-            >
-                <LinkButton href="/" variant="contained">
-                    Zpět na hlavní stránku
-                </LinkButton>
-                <LinkButton href="/novinky" variant="outlined">
-                    Sledovat novinky
-                </LinkButton>
             </Box>
         </Box>
     );
