@@ -74,7 +74,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },

@@ -63,7 +63,7 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },

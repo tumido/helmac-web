@@ -60,7 +60,7 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
