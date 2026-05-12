@@ -3,11 +3,11 @@ export interface NavLink {
     href: string;
 }
 
-export const NAV_LINKS: NavLink[] = [
+export const STATIC_NAV_BEFORE: NavLink[] = [
     { label: "Program", href: "/program" },
-    { label: "Co nabízíme", href: "/co-nabizime" },
-    { label: "Info", href: "/info" },
-    { label: "Pravidla", href: "/pravidla" },
+];
+
+export const STATIC_NAV_AFTER: NavLink[] = [
     { label: "Galerie", href: "/galerie" },
     { label: "Novinky", href: "/novinky" },
     { label: "Archiv", href: "/archiv" },

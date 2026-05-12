@@ -144,9 +144,7 @@ model Year {
   registrationSubmissions RegistrationSubmission[]
   formPreview             FormPreview?
   programDays        ProgramDay[]
-  rules              Rule[]
-  offers             Offer[]
-  infoSections       InfoSection[]
+  sectionTypes       SectionType[]
   bankTransactions   BankTransaction[]
   conditionalEmails  ConditionalEmail[]
 
@@ -230,69 +228,53 @@ model ProgramEvent {
 }
 
 // ============================================
-// RULES - Pravidla sections per year
+// SECTION TYPES - Dynamic section categories per year
 // ============================================
 
-model Rule {
-    id        String   @id @default(cuid())
-    yearId    String
-    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+model SectionType {
+    id              String   @id @default(cuid())
+    yearId          String
+    year            Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
-    title     String
-    subtitle  String?
-    icon      String?
-    content   Json     @default("[]")
-    showToc   Boolean  @default(false)
-    sortOrder Int      @default(0)
+    label           String
+    slug            String
+    icon            String?
+    sortOrder       Int      @default(0)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    pageTitle       String?
+    pageSubtitle    String?
+    metaTitle       String?
+    metaDescription String?
 
-    @@map("rules")
+    sections        Section[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@unique([yearId, slug])
+    @@map("section_types")
 }
 
 // ============================================
-// OFFERS - Co nabízíme sections per year
+// SECTIONS - Content sections within a type
 // ============================================
 
-model Offer {
-    id        String   @id @default(cuid())
-    yearId    String
-    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+model Section {
+    id            String      @id @default(cuid())
+    sectionTypeId String
+    sectionType   SectionType @relation(fields: [sectionTypeId], references: [id], onDelete: Cascade)
 
-    title     String
-    subtitle  String?
-    icon      String?
-    content   Json     @default("[]")
-    showToc   Boolean  @default(false)
-    sortOrder Int      @default(0)
+    title         String
+    subtitle      String?
+    icon          String?
+    content       Json        @default("[]")
+    showToc       Boolean     @default(false)
+    sortOrder     Int         @default(0)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
 
-    @@map("offers")
-}
-
-// ============================================
-// INFO SECTIONS - Info tab sections per year
-// ============================================
-
-model InfoSection {
-    id        String   @id @default(cuid())
-    yearId    String
-    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
-
-    title     String
-    subtitle  String?
-    icon      String?
-    content   Json     @default("[]")
-    showToc   Boolean  @default(false)
-    sortOrder Int      @default(0)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@map("info_sections")
+    @@map("sections")
 }
 
 // ============================================

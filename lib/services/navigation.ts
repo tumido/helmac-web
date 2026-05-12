@@ -1,90 +1,85 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import { migrateFormData } from "@/lib/utils/form-migration";
 
 export interface NavSubItem {
     id: string;
     label: string;
 }
 
-export interface NavSubtabs {
+export interface DynamicNavSection {
+    label: string;
+    href: string;
+    subItems: NavSubItem[];
+}
+
+export interface NavigationData {
     program: NavSubItem[];
-    info: NavSubItem[];
-    pravidla: NavSubItem[];
-    nabidka: NavSubItem[];
+    sections: DynamicNavSection[];
 }
 
 function formatDayLabel(label: string, date: Date): string {
     const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(
+        2,
+        "0"
+    );
     const year = date.getFullYear();
     return `${label} - ${day}.${month}.${year}`;
 }
 
-export const getNavigationSubtabs = cache(async (): Promise<NavSubtabs> => {
-    const activeYear = await db.year.findFirst({
-        where: { isActive: true, isArchived: false },
-        select: { id: true },
-    });
+export const getNavigationData = cache(
+    async (): Promise<NavigationData> => {
+        const activeYear = await db.year.findFirst({
+            where: { isActive: true, isArchived: false },
+            select: { id: true },
+        });
 
-    if (!activeYear) {
-        return { program: [], info: [], pravidla: [], nabidka: [] };
-    }
+        if (!activeYear) {
+            return { program: [], sections: [] };
+        }
 
-    const [programDays, infoSections, rules, offers, registrationForm] = await Promise.all([
-        db.programDay.findMany({
-            where: { yearId: activeYear.id },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, label: true, date: true },
-        }),
-        db.infoSection.findMany({
-            where: { yearId: activeYear.id },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, title: true },
-        }),
-        db.rule.findMany({
-            where: { yearId: activeYear.id },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, title: true },
-        }),
-        db.offer.findMany({
-            where: { yearId: activeYear.id },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, title: true },
-        }),
-        db.registrationForm.findUnique({
-            where: { yearId: activeYear.id },
-            select: { fields: true },
-        }),
-    ]);
+        const [programDays, sectionTypes] =
+            await Promise.all([
+                db.programDay.findMany({
+                    where: { yearId: activeYear.id },
+                    orderBy: { sortOrder: "asc" },
+                    select: {
+                        id: true,
+                        label: true,
+                        date: true,
+                    },
+                }),
+                db.sectionType.findMany({
+                    where: { yearId: activeYear.id },
+                    orderBy: { sortOrder: "asc" },
+                    include: {
+                        sections: {
+                            orderBy: { sortOrder: "asc" },
+                            select: {
+                                id: true,
+                                title: true,
+                            },
+                        },
+                    },
+                }),
+            ]);
 
-    return {
-        program: programDays.map((day) => ({
-            id: day.id,
-            label: formatDayLabel(day.label, day.date),
-        })),
-        info: [
-            ...infoSections.map((section) => ({
-                id: section.id,
-                label: section.title,
+        return {
+            program: programDays.map((day) => ({
+                id: day.id,
+                label: formatDayLabel(
+                    day.label,
+                    day.date
+                ),
             })),
-            ...(() => {
-                if (!registrationForm) return [];
-                const formData = migrateFormData(registrationForm.fields);
-                const config = formData.infoStatsConfig;
-                if (config?.enabled && config.stats.length > 0) {
-                    return [{ id: "__stats__", label: "Statistiky" }];
-                }
-                return [];
-            })(),
-        ],
-        pravidla: rules.map((rule) => ({
-            id: rule.id,
-            label: rule.title,
-        })),
-        nabidka: offers.map((offer) => ({
-            id: offer.id,
-            label: offer.title,
-        })),
-    };
-});
+            sections: sectionTypes.map((st) => ({
+                label: st.label,
+                href: `/${st.slug}`,
+                subItems: st.sections.map((s) => ({
+                    id: s.id,
+                    label: s.title,
+                })),
+            })),
+        };
+    }
+);
