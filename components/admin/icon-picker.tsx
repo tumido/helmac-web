@@ -4,18 +4,22 @@ import { useState, useMemo } from "react";
 import {
     Box,
     Button,
+    Checkbox,
+    Chip,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField,
-    Chip,
     IconButton,
+    ListItemText,
+    Menu,
+    MenuItem,
+    TextField,
     Typography,
     InputAdornment,
 } from "@mui/material";
-import { Add, Close, Search } from "@mui/icons-material";
-import { GameIcon, GAME_ICONS, ICON_CATEGORIES } from "@/lib/icons";
+import { Add, Close, FilterList, Search } from "@mui/icons-material";
+import { GameIcon, GAME_ICONS, ICON_TAGS } from "@/lib/icons";
 
 const BATCH_SIZE = 60;
 
@@ -27,12 +31,18 @@ interface IconPickerProps {
 export function IconPicker({ value, onChange }: IconPickerProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const [category, setCategory] = useState<string | null>(null);
+    const [tags, setTags] = useState<string[]>([]);
     const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+    const [filterAnchor, setFilterAnchor] =
+        useState<HTMLElement | null>(null);
 
     const filtered = useMemo(() => {
         return GAME_ICONS.filter((icon) => {
-            if (category && icon.category !== category) return false;
+            if (
+                tags.length > 0 &&
+                !tags.some((t) => icon.tags.includes(t))
+            )
+                return false;
             if (search) {
                 const q = search.toLowerCase();
                 return (
@@ -42,11 +52,18 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
             }
             return true;
         });
-    }, [search, category]);
+    }, [search, tags]);
+
+    const toggleTag = (t: string) => {
+        setTags((prev) =>
+            prev.includes(t)
+                ? prev.filter((x) => x !== t)
+                : [...prev, t]
+        );
+    };
 
     const visible = filtered.slice(0, visibleCount);
     const hasMore = visibleCount < filtered.length;
-
 
     const handleSelect = (name: string) => {
         onChange(name);
@@ -60,7 +77,9 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 
     return (
         <>
-            <Box
+            <Button
+                variant="outlined"
+                size="small"
                 onClick={() => setOpen(true)}
                 sx={{
                     width: 80,
@@ -70,15 +89,11 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                     alignItems: "center",
                     justifyContent: "center",
                     border: "2px dashed",
-                    borderColor: value
-                        ? "primary.main"
-                        : "divider",
+                    borderColor: value ? "primary.main" : "divider",
                     borderStyle: value ? "solid" : "dashed",
                     borderRadius: 2,
                     cursor: "pointer",
-                    backgroundColor: value
-                        ? "action.selected"
-                        : "transparent",
+                    backgroundColor: value ? "action.selected" : "transparent",
                     transition: "all 0.2s",
                     "&:hover": {
                         borderColor: "primary.main",
@@ -92,16 +107,10 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                         sx={{ fontSize: 36, color: "text.primary" }}
                     />
                 ) : (
-                    <Add
-                        sx={{ fontSize: 24, color: "text.disabled" }}
-                    />
+                    <Add sx={{ fontSize: 24, color: "text.disabled" }} />
                 )}
-            </Box>
-            <input
-                type="hidden"
-                name="icon"
-                value={value || ""}
-            />
+            </Button>
+            <input type="hidden" name="icon" value={value || ""} />
 
             <Dialog
                 open={open}
@@ -117,63 +126,91 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                     }}
                 >
                     Vybrat ikonu
-                    <IconButton
-                        onClick={() => setOpen(false)}
-                        size="small"
-                    >
+                    <IconButton onClick={() => setOpen(false)} size="small">
                         <Close />
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                    <TextField
-                        autoFocus
-                        fullWidth
-                        size="small"
-                        placeholder="Hledat..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <Search />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={{ mb: 2 }}
-                    />
-
                     <Box
                         sx={{
                             display: "flex",
-                            flexWrap: "wrap",
-                            gap: 0.5,
-                            mb: 2,
+                            gap: 1,
+                            mb: tags.length > 0 ? 1 : 2,
                         }}
                     >
-                        <Chip
-                            label="Vše"
+                        <TextField
+                            autoFocus
+                            fullWidth
                             size="small"
-                            variant={
-                                category === null
-                                    ? "filled"
-                                    : "outlined"
-                            }
-                            onClick={() => setCategory(null)}
+                            placeholder="Hledat..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search />
+                                    </InputAdornment>
+                                ),
+                            }}
                         />
-                        {ICON_CATEGORIES.map((cat) => (
-                            <Chip
-                                key={cat}
-                                label={cat}
-                                size="small"
-                                variant={
-                                    category === cat
-                                        ? "filled"
-                                        : "outlined"
-                                }
-                                onClick={() => setCategory(cat)}
-                            />
-                        ))}
+                        <IconButton
+                            onClick={(e) =>
+                                setFilterAnchor(e.currentTarget)
+                            }
+                            color={
+                                tags.length > 0
+                                    ? "primary"
+                                    : "default"
+                            }
+                        >
+                            <FilterList />
+                        </IconButton>
+                        <Menu
+                            anchorEl={filterAnchor}
+                            open={Boolean(filterAnchor)}
+                            onClose={() => setFilterAnchor(null)}
+                            slotProps={{
+                                paper: {
+                                    sx: { maxHeight: 400 },
+                                },
+                            }}
+                        >
+                            {ICON_TAGS.map((t) => (
+                                <MenuItem
+                                    key={t}
+                                    dense
+                                    onClick={() => toggleTag(t)}
+                                >
+                                    <Checkbox
+                                        size="small"
+                                        checked={tags.includes(t)}
+                                        sx={{ p: 0, mr: 1 }}
+                                    />
+                                    <ListItemText primary={t} />
+                                </MenuItem>
+                            ))}
+                        </Menu>
                     </Box>
+
+                    {tags.length > 0 && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                                mb: 2,
+                            }}
+                        >
+                            {tags.map((t) => (
+                                <Chip
+                                    key={t}
+                                    label={t}
+                                    size="small"
+                                    onDelete={() => toggleTag(t)}
+                                />
+                            ))}
+                        </Box>
+                    )}
 
                     <Box
                         sx={{
@@ -188,9 +225,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                         {visible.map((icon) => (
                             <Box
                                 key={icon.name}
-                                onClick={() =>
-                                    handleSelect(icon.name)
-                                }
+                                onClick={() => handleSelect(icon.name)}
                                 sx={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -205,8 +240,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                                             ? "primary.main"
                                             : "transparent",
                                     "&:hover": {
-                                        backgroundColor:
-                                            "action.hover",
+                                        backgroundColor: "action.hover",
                                     },
                                 }}
                             >
@@ -239,12 +273,16 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                                     size="small"
                                     onClick={() =>
                                         setVisibleCount(
-                                            (prev) =>
-                                                prev + BATCH_SIZE
+                                            (prev) => prev + BATCH_SIZE
                                         )
                                     }
                                 >
-                                    Načíst další {Math.min(BATCH_SIZE, filtered.length - visibleCount)} z {filtered.length - visibleCount}
+                                    Načíst další{" "}
+                                    {Math.min(
+                                        BATCH_SIZE,
+                                        filtered.length - visibleCount
+                                    )}{" "}
+                                    z {filtered.length - visibleCount}
                                 </Button>
                             </Box>
                         )}
@@ -260,10 +298,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                             Odebrat ikonu
                         </Button>
                     )}
-                    <Button
-                        onClick={() => setOpen(false)}
-                        size="small"
-                    >
+                    <Button onClick={() => setOpen(false)} size="small">
                         Zrušit
                     </Button>
                 </DialogActions>

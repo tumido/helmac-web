@@ -1,8 +1,8 @@
 export { GameIcon } from "./game-icon";
 export {
     GAME_ICONS,
-    ICON_CATEGORIES,
+    ICON_TAGS,
     getIconPaths,
     type GameIconMeta,
-    type IconCategory,
+    type IconTag,
 } from "./registry";
