@@ -27,6 +27,7 @@ const inputFieldSchema = z.object({
     name: z.string().min(1),
     label: z.string().min(1, "Popisek je povinný"),
     required: z.boolean(),
+    editable: z.boolean().optional(),
     placeholder: z.string().optional(),
     options: z.array(z.string().min(1)).optional(),
     pricingId: z.string().optional(),

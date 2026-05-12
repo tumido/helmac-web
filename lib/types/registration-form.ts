@@ -26,6 +26,7 @@ export interface InputField {
     name: string;
     label: string;
     required: boolean;
+    editable?: boolean; // Field can be edited by the public user after submission
     placeholder?: string;
     options?: string[]; // For select/radio
     pricingId?: string; // For pricing_select: references PricingDefinition.id

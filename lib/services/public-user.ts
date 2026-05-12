@@ -65,6 +65,8 @@ export async function getPublicUserRegistrations(userId: string) {
         orderBy: { createdAt: "desc" },
         select: {
             id: true,
+            yearId: true,
+            formId: true,
             data: true,
             status: true,
             isPaid: true,
@@ -77,6 +79,7 @@ export async function getPublicUserRegistrations(userId: string) {
                 select: {
                     year: true,
                     title: true,
+                    registrationOpen: true,
                 },
             },
             form: {

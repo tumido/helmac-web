@@ -115,6 +115,22 @@ function FieldEditorInner({ open, field, onClose, onSave, conditions, pricingDef
                                 }
                                 label="Povinné pole"
                             />
+                            {!isPricing && (
+                                <Box>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={inputData.editable ?? false}
+                                                onChange={(e) => updateInput({ editable: e.target.checked || undefined })}
+                                            />
+                                        }
+                                        label="Upravitelné po odeslání"
+                                    />
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 4, mt: -0.5 }}>
+                                        Uživatel může pole upravit po odeslání registrace
+                                    </Typography>
+                                </Box>
+                            )}
                             <Box>
                                 <FormControlLabel
                                     control={

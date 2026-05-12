@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
-import { Edit, Delete, AddCircleOutline, People } from "@mui/icons-material";
+import { Edit, Delete, AddCircleOutline, People, EditNote } from "@mui/icons-material";
 import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
@@ -144,6 +144,32 @@ export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCo
                                 *
                             </IconButton>
                         </Tooltip>
+                        {!field.type.startsWith("pricing_") && (
+                            <Tooltip title={field.editable ? "Zrušit upravitelné po odeslání" : "Upravitelné po odeslání"}>
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onToggleField(field.id, { editable: !field.editable || undefined });
+                                    }}
+                                    sx={{
+                                        border: 1,
+                                        borderColor: field.editable ? "info.main" : "grey.400",
+                                        color: field.editable ? "info.main" : "grey.400",
+                                        borderRadius: 1,
+                                        width: 28,
+                                        height: 28,
+                                        "&:hover": {
+                                            borderColor: "info.main",
+                                            color: "info.main",
+                                            backgroundColor: "info.50",
+                                        },
+                                    }}
+                                >
+                                    <EditNote sx={{ fontSize: 16 }} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                         <Tooltip title={field.includeForAdditionalPeople ? "Zrušit pro další osoby" : "Zobrazit pro další osoby"}>
                             <IconButton
                                 size="small"
