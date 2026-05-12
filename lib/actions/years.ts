@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { createYearSchema, updateYearSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
+import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 
 export type YearActionState = {
     error?: {
@@ -336,6 +337,13 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
         return { error: validated.error.flatten().fieldErrors };
     }
 
+    let sections;
+    try {
+        sections = parseEmailConditionalSectionsJson(formData.get("sectionsJson"));
+    } catch (err) {
+        return { error: { _form: [err instanceof Error ? err.message : "Neplatné podmíněné sekce"] } };
+    }
+
     try {
         await db.year.update({
             where: { id: yearId },
@@ -344,6 +352,7 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
                 confirmationEmailBody: validated.data.confirmationEmailBody,
                 confirmationEmailBcc: validated.data.confirmationEmailBcc,
                 confirmationEmailAccountId: validated.data.emailAccountId,
+                confirmationEmailSections: sections,
             },
         });
 
@@ -409,6 +418,13 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
         return { error: validated.error.flatten().fieldErrors };
     }
 
+    let sections;
+    try {
+        sections = parseEmailConditionalSectionsJson(formData.get("sectionsJson"));
+    } catch (err) {
+        return { error: { _form: [err instanceof Error ? err.message : "Neplatné podmíněné sekce"] } };
+    }
+
     try {
         await db.year.update({
             where: { id: yearId },
@@ -417,6 +433,7 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
                 priceChangeEmailBody: validated.data.confirmationEmailBody,
                 priceChangeEmailBcc: validated.data.confirmationEmailBcc,
                 priceChangeEmailAccountId: validated.data.emailAccountId,
+                priceChangeEmailSections: sections,
             },
         });
 

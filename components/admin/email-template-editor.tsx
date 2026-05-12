@@ -21,6 +21,9 @@ import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor
 import { richContentSx } from "@/lib/utils/rich-content-sx";
 import { renderPlaceholderChipsInHtml } from "@/lib/utils/placeholder-html";
 import { TestEmailDialog } from "@/components/admin/test-email-dialog";
+import { ConditionalSectionsEditor } from "@/components/admin/email-builder/conditional-sections-editor";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 
 type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
 
@@ -40,6 +43,9 @@ interface EmailTemplateEditorProps {
     saveAction?: SaveAction;
     emailAccounts?: EmailAccountOption[];
     selectedEmailAccountId?: string | null;
+    initialSections?: EmailConditionalSection[];
+    availableFields?: FormField[];
+    pricingDefinitions?: PricingDefinition[];
 }
 
 export function EmailTemplateEditor({
@@ -51,16 +57,21 @@ export function EmailTemplateEditor({
     saveAction = updateEmailTemplate,
     emailAccounts = [],
     selectedEmailAccountId: initialEmailAccountId,
+    initialSections = [],
+    availableFields = [],
+    pricingDefinitions = [],
 }: EmailTemplateEditorProps) {
     const [editing, setEditing] = useState(false);
     const [savedSubject, setSavedSubject] = useState(initialSubject ?? "");
     const [savedBody, setSavedBody] = useState(initialBody ?? "");
     const [savedBcc, setSavedBcc] = useState(initialBcc ?? "");
     const [savedEmailAccountId, setSavedEmailAccountId] = useState(initialEmailAccountId ?? "");
+    const [savedSections, setSavedSections] = useState<EmailConditionalSection[]>(initialSections);
     const [subject, setSubject] = useState(initialSubject ?? "");
     const [body, setBody] = useState(initialBody ?? "");
     const [bcc, setBcc] = useState(initialBcc ?? "");
     const [emailAccountId, setEmailAccountId] = useState(initialEmailAccountId ?? "");
+    const [sections, setSections] = useState<EmailConditionalSection[]>(initialSections);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -74,19 +85,31 @@ export function EmailTemplateEditor({
     );
 
     const testSource = editing
-        ? { subject, body, bcc, emailAccountId }
+        ? { subject, body, bcc, emailAccountId, sections }
         : {
               subject: savedSubject,
               body: savedBody,
               bcc: savedBcc,
               emailAccountId: savedEmailAccountId,
+              sections: savedSections,
           };
 
     const usedPlaceholders = useMemo(() => {
-        const haystack = `${testSource.subject}\n${testSource.body}`;
+        const sectionBodies = testSource.sections.map((s) => s.body).join("\n");
+        const haystack = `${testSource.subject}\n${testSource.body}\n${sectionBodies}`;
         const keys = new Set<string>();
         for (const match of haystack.matchAll(/\{(\w+)\}/g)) {
             keys.add(match[1]);
+        }
+        for (const section of testSource.sections) {
+            for (const rule of section.condition.rules) {
+                const fieldId = rule.fieldId;
+                if (!fieldId) continue;
+                const field = availableFields.find((f) => f.id === fieldId);
+                if (field && "name" in field && field.name) {
+                    keys.add(field.name);
+                }
+            }
         }
         const labelByKey = new Map(
             availablePlaceholders.map((p) => [p.key, p.label]),
@@ -94,7 +117,7 @@ export function EmailTemplateEditor({
         return Array.from(keys)
             .filter((k) => k !== "qrPlatba")
             .map((k) => ({ key: k, label: labelByKey.get(k) ?? k }));
-    }, [testSource.subject, testSource.body, availablePlaceholders]);
+    }, [testSource.subject, testSource.body, testSource.sections, availableFields, availablePlaceholders]);
 
     const canTest = !!testSource.subject || !!testSource.body;
 
@@ -125,6 +148,7 @@ export function EmailTemplateEditor({
         setBody(savedBody);
         setBcc(savedBcc);
         setEmailAccountId(savedEmailAccountId);
+        setSections(savedSections);
         setError(null);
         setFieldErrors({});
         setEditing(false);
@@ -143,6 +167,7 @@ export function EmailTemplateEditor({
         if (emailAccountId) {
             formData.set("emailAccountId", emailAccountId);
         }
+        formData.set("sectionsJson", JSON.stringify(sections));
 
         const result = await saveAction(yearId, formData);
 
@@ -150,13 +175,19 @@ export function EmailTemplateEditor({
             if (typeof result.error === "string") {
                 setError(result.error);
             } else {
-                setFieldErrors(result.error as Record<string, string[]>);
+                const errObj = result.error as Record<string, string[] | undefined>;
+                if (errObj._form?.[0]) {
+                    setError(errObj._form[0]);
+                } else {
+                    setFieldErrors(errObj as Record<string, string[]>);
+                }
             }
         } else {
             setSavedSubject(subject);
             setSavedBody(body);
             setSavedBcc(bcc);
             setSavedEmailAccountId(emailAccountId);
+            setSavedSections(sections);
             setSuccess(true);
             setEditing(false);
             setTimeout(() => setSuccess(false), 3000);
@@ -368,6 +399,16 @@ export function EmailTemplateEditor({
                                 sx={{ mb: 2 }}
                             />
 
+                            <Box sx={{ mt: 1, mb: 2 }}>
+                                <ConditionalSectionsEditor
+                                    sections={sections}
+                                    onChange={setSections}
+                                    availableFields={availableFields}
+                                    pricingDefinitions={pricingDefinitions}
+                                    placeholders={availablePlaceholders}
+                                />
+                            </Box>
+
                             {error && (
                                 <Alert severity="error" sx={{ mb: 2 }}>
                                     {error}
@@ -412,6 +453,8 @@ export function EmailTemplateEditor({
                 bcc={testSource.bcc || null}
                 emailAccountId={testSource.emailAccountId || null}
                 usedPlaceholders={usedPlaceholders}
+                sections={testSource.sections}
+                availableFields={availableFields}
             />
         </Box>
     );

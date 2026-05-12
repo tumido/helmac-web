@@ -345,7 +345,7 @@ export function ConditionEditor({ conditions, allFields, elements, onChange, pri
     );
 }
 
-interface RuleRowProps {
+export interface RuleRowProps {
     rule: ConditionRule;
     inputFields: InputField[];
     allFields: FormField[];
@@ -355,7 +355,7 @@ interface RuleRowProps {
     canDelete: boolean;
 }
 
-function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onDelete, canDelete }: RuleRowProps) {
+export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onDelete, canDelete }: RuleRowProps) {
     const targetField = allFields.find((f) => f.id === rule.fieldId);
     const targetInput = targetField && isInputField(targetField) ? targetField : null;
 

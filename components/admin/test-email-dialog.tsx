@@ -14,6 +14,8 @@ import {
     Typography,
 } from "@mui/material";
 import { sendTestEmail } from "@/lib/actions/email-test";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { FormField } from "@/lib/types/registration-form";
 
 interface UsedPlaceholder {
     key: string;
@@ -28,6 +30,8 @@ interface TestEmailDialogProps {
     bcc: string | null;
     emailAccountId: string | null;
     usedPlaceholders: UsedPlaceholder[];
+    sections?: EmailConditionalSection[];
+    availableFields?: FormField[];
 }
 
 export function TestEmailDialog({
@@ -38,6 +42,8 @@ export function TestEmailDialog({
     bcc,
     emailAccountId,
     usedPlaceholders,
+    sections,
+    availableFields,
 }: TestEmailDialogProps) {
     const [recipient, setRecipient] = useState("");
     const [values, setValues] = useState<Record<string, string>>({});
@@ -81,6 +87,8 @@ export function TestEmailDialog({
                 emailAccountId,
                 recipient: recipient.trim(),
                 placeholderValues: values,
+                sections,
+                allFields: availableFields,
             });
 
             if (result.error) {

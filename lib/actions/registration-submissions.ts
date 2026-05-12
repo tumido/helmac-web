@@ -5,11 +5,12 @@ import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import type { RegistrationStatus } from "@prisma/client";
-import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage } from "@/lib/utils/email";
+import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
 import { formatCzechAccount, czechAccountToIBAN } from "@/lib/utils/spayd";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 
 interface ActionResult {
     success?: boolean;
@@ -104,6 +105,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                         confirmationEmailBody: true,
                         confirmationEmailBcc: true,
                         confirmationEmailAccountId: true,
+                        confirmationEmailSections: true,
                     },
                 },
             },
@@ -119,6 +121,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
 
         const formData = migrateFormData(submission.form.fields);
         const allInputFields = getAllInputFields(formData.fields);
+        const allFields = getAllFields(formData.fields);
         const submissionData = submission.data as Record<string, unknown>;
 
         // Find email field
@@ -148,7 +151,13 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
         });
 
         const subject = replacePlaceholders(submission.year.confirmationEmailSubject, placeholders);
-        const body = replacePlaceholders(submission.year.confirmationEmailBody, placeholders);
+        const bodyWithSections = appendConditionalSections({
+            body: submission.year.confirmationEmailBody,
+            sections: (submission.year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
+            rawSubmissionData: submissionData,
+            allFields,
+        });
+        const body = replacePlaceholders(bodyWithSections, placeholders);
 
         // Generate QR payment image if payment data is available
         let qrImageBuffer: Buffer | null = null;

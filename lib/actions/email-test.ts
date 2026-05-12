@@ -2,7 +2,9 @@
 
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { replacePlaceholders, sendConfirmationEmail } from "@/lib/utils/email";
+import { replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
+import { emailConditionalSectionsSchema } from "@/lib/validators/email-section";
+import type { FormField } from "@/lib/types/registration-form";
 
 const sendTestEmailSchema = z.object({
     subject: z.string().min(1, "Předmět je povinný"),
@@ -11,6 +13,8 @@ const sendTestEmailSchema = z.object({
     emailAccountId: z.string().nullable().optional(),
     recipient: z.string().email("Neplatná emailová adresa"),
     placeholderValues: z.record(z.string(), z.string()),
+    sections: emailConditionalSectionsSchema.optional(),
+    allFields: z.array(z.unknown()).optional(),
 });
 
 export type SendTestEmailInput = z.input<typeof sendTestEmailSchema>;
@@ -27,11 +31,19 @@ export async function sendTestEmail(
         };
     }
 
-    const { subject, body, bcc, emailAccountId, recipient, placeholderValues } =
+    const { subject, body, bcc, emailAccountId, recipient, placeholderValues, sections, allFields } =
         parsed.data;
 
     const renderedSubject = replacePlaceholders(subject, placeholderValues);
-    const renderedBody = replacePlaceholders(body, placeholderValues);
+    const bodyWithSections = sections && sections.length > 0
+        ? appendConditionalSections({
+            body,
+            sections,
+            rawSubmissionData: placeholderValues,
+            allFields: (allFields ?? []) as FormField[],
+        })
+        : body;
+    const renderedBody = replacePlaceholders(bodyWithSections, placeholderValues);
 
     try {
         const sent = await sendConfirmationEmail({

@@ -4,14 +4,16 @@ import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
 import type { FormCondition, FormElement, FormField, InputField, OptionCounts, AdditionalPersonData, CapacityLimit } from "@/lib/types/registration-form";
-import { isInputField, isConditionBlock, getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
+import { isConditionBlock, getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
-import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage } from "@/lib/utils/email";
+import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
+import { evaluateCondition } from "@/lib/utils/condition-evaluation";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { getPublicSession } from "@/lib/public-auth";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 
@@ -32,64 +34,6 @@ export interface RegistrationState {
     variableSymbol?: string;
     totalPrice?: number;
     paymentData?: PaymentData;
-}
-
-function evaluateCondition(
-    condition: FormCondition,
-    rawData: Record<string, unknown>,
-    allFields: FormField[],
-): boolean {
-    let result: boolean | null = null;
-    for (let i = 0; i < condition.rules.length; i++) {
-        const rule = condition.rules[i];
-        let passes: boolean;
-
-        if (!rule.fieldId || rule.operator === undefined) {
-            passes = false;
-        } else {
-            const targetField = allFields.find((f) => f.id === rule.fieldId);
-            if (!targetField || !isInputField(targetField)) {
-                passes = false;
-            } else {
-                const currentValue = String(rawData[targetField.name] ?? "");
-
-                let parsedArr: unknown[] | null = null;
-                if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
-                    try {
-                        const arr = JSON.parse(currentValue);
-                        if (Array.isArray(arr)) parsedArr = arr;
-                    } catch { /* ignore */ }
-                }
-
-                if (rule.operator === "is_set" || rule.operator === "is_not_set") {
-                    let isSet: boolean;
-                    if (parsedArr !== null) {
-                        isSet = parsedArr.length > 0;
-                    } else if (targetField.type === "checkbox") {
-                        isSet = currentValue === "true";
-                    } else {
-                        isSet = currentValue.trim() !== "";
-                    }
-                    passes = rule.operator === "is_set" ? isSet : !isSet;
-                } else if (parsedArr !== null) {
-                    const includes = parsedArr.includes(rule.value);
-                    passes = rule.operator === "equals" ? includes : !includes;
-                } else {
-                    passes = rule.operator === "equals"
-                        ? currentValue === rule.value
-                        : currentValue !== rule.value;
-                }
-            }
-        }
-
-        if (result === null) {
-            result = passes;
-        } else {
-            const connector = rule.connector ?? "AND";
-            result = connector === "OR" ? (result || passes) : (result && passes);
-        }
-    }
-    return result ?? false;
 }
 
 /**
@@ -190,6 +134,7 @@ export async function submitDynamicRegistration(
             confirmationEmailBody: true,
             confirmationEmailBcc: true,
             confirmationEmailAccountId: true,
+            confirmationEmailSections: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },
@@ -556,7 +501,13 @@ export async function submitDynamicRegistration(
         ) {
             try {
                 const emailSubject = replacePlaceholders(activeYear.confirmationEmailSubject, placeholders);
-                const emailBody = replacePlaceholders(activeYear.confirmationEmailBody, placeholders);
+                const bodyWithSections = appendConditionalSections({
+                    body: activeYear.confirmationEmailBody,
+                    sections: (activeYear.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
+                    rawSubmissionData: submissionData,
+                    allFields,
+                });
+                const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
                 const sent = await sendConfirmationEmail({
                     to: recipientEmail,
@@ -591,6 +542,7 @@ export async function submitDynamicRegistration(
                         body: true,
                         bcc: true,
                         accountId: true,
+                        sections: true,
                     },
                 });
 
@@ -601,7 +553,13 @@ export async function submitDynamicRegistration(
                     if (fieldValue !== ce.conditionValue) continue;
 
                     const ceSubject = replacePlaceholders(ce.subject, placeholders);
-                    const ceBody = replacePlaceholders(ce.body, placeholders);
+                    const ceBodyWithSections = appendConditionalSections({
+                        body: ce.body,
+                        sections: (ce.sections as unknown as EmailConditionalSection[]) ?? [],
+                        rawSubmissionData: submissionData,
+                        allFields,
+                    });
+                    const ceBody = replacePlaceholders(ceBodyWithSections, placeholders);
 
                     await sendConfirmationEmail({
                         to: recipientEmail,
