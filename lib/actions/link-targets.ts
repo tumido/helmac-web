@@ -13,9 +13,6 @@ const STATIC_TARGETS: LinkTarget[] = [
     { label: "Domov", url: "/", group: "Stránky" },
     { label: "Program", url: "/program", group: "Stránky" },
     { label: "Novinky", url: "/novinky", group: "Stránky" },
-    { label: "Pravidla", url: "/pravidla", group: "Stránky" },
-    { label: "Co nabízíme", url: "/co-nabizime", group: "Stránky" },
-    { label: "Info", url: "/info", group: "Stránky" },
     { label: "Galerie", url: "/galerie", group: "Stránky" },
     { label: "Registrace", url: "/registrace", group: "Stránky" },
     { label: "Archiv", url: "/archiv", group: "Stránky" },
@@ -38,7 +35,7 @@ export async function getLinkTargets(yearId?: string): Promise<LinkTarget[]> {
         return STATIC_TARGETS;
     }
 
-    const [news, programDays, offers, rules, infoSections] = await Promise.all([
+    const [news, programDays, sectionTypes] = await Promise.all([
         db.news.findMany({
             where: { yearId: targetYearId, isPublished: true },
             orderBy: { publishedAt: "desc" },
@@ -49,25 +46,30 @@ export async function getLinkTargets(yearId?: string): Promise<LinkTarget[]> {
             orderBy: { sortOrder: "asc" },
             select: { id: true, label: true },
         }),
-        db.offer.findMany({
+        db.sectionType.findMany({
             where: { yearId: targetYearId },
             orderBy: { sortOrder: "asc" },
-            select: { id: true, title: true },
+            include: {
+                sections: {
+                    orderBy: { sortOrder: "asc" },
+                    select: { id: true, title: true },
+                },
+            },
         }),
-        db.rule.findMany({
-            where: { yearId: targetYearId },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, title: true },
-        }),
-        db.infoSection.findMany({
-            where: { yearId: targetYearId },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, title: true },
-        }),
+    ]);
+
+    const sectionTargets: LinkTarget[] = sectionTypes.flatMap((st) => [
+        { label: st.label, url: `/${st.slug}`, group: "Stránky" },
+        ...st.sections.map((s) => ({
+            label: `${st.label} | ${s.title}`,
+            url: `/${st.slug}?tab=${s.id}`,
+            group: st.label,
+        })),
     ]);
 
     return [
         ...STATIC_TARGETS,
+        ...sectionTargets,
         ...news.map((n) => ({
             label: `Novinky | ${n.title}`,
             url: `/novinky/${n.slug}`,
@@ -77,21 +79,6 @@ export async function getLinkTargets(yearId?: string): Promise<LinkTarget[]> {
             label: `Program | ${d.label}`,
             url: `/program?tab=${d.id}`,
             group: "Program",
-        })),
-        ...offers.map((o) => ({
-            label: `Co nabízíme | ${o.title}`,
-            url: `/co-nabizime?tab=${o.id}`,
-            group: "Co nabízíme",
-        })),
-        ...rules.map((r) => ({
-            label: `Pravidla | ${r.title}`,
-            url: `/pravidla?tab=${r.id}`,
-            group: "Pravidla",
-        })),
-        ...infoSections.map((i) => ({
-            label: `Info | ${i.title}`,
-            url: `/info?tab=${i.id}`,
-            group: "Info",
         })),
     ];
 }

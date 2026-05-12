@@ -9,7 +9,8 @@ import {
     Divider,
     IconButton,
 } from "@mui/material";
-import { NAV_LINKS } from "@/lib/navigation";
+import { STATIC_NAV_BEFORE, STATIC_NAV_AFTER } from "@/lib/navigation";
+import type { NavigationData } from "@/lib/services/navigation";
 import { SOCIAL_LINKS } from "@/lib/social-links";
 import dayjs from "dayjs";
 import "dayjs/locale/cs";
@@ -23,6 +24,7 @@ export interface FooterDates {
 
 interface FooterProps {
     dates?: FooterDates | null;
+    navigationData?: NavigationData;
 }
 
 const LEGAL_LINKS = [{ label: "Ochrana osobních údajů", href: "/gdpr" }];
@@ -43,7 +45,15 @@ function formatDateRange(
     return `${start.format("D. MMMM")} – ${end.format("D. MMMM YYYY")}`;
 }
 
-export function Footer({ dates }: FooterProps) {
+export function Footer({ dates, navigationData }: FooterProps) {
+    const navLinks = [
+        ...STATIC_NAV_BEFORE,
+        ...(navigationData?.sections || []).map((s) => ({
+            label: s.label,
+            href: s.href,
+        })),
+        ...STATIC_NAV_AFTER,
+    ];
     const currentYear = new Date().getFullYear();
     const dateRange = dates
         ? formatDateRange(dates.startDate, dates.endDate)
@@ -130,7 +140,7 @@ export function Footer({ dates }: FooterProps) {
                             alignItems: "flex-start",
                         }}
                     >
-                        {NAV_LINKS.map((link) => (
+                        {navLinks.map((link) => (
                             <MuiLink
                                 key={link.href}
                                 component={Link}

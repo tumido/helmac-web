@@ -21,25 +21,21 @@ import {
 import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/public/ui";
-import { NavSubtabs } from "@/lib/services/navigation";
-import { NAV_LINKS } from "@/lib/navigation";
+import type { NavigationData } from "@/lib/services/navigation";
+import {
+    STATIC_NAV_BEFORE,
+    STATIC_NAV_AFTER,
+} from "@/lib/navigation";
 import type { PublicUserInfo } from "./ThemeWrapper";
 
-const SUBTAB_KEYS: Record<string, keyof NavSubtabs> = {
-    "/program": "program",
-    "/co-nabizime": "nabidka",
-    "/info": "info",
-    "/pravidla": "pravidla",
-};
-
 interface HeaderProps {
-    navSubtabs?: NavSubtabs;
+    navigationData?: NavigationData;
     registrationOpen?: boolean;
     publicUser?: PublicUserInfo | null;
 }
 
 export function Header({
-    navSubtabs,
+    navigationData,
     registrationOpen,
     publicUser,
 }: HeaderProps) {
@@ -55,23 +51,66 @@ export function Header({
     };
 
     const navItems: NavItem[] = useMemo(() => {
-        return NAV_LINKS.map((item) => {
-            const subtabKey = SUBTAB_KEYS[item.href];
-            const subtabs = subtabKey && navSubtabs?.[subtabKey];
-            if (subtabs && subtabs.length > 1) {
+        const beforeItems: NavItem[] =
+            STATIC_NAV_BEFORE.map((item) => {
+                if (
+                    item.href === "/program" &&
+                    navigationData?.program &&
+                    navigationData.program.length > 1
+                ) {
+                    return {
+                        label: item.label,
+                        href: item.href,
+                        subItems:
+                            navigationData.program.map(
+                                (sub) => ({
+                                    id: sub.id,
+                                    label: sub.label,
+                                    href: `${item.href}?tab=${sub.id}`,
+                                })
+                            ),
+                    };
+                }
                 return {
                     label: item.label,
                     href: item.href,
-                    subItems: subtabs.map((sub) => ({
-                        id: sub.id,
-                        label: sub.label,
-                        href: `${item.href}?tab=${sub.id}`,
-                    })),
+                };
+            });
+
+        const sectionItems: NavItem[] = (
+            navigationData?.sections || []
+        ).map((section) => {
+            if (section.subItems.length > 1) {
+                return {
+                    label: section.label,
+                    href: section.href,
+                    subItems: section.subItems.map(
+                        (sub) => ({
+                            id: sub.id,
+                            label: sub.label,
+                            href: `${section.href}?tab=${sub.id}`,
+                        })
+                    ),
                 };
             }
-            return { label: item.label, href: item.href };
+            return {
+                label: section.label,
+                href: section.href,
+            };
         });
-    }, [navSubtabs]);
+
+        const afterItems: NavItem[] =
+            STATIC_NAV_AFTER.map((item) => ({
+                label: item.label,
+                href: item.href,
+            }));
+
+        return [
+            ...beforeItems,
+            ...sectionItems,
+            ...afterItems,
+        ];
+    }, [navigationData]);
 
     return (
         <>
@@ -90,14 +129,18 @@ export function Header({
                 <Container maxWidth="lg">
                     <Toolbar
                         disableGutters
-                        sx={{ justifyContent: "space-between" }}
+                        sx={{
+                            justifyContent:
+                                "space-between",
+                        }}
                     >
                         <Typography
                             component={Link}
                             href="/"
                             variant="h5"
                             sx={{
-                                fontFamily: '"Cinzel", serif',
+                                fontFamily:
+                                    '"Cinzel", serif',
                                 fontWeight: 700,
                                 color: "primary.main",
                                 textDecoration: "none",
@@ -111,7 +154,10 @@ export function Header({
 
                         <Box
                             sx={{
-                                display: { xs: "flex", lg: "none" },
+                                display: {
+                                    xs: "flex",
+                                    lg: "none",
+                                },
                                 alignItems: "center",
                                 gap: 1,
                             }}
@@ -122,7 +168,9 @@ export function Header({
                                     <IconButton
                                         component={Link}
                                         href="/ucet"
-                                        sx={{ color: "primary.main" }}
+                                        sx={{
+                                            color: "primary.main",
+                                        }}
                                     >
                                         <AccountCircle />
                                     </IconButton>
@@ -142,7 +190,9 @@ export function Header({
                                 color="inherit"
                                 aria-label="otevřít menu"
                                 edge="end"
-                                onClick={handleDrawerToggle}
+                                onClick={
+                                    handleDrawerToggle
+                                }
                             >
                                 <MenuIcon />
                             </IconButton>
@@ -150,7 +200,10 @@ export function Header({
 
                         <Box
                             sx={{
-                                display: { xs: "none", lg: "flex" },
+                                display: {
+                                    xs: "none",
+                                    lg: "flex",
+                                },
                                 alignItems: "center",
                                 gap: 2,
                             }}
@@ -174,7 +227,9 @@ export function Header({
                                     <IconButton
                                         component={Link}
                                         href="/ucet"
-                                        sx={{ color: "primary.main" }}
+                                        sx={{
+                                            color: "primary.main",
+                                        }}
                                     >
                                         <AccountCircle />
                                     </IconButton>

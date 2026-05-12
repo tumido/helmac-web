@@ -14,9 +14,7 @@ import {
     Article,
     BarChart,
     CalendarMonth,
-    Gavel,
-    LocalOffer,
-    InfoOutlined,
+    ViewList,
     Newspaper,
     PhotoLibrary,
     AppRegistration,
@@ -62,9 +60,7 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
     const contentItems = [
         { text: "Obsah", href: `${base}/obsah`, icon: Article, exact: true },
         { text: "Program", href: `${base}/program`, icon: CalendarMonth, indented: true },
-        { text: "Nabídky", href: `${base}/nabidka`, icon: LocalOffer, indented: true },
-        { text: "Info", href: `${base}/info`, icon: InfoOutlined, indented: true },
-        { text: "Pravidla", href: `${base}/pravidla`, icon: Gavel, indented: true },
+        { text: "Sekce", href: `${base}/sekce`, icon: ViewList, indented: true },
         { text: "Novinky", href: `${base}/novinky`, icon: Newspaper, indented: true },
         { text: "Galerie", href: `${base}/galerie`, icon: PhotoLibrary, indented: true },
     ];

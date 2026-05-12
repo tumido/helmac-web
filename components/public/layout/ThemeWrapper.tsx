@@ -9,7 +9,7 @@ import { Header } from "./Header";
 import { Footer, FooterDates } from "./Footer";
 import { CookieConsent } from "@/components/public/ui/CookieConsent";
 import { ScrollToTop } from "@/components/public/ui";
-import { NavSubtabs } from "@/lib/services/navigation";
+import { NavigationData } from "@/lib/services/navigation";
 
 export interface PublicUserInfo {
     email: string;
@@ -17,13 +17,13 @@ export interface PublicUserInfo {
 
 interface ThemedContentProps {
     children: React.ReactNode;
-    navSubtabs?: NavSubtabs;
+    navigationData?: NavigationData;
     registrationOpen?: boolean;
     publicUser?: PublicUserInfo | null;
     footerDates?: FooterDates | null;
 }
 
-function ThemedContent({ children, navSubtabs, registrationOpen, publicUser, footerDates }: ThemedContentProps) {
+function ThemedContent({ children, navigationData, registrationOpen, publicUser, footerDates }: ThemedContentProps) {
     const { isDark } = useThemeMode();
     const theme = isDark ? publicTheme : publicLightTheme;
 
@@ -39,11 +39,11 @@ function ThemedContent({ children, navSubtabs, registrationOpen, publicUser, foo
                     transition: "background-color 0.3s ease-in-out",
                 }}
             >
-                <Header navSubtabs={navSubtabs} registrationOpen={registrationOpen} publicUser={publicUser} />
+                <Header navigationData={navigationData} registrationOpen={registrationOpen} publicUser={publicUser} />
                 <Box component="main" sx={{ flex: 1 }}>
                     {children}
                 </Box>
-                <Footer dates={footerDates} />
+                <Footer dates={footerDates} navigationData={navigationData} />
                 <CookieConsent />
                 <ScrollToTop />
             </Box>
@@ -53,17 +53,17 @@ function ThemedContent({ children, navSubtabs, registrationOpen, publicUser, foo
 
 interface ThemeWrapperProps {
     children: React.ReactNode;
-    navSubtabs?: NavSubtabs;
+    navigationData?: NavigationData;
     registrationOpen?: boolean;
     publicUser?: PublicUserInfo | null;
     initialTheme?: "dark" | "light";
     footerDates?: FooterDates | null;
 }
 
-export function ThemeWrapper({ children, navSubtabs, registrationOpen, publicUser, initialTheme = "dark", footerDates }: ThemeWrapperProps) {
+export function ThemeWrapper({ children, navigationData, registrationOpen, publicUser, initialTheme = "dark", footerDates }: ThemeWrapperProps) {
     return (
         <ThemeModeProvider initialMode={initialTheme}>
-            <ThemedContent navSubtabs={navSubtabs} registrationOpen={registrationOpen} publicUser={publicUser} footerDates={footerDates}>{children}</ThemedContent>
+            <ThemedContent navigationData={navigationData} registrationOpen={registrationOpen} publicUser={publicUser} footerDates={footerDates}>{children}</ThemedContent>
         </ThemeModeProvider>
     );
 }

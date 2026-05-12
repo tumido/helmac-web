@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import {
     DndContext,
     closestCenter,
@@ -18,8 +18,9 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Box, Paper } from "@mui/material";
+import { Box } from "@mui/material";
 import { DragIndicator } from "@mui/icons-material";
+import { builderPalette as p } from "@/components/admin/email-builder/palette";
 
 interface SortableItemProps {
     id: string;
@@ -43,16 +44,22 @@ function SortableItem({ id, children }: SortableItemProps) {
     };
 
     return (
-        <Paper
+        <Box
             ref={setNodeRef}
             style={style}
             sx={{
                 display: "flex",
                 alignItems: "center",
-                mb: 1,
+                mb: "4px",
                 "&:last-child": { mb: 0 },
+                backgroundColor: p.surface,
+                border: `1px solid ${p.line}`,
+                borderRadius: "10px",
+                transition: "box-shadow 140ms ease",
+                ...(isDragging && {
+                    boxShadow: `0 4px 12px rgba(0,0,0,0.1)`,
+                }),
             }}
-            elevation={isDragging ? 4 : 1}
         >
             <Box
                 {...attributes}
@@ -61,21 +68,23 @@ function SortableItem({ id, children }: SortableItemProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    p: 1.5,
+                    p: 1,
                     cursor: "grab",
-                    color: "text.disabled",
+                    color: p.ink3,
                     "&:hover": {
-                        color: "text.secondary",
+                        color: p.ink2,
                     },
                     "&:active": {
                         cursor: "grabbing",
                     },
                 }}
             >
-                <DragIndicator />
+                <DragIndicator sx={{ fontSize: 18 }} />
             </Box>
-            <Box sx={{ flex: 1, overflow: "hidden" }}>{children}</Box>
-        </Paper>
+            <Box sx={{ flex: 1, overflow: "hidden" }}>
+                {children}
+            </Box>
+        </Box>
     );
 }
 
@@ -92,31 +101,44 @@ export function SortableList<T>({
     renderItem,
     onReorder,
 }: SortableListProps<T>) {
+    const dndId = useId();
     const [localItems, setLocalItems] = useState(items);
 
-    // Sync local items with props
-    if (items !== localItems && items.length !== localItems.length) {
+    if (
+        items !== localItems &&
+        items.length !== localItems.length
+    ) {
         setLocalItems(items);
     }
 
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
+            coordinateGetter:
+                sortableKeyboardCoordinates,
         })
     );
 
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const handleDragEnd = async (
+        event: DragEndEvent
+    ) => {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            const oldIndex = localItems.findIndex((item) => getId(item) === active.id);
-            const newIndex = localItems.findIndex((item) => getId(item) === over.id);
+            const oldIndex = localItems.findIndex(
+                (item) => getId(item) === active.id
+            );
+            const newIndex = localItems.findIndex(
+                (item) => getId(item) === over.id
+            );
 
-            const newItems = arrayMove(localItems, oldIndex, newIndex);
+            const newItems = arrayMove(
+                localItems,
+                oldIndex,
+                newIndex
+            );
             setLocalItems(newItems);
 
-            // Call the reorder callback with new order
             const newOrder = newItems.map(getId);
             await onReorder(newOrder);
         }
@@ -124,6 +146,7 @@ export function SortableList<T>({
 
     return (
         <DndContext
+            id={dndId}
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
@@ -134,7 +157,10 @@ export function SortableList<T>({
             >
                 <Box>
                     {localItems.map((item) => (
-                        <SortableItem key={getId(item)} id={getId(item)}>
+                        <SortableItem
+                            key={getId(item)}
+                            id={getId(item)}
+                        >
                             {renderItem(item)}
                         </SortableItem>
                     ))}

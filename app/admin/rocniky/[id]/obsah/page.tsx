@@ -8,9 +8,7 @@ import {
 } from "@mui/material";
 import {
     CalendarMonth,
-    Gavel,
-    LocalOffer,
-    InfoOutlined,
+    ViewList,
     Newspaper,
     PhotoLibrary,
     Add,
@@ -34,9 +32,7 @@ async function getYearContent(id: string) {
             _count: {
                 select: {
                     programDays: true,
-                    offers: true,
-                    infoSections: true,
-                    rules: true,
+                    sectionTypes: true,
                     news: true,
                     albums: true,
                 },
@@ -113,25 +109,11 @@ export default async function ObsahPage({ params }: ObsahPageProps) {
                     icon={<CalendarMonth fontSize="large" />}
                 />
                 <StatCard
-                    label="Nabídky"
-                    count={year._count.offers}
-                    unit="nabídek"
-                    href={`/admin/rocniky/${year.id}/nabidka`}
-                    icon={<LocalOffer fontSize="large" />}
-                />
-                <StatCard
-                    label="Info"
-                    count={year._count.infoSections}
-                    unit="sekcí"
-                    href={`/admin/rocniky/${year.id}/info`}
-                    icon={<InfoOutlined fontSize="large" />}
-                />
-                <StatCard
-                    label="Pravidla"
-                    count={year._count.rules}
-                    unit="pravidel"
-                    href={`/admin/rocniky/${year.id}/pravidla`}
-                    icon={<Gavel fontSize="large" />}
+                    label="Sekce"
+                    count={year._count.sectionTypes}
+                    unit="typů sekcí"
+                    href={`/admin/rocniky/${year.id}/sekce`}
+                    icon={<ViewList fontSize="large" />}
                 />
                 <StatCard
                     label="Novinky"
@@ -165,28 +147,12 @@ export default async function ObsahPage({ params }: ObsahPageProps) {
                             Nový den programu
                         </LinkButton>
                         <LinkButton
-                            href={`/admin/rocniky/${year.id}/nabidka/nove`}
+                            href={`/admin/rocniky/${year.id}/sekce`}
                             variant="outlined"
                             size="small"
                             startIcon={<Add />}
                         >
-                            Nová nabídka
-                        </LinkButton>
-                        <LinkButton
-                            href={`/admin/rocniky/${year.id}/info/nove`}
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Add />}
-                        >
-                            Nová info sekce
-                        </LinkButton>
-                        <LinkButton
-                            href={`/admin/rocniky/${year.id}/pravidla/nove`}
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Add />}
-                        >
-                            Nové pravidlo
+                            Spravovat sekce
                         </LinkButton>
                         <LinkButton
                             href={`/admin/rocniky/${year.id}/novinky/nova`}

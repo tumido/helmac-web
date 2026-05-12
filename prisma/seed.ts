@@ -1025,7 +1025,49 @@ async function seedProgram(yearId: string) {
     console.log("Program: 5 days, 28 events");
 }
 
-async function seedOffers(yearId: string) {
+async function seedSections(yearId: string) {
+    const offerType = await prisma.sectionType.create({
+        data: {
+            yearId,
+            label: "Co nabízíme",
+            slug: "co-nabizime",
+            sortOrder: 0,
+            pageTitle: "Co nabízíme",
+            pageSubtitle: "Co vám naše akce nabízí",
+            metaTitle: "Co nabízíme | Helmáč",
+            metaDescription: "Co vám naše akce nabízí",
+        },
+    });
+
+    const infoType = await prisma.sectionType.create({
+        data: {
+            yearId,
+            label: "Info",
+            slug: "info",
+            sortOrder: 1,
+            pageTitle: "Informace",
+            pageSubtitle: "Důležité informace pro účastníky",
+            metaTitle: "Info | Helmáč",
+            metaDescription: "Důležité informace pro účastníky akce Helmáč",
+        },
+    });
+
+    const rulesType = await prisma.sectionType.create({
+        data: {
+            yearId,
+            label: "Pravidla",
+            slug: "pravidla",
+            sortOrder: 2,
+            pageTitle: "Pravidla",
+            pageSubtitle: "Herní pravidla a pokyny pro účastníky",
+            metaTitle: "Pravidla | Helmáč",
+            metaDescription: "Pravidla akce Helmáč - herní pravidla a pokyny pro účastníky",
+        },
+    });
+
+    console.log("Section types: 3");
+
+    // Seed offers
     const offers = [
         {
             title: "Bitva",
@@ -1080,12 +1122,11 @@ async function seedOffers(yearId: string) {
     ];
 
     for (const offer of offers) {
-        await prisma.offer.create({ data: { yearId, ...offer } });
+        await prisma.section.create({ data: { sectionTypeId: offerType.id, ...offer } });
     }
-    console.log("Offers: 10 sections");
-}
+    console.log("Offer sections: 10");
 
-async function seedInfoSections(yearId: string) {
+    // Seed info sections
     const sections = [
         {
             title: "Organizační věci",
@@ -1125,14 +1166,13 @@ async function seedInfoSections(yearId: string) {
     ];
 
     for (const section of sections) {
-        await prisma.infoSection.create({
-            data: { yearId, ...section },
+        await prisma.section.create({
+            data: { sectionTypeId: infoType.id, ...section },
         });
     }
     console.log("Info sections: 7");
-}
 
-async function seedRules(yearId: string) {
+    // Seed rules
     const rules = [
         {
             title: "Bitva",
@@ -1183,9 +1223,9 @@ async function seedRules(yearId: string) {
     ];
 
     for (const rule of rules) {
-        await prisma.rule.create({ data: { yearId, ...rule } });
+        await prisma.section.create({ data: { sectionTypeId: rulesType.id, ...rule } });
     }
-    console.log("Rules: 9 sections");
+    console.log("Rule sections: 9");
 }
 
 async function seedNews(yearId: string, authorId: string) {
@@ -1336,9 +1376,8 @@ async function cleanDatabase() {
     await prisma.programDay.deleteMany();
     await prisma.news.deleteMany();
     await prisma.album.deleteMany();
-    await prisma.offer.deleteMany();
-    await prisma.infoSection.deleteMany();
-    await prisma.rule.deleteMany();
+    await prisma.section.deleteMany();
+    await prisma.sectionType.deleteMany();
     await prisma.page.deleteMany();
     await prisma.auditLog.deleteMany();
     await prisma.session.deleteMany();
@@ -1358,9 +1397,7 @@ async function main() {
 
     await seedPages(year2026.id);
     await seedProgram(year2026.id);
-    await seedOffers(year2026.id);
-    await seedInfoSections(year2026.id);
-    await seedRules(year2026.id);
+    await seedSections(year2026.id);
     await seedNews(year2026.id, admin.id);
     await seedAlbums(year2026.id);
     await seedRegistrationForm(year2026.id);
