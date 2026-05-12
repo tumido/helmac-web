@@ -27,7 +27,11 @@ export default async function PublicFormPreviewPage({ params }: Props) {
                 Toto je náhled formuláře. Odeslání formuláře nebude zaregistrováno.
             </Alert>
 
-            <DynamicRegistrationForm formData={formData} previewMode />
+            <DynamicRegistrationForm
+                formData={formData}
+                previewMode
+                previewYearId={preview.yearId}
+            />
         </Container>
     );
 }

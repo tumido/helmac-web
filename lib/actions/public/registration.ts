@@ -3,8 +3,8 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { FormCondition, FormElement, FormField, InputField, OptionCounts, AdditionalPersonData, CapacityLimit } from "@/lib/types/registration-form";
-import { isConditionBlock, getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
+import type { InputField, OptionCounts, AdditionalPersonData, CapacityLimit } from "@/lib/types/registration-form";
+import { getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
@@ -12,10 +12,10 @@ import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
-import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { getPublicSession } from "@/lib/public-auth";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
+import { buildVisibleFieldIds } from "@/lib/utils/visible-fields";
 
 export interface PaymentData {
     totalAmount: number;
@@ -34,38 +34,6 @@ export interface RegistrationState {
     variableSymbol?: string;
     totalPrice?: number;
     paymentData?: PaymentData;
-}
-
-/**
- * Walk elements and build set of visible field IDs based on conditions.
- */
-function buildVisibleFieldIds(
-    elements: FormElement[],
-    conditions: FormCondition[],
-    rawData: Record<string, unknown>,
-    allFields: FormField[],
-): Set<string> {
-    const visibleFieldIds = new Set<string>();
-    const conditionMap = new Map(conditions.map((c) => [c.id, c]));
-
-    for (const el of elements) {
-        if (isConditionBlock(el)) {
-            const condition = conditionMap.get(el.conditionId);
-            if (!condition) continue;
-
-            const passes = evaluateCondition(condition, rawData, allFields);
-            if (passes) {
-                for (const child of el.children) {
-                    visibleFieldIds.add(child.id);
-                }
-            }
-        } else {
-            // Top-level fields are always visible
-            visibleFieldIds.add(el.id);
-        }
-    }
-
-    return visibleFieldIds;
 }
 
 /**

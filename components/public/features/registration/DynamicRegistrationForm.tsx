@@ -57,11 +57,13 @@ import {
     submitDynamicRegistration,
     type RegistrationState,
 } from "@/lib/actions/public/registration";
+import { sendPreviewConfirmation } from "@/lib/actions/preview-send-confirmation";
 
 interface DynamicRegistrationFormProps {
     formData: RegistrationFormData;
     optionCounts?: OptionCounts;
     previewMode?: boolean;
+    previewYearId?: string;
     isLoggedIn?: boolean;
     publicEmail?: string;
     successContent?: ContentBlock[] | null;
@@ -93,6 +95,7 @@ export function DynamicRegistrationForm({
     formData,
     optionCounts,
     previewMode,
+    previewYearId,
     isLoggedIn,
     publicEmail,
     successContent,
@@ -105,7 +108,16 @@ export function DynamicRegistrationForm({
     >([]);
     const { visibleFields } = useConditionalFields(formData, values);
     const [gdprConsent, setGdprConsent] = useState(false);
-    const [previewSnackbar, setPreviewSnackbar] = useState(false);
+    const [previewSnackbar, setPreviewSnackbar] = useState<{
+        open: boolean;
+        severity: "info" | "success" | "error";
+        message: string;
+    }>({
+        open: false,
+        severity: "info",
+        message: "",
+    });
+    const [previewSending, setPreviewSending] = useState(false);
 
     const [state, formAction, isPending] = useActionState<
         RegistrationState | null,
@@ -128,8 +140,45 @@ export function DynamicRegistrationForm({
 
     const handlePreviewSubmit = useCallback((e: FormEvent) => {
         e.preventDefault();
-        setPreviewSnackbar(true);
+        setPreviewSnackbar({
+            open: true,
+            severity: "info",
+            message: "Toto je pouze náhled. Registrace nebyla odeslána.",
+        });
     }, []);
+
+    const handleSendPreviewEmail = useCallback(async () => {
+        if (!previewYearId) return;
+        setPreviewSending(true);
+        try {
+            const result = await sendPreviewConfirmation({
+                yearId: previewYearId,
+                submissionData: values,
+                additionalPeople,
+            });
+            if (result.success) {
+                setPreviewSnackbar({
+                    open: true,
+                    severity: "success",
+                    message: "Testovací email byl odeslán.",
+                });
+            } else {
+                setPreviewSnackbar({
+                    open: true,
+                    severity: "error",
+                    message: result.error ?? "Nepodařilo se odeslat email",
+                });
+            }
+        } catch {
+            setPreviewSnackbar({
+                open: true,
+                severity: "error",
+                message: "Nepodařilo se odeslat email",
+            });
+        } finally {
+            setPreviewSending(false);
+        }
+    }, [previewYearId, values, additionalPeople]);
 
     // Auto-select single enabled option for pricing_select, select, and radio fields
     useEffect(() => {
@@ -527,6 +576,25 @@ export function DynamicRegistrationForm({
                               ? "Odeslat registraci (náhled)"
                               : "Odeslat registraci"}
                     </Button>
+                    {previewMode && previewYearId && (
+                        <Box sx={{ mt: 2 }}>
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                color="primary"
+                                size="large"
+                                onClick={handleSendPreviewEmail}
+                                disabled={
+                                    previewSending || !allRequiredFilled
+                                }
+                                sx={{ px: 4, py: 1.25 }}
+                            >
+                                {previewSending
+                                    ? "Odesílám..."
+                                    : "Odeslat potvrzovací email (test)"}
+                            </Button>
+                        </Box>
+                    )}
                     {state?.message && !state.success && (
                         <Alert severity="error" sx={{ mt: 2 }}>
                             {state.message}
@@ -537,10 +605,13 @@ export function DynamicRegistrationForm({
 
             {previewMode && (
                         <Snackbar
-                            open={previewSnackbar}
+                            open={previewSnackbar.open}
                             autoHideDuration={4000}
                             onClose={() =>
-                                setPreviewSnackbar(false)
+                                setPreviewSnackbar((s) => ({
+                                    ...s,
+                                    open: false,
+                                }))
                             }
                             anchorOrigin={{
                                 vertical: "bottom",
@@ -548,13 +619,15 @@ export function DynamicRegistrationForm({
                             }}
                         >
                             <Alert
-                                severity="info"
+                                severity={previewSnackbar.severity}
                                 onClose={() =>
-                                    setPreviewSnackbar(false)
+                                    setPreviewSnackbar((s) => ({
+                                        ...s,
+                                        open: false,
+                                    }))
                                 }
                             >
-                                Toto je pouze náhled. Registrace
-                                nebyla odeslána.
+                                {previewSnackbar.message}
                             </Alert>
                         </Snackbar>
                     )}
