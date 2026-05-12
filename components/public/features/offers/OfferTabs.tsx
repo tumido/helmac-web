@@ -39,6 +39,7 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                         textTransform: "none",
                         minWidth: { xs: "auto", sm: 120 },
                         px: { xs: 2, sm: 3 },
+                        gap: 1.5,
                     },
                     "& .Mui-selected": {
                         color: "primary.main",
@@ -52,7 +53,7 @@ export function OfferTabs({ offers, selectedOfferId, onOfferChange }: OfferTabsP
                 {offers.map((offer) => (
                     <Tab
                         key={offer.id}
-                        icon={offer.icon ? <GameIcon name={offer.icon} sx={{ fontSize: "1.2em" }} /> : undefined}
+                        icon={offer.icon ? <GameIcon name={offer.icon} sx={{ fontSize: "1.5em" }} /> : undefined}
                         iconPosition="start"
                         label={
                             offer.subtitle ? (

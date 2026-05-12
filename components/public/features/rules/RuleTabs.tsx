@@ -39,6 +39,7 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                         textTransform: "none",
                         minWidth: { xs: "auto", sm: 120 },
                         px: { xs: 2, sm: 3 },
+                        gap: 1.5,
                     },
                     "& .Mui-selected": {
                         color: "primary.main",
@@ -52,7 +53,7 @@ export function RuleTabs({ rules, selectedRuleId, onRuleChange }: RuleTabsProps)
                 {rules.map((rule) => (
                     <Tab
                         key={rule.id}
-                        icon={rule.icon ? <GameIcon name={rule.icon} sx={{ fontSize: "1.2em" }} /> : undefined}
+                        icon={rule.icon ? <GameIcon name={rule.icon} sx={{ fontSize: "1.5em" }} /> : undefined}
                         iconPosition="start"
                         label={
                             rule.subtitle ? (

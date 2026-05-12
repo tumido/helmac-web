@@ -5,12 +5,14 @@ import { Edit, InfoOutlined } from "@mui/icons-material";
 import { IconLinkButton } from "@/components/ui/link-button";
 import { SortableList } from "@/components/admin/sortable-list";
 import { InfoActions } from "@/components/admin/info-actions";
+import { GameIcon } from "@/lib/icons";
 import { reorderInfoSections } from "@/lib/actions/info";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface InfoSection {
     id: string;
     title: string;
+    icon: string | null;
 }
 
 interface SortableInfoProps {
@@ -46,7 +48,11 @@ export function SortableInfo({ yearId, infoSections }: SortableInfoProps) {
                         pr: 1,
                     }}
                 >
-                    <InfoOutlined sx={{ color: "text.disabled" }} />
+                    {info.icon ? (
+                        <GameIcon name={info.icon} sx={{ color: "text.secondary" }} />
+                    ) : (
+                        <InfoOutlined sx={{ color: "text.disabled" }} />
+                    )}
                     <Box sx={{ flex: 1 }}>
                         <Typography fontWeight="medium">
                             {info.title}

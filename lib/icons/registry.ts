@@ -9,7 +9,7 @@ export interface GameIconMeta {
 
 export const GAME_ICONS: GameIconMeta[] = [
     { name: "3d-hammer", label: "3D kladivo", category: "Řemesla", author: "delapouite" },
-    { name: "abdominal-armor", label: "Břišní zbroj", category: "Brnění", author: "delapouite" },
+    { name: "abdominal-armor", label: "Plátová zbroj", category: "Brnění", author: "delapouite" },
     { name: "acid-shield", label: "Kyselinový štít", category: "Brnění", author: "seregacthtuf" },
     { name: "acrobatic", label: "Akrobat", category: "Bytosti", author: "darkzaitzev" },
     { name: "aerodynamic-harpoon", label: "Harpuna", category: "Hudba", author: "lorc" },
