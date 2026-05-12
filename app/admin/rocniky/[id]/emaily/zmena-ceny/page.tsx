@@ -6,7 +6,8 @@ import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
 import { updatePriceChangeEmailTemplate } from "@/lib/actions/years";
 import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 
 interface ZmenaCenyPageProps {
     params: Promise<{ id: string }>;
@@ -23,6 +24,7 @@ async function getYearPriceChangeEmailTemplate(yearId: string) {
             priceChangeEmailBody: true,
             priceChangeEmailBcc: true,
             priceChangeEmailAccountId: true,
+            priceChangeEmailSections: true,
         },
     });
 }
@@ -45,6 +47,8 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const allFormFields = formData ? getAllFields(formData.fields) : [];
+    const pricingDefinitions = formData?.pricingDefinitions ?? [];
 
     const availablePlaceholders = [
         ...allFormInputFields.map((f) => ({ key: f.name, label: f.label })),
@@ -59,7 +63,7 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -79,6 +83,9 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
                 saveAction={updatePriceChangeEmailTemplate}
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={year.priceChangeEmailAccountId}
+                initialSections={(year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? []}
+                availableFields={allFormFields}
+                pricingDefinitions={pricingDefinitions}
             />
         </Container>
     );

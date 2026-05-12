@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
-import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail } from "@/lib/utils/email";
+import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllFields, isInputField } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
-import type { InputField, PricingSummaryData } from "@/lib/types/registration-form";
+import type { FormField, PricingSummaryData } from "@/lib/types/registration-form";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
                     priceChangeEmailBody: true,
                     priceChangeEmailBcc: true,
                     priceChangeEmailAccountId: true,
+                    priceChangeEmailSections: true,
                 },
             },
         },
@@ -55,9 +57,9 @@ export async function GET(request: NextRequest) {
     const emailErrors: string[] = [];
 
     // Cache form fields per formId to avoid repeated DB lookups
-    const formFieldsCache = new Map<string, InputField[]>();
+    const formFieldsCache = new Map<string, FormField[]>();
 
-    async function getFormInputFields(formId: string): Promise<InputField[]> {
+    async function getFormInputFields(formId: string): Promise<FormField[]> {
         if (formFieldsCache.has(formId)) {
             return formFieldsCache.get(formId)!;
         }
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
             return [];
         }
         const formData = migrateFormData(form.fields);
-        const fields = getAllInputFields(formData.fields);
+        const fields = getAllFields(formData.fields);
         formFieldsCache.set(formId, fields);
         return fields;
     }
@@ -109,9 +111,11 @@ export async function GET(request: NextRequest) {
             ) {
                 try {
                     const inputFields = await getFormInputFields(submission.formId);
-                    const emailField = inputFields.find((f) => f.type === "email");
+                    const emailField = inputFields.find((f) => isInputField(f) && f.type === "email");
                     const submissionData = submission.data as Record<string, unknown>;
-                    const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+                    const recipientEmail = emailField && isInputField(emailField)
+                        ? String(submissionData[emailField.name] ?? "")
+                        : "";
 
                     if (recipientEmail) {
                         const bankAccountFormatted = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
@@ -136,7 +140,13 @@ export async function GET(request: NextRequest) {
                         placeholders.novaCena = `${totalPrice} Kč`;
 
                         const emailSubject = replacePlaceholders(year.priceChangeEmailSubject, placeholders);
-                        const emailBody = replacePlaceholders(year.priceChangeEmailBody, placeholders);
+                        const bodyWithSections = appendConditionalSections({
+                            body: year.priceChangeEmailBody,
+                            sections: (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? [],
+                            rawSubmissionData: submissionData,
+                            allFields: inputFields,
+                        });
+                        const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
                         // Generate QR payment image if bank account is configured
                         let qrImageBuffer: Buffer | null = null;

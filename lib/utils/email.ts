@@ -4,6 +4,9 @@ import QRCode from "qrcode";
 import { generateSPAYD } from "@/lib/utils/spayd";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/utils/encryption";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { FormField } from "@/lib/types/registration-form";
+import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 
 // Cache transporters by account ID
 const globalForMailer = globalThis as unknown as {
@@ -77,6 +80,31 @@ export function invalidateTransporterCache() {
         entry.transporter.close();
     }
     cache.clear();
+}
+
+/**
+ * Append conditional sections whose conditions evaluate to true against the
+ * registration submission data. Sections are sorted by sortOrder and
+ * concatenated to the body with `\n\n` separators. Placeholder replacement is
+ * the caller's responsibility — run replacePlaceholders on the result.
+ */
+export function appendConditionalSections(opts: {
+    body: string;
+    sections: EmailConditionalSection[];
+    rawSubmissionData: Record<string, unknown>;
+    allFields: FormField[];
+}): string {
+    const { body, sections, rawSubmissionData, allFields } = opts;
+    if (!sections || sections.length === 0) return body;
+
+    const matched = [...sections]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .filter((s) => evaluateCondition(s.condition, rawSubmissionData, allFields));
+
+    if (matched.length === 0) return body;
+
+    const extra = matched.map((s) => s.body).join("\n\n");
+    return body ? `${body}\n\n${extra}` : extra;
 }
 
 /**

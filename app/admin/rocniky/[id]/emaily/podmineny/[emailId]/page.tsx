@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
 import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { updateConditionalEmailTemplate } from "@/lib/actions/conditional-emails";
 
 interface ConditionalEmailPageProps {
@@ -28,6 +29,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                 body: true,
                 bcc: true,
                 accountId: true,
+                sections: true,
             },
         }),
         db.emailAccount.findMany({
@@ -54,6 +56,8 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const allFormFields = formData ? getAllFields(formData.fields) : [];
+    const pricingDefinitions = formData?.pricingDefinitions ?? [];
 
     const fieldNameToLabel = new Map(allFormInputFields.map((f) => [f.name, f.label]));
     const conditionFieldLabel =
@@ -70,7 +74,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -96,6 +100,9 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                 saveAction={updateConditionalEmailTemplate}
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={conditionalEmail.accountId}
+                initialSections={(conditionalEmail.sections as unknown as EmailConditionalSection[]) ?? []}
+                availableFields={allFormFields}
+                pricingDefinitions={pricingDefinitions}
             />
         </Container>
     );

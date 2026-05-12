@@ -6,7 +6,8 @@ import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
 import { updatePaymentEmailTemplate } from "@/lib/actions/bank-sync";
 import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 
 interface PlatbaPageProps {
     params: Promise<{ id: string }>;
@@ -23,6 +24,7 @@ async function getYearPaymentEmailTemplate(yearId: string) {
             paymentEmailBody: true,
             paymentEmailBcc: true,
             paymentEmailAccountId: true,
+            paymentEmailSections: true,
         },
     });
 }
@@ -45,6 +47,8 @@ export default async function PlatbaPage({ params }: PlatbaPageProps) {
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const allFormFields = formData ? getAllFields(formData.fields) : [];
+    const pricingDefinitions = formData?.pricingDefinitions ?? [];
 
     const availablePlaceholders = [
         ...allFormInputFields.map((f) => ({ key: f.name, label: f.label })),
@@ -57,7 +61,7 @@ export default async function PlatbaPage({ params }: PlatbaPageProps) {
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -77,6 +81,9 @@ export default async function PlatbaPage({ params }: PlatbaPageProps) {
                 saveAction={updatePaymentEmailTemplate}
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={year.paymentEmailAccountId}
+                initialSections={(year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? []}
+                availableFields={allFormFields}
+                pricingDefinitions={pricingDefinitions}
             />
         </Container>
     );

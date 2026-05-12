@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
 import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 
 interface PotvrzovacíPageProps {
     params: Promise<{ id: string }>;
@@ -22,6 +23,7 @@ async function getYearEmailTemplate(yearId: string) {
             confirmationEmailBody: true,
             confirmationEmailBcc: true,
             confirmationEmailAccountId: true,
+            confirmationEmailSections: true,
         },
     });
 }
@@ -44,6 +46,8 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const allFormFields = formData ? getAllFields(formData.fields) : [];
+    const pricingDefinitions = formData?.pricingDefinitions ?? [];
 
     const availablePlaceholders = [
         ...allFormInputFields.map((f) => ({ key: f.name, label: f.label })),
@@ -56,7 +60,7 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
     ];
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -75,6 +79,9 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
                 availablePlaceholders={availablePlaceholders}
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={year.confirmationEmailAccountId}
+                initialSections={(year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? []}
+                availableFields={allFormFields}
+                pricingDefinitions={pricingDefinitions}
             />
         </Container>
     );

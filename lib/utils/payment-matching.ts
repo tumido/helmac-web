@@ -1,11 +1,13 @@
 import { Prisma, BankTransactionMatchStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail } from "@/lib/utils/email";
+import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
 import { formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getAllFields, isInputField } from "@/lib/types/registration-form";
+import type { FormField } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { ParsedBankTransaction } from "@/lib/utils/fio-api";
+import type { EmailConditionalSection } from "@/lib/types/email-sections";
 
 export interface MatchResult {
     total: number;
@@ -41,10 +43,10 @@ export async function processTransactions(
     // Fetch global bank account for email placeholders
     const bankAccount = await getGlobalBankAccount();
 
-    // Cache form fields per formId for email placeholders
-    const formFieldsCache = new Map<string, { name: string; label: string; type: string }[]>();
+    // Cache form fields per formId for email placeholders and section conditions
+    const formFieldsCache = new Map<string, FormField[]>();
 
-    async function getFormFields(formId: string) {
+    async function getFormFields(formId: string): Promise<FormField[]> {
         if (formFieldsCache.has(formId)) return formFieldsCache.get(formId)!;
         const form = await db.registrationForm.findUnique({
             where: { id: formId },
@@ -55,7 +57,7 @@ export async function processTransactions(
             return [];
         }
         const formData = migrateFormData(form.fields);
-        const fields = getAllInputFields(formData.fields);
+        const fields = getAllFields(formData.fields);
         formFieldsCache.set(formId, fields);
         return fields;
     }
@@ -99,6 +101,7 @@ export async function processTransactions(
                             paymentEmailBody: true,
                             paymentEmailBcc: true,
                             paymentEmailAccountId: true,
+                            paymentEmailSections: true,
                         },
                     },
                 },
@@ -167,9 +170,11 @@ export async function processTransactions(
             ) {
                 try {
                     const fields = await getFormFields(submission.formId);
-                    const emailField = fields.find((f) => f.type === "email");
+                    const emailField = fields.find((f) => isInputField(f) && f.type === "email");
                     const submissionData = submission.data as Record<string, unknown>;
-                    const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
+                    const recipientEmail = emailField && isInputField(emailField)
+                        ? String(submissionData[emailField.name] ?? "")
+                        : "";
 
                     if (recipientEmail) {
                         const bankAccountFormatted = bankAccount?.bankAccountNumber && bankAccount?.bankAccountBankCode
@@ -192,7 +197,13 @@ export async function processTransactions(
                         placeholders.prijataCastka = `${tx.amount} Kč`;
 
                         const emailSubject = replacePlaceholders(year.paymentEmailSubject, placeholders);
-                        const emailBody = replacePlaceholders(year.paymentEmailBody, placeholders);
+                        const bodyWithSections = appendConditionalSections({
+                            body: year.paymentEmailBody,
+                            sections: (year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? [],
+                            rawSubmissionData: submissionData,
+                            allFields: fields,
+                        });
+                        const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
                         const sent = await sendConfirmationEmail({
                             to: recipientEmail,

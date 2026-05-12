@@ -7,6 +7,7 @@ import {
     createConditionalEmailSchema,
     updateConditionalEmailTemplateSchema,
 } from "@/lib/validators/conditional-email";
+import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 
 export async function createConditionalEmail(
     yearId: string,
@@ -67,6 +68,13 @@ export async function updateConditionalEmailTemplate(emailId: string, formData: 
         return { error: validated.error.flatten().fieldErrors };
     }
 
+    let sections;
+    try {
+        sections = parseEmailConditionalSectionsJson(formData.get("sectionsJson"));
+    } catch (err) {
+        return { error: err instanceof Error ? err.message : "Neplatné podmíněné sekce" };
+    }
+
     try {
         const email = await db.conditionalEmail.update({
             where: { id: emailId },
@@ -75,6 +83,7 @@ export async function updateConditionalEmailTemplate(emailId: string, formData: 
                 body: validated.data.confirmationEmailBody,
                 bcc: validated.data.confirmationEmailBcc,
                 accountId: validated.data.emailAccountId,
+                sections,
             },
         });
 
