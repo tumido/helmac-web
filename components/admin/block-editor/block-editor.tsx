@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { type SetStateAction, useState, useCallback, useRef, useMemo } from "react";
 import { Box, Button, IconButton, Typography } from "@mui/material";
 import {
     Add,
@@ -56,7 +56,7 @@ function blocksToLayout(blocks: ContentBlock[]): Layout {
 
 interface BlockEditorProps {
     value: ContentBlock[];
-    onChange: (blocks: ContentBlock[]) => void;
+    onChange: (blocks: SetStateAction<ContentBlock[]>) => void;
     yearId?: string;
 }
 
@@ -76,80 +76,83 @@ export function BlockEditor({ value: rawValue, onChange, yearId }: BlockEditorPr
     const handleAddBlock = useCallback(
         (type: ContentBlockType) => {
             const block = createBlock(type);
-            onChange([...value, block]);
+            onChange((prev) => [...prev, block]);
         },
-        [value, onChange]
+        [onChange]
     );
 
     const handleUpdateBlock = useCallback(
         (id: string, updated: ContentBlock) => {
             isUpdatingRef.current = true;
-            const blocks = value.map((b) => (b.id === id ? updated : b));
-            onChange(blocks);
+            onChange((prev) =>
+                prev.map((b) => (b.id === id ? updated : b))
+            );
             requestAnimationFrame(() => {
                 isUpdatingRef.current = false;
             });
         },
-        [value, onChange]
+        [onChange]
     );
 
     const handleDeleteBlock = useCallback(
         (id: string) => {
-            onChange(value.filter((b) => b.id !== id));
+            onChange((prev) => prev.filter((b) => b.id !== id));
         },
-        [value, onChange]
+        [onChange]
     );
 
     const handleDuplicateBlock = useCallback(
         (id: string) => {
-            const source = value.find((b) => b.id === id);
-            if (!source) return;
-            const copy = {
-                ...structuredClone(source),
-                id: crypto.randomUUID(),
-                layout: { ...source.layout, y: Infinity },
-            };
-            onChange([...value, copy]);
+            onChange((prev) => {
+                const source = prev.find((b) => b.id === id);
+                if (!source) return prev;
+                const copy = {
+                    ...structuredClone(source),
+                    id: crypto.randomUUID(),
+                    layout: { ...source.layout, y: Infinity },
+                };
+                return [...prev, copy];
+            });
         },
-        [value, onChange]
+        [onChange]
     );
 
     const handleLayoutChange = useCallback(
         (newLayout: Layout) => {
             if (isUpdatingRef.current) return;
 
-            const blocks = value.map((block) => {
-                const item = newLayout.find(
-                    (l: LayoutItem) => l.i === block.id
-                );
-                if (!item) return block;
-                if (
-                    block.layout.x === item.x &&
-                    block.layout.y === item.y &&
-                    block.layout.w === item.w &&
-                    block.layout.h === item.h
-                ) {
-                    return block;
-                }
-                return {
-                    ...block,
-                    layout: {
-                        x: item.x,
-                        y: item.y,
-                        w: item.w,
-                        h: item.h,
-                    },
-                };
-            });
+            onChange((prev) => {
+                const blocks = prev.map((block) => {
+                    const item = newLayout.find(
+                        (l: LayoutItem) => l.i === block.id
+                    );
+                    if (!item) return block;
+                    if (
+                        block.layout.x === item.x &&
+                        block.layout.y === item.y &&
+                        block.layout.w === item.w &&
+                        block.layout.h === item.h
+                    ) {
+                        return block;
+                    }
+                    return {
+                        ...block,
+                        layout: {
+                            x: item.x,
+                            y: item.y,
+                            w: item.w,
+                            h: item.h,
+                        },
+                    };
+                });
 
-            const changed = blocks.some(
-                (b, i) => b.layout !== value[i]?.layout
-            );
-            if (changed) {
-                onChange(blocks);
-            }
+                const changed = blocks.some(
+                    (b, i) => b.layout !== prev[i]?.layout
+                );
+                return changed ? blocks : prev;
+            });
         },
-        [value, onChange]
+        [onChange]
     );
 
     const renderBlockEditor = (block: ContentBlock) => {
