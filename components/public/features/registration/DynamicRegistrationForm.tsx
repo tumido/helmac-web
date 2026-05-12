@@ -30,6 +30,7 @@ import type {
     AdditionalPersonData,
     FormField,
 } from "@/lib/types/registration-form";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 import {
     isInputField,
     getAllFields,
@@ -63,7 +64,7 @@ interface DynamicRegistrationFormProps {
     previewMode?: boolean;
     isLoggedIn?: boolean;
     publicEmail?: string;
-    successContent?: string | null;
+    successContent?: ContentBlock[] | null;
 }
 
 function buildInitialValues(

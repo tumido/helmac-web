@@ -5,6 +5,7 @@ import { getRegistrationStatus, getActiveYear, getOptionCountsForYear } from "@/
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatDate } from "@/lib/utils/date";
 import { getPublicSession } from "@/lib/public-auth";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 export const metadata = {
     title: "Registrace | Helmáč",
@@ -106,7 +107,9 @@ export default async function RegistracePage() {
                     optionCounts={optionCounts}
                     isLoggedIn={!!publicSession}
                     publicEmail={publicSession?.email}
-                    successContent={status.year?.registrationSuccessContent ?? null}
+                    successContent={
+                        (status.year?.registrationSuccessContent as unknown as ContentBlock[] | null) ?? null
+                    }
                 />
             </Container>
         </>

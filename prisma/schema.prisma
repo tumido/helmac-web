@@ -108,7 +108,7 @@ model Year {
   registrationOpen      Boolean   @default(false)
   registrationStartDate DateTime?
 
-  registrationSuccessContent String? @db.Text
+  registrationSuccessContent Json @default("[]")
 
   confirmationEmailEnabled  Boolean  @default(false)
   confirmationEmailSubject  String?

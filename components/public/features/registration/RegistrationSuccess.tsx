@@ -7,7 +7,8 @@ import { Check } from "@mui/icons-material";
 import { formatPrice } from "@/lib/utils/pricing";
 import { QRCodeSVG } from "qrcode.react";
 import { DecorativeDivider } from "@/components/public/ui";
-import { MarkdownContent } from "@/components/ui/markdown-content";
+import { BlockRenderer } from "@/components/public/features/content-blocks";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 import type { PaymentData } from "@/lib/actions/public/registration";
 
 interface RegistrationSuccessProps {
@@ -15,7 +16,7 @@ interface RegistrationSuccessProps {
     variableSymbol?: string;
     totalPrice?: number;
     paymentData?: PaymentData;
-    successContent?: string | null;
+    successContent?: ContentBlock[] | null;
 }
 
 export function RegistrationSuccess({
@@ -72,8 +73,8 @@ export function RegistrationSuccess({
                         textAlign: "center",
                     }}
                 >
-                    {successContent ? (
-                        <MarkdownContent content={successContent} />
+                    {successContent && successContent.length > 0 ? (
+                        <BlockRenderer blocks={successContent} />
                     ) : (
                         <>
                             <Check

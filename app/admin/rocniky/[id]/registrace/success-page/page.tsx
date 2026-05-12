@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSuccessContentEditor } from "@/components/admin/registration-success-content-editor";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface SuccessPagePageProps {
     params: Promise<{ id: string }>;
@@ -31,7 +32,7 @@ export default async function SuccessPagePage({ params }: SuccessPagePageProps) 
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },
@@ -43,7 +44,7 @@ export default async function SuccessPagePage({ params }: SuccessPagePageProps) 
             />
             <RegistrationSuccessContentEditor
                 yearId={year.id}
-                initialContent={year.registrationSuccessContent}
+                initialContent={year.registrationSuccessContent as unknown as ContentBlock[]}
             />
         </Container>
     );

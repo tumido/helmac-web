@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { createYearSchema, updateYearSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
+import { contentBlocksSchema } from "@/lib/validators/content-blocks";
 
 export type YearActionState = {
     error?: {
@@ -374,12 +375,24 @@ export async function updateRegistrationSuccessContent(
         return { error: "Nemáte oprávnění" };
     }
 
-    const content = (formData.get("content") as string | null) ?? "";
+    const raw = (formData.get("content") as string | null) ?? "[]";
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        return { error: "Neplatný formát obsahu" };
+    }
+
+    const validated = contentBlocksSchema.safeParse(parsed);
+    if (!validated.success) {
+        return { error: "Neplatný formát obsahu" };
+    }
 
     try {
         await db.year.update({
             where: { id: yearId },
-            data: { registrationSuccessContent: content || null },
+            data: { registrationSuccessContent: validated.data },
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/registrace`);

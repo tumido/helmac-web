@@ -3,25 +3,23 @@
 import { useState } from "react";
 import { Alert, Box, Button, CircularProgress } from "@mui/material";
 import { Save } from "@mui/icons-material";
-import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { BlockEditor } from "@/components/admin/block-editor";
 import { updateRegistrationSuccessContent } from "@/lib/actions/years";
+import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface RegistrationSuccessContentEditorProps {
     yearId: string;
-    initialContent: string | null;
+    initialContent: ContentBlock[];
 }
 
 export function RegistrationSuccessContentEditor({
     yearId,
     initialContent,
 }: RegistrationSuccessContentEditorProps) {
-    const [content, setContent] = useState(initialContent ?? "");
-    const [savedContent, setSavedContent] = useState(initialContent ?? "");
+    const [blocks, setBlocks] = useState<ContentBlock[]>(initialContent);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-
-    const dirty = content !== savedContent;
 
     const handleSave = async () => {
         setSaving(true);
@@ -29,14 +27,13 @@ export function RegistrationSuccessContentEditor({
         setSuccess(false);
 
         const formData = new FormData();
-        formData.set("content", content);
+        formData.set("content", JSON.stringify(blocks));
 
         const result = await updateRegistrationSuccessContent(yearId, formData);
 
         if (result.error) {
             setError(result.error);
         } else {
-            setSavedContent(content);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -46,33 +43,27 @@ export function RegistrationSuccessContentEditor({
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {error && <Alert severity="error">{error}</Alert>}
-            {success && <Alert severity="success">Obsah byl uložen</Alert>}
-
-            <RichTextEditor
-                value={content}
-                onChange={setContent}
-                format="markdown"
-                minHeight={400}
-                placeholder="Zadejte text, který se zobrazí po úspěšné registraci..."
-            />
-
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <Button
                     variant="contained"
                     startIcon={
                         saving ? (
-                            <CircularProgress size={16} color="inherit" />
+                            <CircularProgress size={20} color="inherit" />
                         ) : (
                             <Save />
                         )
                     }
                     onClick={handleSave}
-                    disabled={saving || !dirty}
+                    disabled={saving}
                 >
                     {saving ? "Ukládám..." : "Uložit"}
                 </Button>
             </Box>
+
+            {error && <Alert severity="error">{error}</Alert>}
+            {success && <Alert severity="success">Obsah byl uložen</Alert>}
+
+            <BlockEditor value={blocks} onChange={setBlocks} yearId={yearId} />
         </Box>
     );
 }
