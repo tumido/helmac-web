@@ -1,4 +1,4 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { getOfferById } from "@/lib/services/offers";
@@ -32,12 +32,6 @@ export default async function EditOfferPage({ params }: EditOfferPageProps) {
                 ]}
                 title="Upravit nabídku"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
-            </Box>
-
             <OfferForm
                 mode="edit"
                 yearId={year.id}

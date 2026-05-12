@@ -1,4 +1,4 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { OfferForm } from "@/components/forms/offer-form";
@@ -27,12 +27,6 @@ export default async function NewOfferPage({ params }: NewOfferPageProps) {
                 ]}
                 title="Nová nabídka"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
-            </Box>
-
             <OfferForm mode="create" yearId={year.id} />
         </Container>
     );

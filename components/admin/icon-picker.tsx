@@ -14,7 +14,7 @@ import {
     Typography,
     InputAdornment,
 } from "@mui/material";
-import { Close, Search } from "@mui/icons-material";
+import { Add, Close, Search } from "@mui/icons-material";
 import { GameIcon, GAME_ICONS, ICON_CATEGORIES } from "@/lib/icons";
 
 const BATCH_SIZE = 60;
@@ -60,22 +60,43 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 
     return (
         <>
-            <Button
-                variant="outlined"
-                size="small"
+            <Box
                 onClick={() => setOpen(true)}
-                startIcon={
-                    value ? (
-                        <GameIcon
-                            name={value}
-                            sx={{ fontSize: "1.2em" }}
-                        />
-                    ) : undefined
-                }
-                sx={{ textTransform: "none" }}
+                sx={{
+                    width: 80,
+                    minWidth: 80,
+                    alignSelf: "stretch",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "2px dashed",
+                    borderColor: value
+                        ? "primary.main"
+                        : "divider",
+                    borderStyle: value ? "solid" : "dashed",
+                    borderRadius: 2,
+                    cursor: "pointer",
+                    backgroundColor: value
+                        ? "action.selected"
+                        : "transparent",
+                    transition: "all 0.2s",
+                    "&:hover": {
+                        borderColor: "primary.main",
+                        backgroundColor: "action.hover",
+                    },
+                }}
             >
-                {value ? "Změnit ikonu" : "Vybrat ikonu"}
-            </Button>
+                {value ? (
+                    <GameIcon
+                        name={value}
+                        sx={{ fontSize: 36, color: "text.primary" }}
+                    />
+                ) : (
+                    <Add
+                        sx={{ fontSize: 24, color: "text.disabled" }}
+                    />
+                )}
+            </Box>
             <input
                 type="hidden"
                 name="icon"

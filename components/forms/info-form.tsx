@@ -8,7 +8,6 @@ import {
     TextField,
     Alert,
     CircularProgress,
-    Paper,
     Switch,
     FormControlLabel,
 } from "@mui/material";
@@ -75,61 +74,77 @@ export function InfoForm({ mode, yearId, infoId, defaultValues }: InfoFormProps)
             component="form"
             action={formAction}
         >
-            {/* Toolbar */}
-            <Paper
-                variant="outlined"
+            {/* Header */}
+            <Box
                 sx={{
                     display: "flex",
-                    alignItems: "center",
                     gap: 2,
-                    px: 2,
-                    py: 1,
-                    mb: 3,
-                    flexWrap: "wrap",
-                    borderRadius: 2,
+                    mb: 2,
                 }}
             >
-                <TextField
-                    required
-                    size="small"
-                    id="title"
-                    name="title"
-                    label="Název info sekce"
-                    defaultValue={defaultValues?.title || ""}
-                    error={!!state?.error?.title}
-                    helperText={state?.error?.title?.[0]}
-                    sx={{ minWidth: 200, flex: 1 }}
-                />
-                <TextField
-                    size="small"
-                    id="subtitle"
-                    name="subtitle"
-                    label="Podtitulek"
-                    defaultValue={defaultValues?.subtitle || ""}
-                    sx={{ minWidth: 150, flex: 1 }}
-                />
                 <IconPicker value={icon} onChange={setIcon} />
-                <FormControlLabel
-                    control={
-                        <Switch
-                            name="showToc"
-                            value="true"
-                            size="small"
-                            checked={showToc}
-                            onChange={(e) => setShowToc(e.target.checked)}
-                        />
-                    }
-                    label="Zobrazit obsah"
-                />
-                <SubmitButton mode={mode} />
-                <LinkButton
-                    href={`/admin/rocniky/${yearId}/info`}
-                    variant="outlined"
-                    size="small"
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        width: 360,
+                    }}
                 >
-                    Zrušit
-                </LinkButton>
-            </Paper>
+                    <TextField
+                        required
+                        size="small"
+                        id="title"
+                        name="title"
+                        label="Název info sekce"
+                        defaultValue={defaultValues?.title || ""}
+                        error={!!state?.error?.title}
+                        helperText={state?.error?.title?.[0]}
+                    />
+                    <TextField
+                        size="small"
+                        id="subtitle"
+                        name="subtitle"
+                        label="Podtitulek"
+                        defaultValue={defaultValues?.subtitle || ""}
+                    />
+                </Box>
+                <Box sx={{ flex: 1 }} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        alignItems: "flex-end",
+                    }}
+                >
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <LinkButton
+                            href={`/admin/rocniky/${yearId}/info`}
+                            variant="outlined"
+                        >
+                            Zrušit
+                        </LinkButton>
+                        <SubmitButton mode={mode} />
+                    </Box>
+                    <FormControlLabel
+                        labelPlacement="start"
+                        control={
+                            <Switch
+                                name="showToc"
+                                value="true"
+                                size="small"
+                                checked={showToc}
+                                onChange={(e) =>
+                                    setShowToc(e.target.checked)
+                                }
+                            />
+                        }
+                        label="Zobrazit obsah"
+                        sx={{ py: 0.75, mr: 0 }}
+                    />
+                </Box>
+            </Box>
 
             {state?.error?._form && (
                 <Alert severity="error" sx={{ mb: 2 }}>
