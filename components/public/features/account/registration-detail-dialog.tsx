@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
     Alert,
@@ -32,6 +32,11 @@ import {
 } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatPrice } from "@/lib/utils/pricing";
+import {
+    computePricingLineItems,
+    type PricingLineItem,
+    type PricingLineGroup,
+} from "@/lib/utils/pricing-line-items";
 import { formatDate } from "@/lib/utils/date";
 import { DynamicFormField } from "@/components/public/features/registration/DynamicFormField";
 import { updatePublicRegistration } from "@/lib/actions/public/registration-edit";
@@ -420,6 +425,115 @@ function RegistrationDetailDialog({
     );
 }
 
+function PriceLine({ line }: { line: PricingLineItem }) {
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 1.5,
+                py: 0.25,
+            }}
+        >
+            <Typography
+                variant="body2"
+                component="span"
+                sx={{ color: "text.primary", flexShrink: 0 }}
+            >
+                <Box
+                    component="span"
+                    sx={{ color: "text.secondary", mr: 0.75 }}
+                >
+                    {line.label}:
+                </Box>
+                {line.optionName}
+            </Typography>
+            <Box
+                aria-hidden
+                sx={{
+                    flex: 1,
+                    borderBottom: "1px dotted",
+                    borderColor: "divider",
+                    transform: "translateY(-3px)",
+                    minWidth: 16,
+                }}
+            />
+            <Typography
+                variant="body2"
+                component="span"
+                sx={{
+                    color: "primary.main",
+                    fontWeight: 600,
+                    flexShrink: 0,
+                    fontVariantNumeric: "tabular-nums",
+                }}
+            >
+                {formatPrice(line.price)}
+            </Typography>
+        </Box>
+    );
+}
+
+function PriceItemSection({
+    title,
+    lines,
+}: {
+    title?: string;
+    lines: PricingLineItem[];
+}) {
+    if (lines.length === 0) return null;
+    return (
+        <Box>
+            {title && (
+                <Typography
+                    variant="overline"
+                    sx={{
+                        display: "block",
+                        color: "primary.main",
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        lineHeight: 1.4,
+                        pb: 0.5,
+                        mb: 0.75,
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                    }}
+                >
+                    {title}
+                </Typography>
+            )}
+            {lines.map((line, i) => (
+                <PriceLine key={i} line={line} />
+            ))}
+        </Box>
+    );
+}
+
+function PriceItemList({
+    mainLines,
+    apLines,
+}: {
+    mainLines: PricingLineItem[];
+    apLines: PricingLineGroup[];
+}) {
+    const hasAP = apLines.some((g) => g.lines.length > 0);
+    return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+            <PriceItemSection
+                title={hasAP ? "Hlavní osoba" : undefined}
+                lines={mainLines}
+            />
+            {apLines.map((group) => (
+                <PriceItemSection
+                    key={group.personIndex}
+                    title={`Osoba č. ${group.personIndex + 2}`}
+                    lines={group.lines}
+                />
+            ))}
+        </Box>
+    );
+}
+
 export function RegistrationHistoryTable({ registrations }: RegistrationHistoryTableProps) {
     const [selectedRegistration, setSelectedRegistration] = useState<SerializedRegistration | null>(null);
 
@@ -437,34 +551,80 @@ export function RegistrationHistoryTable({ registrations }: RegistrationHistoryT
                     </TableHead>
                     <TableBody>
                         {registrations.map((reg) => {
+                            const formData = migrateFormData(reg.form?.fields);
+                            const data = (typeof reg.data === "object" && reg.data !== null
+                                ? reg.data
+                                : {}) as Record<string, unknown>;
+                            const additionalPeople = (Array.isArray(data.additionalPeople)
+                                ? data.additionalPeople
+                                : []) as AdditionalPersonData[];
+                            const { mainLines, apLines } = computePricingLineItems(
+                                formData,
+                                data,
+                                additionalPeople,
+                            );
+                            const hasLineItems =
+                                mainLines.length > 0 ||
+                                apLines.some((g) => g.lines.length > 0);
+
                             return (
-                                <TableRow
-                                    key={reg.id}
-                                    hover
-                                    onClick={() => setSelectedRegistration(reg)}
-                                    sx={{ cursor: "pointer" }}
-                                >
-                                    <TableCell>
-                                        <Typography variant="body2" fontWeight={600}>
-                                            {reg.year.title}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {formatDate(reg.createdAt)}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {reg.totalPrice ? `${reg.totalPrice} Kč` : "–"}
-                                    </TableCell>
-                                    <TableCell>
-                                        {reg.isPaid ? (
-                                            <Chip label="Zaplaceno" color="success" size="small" />
-                                        ) : reg.totalPrice ? (
-                                            <Chip label="Nezaplaceno" color="warning" size="small" />
-                                        ) : (
-                                            "–"
-                                        )}
-                                    </TableCell>
-                                </TableRow>
+                                <Fragment key={reg.id}>
+                                    <TableRow
+                                        hover
+                                        onClick={() => setSelectedRegistration(reg)}
+                                        sx={{
+                                            cursor: "pointer",
+                                            "& > *": { borderBottom: hasLineItems ? "none" : undefined },
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {reg.year.title}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            {formatDate(reg.createdAt)}
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {reg.totalPrice ? `${reg.totalPrice} Kč` : "–"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {reg.isPaid ? (
+                                                <Chip label="Zaplaceno" color="success" size="small" />
+                                            ) : reg.totalPrice ? (
+                                                <Chip label="Nezaplaceno" color="warning" size="small" />
+                                            ) : (
+                                                "–"
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                    {hasLineItems && (
+                                        <TableRow
+                                            hover
+                                            onClick={() => setSelectedRegistration(reg)}
+                                            sx={{ cursor: "pointer" }}
+                                        >
+                                            <TableCell
+                                                colSpan={4}
+                                                sx={{
+                                                    py: 2,
+                                                    pl: { xs: 2, sm: 3 },
+                                                    pr: { xs: 2, sm: 3 },
+                                                    borderTop: "1px dashed",
+                                                    borderTopColor: "divider",
+                                                    borderLeft: "3px solid",
+                                                    borderLeftColor: "primary.main",
+                                                    backgroundColor: (theme) =>
+                                                        theme.palette.mode === "dark"
+                                                            ? `${theme.palette.primary.main}0D`
+                                                            : `${theme.palette.primary.main}14`,
+                                                }}
+                                            >
+                                                <PriceItemList mainLines={mainLines} apLines={apLines} />
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
                             );
                         })}
                     </TableBody>
