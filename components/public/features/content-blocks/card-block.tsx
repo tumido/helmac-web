@@ -56,15 +56,29 @@ export function CardBlockRenderer({ block }: CardBlockRendererProps) {
                         <MarkdownContent content={block.text} />
                     </Box>
                 )}
-                {block.buttonLabel && block.buttonUrl && (
-                    <Box sx={{ pt: 1 }}>
-                        <Button
-                            variant="contained"
-                            href={block.buttonUrl}
-                            size="small"
-                        >
-                            {block.buttonLabel}
-                        </Button>
+                {block.buttons.some((b) => b.label && b.href) && (
+                    <Box
+                        sx={{
+                            pt: 1,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 1,
+                        }}
+                    >
+                        {block.buttons.map(
+                            (btn) =>
+                                btn.label &&
+                                btn.href && (
+                                    <Button
+                                        key={btn.id}
+                                        variant={btn.variant}
+                                        href={btn.href}
+                                        size="small"
+                                    >
+                                        {btn.label}
+                                    </Button>
+                                )
+                        )}
                     </Box>
                 )}
             </CardContent>

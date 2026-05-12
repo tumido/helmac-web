@@ -30,6 +30,13 @@ const dividerBlockSchema = z.object({
     variant: z.enum(["simple", "ornate"]),
 });
 
+const cardButtonSchema = z.object({
+    id: z.string().min(1),
+    label: z.string(),
+    href: z.string(),
+    variant: z.enum(["contained", "outlined", "text"]),
+});
+
 const cardBlockSchema = z.object({
     type: z.literal("card"),
     id: z.string().min(1),
@@ -37,8 +44,7 @@ const cardBlockSchema = z.object({
     imageUrl: z.string(),
     title: z.string(),
     text: z.string(),
-    buttonLabel: z.string(),
-    buttonUrl: z.string(),
+    buttons: z.array(cardButtonSchema),
 });
 
 const contentBlockSchema = z.union([

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { Box, Button, IconButton, Typography } from "@mui/material";
 import {
     Add,
@@ -28,7 +28,7 @@ import type {
     ContentBlock,
     ContentBlockType,
 } from "@/lib/types/content-blocks";
-import { createBlock } from "@/lib/types/content-blocks";
+import { createBlock, normalizeBlocks } from "@/lib/types/content-blocks";
 
 const BLOCK_META: Record<
     ContentBlockType,
@@ -60,7 +60,9 @@ interface BlockEditorProps {
     yearId?: string;
 }
 
-export function BlockEditor({ value, onChange, yearId }: BlockEditorProps) {
+export function BlockEditor({ value: rawValue, onChange, yearId }: BlockEditorProps) {
+    const value = useMemo(() => normalizeBlocks(rawValue), [rawValue]);
+
     const [selectorAnchor, setSelectorAnchor] = useState<HTMLElement | null>(
         null
     );
