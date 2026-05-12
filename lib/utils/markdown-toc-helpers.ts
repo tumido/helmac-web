@@ -7,6 +7,7 @@ export interface TocItem {
 }
 
 const HEADING_RE = /^(#{2,3})\s+(.+)$/;
+const HTML_HEADING_RE = /^<h([23])\b[^>]*>(.*?)<\/h\1>$/i;
 
 function stripInlineMarkdown(text: string): string {
     return (
@@ -33,11 +34,25 @@ export function extractMarkdownToc(markdown: string): TocItem[] {
     const usedIds = new Map<string, number>();
 
     for (const line of markdown.split("\n")) {
-        const match = HEADING_RE.exec(line.trim());
-        if (!match) continue;
+        const trimmed = line.trim();
 
-        const level = match[1].length as 2 | 3;
-        const text = stripInlineMarkdown(match[2].trim());
+        let level: 2 | 3;
+        let rawText: string;
+
+        const mdMatch = HEADING_RE.exec(trimmed);
+        if (mdMatch) {
+            level = mdMatch[1].length as 2 | 3;
+            rawText = mdMatch[2];
+        } else {
+            const htmlMatch = HTML_HEADING_RE.exec(trimmed);
+            if (!htmlMatch) continue;
+            level = Number(htmlMatch[1]) as 2 | 3;
+            rawText = htmlMatch[2];
+        }
+
+        const text = stripInlineMarkdown(rawText.trim());
+        if (!text) continue;
+
         const baseId = generateSlug(text) || `heading-${level}`;
 
         const count = usedIds.get(baseId) ?? 0;
