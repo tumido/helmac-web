@@ -451,12 +451,21 @@ export function DynamicFormField({
             if (!def) return null;
             const defTiers = def.usePriceTiers ? (priceTiers ?? []) : [];
             const currentTier = getCurrentTierIndex(defTiers);
+            const defCount = def.options.length;
+            const defCols = defCount % 3 === 0 ? 3 : defCount % 2 === 0 ? 2 : Math.min(defCount, 3);
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                         {label}
                     </Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    <Box sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "repeat(2, 1fr)",
+                            md: `repeat(${defCols}, 1fr)`,
+                        },
+                        gap: 1,
+                    }}>
                         {def.options.map((opt) => {
                             const isSelected = String(value) === opt.name;
                             const isDisabled =
@@ -474,11 +483,6 @@ export function DynamicFormField({
                                         onChange(field.name, opt.name)
                                     }
                                     sx={{
-                                        flex: {
-                                            xs: "1 1 calc(50% - 4px)",
-                                            md: "1 1 0",
-                                        },
-                                        minWidth: "fit-content",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "space-between",
@@ -516,18 +520,6 @@ export function DynamicFormField({
                                             variant="body1"
                                             fontWeight={600}
                                             sx={{
-                                                whiteSpace: {
-                                                    xs: "normal",
-                                                    md: "nowrap",
-                                                },
-                                                overflow: {
-                                                    xs: "visible",
-                                                    md: "hidden",
-                                                },
-                                                textOverflow: {
-                                                    xs: "clip",
-                                                    md: "ellipsis",
-                                                },
                                             }}
                                         >
                                             {opt.name}
@@ -715,6 +707,9 @@ export function DynamicFormField({
                 onChange(field.name, JSON.stringify(updated));
             };
 
+            const qCount = qDef.options.length;
+            const qCols = qCount % 3 === 0 ? 3 : qCount % 2 === 0 ? 2 : Math.min(qCount, 3);
+
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
@@ -722,8 +717,11 @@ export function DynamicFormField({
                     </Typography>
                     <Box
                         sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "repeat(2, 1fr)",
+                                md: `repeat(${qCols}, 1fr)`,
+                            },
                             gap: 1,
                         }}
                     >
@@ -739,11 +737,6 @@ export function DynamicFormField({
                                 <Box
                                     key={opt.id}
                                     sx={{
-                                        flex: {
-                                            xs: "1 1 calc(50% - 4px)",
-                                            md: "1 1 0",
-                                        },
-                                        minWidth: "fit-content",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent:
@@ -775,18 +768,6 @@ export function DynamicFormField({
                                             variant="body1"
                                             fontWeight={600}
                                             sx={{
-                                                whiteSpace: {
-                                                    xs: "normal",
-                                                    md: "nowrap",
-                                                },
-                                                overflow: {
-                                                    xs: "visible",
-                                                    md: "hidden",
-                                                },
-                                                textOverflow: {
-                                                    xs: "clip",
-                                                    md: "ellipsis",
-                                                },
                                             }}
                                         >
                                             {opt.name}
@@ -997,12 +978,22 @@ export function DynamicFormField({
                 onChange(field.name, JSON.stringify(newSelected));
             };
 
+            const msCount = msDef.options.length;
+            const msCols = msCount % 3 === 0 ? 3 : msCount % 2 === 0 ? 2 : Math.min(msCount, 3);
+
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                         {label}
                     </Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    <Box sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "repeat(2, 1fr)",
+                            md: `repeat(${msCols}, 1fr)`,
+                        },
+                        gap: 1,
+                    }}>
                         {msDef.options.map((opt) => {
                             const isSelected = msSelected.includes(opt.name);
                             const isDisabled =
@@ -1011,7 +1002,7 @@ export function DynamicFormField({
                                 opt.prices[msCurrentTier] ??
                                 opt.prices[opt.prices.length - 1] ??
                                 0;
-                            const msPriceTag = `${msCurrentPrice > 0 ? "+" : "-"}${formatPrice(msCurrentPrice)}`;
+                            const msPriceTag = `${msCurrentPrice > 0 ? "+" : ""}${formatPrice(msCurrentPrice)}`;
                             return (
                                 <Box
                                     key={opt.id}
@@ -1020,11 +1011,6 @@ export function DynamicFormField({
                                         handleToggleOption(opt.name)
                                     }
                                     sx={{
-                                        flex: {
-                                            xs: "1 1 calc(50% - 4px)",
-                                            md: "1 1 0",
-                                        },
-                                        minWidth: "fit-content",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "space-between",
@@ -1092,20 +1078,6 @@ export function DynamicFormField({
                                             <Typography
                                                 variant="body1"
                                                 fontWeight={600}
-                                                sx={{
-                                                    whiteSpace: {
-                                                        xs: "normal",
-                                                        md: "nowrap",
-                                                    },
-                                                    overflow: {
-                                                        xs: "visible",
-                                                        md: "hidden",
-                                                    },
-                                                    textOverflow: {
-                                                        xs: "clip",
-                                                        md: "ellipsis",
-                                                    },
-                                                }}
                                             >
                                                 {opt.name}
                                             </Typography>
