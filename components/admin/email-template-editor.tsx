@@ -22,6 +22,7 @@ import { richContentSx } from "@/lib/utils/rich-content-sx";
 import { renderPlaceholderChipsInHtml } from "@/lib/utils/placeholder-html";
 import { TestEmailDialog } from "@/components/admin/test-email-dialog";
 import { ConditionalSectionsEditor } from "@/components/admin/email-builder/conditional-sections-editor";
+import { ConditionalSectionsView } from "@/components/admin/email-builder/conditional-sections-view";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 
@@ -291,6 +292,13 @@ export function EmailTemplateEditor({
                                             </Typography>
                                         </>
                                     )}
+
+                                    <ConditionalSectionsView
+                                        sections={savedSections}
+                                        availableFields={availableFields}
+                                        pricingDefinitions={pricingDefinitions}
+                                        placeholders={availablePlaceholders}
+                                    />
                                 </Box>
                             )}
 
