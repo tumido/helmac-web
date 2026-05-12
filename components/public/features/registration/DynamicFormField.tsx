@@ -952,6 +952,11 @@ export function DynamicFormField({
                             </Typography>
                         </>
                     )}
+                    <input
+                        type="hidden"
+                        name={htmlName}
+                        value={String(value)}
+                    />
                 </Box>
             );
         }
