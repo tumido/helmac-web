@@ -1,8 +1,9 @@
-import { Container, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
-import { AccountNav } from "@/components/public/features/account/account-nav";
 
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
     title: "Můj účet | Helmáč",
 };
 
@@ -18,21 +19,8 @@ export default function AccountLayout({
                 subtitle="Správa vašeho účtu a registrací"
                 icon="visored-helm"
             />
-            <Container maxWidth="lg" sx={{ pb: 8 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 3,
-                        flexDirection: { xs: "column", md: "row" },
-                    }}
-                >
-                    <Box sx={{ width: { xs: "100%", md: 240 }, flexShrink: 0 }}>
-                        <AccountNav />
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                        {children}
-                    </Box>
-                </Box>
+            <Container maxWidth="lg" sx={{ pb: 8, mt: 4 }}>
+                {children}
             </Container>
         </>
     );

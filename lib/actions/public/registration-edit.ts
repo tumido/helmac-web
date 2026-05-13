@@ -172,6 +172,6 @@ export async function updatePublicRegistration(
         data: { data: mergedData as object },
     });
 
-    revalidatePath("/ucet/registrace");
+    revalidatePath("/ucet");
     return { success: true };
 }

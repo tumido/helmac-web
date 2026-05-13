@@ -93,7 +93,6 @@ export type { Editor } from "@tiptap/react";
 
 const ALL_TOOLS = [
     "formatting",
-    "basicFormatting",
     "h2",
     "h3",
     "alignment",
@@ -105,7 +104,7 @@ const ALL_TOOLS = [
     "undo",
 ] as const;
 
-export type ToolGroup = (typeof ALL_TOOLS)[number];
+export type ToolGroup = (typeof ALL_TOOLS)[number] | "basicFormatting";
 
 interface RichTextEditorProps {
     value: string;

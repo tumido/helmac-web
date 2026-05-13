@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Grid, Typography } from "@mui/material";
+import { Box, Button, Grid, Typography } from "@mui/material";
 import { AnimatedSection } from "@/components/public/ui/AnimatedSection";
 import { GameIcon } from "@/lib/icons";
 import ReactMarkdown from "react-markdown";
@@ -22,21 +22,39 @@ function HighlightCard({
     title,
     subtitle,
     description,
+    href,
 }: {
     icon: string;
     title: string;
     subtitle?: string;
     description: string;
+    href: string;
 }) {
     return (
         <Box
+            component={Link}
+            href={href}
             sx={{
                 textAlign: "center",
                 px: { xs: 2, md: 3 },
                 py: { xs: 3, md: 4 },
+                display: "block",
+                textDecoration: "none",
+                color: "inherit",
+                borderRadius: 2,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                    backgroundColor: "rgba(201, 162, 39, 0.04)",
+                    "& .highlight-icon": {
+                        backgroundColor:
+                            "rgba(201, 162, 39, 0.12)",
+                        borderColor: "primary.main",
+                    },
+                },
             }}
         >
             <Box
+                className="highlight-icon"
                 sx={{
                     width: 72,
                     height: 72,
@@ -107,6 +125,7 @@ export function EventHighlights({ sections, slug }: EventHighlightsProps) {
                                 title={section.title}
                                 subtitle={section.subtitle || undefined}
                                 description={section.description || ""}
+                                href={`/${slug}?tab=${section.id}`}
                             />
                         </AnimatedSection>
                     </Grid>
@@ -122,20 +141,10 @@ export function EventHighlights({ sections, slug }: EventHighlightsProps) {
                 <Link
                     href={`/${slug}`}
                     style={{
-                        fontFamily: '"Cinzel", serif',
-                        fontSize: "0.9375rem",
-                        fontWeight: 500,
                         textDecoration: "none",
-                        border: "1px solid",
-                        borderColor: "#9A7B1A",
-                        color: "#C9A227",
-                        padding: "10px 28px",
-                        borderRadius: 4,
-                        letterSpacing: "0.02em",
-                        textTransform: "uppercase",
                     }}
                 >
-                    Zobrazit vše
+                    <Button variant="outlined">Zobrazit vše</Button>
                 </Link>
             </Box>
         </>
