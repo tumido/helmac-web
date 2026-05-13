@@ -19,10 +19,13 @@ import {
 import { Add } from "@mui/icons-material";
 import { createConditionalEmail } from "@/lib/actions/conditional-emails";
 
+type ConditionOperator = "equals" | "is_set" | "is_not_set";
+
 interface FieldOption {
     id: string;
     name: string;
     label: string;
+    type: string;
     options: string[];
 }
 
@@ -39,16 +42,19 @@ export function CreateConditionalEmailDialog({
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [selectedFieldId, setSelectedFieldId] = useState("");
+    const [operator, setOperator] = useState<ConditionOperator>("equals");
     const [selectedValue, setSelectedValue] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const selectedField = availableFields.find((f) => f.id === selectedFieldId);
+    const valueRequired = operator === "equals";
 
     const handleOpen = () => {
         setOpen(true);
         setName("");
         setSelectedFieldId("");
+        setOperator("equals");
         setSelectedValue("");
         setError(null);
     };
@@ -60,7 +66,7 @@ export function CreateConditionalEmailDialog({
     };
 
     const handleSubmit = () => {
-        if (!name.trim() || !selectedFieldId || !selectedValue) {
+        if (!name.trim() || !selectedFieldId || (valueRequired && !selectedValue)) {
             setError("Vyplňte všechna pole");
             return;
         }
@@ -74,7 +80,8 @@ export function CreateConditionalEmailDialog({
                 name: name.trim(),
                 conditionFieldId: selectedFieldId,
                 conditionFieldName: field.name,
-                conditionValue: selectedValue,
+                conditionOperator: operator,
+                conditionValue: valueRequired ? selectedValue : undefined,
             });
 
             if (result && "error" in result && result.error) {
@@ -89,6 +96,12 @@ export function CreateConditionalEmailDialog({
             }
         });
     };
+
+    const isSubmitDisabled =
+        isPending ||
+        !name.trim() ||
+        !selectedFieldId ||
+        (valueRequired && !selectedValue);
 
     return (
         <>
@@ -134,17 +147,42 @@ export function CreateConditionalEmailDialog({
 
                         {selectedField && (
                             <FormControl fullWidth disabled={isPending}>
+                                <InputLabel>Operátor</InputLabel>
+                                <Select
+                                    value={operator}
+                                    onChange={(e) => {
+                                        setOperator(e.target.value as ConditionOperator);
+                                        setSelectedValue("");
+                                    }}
+                                    label="Operátor"
+                                >
+                                    <MenuItem value="equals">Konkrétní hodnota</MenuItem>
+                                    <MenuItem value="is_set">Cokoli vybráno</MenuItem>
+                                    <MenuItem value="is_not_set">Nic nevybráno</MenuItem>
+                                </Select>
+                            </FormControl>
+                        )}
+
+                        {selectedField && operator === "equals" && (
+                            <FormControl fullWidth disabled={isPending}>
                                 <InputLabel>Hodnota</InputLabel>
                                 <Select
                                     value={selectedValue}
                                     onChange={(e) => setSelectedValue(e.target.value)}
                                     label="Hodnota"
                                 >
-                                    {selectedField.options.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
-                                        </MenuItem>
-                                    ))}
+                                    {selectedField.type === "checkbox" ? (
+                                        [
+                                            <MenuItem key="true" value="true">Zaškrtnuto</MenuItem>,
+                                            <MenuItem key="false" value="false">Nezaškrtnuto</MenuItem>,
+                                        ]
+                                    ) : (
+                                        selectedField.options.map((opt) => (
+                                            <MenuItem key={opt} value={opt}>
+                                                {opt}
+                                            </MenuItem>
+                                        ))
+                                    )}
                                 </Select>
                             </FormControl>
                         )}
@@ -161,7 +199,7 @@ export function CreateConditionalEmailDialog({
                     <Button
                         onClick={handleSubmit}
                         variant="contained"
-                        disabled={isPending || !name.trim() || !selectedFieldId || !selectedValue}
+                        disabled={isSubmitDisabled}
                     >
                         Vytvořit
                     </Button>

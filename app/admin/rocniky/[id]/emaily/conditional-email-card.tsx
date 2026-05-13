@@ -28,11 +28,22 @@ interface ConditionalEmailCardProps {
         enabled: boolean;
         conditionFieldName: string;
         conditionFieldLabel: string;
-        conditionValue: string;
+        conditionOperator: string;
+        conditionValue: string | null;
         subject: string | null;
         body: string | null;
         account: { email: string; label: string | null } | null;
     };
+}
+
+function renderConditionText(
+    label: string,
+    operator: string,
+    value: string | null,
+): string {
+    if (operator === "is_set") return `${label} – cokoli vybráno`;
+    if (operator === "is_not_set") return `${label} – nic nevybráno`;
+    return `${label} = "${value ?? ""}"`;
 }
 
 function SenderInfo({ account }: { account: { email: string; label: string | null } | null }) {
@@ -86,7 +97,7 @@ export function ConditionalEmailCard({ yearId, email }: ConditionalEmailCardProp
                                 {email.name}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Podmínka: {email.conditionFieldLabel} = &quot;{email.conditionValue}&quot;
+                                Podmínka: {renderConditionText(email.conditionFieldLabel, email.conditionOperator, email.conditionValue)}
                             </Typography>
                         </Box>
                         <Button

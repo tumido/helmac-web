@@ -12,12 +12,19 @@ import { CreateConditionalEmailDialog } from "./create-conditional-email-dialog"
 import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields } from "@/lib/types/registration-form";
+import { getFieldOptionValues } from "@/lib/utils/pricing";
 
 interface EmailyPageProps {
     params: Promise<{ id: string }>;
 }
 
-const OPTION_FIELD_TYPES = new Set(["select", "radio", "checkbox", "pricing_select"]);
+const OPTION_FIELD_TYPES = new Set([
+    "select",
+    "radio",
+    "checkbox",
+    "pricing_select",
+    "pricing_multi_select",
+]);
 
 async function getYearEmailStatus(yearId: string) {
     return db.year.findUnique({
@@ -53,6 +60,7 @@ async function getYearEmailStatus(yearId: string) {
                     name: true,
                     enabled: true,
                     conditionFieldName: true,
+                    conditionOperator: true,
                     conditionValue: true,
                     subject: true,
                     body: true,
@@ -97,14 +105,20 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
     const registrationForm = await getRegistrationFormForYear(year.id);
     const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
     const allInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const pricingDefinitions = formData?.pricingDefinitions ?? [];
     const fieldNameToLabel = new Map(allInputFields.map((f) => [f.name, f.label]));
     const availableFields = allInputFields
-        .filter((f) => OPTION_FIELD_TYPES.has(f.type) && f.options && f.options.length > 0)
+        .filter((f) => {
+            if (!OPTION_FIELD_TYPES.has(f.type)) return false;
+            if (f.type === "checkbox") return true;
+            return getFieldOptionValues(f, pricingDefinitions).length > 0;
+        })
         .map((f) => ({
             id: f.id,
             name: f.name,
             label: f.label,
-            options: f.options!,
+            type: f.type,
+            options: getFieldOptionValues(f, pricingDefinitions),
         }));
 
     return (

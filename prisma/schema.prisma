@@ -166,7 +166,8 @@ model ConditionalEmail {
 
     conditionFieldId    String
     conditionFieldName  String
-    conditionValue      String
+    conditionOperator   String   @default("equals")
+    conditionValue      String?
 
     subject             String?
     body                String?  @db.Text

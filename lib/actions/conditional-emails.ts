@@ -15,7 +15,8 @@ export async function createConditionalEmail(
         name: string;
         conditionFieldId: string;
         conditionFieldName: string;
-        conditionValue: string;
+        conditionOperator: "equals" | "is_set" | "is_not_set";
+        conditionValue?: string;
     },
 ) {
     try {
@@ -36,7 +37,11 @@ export async function createConditionalEmail(
                 name: validated.data.name,
                 conditionFieldId: validated.data.conditionFieldId,
                 conditionFieldName: validated.data.conditionFieldName,
-                conditionValue: validated.data.conditionValue,
+                conditionOperator: validated.data.conditionOperator,
+                conditionValue:
+                    validated.data.conditionOperator === "equals"
+                        ? validated.data.conditionValue ?? null
+                        : null,
             },
         });
 

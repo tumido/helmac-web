@@ -13,6 +13,8 @@ import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { ConditionRule, FormCondition } from "@/lib/types/registration-form";
+import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 import { getPublicSession } from "@/lib/public-auth";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import { buildVisibleFieldIds } from "@/lib/utils/visible-fields";
@@ -506,7 +508,10 @@ export async function submitDynamicRegistration(
                 const conditionalEmails = await db.conditionalEmail.findMany({
                     where: { yearId: activeYear.id, enabled: true },
                     select: {
-                        conditionFieldName: true,
+                        id: true,
+                        name: true,
+                        conditionFieldId: true,
+                        conditionOperator: true,
                         conditionValue: true,
                         subject: true,
                         body: true,
@@ -519,8 +524,17 @@ export async function submitDynamicRegistration(
                 for (const ce of conditionalEmails) {
                     if (!ce.subject || !ce.body) continue;
 
-                    const fieldValue = String(submissionData[ce.conditionFieldName] ?? "");
-                    if (fieldValue !== ce.conditionValue) continue;
+                    const synth: FormCondition = {
+                        id: ce.id,
+                        name: ce.name,
+                        rules: [{
+                            type: "field_value",
+                            fieldId: ce.conditionFieldId,
+                            operator: ce.conditionOperator as ConditionRule["operator"],
+                            value: ce.conditionValue ?? "",
+                        }],
+                    };
+                    if (!evaluateCondition(synth, submissionData, allFields)) continue;
 
                     const ceSubject = replacePlaceholders(ce.subject, placeholders);
                     const ceBodyWithSections = appendConditionalSections({

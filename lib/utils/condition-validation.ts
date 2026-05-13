@@ -126,7 +126,7 @@ export interface ConditionalEmailInfo {
     id: string;
     name: string;
     conditionFieldId: string;
-    conditionValue: string;
+    conditionValue: string | null;
 }
 
 /** Returns conditional emails that use the given field ID as their condition */

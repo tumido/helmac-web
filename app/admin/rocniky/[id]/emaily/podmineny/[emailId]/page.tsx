@@ -24,6 +24,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                 yearId: true,
                 name: true,
                 conditionFieldName: true,
+                conditionOperator: true,
                 conditionValue: true,
                 subject: true,
                 body: true,
@@ -88,7 +89,15 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
 
             <Box sx={{ mb: 3 }}>
                 <Typography variant="body2" color="text.secondary" component="div">
-                    Podmínka: pole <Chip label={conditionFieldLabel} size="small" sx={{ mx: 0.5 }} /> = <Chip label={conditionalEmail.conditionValue} size="small" sx={{ mx: 0.5 }} />
+                    Podmínka: pole <Chip label={conditionFieldLabel} size="small" sx={{ mx: 0.5 }} />
+                    {conditionalEmail.conditionOperator === "is_set" && " – cokoli vybráno"}
+                    {conditionalEmail.conditionOperator === "is_not_set" && " – nic nevybráno"}
+                    {conditionalEmail.conditionOperator === "equals" && (
+                        <>
+                            {" = "}
+                            <Chip label={conditionalEmail.conditionValue ?? ""} size="small" sx={{ mx: 0.5 }} />
+                        </>
+                    )}
                 </Typography>
             </Box>
 

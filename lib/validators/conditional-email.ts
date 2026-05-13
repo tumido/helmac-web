@@ -1,20 +1,31 @@
 import { z } from "zod";
 
-export const createConditionalEmailSchema = z.object({
-    name: z
-        .string()
-        .min(1, "Název je povinný")
-        .max(200, "Název je příliš dlouhý"),
-    conditionFieldId: z
-        .string()
-        .min(1, "Pole podmínky je povinné"),
-    conditionFieldName: z
-        .string()
-        .min(1, "Název pole podmínky je povinný"),
-    conditionValue: z
-        .string()
-        .min(1, "Hodnota podmínky je povinná"),
-});
+export const createConditionalEmailSchema = z
+    .object({
+        name: z
+            .string()
+            .min(1, "Název je povinný")
+            .max(200, "Název je příliš dlouhý"),
+        conditionFieldId: z
+            .string()
+            .min(1, "Pole podmínky je povinné"),
+        conditionFieldName: z
+            .string()
+            .min(1, "Název pole podmínky je povinný"),
+        conditionOperator: z
+            .enum(["equals", "is_set", "is_not_set"])
+            .default("equals"),
+        conditionValue: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.conditionOperator === "equals" && !data.conditionValue) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["conditionValue"],
+                message: "Hodnota podmínky je povinná",
+            });
+        }
+    });
 
 export const updateConditionalEmailTemplateSchema = z.object({
     confirmationEmailSubject: z
