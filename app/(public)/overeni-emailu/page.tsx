@@ -1,5 +1,5 @@
-import { Container, Paper } from "@mui/material";
-import { PageHeader } from "@/components/public/ui";
+import { Container } from "@mui/material";
+import { PageHeader, Card } from "@/components/public/ui";
 import { EmailVerificationContent } from "./email-verification-content";
 
 export const metadata = {
@@ -19,20 +19,12 @@ export default async function OvereniEmailuPage({
             <PageHeader
                 title="Ověření emailu"
                 subtitle="Aktivace vašeho účtu"
+                icon="wax-seal"
             />
             <Container maxWidth="sm" sx={{ pb: 8 }}>
-                <Paper
-                    elevation={2}
-                    sx={{
-                        mt: -4,
-                        p: 4,
-                        position: "relative",
-                        zIndex: 1,
-                        backgroundColor: "background.paper",
-                    }}
-                >
+                <Card sx={{ mt: 4 }}>
                     <EmailVerificationContent email={params.email} />
-                </Paper>
+                </Card>
             </Container>
         </>
     );

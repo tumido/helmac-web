@@ -1,5 +1,4 @@
 import { Typography, Box } from "@mui/material";
-import { OpenInNew } from "@mui/icons-material";
 import { Card } from "@/components/public/ui";
 import { AlbumPreview } from "./gallery.types";
 
@@ -9,66 +8,65 @@ interface AlbumCardProps {
 
 export function AlbumCard({ album }: AlbumCardProps) {
     return (
-        <a
-            href={album.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "none", color: "inherit" }}
+        <Box
+            sx={{
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                "&:hover": {
+                    transform: "translateY(-4px)",
+                    "& .MuiCard-root": {
+                        boxShadow:
+                            "0 -2px 15px rgba(201,162,39,0.15)",
+                    },
+                },
+            }}
         >
-            <Card
-                image={album.coverImage || undefined}
-                imageAlt={album.title}
-                imageHeight={200}
-                sx={{ cursor: "pointer" }}
+            <a
+                href={album.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none", color: "inherit" }}
             >
-                <Typography
-                    variant="h5"
-                    component="h3"
-                    gutterBottom
-                    sx={{
-                        fontFamily: '"Cinzel", serif',
-                        fontWeight: 600,
-                    }}
+                <Card
+                    image={album.coverImage || undefined}
+                    imageAlt={album.title}
+                    imageHeight={180}
+                    sx={{ cursor: "pointer" }}
                 >
-                    {album.title}
-                </Typography>
-                <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", mb: 0.5 }}
-                >
-                    {album.year.year}
-                </Typography>
-                {album.description && (
                     <Typography
-                        variant="body2"
-                        color="text.secondary"
+                        variant="h5"
+                        component="h3"
+                        gutterBottom
                         sx={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            mb: 2,
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: 600,
                         }}
                     >
-                        {album.description}
+                        {album.title}
                     </Typography>
-                )}
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                        mt: "auto",
-                        color: "text.secondary",
-                    }}
-                >
-                    <OpenInNew fontSize="small" />
-                    <Typography variant="caption">
-                        Otevřít galerii
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mb: 0.5 }}
+                    >
+                        {album.year.year}
                     </Typography>
-                </Box>
-            </Card>
-        </a>
+                    {album.description && (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                mb: 2,
+                            }}
+                        >
+                            {album.description}
+                        </Typography>
+                    )}
+                </Card>
+            </a>
+        </Box>
     );
 }

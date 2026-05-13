@@ -2,15 +2,23 @@ import { Prisma } from "@prisma/client";
 
 export type TimeOfDay = "morning" | "afternoon" | "evening";
 
+export interface ActionButton {
+    label: string;
+    url: string;
+    variant?: "contained" | "outlined" | "text";
+}
+
 export interface ProgramEvent {
     id: string;
     startTime: string;
+    endTime: string | null;
     title: string;
     description: string;
     location: string;
     imageUrl: string | null;
     tags: string[];
     storyContent: Prisma.JsonValue;
+    actionButtons: ActionButton[];
 }
 
 export interface ProgramDay {

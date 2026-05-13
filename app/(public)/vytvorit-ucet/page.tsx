@@ -1,6 +1,6 @@
-import { Container, Box, Typography, Paper } from "@mui/material";
+import { Container, Box, Typography } from "@mui/material";
 import Link from "next/link";
-import { PageHeader } from "@/components/public/ui";
+import { PageHeader, Card } from "@/components/public/ui";
 import { PublicRegisterForm } from "@/components/forms/public-register-form";
 
 export const metadata = {
@@ -14,32 +14,34 @@ export default function VytvoritUcetPage() {
             <PageHeader
                 title="Vytvoření účtu"
                 subtitle="Zaregistrujte se pro sledování svých registrací"
+                icon="quill"
             />
             <Container maxWidth="sm" sx={{ pb: 8 }}>
-                <Paper
-                    elevation={2}
+                <Card
                     sx={{
-                        mt: -4,
-                        p: 4,
-                        position: "relative",
-                        zIndex: 1,
-                        backgroundColor: "background.paper",
+                        mt: 4,
                     }}
                 >
                     <PublicRegisterForm />
 
                     <Box sx={{ textAlign: "center", mt: 3 }}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                        >
                             Již máte účet?{" "}
                             <Link
                                 href="/prihlaseni"
-                                style={{ color: "inherit", textDecoration: "none" }}
+                                style={{
+                                    color: "inherit",
+                                    textDecoration: "none",
+                                }}
                             >
                                 Přihlaste se
                             </Link>
                         </Typography>
                     </Box>
-                </Paper>
+                </Card>
             </Container>
         </>
     );

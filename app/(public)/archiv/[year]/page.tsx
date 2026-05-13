@@ -51,7 +51,7 @@ export default async function ArchiveYearPage({
 
     return (
         <>
-            <PageHeader title={year.title} subtitle={year.subtitle || undefined} backgroundImage={year.headerPhoto || undefined} />
+            <PageHeader title={year.title} subtitle={year.subtitle || undefined} icon="open-treasure-chest" />
 
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <LinkButton
@@ -149,7 +149,7 @@ export default async function ArchiveYearPage({
                                     {year.news.map((item) => (
                                         <ListItem key={item.id} disablePadding>
                                             <ListItemLinkButton
-                                                href={`/novinky/${item.slug}`}
+                                                href={`/novinky#${item.slug}`}
                                             >
                                                 <ListItemText
                                                     primary={item.title}

@@ -1,46 +1,52 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
-import { DayTabs } from "./DayTabs";
 import { TagFilter } from "./TagFilter";
-import { TimeSection } from "./TimeSection";
 import { EventCard } from "./EventCard";
 import { EventDetailModal } from "./EventDetailModal";
-import {
-    ProgramScheduleData,
-    ProgramEvent,
-    TimeOfDay,
-    getTimeOfDay,
-} from "./program.types";
+import { ProgramScheduleData, ProgramEvent } from "./program.types";
 
 interface ProgramScheduleProps {
     data: ProgramScheduleData;
     allTags: string[];
 }
 
-interface GroupedEvents {
-    morning: ProgramEvent[];
-    afternoon: ProgramEvent[];
-    evening: ProgramEvent[];
+interface TimeGroup {
+    startTime: string;
+    events: ProgramEvent[];
+}
+
+function groupByStartTime(events: ProgramEvent[]): TimeGroup[] {
+    const sorted = [...events].sort((a, b) => {
+        if (a.startTime !== b.startTime)
+            return a.startTime.localeCompare(b.startTime);
+        return 0;
+    });
+
+    const groups: TimeGroup[] = [];
+    for (const event of sorted) {
+        const last = groups[groups.length - 1];
+        if (last && last.startTime === event.startTime) {
+            last.events.push(event);
+        } else {
+            groups.push({ startTime: event.startTime, events: [event] });
+        }
+    }
+    return groups;
 }
 
 export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
-    const router = useRouter();
-    const pathname = usePathname();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
-    const selectedDayId = (tabParam && data.days.some((d) => d.id === tabParam))
-        ? tabParam
-        : data.days[0]?.id || "";
+    const selectedDayId =
+        tabParam && data.days.some((d) => d.id === tabParam)
+            ? tabParam
+            : data.days[0]?.id || "";
 
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
-
-    const handleDayChange = (dayId: string) => {
-        router.replace(`${pathname}?tab=${dayId}`, { scroll: false });
-    };
     const [detailEvent, setDetailEvent] = useState<ProgramEvent | null>(null);
 
     const selectedDay = data.days.find((day) => day.id === selectedDayId);
@@ -53,24 +59,9 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
         );
     }, [selectedDay, selectedTag]);
 
-    const groupedEvents = useMemo((): GroupedEvents => {
-        const groups: GroupedEvents = {
-            morning: [],
-            afternoon: [],
-            evening: [],
-        };
-
-        filteredEvents.forEach((event) => {
-            const timeOfDay = getTimeOfDay(event.startTime);
-            groups[timeOfDay].push(event);
-        });
-
-        return groups;
-    }, [filteredEvents]);
-
-    const timeGroups: TimeOfDay[] = ["morning", "afternoon", "evening"];
-    const nonEmptyGroups = timeGroups.filter(
-        (group) => groupedEvents[group].length > 0
+    const timeGroups = useMemo(
+        () => groupByStartTime(filteredEvents),
+        [filteredEvents]
     );
 
     if (data.days.length === 0) {
@@ -85,14 +76,6 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
 
     return (
         <Box>
-            {/* Day Tabs */}
-            <DayTabs
-                days={data.days}
-                selectedDayId={selectedDayId}
-                onDayChange={handleDayChange}
-            />
-
-            {/* Tag Filter */}
             {allTags.length > 0 && (
                 <TagFilter
                     tags={allTags}
@@ -101,7 +84,6 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
                 />
             )}
 
-            {/* Events */}
             {filteredEvents.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 6 }}>
                     <Typography color="text.secondary">
@@ -111,22 +93,57 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
                     </Typography>
                 </Box>
             ) : (
-                <Box>
-                    {nonEmptyGroups.map((timeOfDay, index) => (
-                        <Box key={timeOfDay}>
-                            <TimeSection
-                                timeOfDay={timeOfDay}
-                                isFirst={index === 0}
-                            />
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0,
+                    }}
+                >
+                    {timeGroups.map((group) => (
+                        <Box
+                            key={group.startTime}
+                            sx={{
+                                display: "flex",
+                                flexDirection: { xs: "column", sm: "row" },
+                                gap: { xs: 0, sm: 0 },
+                            }}
+                        >
+                            {/* Time label */}
                             <Box
                                 sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                    ml: { xs: 1, sm: "10px" },
+                                    width: { xs: "auto", sm: 80 },
+                                    flexShrink: 0,
+                                    pt: { xs: 2, sm: 3 },
+                                    pb: { xs: 0.5, sm: 0 },
+                                    pl: { xs: 1, sm: 0 },
                                 }}
                             >
-                                {groupedEvents[timeOfDay].map((event) => (
+                                <Typography
+                                    sx={{
+                                        color: "primary.main",
+                                        fontWeight: 700,
+                                        fontFamily: "monospace",
+                                        fontSize: "1.15rem",
+                                    }}
+                                >
+                                    {group.startTime}
+                                </Typography>
+                            </Box>
+
+                            {/* Events column */}
+                            <Box
+                                sx={{
+                                    flex: 1,
+                                    borderLeft: (theme) => ({
+                                        xs: "none",
+                                        sm: `1px solid ${theme.palette.primary.main}`,
+                                    }),
+                                    display: "flex",
+                                    flexDirection: "column",
+                                }}
+                            >
+                                {group.events.map((event) => (
                                     <EventCard
                                         key={event.id}
                                         event={event}
@@ -141,7 +158,6 @@ export function ProgramSchedule({ data, allTags }: ProgramScheduleProps) {
                 </Box>
             )}
 
-            {/* Detail Modal */}
             <EventDetailModal
                 event={detailEvent}
                 open={detailEvent !== null}

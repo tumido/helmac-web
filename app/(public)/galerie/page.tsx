@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { AlbumGrid } from "@/components/public/features/gallery/AlbumGrid";
-import { getAllPublishedAlbums, getActiveYear } from "@/lib/services";
+import { getAllPublishedAlbums } from "@/lib/services";
 
 export const metadata = {
     title: "Galerie | Helmáč",
@@ -9,19 +9,16 @@ export const metadata = {
 };
 
 export default async function GaleriePage() {
-    const [albums, activeYear] = await Promise.all([
-        getAllPublishedAlbums(),
-        getActiveYear(),
-    ]);
+    const albums = await getAllPublishedAlbums();
 
     return (
         <>
             <PageHeader
                 title="Galerie"
                 subtitle="Nahlédněte do světa Helmáče skrze naše fotografie"
-                backgroundImage={activeYear?.headerPhoto || undefined}
+                icon="wood-frame"
             />
-            <Container maxWidth="lg" sx={{ pb: 8 }}>
+            <Container maxWidth="lg" sx={{ pt: 4, pb: 8 }}>
                 <AlbumGrid albums={albums} />
             </Container>
         </>

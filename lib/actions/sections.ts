@@ -38,6 +38,7 @@ export async function createSection(
     const rawData = {
         title: formData.get("title"),
         subtitle: formData.get("subtitle") || undefined,
+        description: formData.get("description") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
         icon: formData.get("icon") || undefined,
@@ -73,6 +74,7 @@ export async function createSection(
                 sectionTypeId,
                 title: validated.data.title,
                 subtitle: validated.data.subtitle ?? null,
+                description: validated.data.description ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc ?? false,
                 icon: validated.data.icon ?? null,
@@ -104,6 +106,7 @@ export async function updateSection(
     const rawData = {
         title: formData.get("title"),
         subtitle: formData.get("subtitle") || undefined,
+        description: formData.get("description") || undefined,
         content: formData.get("content"),
         showToc: formData.get("showToc"),
         icon: formData.get("icon") || undefined,
@@ -138,6 +141,7 @@ export async function updateSection(
             data: {
                 title: validated.data.title,
                 subtitle: validated.data.subtitle ?? null,
+                description: validated.data.description ?? null,
                 content: validated.data.content,
                 showToc: validated.data.showToc,
                 icon: validated.data.icon ?? null,
@@ -315,6 +319,10 @@ export async function createSectionType(
         pageSubtitle: formData.get("pageSubtitle") || undefined,
         metaTitle: formData.get("metaTitle") || undefined,
         metaDescription: formData.get("metaDescription") || undefined,
+        featuredOnIndex:
+            formData.get("featuredOnIndex") === "true",
+        description:
+            formData.get("description") || undefined,
     };
 
     const validated = createSectionTypeSchema.safeParse(rawData);
@@ -343,21 +351,36 @@ export async function createSectionType(
             _max: { sortOrder: true },
         });
 
-        await db.sectionType.create({
-            data: {
-                yearId,
-                label: validated.data.label,
-                slug: validated.data.slug,
-                icon: validated.data.icon ?? null,
-                pageTitle: validated.data.pageTitle ?? null,
-                pageSubtitle: validated.data.pageSubtitle ?? null,
-                metaTitle: validated.data.metaTitle ?? null,
-                metaDescription: validated.data.metaDescription ?? null,
-                sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
-            },
-        });
+        const data = {
+            yearId,
+            label: validated.data.label,
+            slug: validated.data.slug,
+            icon: validated.data.icon ?? null,
+            pageTitle: validated.data.pageTitle ?? null,
+            pageSubtitle: validated.data.pageSubtitle ?? null,
+            metaTitle: validated.data.metaTitle ?? null,
+            metaDescription: validated.data.metaDescription ?? null,
+            featuredOnIndex: validated.data.featuredOnIndex ?? false,
+            description: validated.data.description ?? null,
+            sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+        };
+
+        if (data.featuredOnIndex) {
+            await db.$transaction([
+                db.sectionType.updateMany({
+                    where: { yearId, featuredOnIndex: true },
+                    data: { featuredOnIndex: false },
+                }),
+                db.sectionType.create({ data }),
+            ]);
+        } else {
+            await db.sectionType.create({ data });
+        }
 
         revalidatePath(`/admin/rocniky/${yearId}/sekce`);
+        if (data.featuredOnIndex) {
+            revalidatePath("/");
+        }
         return { success: true };
     } catch (error) {
         console.error("Failed to create section type:", error);
@@ -384,6 +407,10 @@ export async function updateSectionType(
         pageSubtitle: formData.get("pageSubtitle") || undefined,
         metaTitle: formData.get("metaTitle") || undefined,
         metaDescription: formData.get("metaDescription") || undefined,
+        featuredOnIndex:
+            formData.get("featuredOnIndex") === "true",
+        description:
+            formData.get("description") || undefined,
     };
 
     const validated = updateSectionTypeSchema.safeParse(rawData);
@@ -426,21 +453,43 @@ export async function updateSectionType(
             }
         }
 
-        await db.sectionType.update({
-            where: { id: typeId },
-            data: {
-                label: validated.data.label,
-                slug: validated.data.slug,
-                icon: validated.data.icon ?? null,
-                pageTitle: validated.data.pageTitle ?? null,
-                pageSubtitle: validated.data.pageSubtitle ?? null,
-                metaTitle: validated.data.metaTitle ?? null,
-                metaDescription: validated.data.metaDescription ?? null,
-            },
-        });
+        const updateData = {
+            label: validated.data.label,
+            slug: validated.data.slug,
+            icon: validated.data.icon ?? null,
+            pageTitle: validated.data.pageTitle ?? null,
+            pageSubtitle: validated.data.pageSubtitle ?? null,
+            metaTitle: validated.data.metaTitle ?? null,
+            metaDescription: validated.data.metaDescription ?? null,
+            featuredOnIndex: validated.data.featuredOnIndex ?? false,
+            description: validated.data.description ?? null,
+        };
+
+        if (updateData.featuredOnIndex) {
+            await db.$transaction([
+                db.sectionType.updateMany({
+                    where: {
+                        yearId: sectionType.yearId,
+                        featuredOnIndex: true,
+                        id: { not: typeId },
+                    },
+                    data: { featuredOnIndex: false },
+                }),
+                db.sectionType.update({
+                    where: { id: typeId },
+                    data: updateData,
+                }),
+            ]);
+        } else {
+            await db.sectionType.update({
+                where: { id: typeId },
+                data: updateData,
+            });
+        }
 
         revalidatePath(`/admin/rocniky/${sectionType.yearId}/sekce`);
         revalidatePath(`/${sectionType.slug}`);
+        revalidatePath("/");
         if (
             validated.data.slug &&
             validated.data.slug !== sectionType.slug

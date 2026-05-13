@@ -20,6 +20,7 @@ import {
     Fade,
     Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import MuiLink from "@mui/material/Link";
 import NextLink from "next/link";
 import { DecorativeDivider, AnimatedSection } from "@/components/public/ui";
@@ -203,7 +204,7 @@ export function DynamicRegistrationForm({
                     (o) => !disabledOpts.has(o.name)
                 );
                 if (enabledOptions.length === 1) {
-                    updates[field.name] = enabledOptions[0].name;
+                    updates[field.name] = enabledOptions[0].id;
                 }
             } else if (field.type === "select" || field.type === "radio") {
                 if (!field.options || field.options.length === 0) continue;
@@ -276,32 +277,21 @@ export function DynamicRegistrationForm({
         return sections
             .filter(
                 (s) =>
-                    s.heading &&
-                    !isInputField(s.heading) &&
-                    s.fields.length > 0
+                    s.heading && !isInputField(s.heading) && s.fields.length > 0
             )
             .map((s) => ({
                 id: `section-${s.heading!.id}`,
-                label: (
-                    s.heading as { type: "heading"; text: string }
-                ).text,
+                label: (s.heading as { type: "heading"; text: string }).text,
             }));
     }, [sections]);
 
     const allRequiredFilled = useMemo(() => {
         for (const field of allInputFields) {
-            if (!field.required || !visibleFields.has(field.id))
-                continue;
+            if (!field.required || !visibleFields.has(field.id)) continue;
             const val = values[field.name];
-            if (
-                val === undefined ||
-                val === "" ||
-                val === false
-            )
-                return false;
+            if (val === undefined || val === "" || val === false) return false;
         }
-        if (!isLoggedIn && !previewMode && !gdprConsent)
-            return false;
+        if (!isLoggedIn && !previewMode && !gdprConsent) return false;
         return true;
     }, [
         allInputFields,
@@ -355,11 +345,7 @@ export function DynamicRegistrationForm({
                         id="registration-form"
                         component="form"
                         action={previewMode ? undefined : formAction}
-                        onSubmit={
-                            previewMode
-                                ? handlePreviewSubmit
-                                : undefined
-                        }
+                        onSubmit={previewMode ? handlePreviewSubmit : undefined}
                     >
                         {/* Include checkbox values as hidden inputs for FormData */}
                         {allInputFields.map((field) => {
@@ -370,8 +356,7 @@ export function DynamicRegistrationForm({
                                         type="hidden"
                                         name={field.name}
                                         value={String(
-                                            values[field.name] ??
-                                                false
+                                            values[field.name] ?? false
                                         )}
                                     />
                                 );
@@ -379,231 +364,223 @@ export function DynamicRegistrationForm({
                             return null;
                         })}
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 3,
-                    }}
-                >
-                    {sections.map((section, sectionIdx) => (
-                        <AnimatedSection
-                            key={
-                                section.heading?.id ??
-                                `section-${sectionIdx}`
-                            }
-                            delay={sectionIdx * 100}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 3,
+                            }}
                         >
-                            {section.heading && (
-                                <DynamicFormField
-                                    field={section.heading}
-                                    value=""
-                                    onChange={handleChange}
-                                    pricingDefinitions={
-                                        formData.pricingDefinitions
+                            {sections.map((section, sectionIdx) => (
+                                <AnimatedSection
+                                    key={
+                                        section.heading?.id ??
+                                        `section-${sectionIdx}`
                                     }
-                                    priceTiers={formData.priceTiers}
-                                />
-                            )}
-                            {section.fields.length > 0 && (
-                                <Paper
-                                    variant="outlined"
-                                    sx={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: 2.5,
-                                        p: { xs: 2, md: 3 },
-                                        borderRadius: 2,
-                                    }}
+                                    delay={sectionIdx * 100}
                                 >
-                                    {section.fields.map(
-                                        (field) => {
-                                            const value =
-                                                isInputField(field)
-                                                    ? (values[
-                                                          field.name
-                                                      ] ?? "")
-                                                    : "";
-                                            const disabledOpts =
-                                                isInputField(field)
-                                                    ? getDisabledOptionsForField(
-                                                          field.id,
-                                                          field.name,
-                                                          formData.capacityLimits,
-                                                          optionCounts
-                                                      )
-                                                    : undefined;
-
-                                            return (
-                                                <Fade
-                                                    key={field.id}
-                                                    in
-                                                    timeout={300}
-                                                >
-                                                    <Box>
-                                                        <DynamicFormField
-                                                            field={
-                                                                field
-                                                            }
-                                                            value={
-                                                                value
-                                                            }
-                                                            error={
-                                                                isInputField(
-                                                                    field
-                                                                )
-                                                                    ? getFieldError(
-                                                                          field.name
-                                                                      )
-                                                                    : undefined
-                                                            }
-                                                            onChange={
-                                                                handleChange
-                                                            }
-                                                            pricingDefinitions={
-                                                                formData.pricingDefinitions
-                                                            }
-                                                            priceTiers={
-                                                                formData.priceTiers
-                                                            }
-                                                            disabledOptions={
-                                                                disabledOpts
-                                                            }
-                                                        />
-                                                    </Box>
-                                                </Fade>
-                                            );
-                                        }
+                                    {section.heading && (
+                                        <DynamicFormField
+                                            field={section.heading}
+                                            value=""
+                                            onChange={handleChange}
+                                            pricingDefinitions={
+                                                formData.pricingDefinitions
+                                            }
+                                            priceTiers={formData.priceTiers}
+                                        />
                                     )}
-                                </Paper>
-                            )}
-                        </AnimatedSection>
-                    ))}
-                </Box>
+                                    {section.fields.length > 0 && (
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 2.5,
+                                                p: { xs: 2, md: 3 },
+                                                borderRadius: 2,
+                                            }}
+                                        >
+                                            {section.fields.map((field) => {
+                                                const value = isInputField(
+                                                    field
+                                                )
+                                                    ? (values[field.name] ?? "")
+                                                    : "";
+                                                const disabledOpts =
+                                                    isInputField(field)
+                                                        ? getDisabledOptionsForField(
+                                                              field.id,
+                                                              field.name,
+                                                              formData.capacityLimits,
+                                                              optionCounts
+                                                          )
+                                                        : undefined;
 
-                {showAPSection && (
-                    <AdditionalPeopleSection
-                        formData={formData}
-                        apFields={apFields}
-                        mainValues={values}
-                        optionCounts={optionCounts}
-                        people={additionalPeople}
-                        onPeopleChange={setAdditionalPeople}
-                        errors={state?.apErrors}
-                    />
-                )}
+                                                return (
+                                                    <Fade
+                                                        key={field.id}
+                                                        in
+                                                        timeout={300}
+                                                    >
+                                                        <Box>
+                                                            <DynamicFormField
+                                                                field={field}
+                                                                value={value}
+                                                                error={
+                                                                    isInputField(
+                                                                        field
+                                                                    )
+                                                                        ? getFieldError(
+                                                                              field.name
+                                                                          )
+                                                                        : undefined
+                                                                }
+                                                                onChange={
+                                                                    handleChange
+                                                                }
+                                                                pricingDefinitions={
+                                                                    formData.pricingDefinitions
+                                                                }
+                                                                priceTiers={
+                                                                    formData.priceTiers
+                                                                }
+                                                                disabledOptions={
+                                                                    disabledOpts
+                                                                }
+                                                            />
+                                                        </Box>
+                                                    </Fade>
+                                                );
+                                            })}
+                                        </Paper>
+                                    )}
+                                </AnimatedSection>
+                            ))}
+                        </Box>
 
-                {!isLoggedIn && !previewMode && (
-                    <Box sx={{ mt: 3 }}>
-                        {gdprConsent && (
-                            <input
-                                type="hidden"
-                                name="gdprConsent"
-                                value="on"
+                        {showAPSection && (
+                            <AdditionalPeopleSection
+                                formData={formData}
+                                apFields={apFields}
+                                mainValues={values}
+                                optionCounts={optionCounts}
+                                people={additionalPeople}
+                                onPeopleChange={setAdditionalPeople}
+                                errors={state?.apErrors}
                             />
                         )}
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={gdprConsent}
-                                    onChange={(e) =>
-                                        setGdprConsent(
-                                            e.target.checked
-                                        )
+
+                        {!isLoggedIn && !previewMode && (
+                            <Box sx={{ mt: 3 }}>
+                                {gdprConsent && (
+                                    <input
+                                        type="hidden"
+                                        name="gdprConsent"
+                                        value="on"
+                                    />
+                                )}
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={gdprConsent}
+                                            onChange={(e) =>
+                                                setGdprConsent(e.target.checked)
+                                            }
+                                        />
+                                    }
+                                    label={
+                                        <>
+                                            Souhlasím se{" "}
+                                            <MuiLink
+                                                component={NextLink}
+                                                href="/gdpr"
+                                                target="_blank"
+                                            >
+                                                zpracováním osobních údajů
+                                            </MuiLink>
+                                        </>
                                     }
                                 />
-                            }
-                            label={
-                                <>
-                                    Souhlasím se{" "}
-                                    <MuiLink
-                                        component={NextLink}
-                                        href="/gdpr"
-                                        target="_blank"
-                                    >
-                                        zpracováním osobních údajů
-                                    </MuiLink>
-                                </>
-                            }
-                        />
-                        {state?.errors?.gdprConsent && (
-                            <FormHelperText error>
-                                {state.errors.gdprConsent[0]}
-                            </FormHelperText>
+                                {state?.errors?.gdprConsent && (
+                                    <FormHelperText error>
+                                        {state.errors.gdprConsent[0]}
+                                    </FormHelperText>
+                                )}
+                            </Box>
                         )}
-                    </Box>
-                )}
 
-                <DecorativeDivider variant="ornate" my={3} />
+                        <DecorativeDivider variant="ornate" sx={{ my: 3 }} />
 
-                <Box
-                    sx={{
-                        textAlign: "center",
-                        pb: { xs: 10, md: 0 },
-                    }}
-                >
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                    >
-                        Po odeslání obdržíte potvrzení na email.
-                    </Typography>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        color="primary"
-                        size="large"
-                        disabled={
-                            !previewMode &&
-                            (isPending || !allRequiredFilled)
-                        }
-                        sx={{
-                            px: 6,
-                            py: 1.5,
-                            fontSize: "1.1rem",
-                            boxShadow:
-                                "0 0 20px rgba(201, 162, 39, 0.3)",
-                            "&:hover": {
-                                boxShadow:
-                                    "0 0 30px rgba(201, 162, 39, 0.5)",
-                            },
-                        }}
-                    >
-                        {!previewMode && isPending
-                            ? "Odesílám..."
-                            : previewMode
-                              ? "Odeslat registraci (náhled)"
-                              : "Odeslat registraci"}
-                    </Button>
-                    {previewMode && previewYearId && (
-                        <Box sx={{ mt: 2 }}>
+                        <Box
+                            sx={{
+                                textAlign: "center",
+                                pb: { xs: 10, md: 0 },
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mb: 2 }}
+                            >
+                                Po odeslání obdržíte potvrzení na email.
+                            </Typography>
                             <Button
-                                type="button"
-                                variant="outlined"
+                                type="submit"
+                                variant="contained"
                                 color="primary"
                                 size="large"
-                                onClick={handleSendPreviewEmail}
                                 disabled={
-                                    previewSending || !allRequiredFilled
+                                    !previewMode &&
+                                    (isPending || !allRequiredFilled)
                                 }
-                                sx={{ px: 4, py: 1.25 }}
+                                sx={{
+                                    px: 6,
+                                    py: 1.5,
+                                    fontSize: "1.1rem",
+                                    boxShadow: (theme) =>
+                                        `0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                    "&:hover": {
+                                        boxShadow: (theme) =>
+                                            `0 0 30px ${alpha(theme.palette.primary.main, 0.5)}`,
+                                    },
+                                }}
                             >
-                                {previewSending
+                                {!previewMode && isPending
                                     ? "Odesílám..."
-                                    : "Odeslat potvrzovací email (test)"}
+                                    : previewMode
+                                      ? "Odeslat registraci (náhled)"
+                                      : "Odeslat registraci"}
                             </Button>
+                            {previewMode && previewYearId && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Button
+                                        type="button"
+                                        variant="outlined"
+                                        color="primary"
+                                        size="large"
+                                        onClick={handleSendPreviewEmail}
+                                        disabled={
+                                            previewSending ||
+                                            !allRequiredFilled
+                                        }
+                                        sx={{ px: 4, py: 1.25 }}
+                                    >
+                                        {previewSending
+                                            ? "Odesílám..."
+                                            : "Odeslat potvrzovací email (test)"}
+                                    </Button>
+                                </Box>
+                            )}
+                            {state?.message && !state.success && (
+                                <Alert severity="error" sx={{ mt: 2 }}>
+                                    {state.message}
+                                </Alert>
+                            )}
                         </Box>
-                    )}
-                    {state?.message && !state.success && (
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                            {state.message}
-                        </Alert>
-                    )}
-                </Box>
-            </Box>
+                    </Box>
 
-            {previewMode && (
+                    {previewMode && (
                         <Snackbar
                             open={previewSnackbar.open}
                             autoHideDuration={4000}
@@ -651,18 +628,17 @@ export function DynamicRegistrationForm({
                         size="large"
                         fullWidth
                         disabled={
-                            !previewMode &&
-                            (isPending || !allRequiredFilled)
+                            !previewMode && (isPending || !allRequiredFilled)
                         }
                         sx={{
                             mt: 2,
                             py: 1.5,
                             fontSize: "1rem",
-                            boxShadow:
-                                "0 0 20px rgba(201, 162, 39, 0.3)",
+                            boxShadow: (theme) =>
+                                `0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
                             "&:hover": {
-                                boxShadow:
-                                    "0 0 30px rgba(201, 162, 39, 0.5)",
+                                boxShadow: (theme) =>
+                                    `0 0 30px ${alpha(theme.palette.primary.main, 0.5)}`,
                             },
                         }}
                     >
@@ -673,9 +649,7 @@ export function DynamicRegistrationForm({
                 </Box>
             </Box>
 
-            {hasPricing && (
-                <StickyPriceSummary {...priceSummaryProps} />
-            )}
+            {hasPricing && <StickyPriceSummary {...priceSummaryProps} />}
         </Box>
     );
 }

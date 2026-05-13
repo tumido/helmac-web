@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 export interface NavSubItem {
     id: string;
     label: string;
+    icon?: string | null;
 }
 
 export interface DynamicNavSection {
@@ -58,6 +59,7 @@ export const getNavigationData = cache(
                             select: {
                                 id: true,
                                 title: true,
+                                icon: true,
                             },
                         },
                     },
@@ -78,6 +80,7 @@ export const getNavigationData = cache(
                 subItems: st.sections.map((s) => ({
                     id: s.id,
                     label: s.title,
+                    icon: s.icon,
                 })),
             })),
         };

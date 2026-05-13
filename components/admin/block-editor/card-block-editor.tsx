@@ -150,6 +150,7 @@ export function CardBlockEditor({
                         "formatting",
                         "h3",
                         "lists",
+                        "definitionList",
                         "inserts",
                         "undo",
                     ]}

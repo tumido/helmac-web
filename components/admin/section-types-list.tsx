@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useId } from "react";
+import { useState, useCallback, useRef, useId, useEffect } from "react";
 import {
     Typography,
     Box,
@@ -105,6 +105,8 @@ interface SectionTypeData {
     pageSubtitle: string | null;
     metaTitle: string | null;
     metaDescription: string | null;
+    featuredOnIndex: boolean;
+    description: string | null;
     sections: SectionData[];
 }
 
@@ -580,13 +582,14 @@ export function SectionTypesList({
         useState(false);
 
     const originTypeRef = useRef<string | null>(null);
+    const prevLengthRef = useRef(sectionTypes.length);
 
-    if (
-        sectionTypes !== localTypes &&
-        sectionTypes.length !== localTypes.length
-    ) {
-        setLocalTypes(sectionTypes);
-    }
+    useEffect(() => {
+        if (sectionTypes.length !== prevLengthRef.current) {
+            prevLengthRef.current = sectionTypes.length;
+            setLocalTypes(sectionTypes);
+        }
+    }, [sectionTypes]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -949,12 +952,14 @@ export function SectionTypesList({
                 </DragOverlay>
             </DndContext>
 
-            <SectionTypeForm
-                mode="create"
-                yearId={yearId}
-                open={createOpen}
-                onClose={() => setCreateOpen(false)}
-            />
+            {createOpen && (
+                <SectionTypeForm
+                    mode="create"
+                    yearId={yearId}
+                    open={createOpen}
+                    onClose={() => setCreateOpen(false)}
+                />
+            )}
 
             {editType && (
                 <SectionTypeForm
@@ -971,6 +976,10 @@ export function SectionTypesList({
                         metaTitle: editType.metaTitle,
                         metaDescription:
                             editType.metaDescription,
+                        featuredOnIndex:
+                            editType.featuredOnIndex,
+                        description:
+                            editType.description,
                     }}
                     open={!!editType}
                     onClose={() => setEditType(null)}

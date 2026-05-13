@@ -1,4 +1,4 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { getYearById } from "@/lib/services/years";
 import { ProgramDayForm } from "@/components/forms/program-day-form";
@@ -8,7 +8,9 @@ interface NewDayPageProps {
     params: Promise<{ id: string }>;
 }
 
-export default async function NewDayPage({ params }: NewDayPageProps) {
+export default async function NewDayPage({
+    params,
+}: NewDayPageProps) {
     const { id } = await params;
     const year = await getYearById(id);
 
@@ -20,20 +22,27 @@ export default async function NewDayPage({ params }: NewDayPageProps) {
         <Container maxWidth="sm">
             <PageHeader
                 breadcrumbs={[
-                    { label: "Rocniky", href: "/admin/rocniky" },
-                    { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
-                    { label: "Program", href: `/admin/rocniky/${year.id}/program` },
-                    { label: "Novy den" },
+                    {
+                        label: "Ročníky",
+                        href: "/admin/rocniky",
+                    },
+                    {
+                        label: `${year.year}`,
+                        href: `/admin/rocniky/${year.id}`,
+                    },
+                    {
+                        label: "Program",
+                        href: `/admin/rocniky/${year.id}/program`,
+                    },
+                    { label: "Nový den" },
                 ]}
-                title="Novy den programu"
+                title="Nový den programu"
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.secondary">
-                    {year.year} - {year.title}
-                </Typography>
-            </Box>
 
-            <ProgramDayForm mode="create" yearId={year.id} />
+            <ProgramDayForm
+                mode="create"
+                yearId={year.id}
+            />
         </Container>
     );
 }

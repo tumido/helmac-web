@@ -5,14 +5,12 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth, requireEditor } from "@/lib/auth";
 import { createNewsSchema, updateNewsSchema } from "@/lib/validators/news";
+import { generateSlug } from "@/lib/utils/slugify";
 
 export type NewsActionState = {
     error?: {
-        slug?: string[];
         title?: string[];
-        excerpt?: string[];
         content?: string[];
-        coverImage?: string[];
         _form?: string[];
     };
     success?: boolean;
@@ -35,13 +33,18 @@ export async function createNews(
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
+    const actionButtonsRaw = formData.get("actionButtons") as string | null;
+    let actionButtons;
+    try {
+        actionButtons = actionButtonsRaw ? JSON.parse(actionButtonsRaw) : [];
+    } catch {
+        actionButtons = [];
+    }
+
     const rawData = {
-        slug: formData.get("slug"),
         title: formData.get("title"),
-        excerpt: formData.get("excerpt") || undefined,
         content: formData.get("content"),
-        coverImage: formData.get("coverImage") || undefined,
-        showToc: formData.get("showToc"),
+        actionButtons,
     };
 
     const validated = createNewsSchema.safeParse(rawData);
@@ -54,30 +57,26 @@ export async function createNews(
     const validatedRedirectTo = rawRedirectTo?.startsWith("/admin/") ? rawRedirectTo : "/admin/novinky";
 
     try {
-        // Check if slug already exists for this year
+        let slug = generateSlug(validated.data.title);
+
         const existing = await db.news.findUnique({
             where: {
-                yearId_slug: {
-                    yearId,
-                    slug: validated.data.slug,
-                },
+                yearId_slug: { yearId, slug },
             },
         });
 
         if (existing) {
-            return { error: { slug: ["Novinka s tímto slugem již existuje"] } };
+            slug = `${slug}-${Date.now()}`;
         }
 
         await db.news.create({
             data: {
                 yearId,
                 authorId: session.user.id,
-                slug: validated.data.slug,
+                slug,
                 title: validated.data.title,
-                excerpt: validated.data.excerpt,
                 content: validated.data.content,
-                coverImage: validated.data.coverImage || null,
-                showToc: validated.data.showToc ?? false,
+                actionButtons: validated.data.actionButtons ?? [],
                 isPublished: true,
                 publishedAt: new Date(),
             },
@@ -107,13 +106,18 @@ export async function updateNews(
         return { error: { _form: ["Nemáte oprávnění"] } };
     }
 
+    const actionButtonsRaw = formData.get("actionButtons") as string | null;
+    let actionButtons;
+    try {
+        actionButtons = actionButtonsRaw ? JSON.parse(actionButtonsRaw) : undefined;
+    } catch {
+        actionButtons = undefined;
+    }
+
     const rawData = {
-        slug: formData.get("slug"),
         title: formData.get("title"),
-        excerpt: formData.get("excerpt") || undefined,
         content: formData.get("content"),
-        coverImage: formData.get("coverImage") || undefined,
-        showToc: formData.get("showToc"),
+        actionButtons,
     };
 
     const validated = updateNewsSchema.safeParse(rawData);
@@ -132,31 +136,12 @@ export async function updateNews(
             return { error: { _form: ["Novinka nenalezena"] } };
         }
 
-        // Check if slug conflicts with another news
-        if (validated.data.slug && validated.data.slug !== news.slug) {
-            const existing = await db.news.findUnique({
-                where: {
-                    yearId_slug: {
-                        yearId: news.yearId,
-                        slug: validated.data.slug,
-                    },
-                },
-            });
-
-            if (existing) {
-                return { error: { slug: ["Novinka s tímto slugem již existuje"] } };
-            }
-        }
-
         await db.news.update({
             where: { id: newsId },
             data: {
-                slug: validated.data.slug,
                 title: validated.data.title,
-                excerpt: validated.data.excerpt,
                 content: validated.data.content,
-                coverImage: validated.data.coverImage || null,
-                showToc: validated.data.showToc,
+                actionButtons: validated.data.actionButtons,
                 isPublished: true,
                 publishedAt: news.publishedAt ?? new Date(),
             },

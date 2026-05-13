@@ -37,9 +37,8 @@
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:github.com)",
-      "Read(//private/tmp/game-icons/**)",
-      "Read(//tmp/game-icons/**)",
-      "Read(//tmp/**)"
+      "mcp__eslint__lint-files",
+      "Bash(npx eslint *)"
     ]
   },
   "enableAllProjectMcpServers": true,

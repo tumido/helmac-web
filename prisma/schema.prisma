@@ -147,6 +147,7 @@ model Year {
   sectionTypes       SectionType[]
   bankTransactions   BankTransaction[]
   conditionalEmails  ConditionalEmail[]
+  homepageSteps      HomepageStep[]
 
   @@map("years")
 }
@@ -211,12 +212,14 @@ model ProgramEvent {
   day          ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
 
   startTime    String     // "13:00" format
+  endTime      String?    // "14:30" format, optional
   title        String
   description  String     @db.Text
   location     String
   imageUrl     String?
   tags         String[]   // Array of tag strings
   storyContent Json?      // Rich content for detail modal
+  actionButtons Json      @default("[]")
 
   isPublished  Boolean    @default(false)
   sortOrder    Int        @default(0)
@@ -245,6 +248,8 @@ model SectionType {
     pageSubtitle    String?
     metaTitle       String?
     metaDescription String?
+    featuredOnIndex Boolean  @default(false)
+    description     String?
 
     sections        Section[]
 
@@ -266,6 +271,7 @@ model Section {
 
     title         String
     subtitle      String?
+    description   String?
     icon          String?
     content       Json        @default("[]")
     showToc       Boolean     @default(false)
@@ -275,6 +281,26 @@ model Section {
     updatedAt     DateTime    @updatedAt
 
     @@map("sections")
+}
+
+// ============================================
+// HOMEPAGE STEPS - Configurable steps on homepage
+// ============================================
+
+model HomepageStep {
+    id          String   @id @default(cuid())
+    yearId      String
+    year        Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+    title       String
+    description String
+    icon        String
+    sortOrder   Int      @default(0)
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("homepage_steps")
 }
 
 // ============================================
@@ -322,6 +348,8 @@ model News {
   content     String      @db.Text
   coverImage  String?
   showToc     Boolean     @default(false)
+
+  actionButtons Json      @default("[]")
 
   isPublished Boolean     @default(false)
   publishedAt DateTime?

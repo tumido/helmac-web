@@ -101,7 +101,6 @@ export const getYearByNumber = cache(async (yearNumber: number) => {
                     id: true,
                     slug: true,
                     title: true,
-                    excerpt: true,
                     publishedAt: true,
                 },
             },

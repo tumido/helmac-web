@@ -45,10 +45,10 @@ const ROW_HEIGHT = 30;
 function blocksToLayout(blocks: ContentBlock[]): Layout {
     return blocks.map((b) => ({
         i: b.id,
-        x: b.layout.x,
-        y: b.layout.y,
-        w: b.layout.w,
-        h: b.layout.h,
+        x: b.layout?.x ?? 0,
+        y: b.layout?.y ?? 0,
+        w: b.layout?.w ?? 12,
+        h: b.layout?.h ?? 2,
         minW: 1,
         minH: 1,
     }));
@@ -128,10 +128,10 @@ export function BlockEditor({ value: rawValue, onChange, yearId }: BlockEditorPr
                     );
                     if (!item) return block;
                     if (
-                        block.layout.x === item.x &&
-                        block.layout.y === item.y &&
-                        block.layout.w === item.w &&
-                        block.layout.h === item.h
+                        block.layout?.x === item.x &&
+                        block.layout?.y === item.y &&
+                        block.layout?.w === item.w &&
+                        block.layout?.h === item.h
                     ) {
                         return block;
                     }
@@ -280,14 +280,14 @@ export function BlockEditor({ value: rawValue, onChange, yearId }: BlockEditorPr
                                                 ml: 0.5,
                                             }}
                                         >
-                                            {meta.icon}
+                                            {meta?.icon}
                                         </Box>
                                         <Box sx={{ flex: 1 }} />
                                         <Typography
                                             variant="caption"
                                             color="text.disabled"
                                         >
-                                            {block.layout.w}/12
+                                            {block.layout?.w ?? 12}/12
                                         </Typography>
                                         {block.type === "card" && (
                                             <IconButton

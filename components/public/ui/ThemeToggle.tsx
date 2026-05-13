@@ -1,7 +1,8 @@
 "use client";
 
 import { IconButton, Tooltip } from "@mui/material";
-import { LightMode, DarkMode } from "@mui/icons-material";
+import { alpha } from "@mui/material/styles";
+import { GameIcon } from "@/lib/icons";
 import { useThemeMode } from "@/contexts/ThemeContext";
 
 interface ThemeToggleProps {
@@ -20,13 +21,14 @@ export function ThemeToggle({ size = "medium" }: ThemeToggleProps) {
                     color: "primary.main",
                     transition: "all 0.3s ease-in-out",
                     "&:hover": {
-                        backgroundColor: "rgba(201, 162, 39, 0.15)",
+                        backgroundColor: (theme) =>
+                            alpha(theme.palette.primary.main, 0.15),
                         transform: "rotate(180deg)",
                     },
                 }}
                 aria-label={isDark ? "Přepnout na světlý režim" : "Přepnout na tmavý režim"}
             >
-                {isDark ? <LightMode /> : <DarkMode />}
+                {isDark ? <GameIcon name="sun" /> : <GameIcon name="moon" />}
             </IconButton>
         </Tooltip>
     );

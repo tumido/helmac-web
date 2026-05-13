@@ -84,7 +84,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
                 sx={{
                     width: 80,
                     minWidth: 80,
-                    alignSelf: "stretch",
+                    height: 80,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

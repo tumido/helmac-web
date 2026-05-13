@@ -25,7 +25,7 @@ export default async function NewNewsPage({ searchParams }: NewNewsPageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Novinky", href: "/admin/novinky" },

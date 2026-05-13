@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/public/ui";
-import { SectionContent } from "@/components/public/features/sections";
+import { SectionContent, SectionTabsNav } from "@/components/public/features/sections";
 import { getSectionTypeBySlugForActiveYear } from "@/lib/services/sections";
 import type { Metadata } from "next";
 import type { SectionItem } from "@/components/public/features/sections";
@@ -39,7 +39,8 @@ export default async function SectionPage({
         notFound();
     }
 
-    const { sectionType, year } = result;
+    const { sectionType } = result;
+    const sections = sectionType.sections as unknown as SectionItem[];
 
     return (
         <>
@@ -51,17 +52,20 @@ export default async function SectionPage({
                 subtitle={
                     sectionType.pageSubtitle || undefined
                 }
-                backgroundImage={
-                    year?.headerPhoto || undefined
-                }
-            />
-            <Container maxWidth="lg" sx={{ pb: 8 }}>
+                icon={sectionType.icon || undefined}
+            >
+                {sections.length > 1 && (
+                    <Suspense>
+                        <SectionTabsNav sections={sections} />
+                    </Suspense>
+                )}
+            </PageHeader>
+            <Container
+                maxWidth="lg"
+                sx={{ position: "relative", pb: 8 }}
+            >
                 <Suspense>
-                    <SectionContent
-                        sections={
-                            sectionType.sections as unknown as SectionItem[]
-                        }
-                    />
+                    <SectionContent sections={sections} />
                 </Suspense>
             </Container>
         </>

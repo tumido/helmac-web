@@ -9,8 +9,17 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import Youtube from "@tiptap/extension-youtube";
-import { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
-import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
+import {
+    Table,
+    TableRow,
+    TableCell,
+    TableHeader,
+} from "@tiptap/extension-table";
+import {
+    Details,
+    DetailsSummary,
+    DetailsContent,
+} from "@tiptap/extension-details";
 import {
     Box,
     IconButton,
@@ -56,12 +65,23 @@ import {
     Subject,
 } from "@mui/icons-material";
 import { Fragment } from "@tiptap/pm/model";
-import { getHTMLFromFragment, Node as TiptapNode, mergeAttributes } from "@tiptap/core";
+import {
+    getHTMLFromFragment,
+    Node as TiptapNode,
+    mergeAttributes,
+} from "@tiptap/core";
 import Paragraph from "@tiptap/extension-paragraph";
 import Heading from "@tiptap/extension-heading";
 import { defaultMarkdownSerializer } from "prosemirror-markdown";
 import { Markdown, type MarkdownStorage } from "tiptap-markdown";
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type MutableRefObject,
+} from "react";
 import {
     PlaceholderExtension,
     type PlaceholderOption,
@@ -73,6 +93,7 @@ export type { Editor } from "@tiptap/react";
 
 const ALL_TOOLS = [
     "formatting",
+    "basicFormatting",
     "h2",
     "h3",
     "alignment",
@@ -80,6 +101,7 @@ const ALL_TOOLS = [
     "inserts",
     "media",
     "buttons",
+    "definitionList",
     "undo",
 ] as const;
 
@@ -185,35 +207,23 @@ const DefinitionList = TiptapNode.create({
                 for (let d = $from.depth; d >= 1; d--) {
                     const node = $from.node(d);
                     const parentNode = d > 1 ? $from.node(d - 1) : null;
-                    if (
-                        parentNode?.type.name !== "definitionList"
-                    ) {
+                    if (parentNode?.type.name !== "definitionList") {
                         continue;
                     }
                     if (node.type.name === "definitionTerm") {
-                        return ed.commands.insertContentAt(
-                            $from.after(d),
-                            {
-                                type: "definitionDescription",
-                                content: [
-                                    { type: "paragraph" },
-                                ],
-                            }
-                        );
+                        return ed.commands.insertContentAt($from.after(d), {
+                            type: "definitionDescription",
+                            content: [{ type: "paragraph" }],
+                        });
                     }
                     if (node.type.name === "definitionDescription") {
                         if (node.textContent === "") {
                             return false;
                         }
-                        return ed.commands.insertContentAt(
-                            $from.after(d),
-                            {
-                                type: "definitionTerm",
-                                content: [
-                                    { type: "paragraph" },
-                                ],
-                            }
-                        );
+                        return ed.commands.insertContentAt($from.after(d), {
+                            type: "definitionTerm",
+                            content: [{ type: "paragraph" }],
+                        });
                     }
                 }
                 return false;
@@ -252,14 +262,8 @@ const DefinitionDescription = TiptapNode.create({
 
 type ButtonVariant = "contained" | "outlined" | "text";
 
-const buttonEditCallbacks = new WeakMap<
-    Editor,
-    () => void
->();
-const buttonInsertCallbacks = new WeakMap<
-    Editor,
-    () => void
->();
+const buttonEditCallbacks = new WeakMap<Editor, () => void>();
+const buttonInsertCallbacks = new WeakMap<Editor, () => void>();
 
 const ButtonGroupNode = TiptapNode.create({
     name: "buttonGroup",
@@ -272,9 +276,7 @@ const ButtonGroupNode = TiptapNode.create({
             {
                 tag: "div.button-row",
                 getAttrs: (el: HTMLElement) => ({
-                    textAlign:
-                        el.getAttribute("data-align") ||
-                        "center",
+                    textAlign: el.getAttribute("data-align") || "center",
                 }),
             },
         ];
@@ -299,27 +301,18 @@ const ButtonGroupNode = TiptapNode.create({
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     state: any,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    node: any,
+                    node: any
                 ) {
-                    const align =
-                        node.attrs.textAlign ||
-                        "center";
+                    const align = node.attrs.textAlign || "center";
                     state.write(
-                        `<div class="button-row" data-align="${align}">\n`,
+                        `<div class="button-row" data-align="${align}">\n`
                     );
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     node.forEach((child: any) => {
-                        if (
-                            child.type.name ===
-                            "buttonNode"
-                        ) {
-                            const {
-                                label,
-                                href,
-                                variant,
-                            } = child.attrs;
+                        if (child.type.name === "buttonNode") {
+                            const { label, href, variant } = child.attrs;
                             state.write(
-                                `<div data-button="${variant || "contained"}" data-align="${align}" data-href="${href || "#"}">${label || "Tlačítko"}</div>\n`,
+                                `<div data-button="${variant || "contained"}" data-align="${align}" data-href="${href || "#"}">${label || "Tlačítko"}</div>\n`
                             );
                         }
                     });
@@ -333,63 +326,41 @@ const ButtonGroupNode = TiptapNode.create({
 
     addNodeView() {
         return ({ node, editor: groupEd, getPos }) => {
-            const dom =
-                document.createElement("div");
+            const dom = document.createElement("div");
             dom.style.padding = "4px 8px";
-            dom.style.border =
-                "1px dashed #bdbdbd";
+            dom.style.border = "1px dashed #bdbdbd";
             dom.style.borderRadius = "4px";
             dom.style.margin = "4px 0";
 
-            const contentDOM =
-                document.createElement("div");
+            const contentDOM = document.createElement("div");
             contentDOM.style.display = "flex";
             contentDOM.style.flexWrap = "wrap";
             contentDOM.style.gap = "8px";
             contentDOM.style.alignItems = "center";
             contentDOM.style.flex = "1";
 
-            const align =
-                node.attrs.textAlign || "center";
+            const align = node.attrs.textAlign || "center";
             if (align === "left")
-                contentDOM.style.justifyContent =
-                    "flex-start";
+                contentDOM.style.justifyContent = "flex-start";
             else if (align === "right")
-                contentDOM.style.justifyContent =
-                    "flex-end";
-            else
-                contentDOM.style.justifyContent =
-                    "center";
+                contentDOM.style.justifyContent = "flex-end";
+            else contentDOM.style.justifyContent = "center";
 
-            const addBtn =
-                document.createElement("button");
+            const addBtn = document.createElement("button");
             addBtn.textContent = "+";
             addBtn.type = "button";
             addBtn.contentEditable = "false";
             addBtn.style.cssText =
                 "width:28px;height:28px;border:1px dashed #9e9e9e;border-radius:4px;background:transparent;color:#757575;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
-            addBtn.addEventListener(
-                "mousedown",
-                (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const pos =
-                        typeof getPos === "function"
-                            ? getPos()
-                            : null;
-                    if (
-                        pos !== null &&
-                        pos !== undefined
-                    ) {
-                        groupEd.commands.setNodeSelection(
-                            pos + 1,
-                        );
-                    }
-                    buttonInsertCallbacks
-                        .get(groupEd)
-                        ?.();
-                },
-            );
+            addBtn.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const pos = typeof getPos === "function" ? getPos() : null;
+                if (pos !== null && pos !== undefined) {
+                    groupEd.commands.setNodeSelection(pos + 1);
+                }
+                buttonInsertCallbacks.get(groupEd)?.();
+            });
 
             dom.appendChild(contentDOM);
             dom.appendChild(addBtn);
@@ -398,22 +369,11 @@ const ButtonGroupNode = TiptapNode.create({
             dom.style.gap = "8px";
 
             dom.addEventListener("click", (e) => {
-                if (
-                    e.target === dom ||
-                    e.target === contentDOM
-                ) {
+                if (e.target === dom || e.target === contentDOM) {
                     e.preventDefault();
-                    const pos =
-                        typeof getPos === "function"
-                            ? getPos()
-                            : null;
-                    if (
-                        pos !== null &&
-                        pos !== undefined
-                    ) {
-                        groupEd.commands.setNodeSelection(
-                            pos,
-                        );
+                    const pos = typeof getPos === "function" ? getPos() : null;
+                    if (pos !== null && pos !== undefined) {
+                        groupEd.commands.setNodeSelection(pos);
                     }
                 }
             });
@@ -422,33 +382,21 @@ const ButtonGroupNode = TiptapNode.create({
                 dom,
                 contentDOM,
                 update(updatedNode) {
-                    if (
-                        updatedNode.type.name !==
-                        "buttonGroup"
-                    )
-                        return false;
-                    const a =
-                        updatedNode.attrs.textAlign ||
-                        "center";
+                    if (updatedNode.type.name !== "buttonGroup") return false;
+                    const a = updatedNode.attrs.textAlign || "center";
                     if (a === "left")
-                        contentDOM.style.justifyContent =
-                            "flex-start";
+                        contentDOM.style.justifyContent = "flex-start";
                     else if (a === "right")
-                        contentDOM.style.justifyContent =
-                            "flex-end";
-                    else
-                        contentDOM.style.justifyContent =
-                            "center";
+                        contentDOM.style.justifyContent = "flex-end";
+                    else contentDOM.style.justifyContent = "center";
                     return true;
                 },
                 selectNode() {
-                    dom.style.borderColor =
-                        "#1976d2";
+                    dom.style.borderColor = "#1976d2";
                     dom.style.borderStyle = "solid";
                 },
                 deselectNode() {
-                    dom.style.borderColor =
-                        "#bdbdbd";
+                    dom.style.borderColor = "#bdbdbd";
                     dom.style.borderStyle = "dashed";
                 },
             };
@@ -474,45 +422,26 @@ const ButtonNode = TiptapNode.create({
             {
                 tag: "div[data-button]",
                 getAttrs: (el: HTMLElement) => ({
-                    label:
-                        el.textContent || "Tlačítko",
-                    href:
-                        el.getAttribute("data-href") ||
-                        "",
-                    variant:
-                        el.getAttribute("data-button") ||
-                        "contained",
-                    textAlign:
-                        el.getAttribute("data-align") ||
-                        "center",
+                    label: el.textContent || "Tlačítko",
+                    href: el.getAttribute("data-href") || "",
+                    variant: el.getAttribute("data-button") || "contained",
+                    textAlign: el.getAttribute("data-align") || "center",
                 }),
             },
             {
                 tag: "a[data-button]",
                 getAttrs: (el: HTMLElement) => ({
-                    label:
-                        el.textContent || "Tlačítko",
-                    href:
-                        el.getAttribute("href") || "",
-                    variant:
-                        el.getAttribute("data-button") ||
-                        "contained",
-                    textAlign:
-                        el.getAttribute("data-align") ||
-                        "center",
+                    label: el.textContent || "Tlačítko",
+                    href: el.getAttribute("href") || "",
+                    variant: el.getAttribute("data-button") || "contained",
+                    textAlign: el.getAttribute("data-align") || "center",
                 }),
             },
         ];
     },
 
     renderHTML({ HTMLAttributes }) {
-        const {
-            label,
-            href,
-            variant,
-            textAlign,
-            ...rest
-        } = HTMLAttributes;
+        const { label, href, variant, textAlign, ...rest } = HTMLAttributes;
         return [
             "div",
             mergeAttributes(rest, {
@@ -532,12 +461,11 @@ const ButtonNode = TiptapNode.create({
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     state: any,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    node: any,
+                    node: any
                 ) {
-                    const { label, href, variant, textAlign } =
-                        node.attrs;
+                    const { label, href, variant, textAlign } = node.attrs;
                     state.write(
-                        `<div data-button="${variant || "contained"}" data-align="${textAlign || "center"}" data-href="${href || "#"}" class="editor-button editor-button--${variant || "contained"}">${label || "Tlačítko"}</div>`,
+                        `<div data-button="${variant || "contained"}" data-align="${textAlign || "center"}" data-href="${href || "#"}" class="editor-button editor-button--${variant || "contained"}">${label || "Tlačítko"}</div>`
                     );
                     state.closeBlock(node);
                 },
@@ -550,30 +478,24 @@ const ButtonNode = TiptapNode.create({
         return ({ node, editor: ed }) => {
             const dom = document.createElement("div");
             dom.style.padding = "4px 0";
-            dom.style.textAlign =
-                node.attrs.textAlign || "center";
+            dom.style.textAlign = node.attrs.textAlign || "center";
 
             const btn = document.createElement("span");
-            btn.textContent =
-                node.attrs.label || "Tlačítko";
+            btn.textContent = node.attrs.label || "Tlačítko";
             btn.style.cssText =
                 "display:inline-block;padding:6px 16px;border-radius:4px;text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;user-select:none;";
 
-            const v =
-                node.attrs.variant || "contained";
+            const v = node.attrs.variant || "contained";
             if (v === "contained") {
                 btn.style.backgroundColor = "#1976d2";
                 btn.style.color = "#fff";
                 btn.style.border = "none";
             } else if (v === "outlined") {
-                btn.style.backgroundColor =
-                    "transparent";
+                btn.style.backgroundColor = "transparent";
                 btn.style.color = "#1976d2";
-                btn.style.border =
-                    "1px solid #1976d2";
+                btn.style.border = "1px solid #1976d2";
             } else {
-                btn.style.backgroundColor =
-                    "transparent";
+                btn.style.backgroundColor = "transparent";
                 btn.style.color = "#1976d2";
                 btn.style.border = "none";
             }
@@ -583,17 +505,13 @@ const ButtonNode = TiptapNode.create({
             const onDblClick = () => {
                 buttonEditCallbacks.get(ed)?.();
             };
-            dom.addEventListener(
-                "dblclick",
-                onDblClick,
-            );
+            dom.addEventListener("dblclick", onDblClick);
 
             return {
                 dom,
                 ignoreMutation: () => true,
                 selectNode() {
-                    dom.style.outline =
-                        "2px solid #1976d2";
+                    dom.style.outline = "2px solid #1976d2";
                     dom.style.outlineOffset = "2px";
                     dom.style.borderRadius = "4px";
                 },
@@ -601,44 +519,28 @@ const ButtonNode = TiptapNode.create({
                     dom.style.outline = "none";
                 },
                 update(updatedNode) {
-                    if (
-                        updatedNode.type.name !==
-                        "buttonNode"
-                    )
-                        return false;
+                    if (updatedNode.type.name !== "buttonNode") return false;
                     dom.style.textAlign =
-                        updatedNode.attrs.textAlign ||
-                        "center";
-                    btn.textContent =
-                        updatedNode.attrs.label ||
-                        "Tlačítko";
-                    const uv =
-                        updatedNode.attrs.variant ||
-                        "contained";
+                        updatedNode.attrs.textAlign || "center";
+                    btn.textContent = updatedNode.attrs.label || "Tlačítko";
+                    const uv = updatedNode.attrs.variant || "contained";
                     if (uv === "contained") {
-                        btn.style.backgroundColor =
-                            "#1976d2";
+                        btn.style.backgroundColor = "#1976d2";
                         btn.style.color = "#fff";
                         btn.style.border = "none";
                     } else if (uv === "outlined") {
-                        btn.style.backgroundColor =
-                            "transparent";
+                        btn.style.backgroundColor = "transparent";
                         btn.style.color = "#1976d2";
-                        btn.style.border =
-                            "1px solid #1976d2";
+                        btn.style.border = "1px solid #1976d2";
                     } else {
-                        btn.style.backgroundColor =
-                            "transparent";
+                        btn.style.backgroundColor = "transparent";
                         btn.style.color = "#1976d2";
                         btn.style.border = "none";
                     }
                     return true;
                 },
                 destroy() {
-                    dom.removeEventListener(
-                        "dblclick",
-                        onDblClick,
-                    );
+                    dom.removeEventListener("dblclick", onDblClick);
                 },
             };
         };
@@ -675,8 +577,7 @@ function MenuBar({
     const [btnDialogOpen, setBtnDialogOpen] = useState(false);
     const [btnLabel, setBtnLabel] = useState("Tlačítko");
     const [btnHref, setBtnHref] = useState("");
-    const [btnVariant, setBtnVariant] =
-        useState<ButtonVariant>("contained");
+    const [btnVariant, setBtnVariant] = useState<ButtonVariant>("contained");
     const [btnEditing, setBtnEditing] = useState(false);
 
     const [, forceRender] = useState(0);
@@ -688,7 +589,6 @@ function MenuBar({
             editor.off("transaction", handler);
         };
     }, [editor]);
-
 
     const openLinkDialog = useCallback(() => {
         if (!editor) return;
@@ -720,7 +620,7 @@ function MenuBar({
                 setLinkText(target.label);
             }
         },
-        [showLinkTextField],
+        [showLinkTextField]
     );
 
     const closeLinkDialog = useCallback(() => {
@@ -790,19 +690,12 @@ function MenuBar({
     }, [editor]);
 
     const loadLinkTargets = useCallback(() => {
-        if (
-            linkTargets === null &&
-            !linkTargetsLoading
-        ) {
+        if (linkTargets === null && !linkTargetsLoading) {
             setLinkTargetsLoading(true);
             getLinkTargets(yearId)
-                .then((targets) =>
-                    setLinkTargets(targets),
-                )
+                .then((targets) => setLinkTargets(targets))
                 .catch(() => setLinkTargets([]))
-                .finally(() =>
-                    setLinkTargetsLoading(false),
-                );
+                .finally(() => setLinkTargetsLoading(false));
         }
     }, [yearId, linkTargets, linkTargetsLoading]);
 
@@ -827,15 +720,10 @@ function MenuBar({
                 };
             }
         ).node;
-        if (selNode?.type.name !== "buttonNode")
-            return;
+        if (selNode?.type.name !== "buttonNode") return;
         setBtnLabel(selNode.attrs.label || "");
         setBtnHref(selNode.attrs.href || "");
-        setBtnVariant(
-            (selNode.attrs
-                .variant as ButtonVariant) ||
-                "contained",
-        );
+        setBtnVariant((selNode.attrs.variant as ButtonVariant) || "contained");
         setBtnEditing(true);
         setBtnDialogOpen(true);
         loadLinkTargets();
@@ -843,14 +731,8 @@ function MenuBar({
 
     useEffect(() => {
         if (!editor) return;
-        buttonEditCallbacks.set(
-            editor,
-            openBtnEdit,
-        );
-        buttonInsertCallbacks.set(
-            editor,
-            openBtnInsert,
-        );
+        buttonEditCallbacks.set(editor, openBtnEdit);
+        buttonInsertCallbacks.set(editor, openBtnInsert);
         return () => {
             buttonEditCallbacks.delete(editor);
             buttonInsertCallbacks.delete(editor);
@@ -866,52 +748,33 @@ function MenuBar({
         };
         if (btnEditing) {
             const { from } = editor.state.selection;
-            const node =
-                editor.state.doc.nodeAt(from);
-            if (
-                node?.type.name === "buttonNode"
-            ) {
+            const node = editor.state.doc.nodeAt(from);
+            if (node?.type.name === "buttonNode") {
                 editor.view.dispatch(
-                    editor.state.tr.setNodeMarkup(
-                        from,
-                        undefined,
-                        {
-                            ...node.attrs,
-                            ...attrs,
-                        },
-                    ),
+                    editor.state.tr.setNodeMarkup(from, undefined, {
+                        ...node.attrs,
+                        ...attrs,
+                    })
                 );
             }
         } else {
-            const { $from } =
-                editor.state.selection;
+            const { $from } = editor.state.selection;
             let groupDepth: number | null = null;
-            for (
-                let d = $from.depth;
-                d >= 0;
-                d--
-            ) {
-                if (
-                    $from.node(d).type.name ===
-                    "buttonGroup"
-                ) {
+            for (let d = $from.depth; d >= 0; d--) {
+                if ($from.node(d).type.name === "buttonGroup") {
                     groupDepth = d;
                     break;
                 }
             }
             if (groupDepth !== null) {
-                const endOfGroup =
-                    $from.end(groupDepth);
+                const endOfGroup = $from.end(groupDepth);
                 editor
                     .chain()
                     .focus()
-                    .insertContentAt(
-                        endOfGroup,
-                        {
-                            type: "buttonNode",
-                            attrs,
-                        },
-                    )
+                    .insertContentAt(endOfGroup, {
+                        type: "buttonNode",
+                        attrs,
+                    })
                     .run();
             } else {
                 editor
@@ -927,12 +790,9 @@ function MenuBar({
         setBtnDialogOpen(false);
     }, [editor, btnLabel, btnHref, btnVariant, btnEditing]);
 
-    const toolbarRef =
-        useRef<HTMLDivElement>(null);
-    const [canScrollLeft, setCanScrollLeft] =
-        useState(false);
-    const [canScrollRight, setCanScrollRight] =
-        useState(false);
+    const toolbarRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
 
     useEffect(() => {
         const el = toolbarRef.current;
@@ -940,8 +800,7 @@ function MenuBar({
         const check = () => {
             setCanScrollLeft(el.scrollLeft > 0);
             setCanScrollRight(
-                el.scrollLeft + el.clientWidth <
-                    el.scrollWidth - 1,
+                el.scrollLeft + el.clientWidth < el.scrollWidth - 1
             );
         };
         check();
@@ -949,10 +808,7 @@ function MenuBar({
         const ro = new ResizeObserver(check);
         ro.observe(el);
         return () => {
-            el.removeEventListener(
-                "scroll",
-                check,
-            );
+            el.removeEventListener("scroll", check);
             ro.disconnect();
         };
     });
@@ -973,20 +829,13 @@ function MenuBar({
         contextTools = ["alignment", "undo"];
     } else {
         for (let d = $from.depth; d >= 0; d--) {
-            if (
-                $from.node(d).type.name ===
-                "buttonGroup"
-            ) {
-                contextTools = [
-                    "alignment",
-                    "undo",
-                ];
+            if ($from.node(d).type.name === "buttonGroup") {
+                contextTools = ["alignment", "undo"];
                 break;
             }
         }
     }
-    const show = (g: ToolGroup) =>
-        contextTools.includes(g);
+    const show = (g: ToolGroup) => contextTools.includes(g);
 
     return (
         <Box
@@ -1075,725 +924,896 @@ function MenuBar({
                     },
                 }}
             >
-            {show("formatting") && <>
-            {/* Text formatting */}
-            <Tooltip title="Tučné (Ctrl+B)">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleBold().run()}
-                    color={editor.isActive("bold") ? "primary" : "default"}
-                >
-                    <FormatBold fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Kurzíva (Ctrl+I)">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleItalic().run()}
-                    color={editor.isActive("italic") ? "primary" : "default"}
-                >
-                    <FormatItalic fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Podtržené (Ctrl+U)">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleUnderline().run()}
-                    color={editor.isActive("underline") ? "primary" : "default"}
-                >
-                    <FormatUnderlined fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Přeškrtnuté">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleStrike().run()}
-                    color={editor.isActive("strike") ? "primary" : "default"}
-                >
-                    <StrikethroughS fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            {/* Text color */}
-            <Tooltip title="Barva textu">
-                <IconButton
-                    size="small"
-                    onClick={() => {
-                        const current =
-                            editor.getAttributes(
-                                "textStyle",
-                            ).color;
-                        if (current) {
-                            editor
-                                .chain()
-                                .focus()
-                                .unsetColor()
-                                .run();
-                        } else {
-                            editor
-                                .chain()
-                                .focus()
-                                .setColor(
-                                    PRIMARY_COLOR,
-                                )
-                                .run();
-                        }
-                    }}
-                >
-                    <FormatColorText
-                        fontSize="small"
-                        sx={{
-                            color:
-                                editor.getAttributes(
-                                    "textStyle",
-                                ).color || "inherit",
-                        }}
-                    />
-                </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Kod">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleCode().run()}
-                    color={editor.isActive("code") ? "primary" : "default"}
-                >
-                    <Code fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            </>}
-
-            {(show("h2") || show("h3")) && <>
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-
-            {/* Headings */}
-            <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={
-                    editor.isActive("heading", { level: 2 })
-                        ? "h2"
-                        : editor.isActive("heading", { level: 3 })
-                          ? "h3"
-                          : null
-                }
-                sx={{ "& .MuiToggleButton-root": { px: 1, py: 0.5 } }}
-            >
-                {show("h2") &&
-                <ToggleButton
-                    value="h2"
-                    onClick={() =>
-                        editor.chain().focus().toggleHeading({ level: 2 }).run()
-                    }
-                >
-                    <Title fontSize="small" />
-                    <Box component="span" sx={{ ml: 0.5, fontSize: "0.75rem" }}>
-                        H2
-                    </Box>
-                </ToggleButton>}
-                {show("h3") &&
-                <ToggleButton
-                    value="h3"
-                    onClick={() =>
-                        editor.chain().focus().toggleHeading({ level: 3 }).run()
-                    }
-                >
-                    <Title fontSize="small" />
-                    <Box component="span" sx={{ ml: 0.5, fontSize: "0.75rem" }}>
-                        H3
-                    </Box>
-                </ToggleButton>}
-            </ToggleButtonGroup>
-
-            </>}
-
-            {/* Text alignment */}
-            {(
-                [
-                    ["left", "Zarovnat vlevo", FormatAlignLeft],
-                    ["center", "Zarovnat na střed", FormatAlignCenter],
-                    ["right", "Zarovnat vpravo", FormatAlignRight],
-                    ["justify", "Zarovnat do bloku", FormatAlignJustify],
-                ] as const
-            ).map(([align, title, Icon]) => (
-                <Tooltip key={align} title={title}>
-                    <IconButton
-                        size="small"
-                        onMouseDown={(e) => {
-                            e.preventDefault();
-                            const { $from } =
-                                editor.state.selection;
-                            let groupPos: number | null = null;
-                            for (
-                                let d = $from.depth;
-                                d >= 0;
-                                d--
-                            ) {
-                                if (
-                                    $from.node(d).type
-                                        .name ===
-                                    "buttonGroup"
-                                ) {
-                                    groupPos =
-                                        $from.before(d);
-                                    break;
+                {show("basicFormatting") && (
+                    <>
+                        <Tooltip title="Tučné (Ctrl+B)">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().toggleBold().run()
                                 }
-                            }
-                            if (groupPos !== null) {
-                                const groupNode =
-                                    editor.state.doc.nodeAt(
-                                        groupPos,
-                                    );
-                                if (groupNode) {
-                                    editor.view.dispatch(
-                                        editor.state.tr.setNodeMarkup(
-                                            groupPos,
-                                            undefined,
-                                            {
-                                                ...groupNode.attrs,
-                                                textAlign:
-                                                    align,
-                                            },
-                                        ),
-                                    );
-                                    return;
+                                color={
+                                    editor.isActive("bold")
+                                        ? "primary"
+                                        : "default"
                                 }
-                            }
-                            editor
-                                .chain()
-                                .focus()
-                                .setTextAlign(
-                                    align,
-                                )
-                                .run();
-                        }}
-                        color={
-                            editor.isActive({
-                                textAlign: align,
-                            })
-                                ? "primary"
-                                : "default"
-                        }
-                    >
-                        <Icon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            ))}
+                            >
+                                <FormatBold fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Kurzíva (Ctrl+I)">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().toggleItalic().run()
+                                }
+                                color={
+                                    editor.isActive("italic")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatItalic fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
 
-            {show("lists") && <>
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                {show("formatting") && (
+                    <>
+                        {/* Text formatting */}
+                        <Tooltip title="Tučné (Ctrl+B)">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().toggleBold().run()
+                                }
+                                color={
+                                    editor.isActive("bold")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatBold fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
 
-            {/* Lists */}
-            <Tooltip title="Odrážkový seznam">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleBulletList().run()}
-                    color={editor.isActive("bulletList") ? "primary" : "default"}
-                >
-                    <FormatListBulleted fontSize="small" />
-                </IconButton>
-            </Tooltip>
+                        <Tooltip title="Kurzíva (Ctrl+I)">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().toggleItalic().run()
+                                }
+                                color={
+                                    editor.isActive("italic")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatItalic fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
 
-            <Tooltip title="Číslovaný seznam">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                    color={editor.isActive("orderedList") ? "primary" : "default"}
-                >
-                    <FormatListNumbered fontSize="small" />
-                </IconButton>
-            </Tooltip>
+                        <Tooltip title="Podtržené (Ctrl+U)">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .toggleUnderline()
+                                        .run()
+                                }
+                                color={
+                                    editor.isActive("underline")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatUnderlined fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
 
-            <Tooltip title="Citat">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                    color={editor.isActive("blockquote") ? "primary" : "default"}
-                >
-                    <FormatQuote fontSize="small" />
-                </IconButton>
-            </Tooltip>
+                        <Tooltip title="Přeškrtnuté">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().toggleStrike().run()
+                                }
+                                color={
+                                    editor.isActive("strike")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <StrikethroughS fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
 
-            <Tooltip title="Vodorovný oddělovač">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                >
-                    <HorizontalRule fontSize="small" />
-                </IconButton>
-            </Tooltip>
+                        {/* Text color */}
+                        <Tooltip title="Barva textu">
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    const current =
+                                        editor.getAttributes("textStyle").color;
+                                    if (current) {
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .unsetColor()
+                                            .run();
+                                    } else {
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .setColor(PRIMARY_COLOR)
+                                            .run();
+                                    }
+                                }}
+                            >
+                                <FormatColorText
+                                    fontSize="small"
+                                    sx={{
+                                        color:
+                                            editor.getAttributes("textStyle")
+                                                .color || "inherit",
+                                    }}
+                                />
+                            </IconButton>
+                        </Tooltip>
 
-            </>}
+                        <Tooltip title="Kod">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().toggleCode().run()
+                                }
+                                color={
+                                    editor.isActive("code")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <Code fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
 
-            {show("inserts") && <>
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                {(show("h2") || show("h3")) && (
+                    <>
+                        <Divider
+                            orientation="vertical"
+                            flexItem
+                            sx={{ mx: 0.5 }}
+                        />
 
-            {/* Links & Images */}
-            <Tooltip title="Přidat odkaz">
-                <IconButton
-                    size="small"
-                    onClick={openLinkDialog}
-                    color={editor.isActive("link") ? "primary" : "default"}
-                >
-                    <LinkIcon fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            {editor.isActive("link") && (
-                <Tooltip title="Odebrat odkaz">
-                    <IconButton
-                        size="small"
-                        onClick={() => editor.chain().focus().unsetLink().run()}
-                    >
-                        <LinkOff fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            )}
-
-            {show("media") &&
-            <Tooltip title="Vložit obrázek">
-                <IconButton size="small" onClick={addImage}>
-                    <ImageIcon fontSize="small" />
-                </IconButton>
-            </Tooltip>}
-
-            <Tooltip title="Vložit tabulku">
-                <IconButton
-                    size="small"
-                    onClick={() =>
-                        editor
-                            .chain()
-                            .focus()
-                            .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-                            .run()
-                    }
-                >
-                    <TableChart fontSize="small" />
-                </IconButton>
-            </Tooltip>
-
-            {editor.isActive("table") && (
-                <>
-                    <Tooltip title="Přidat sloupec za">
-                        <IconButton
+                        {/* Headings */}
+                        <ToggleButtonGroup
                             size="small"
-                            onClick={() =>
-                                editor.chain().focus().addColumnAfter().run()
+                            exclusive
+                            value={
+                                editor.isActive("heading", { level: 2 })
+                                    ? "h2"
+                                    : editor.isActive("heading", { level: 3 })
+                                      ? "h3"
+                                      : null
                             }
+                            sx={{
+                                "& .MuiToggleButton-root": { px: 1, py: 0.5 },
+                            }}
                         >
-                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
-                                +C
-                            </Box>
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Smazat sloupec">
-                        <IconButton
-                            size="small"
-                            onClick={() =>
-                                editor.chain().focus().deleteColumn().run()
-                            }
-                        >
-                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
-                                −C
-                            </Box>
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Přidat řádek pod">
-                        <IconButton
-                            size="small"
-                            onClick={() =>
-                                editor.chain().focus().addRowAfter().run()
-                            }
-                        >
-                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
-                                +R
-                            </Box>
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Smazat řádek">
-                        <IconButton
-                            size="small"
-                            onClick={() =>
-                                editor.chain().focus().deleteRow().run()
-                            }
-                        >
-                            <Box component="span" sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
-                                −R
-                            </Box>
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Smazat tabulku">
-                        <IconButton
-                            size="small"
-                            onClick={() =>
-                                editor.chain().focus().deleteTable().run()
-                            }
-                            sx={{ color: "error.main" }}
-                        >
-                            <Delete fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                </>
-            )}
+                            {show("h2") && (
+                                <ToggleButton
+                                    value="h2"
+                                    onClick={() =>
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .toggleHeading({ level: 2 })
+                                            .run()
+                                    }
+                                >
+                                    <Title fontSize="small" />
+                                    <Box
+                                        component="span"
+                                        sx={{ ml: 0.5, fontSize: "0.75rem" }}
+                                    >
+                                        H2
+                                    </Box>
+                                </ToggleButton>
+                            )}
+                            {show("h3") && (
+                                <ToggleButton
+                                    value="h3"
+                                    onClick={() =>
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .toggleHeading({ level: 3 })
+                                            .run()
+                                    }
+                                >
+                                    <Title fontSize="small" />
+                                    <Box
+                                        component="span"
+                                        sx={{ ml: 0.5, fontSize: "0.75rem" }}
+                                    >
+                                        H3
+                                    </Box>
+                                </ToggleButton>
+                            )}
+                        </ToggleButtonGroup>
+                    </>
+                )}
 
-            {show("media") &&
-            <Tooltip title="Vložit YouTube video">
-                <IconButton size="small" onClick={addYoutubeVideo}>
-                    <OndemandVideo fontSize="small" />
-                </IconButton>
-            </Tooltip>}
+                {/* Text alignment */}
+                {show("alignment") &&
+                    (
+                        [
+                            ["left", "Zarovnat vlevo", FormatAlignLeft],
+                            ["center", "Zarovnat na střed", FormatAlignCenter],
+                            ["right", "Zarovnat vpravo", FormatAlignRight],
+                            [
+                                "justify",
+                                "Zarovnat do bloku",
+                                FormatAlignJustify,
+                            ],
+                        ] as const
+                    ).map(([align, title, Icon]) => (
+                        <Tooltip key={align} title={title}>
+                            <IconButton
+                                size="small"
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    const { $from } = editor.state.selection;
+                                    let groupPos: number | null = null;
+                                    for (let d = $from.depth; d >= 0; d--) {
+                                        if (
+                                            $from.node(d).type.name ===
+                                            "buttonGroup"
+                                        ) {
+                                            groupPos = $from.before(d);
+                                            break;
+                                        }
+                                    }
+                                    if (groupPos !== null) {
+                                        const groupNode =
+                                            editor.state.doc.nodeAt(groupPos);
+                                        if (groupNode) {
+                                            editor.view.dispatch(
+                                                editor.state.tr.setNodeMarkup(
+                                                    groupPos,
+                                                    undefined,
+                                                    {
+                                                        ...groupNode.attrs,
+                                                        textAlign: align,
+                                                    }
+                                                )
+                                            );
+                                            return;
+                                        }
+                                    }
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .setTextAlign(align)
+                                        .run();
+                                }}
+                                color={
+                                    editor.isActive({
+                                        textAlign: align,
+                                    })
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <Icon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    ))}
 
-            <Tooltip title="Rozbalovací sekce">
-                <IconButton
-                    size="small"
-                    onClick={() => editor.chain().focus().setDetails().run()}
-                    color={editor.isActive("details") ? "primary" : "default"}
-                >
-                    <UnfoldMore fontSize="small" />
-                </IconButton>
-            </Tooltip>
-            </>}
+                {show("lists") && (
+                    <>
+                        <Divider
+                            orientation="vertical"
+                            flexItem
+                            sx={{ mx: 0.5 }}
+                        />
 
-            {show("buttons") && <>
-            <Tooltip title="Vložit tlačítka">
-                <IconButton
-                    size="small"
-                    onClick={() => {
-                        const { selection } =
-                            editor.state;
-                        const selNode = (
-                            selection as unknown as {
-                                node?: {
-                                    type: {
-                                        name: string;
-                                    };
-                                };
-                            }
-                        ).node;
-                        if (
-                            selNode?.type.name ===
-                            "buttonNode"
-                        ) {
-                            editor
-                                .chain()
-                                .focus()
-                                .wrapIn(
-                                    "buttonGroup",
-                                )
-                                .run();
-                        } else {
-                            editor
-                                .chain()
-                                .focus()
-                                .insertContent({
-                                    type: "buttonGroup",
-                                    content: [
-                                        {
-                                            type: "buttonNode",
-                                            attrs: {
-                                                label: "Tlačítko",
-                                                href: "",
-                                                variant:
-                                                    "contained",
-                                            },
-                                        },
-                                    ],
-                                })
-                                .run();
-                        }
-                    }}
-                >
-                    <SmartButton fontSize="small" />
-                </IconButton>
-            </Tooltip>
+                        {/* Lists */}
+                        <Tooltip title="Odrážkový seznam">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .toggleBulletList()
+                                        .run()
+                                }
+                                color={
+                                    editor.isActive("bulletList")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatListBulleted fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
 
-            <Tooltip title="Definiční seznam">
-                <IconButton
-                    size="small"
-                    onClick={() =>
-                        editor
-                            .chain()
-                            .focus()
-                            .insertContent({
-                                type: "definitionList",
-                                content: [
-                                    {
-                                        type: "definitionTerm",
-                                        content: [
-                                            {
-                                                type: "paragraph",
+                        <Tooltip title="Číslovaný seznam">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .toggleOrderedList()
+                                        .run()
+                                }
+                                color={
+                                    editor.isActive("orderedList")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatListNumbered fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Citat">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .toggleBlockquote()
+                                        .run()
+                                }
+                                color={
+                                    editor.isActive("blockquote")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <FormatQuote fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Vodorovný oddělovač">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .setHorizontalRule()
+                                        .run()
+                                }
+                            >
+                                <HorizontalRule fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+
+                {show("inserts") && (
+                    <>
+                        <Divider
+                            orientation="vertical"
+                            flexItem
+                            sx={{ mx: 0.5 }}
+                        />
+
+                        {/* Links & Images */}
+                        <Tooltip title="Přidat odkaz">
+                            <IconButton
+                                size="small"
+                                onClick={openLinkDialog}
+                                color={
+                                    editor.isActive("link")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <LinkIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+
+                        {editor.isActive("link") && (
+                            <Tooltip title="Odebrat odkaz">
+                                <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                        editor.chain().focus().unsetLink().run()
+                                    }
+                                >
+                                    <LinkOff fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+
+                        {show("media") && (
+                            <Tooltip title="Vložit obrázek">
+                                <IconButton size="small" onClick={addImage}>
+                                    <ImageIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+
+                        <Tooltip title="Vložit tabulku">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .insertTable({
+                                            rows: 3,
+                                            cols: 3,
+                                            withHeaderRow: true,
+                                        })
+                                        .run()
+                                }
+                            >
+                                <TableChart fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+
+                        {editor.isActive("table") && (
+                            <>
+                                <Tooltip title="Přidat sloupec za">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            editor
+                                                .chain()
+                                                .focus()
+                                                .addColumnAfter()
+                                                .run()
+                                        }
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            +C
+                                        </Box>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Smazat sloupec">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            editor
+                                                .chain()
+                                                .focus()
+                                                .deleteColumn()
+                                                .run()
+                                        }
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            −C
+                                        </Box>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Přidat řádek pod">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            editor
+                                                .chain()
+                                                .focus()
+                                                .addRowAfter()
+                                                .run()
+                                        }
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            +R
+                                        </Box>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Smazat řádek">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            editor
+                                                .chain()
+                                                .focus()
+                                                .deleteRow()
+                                                .run()
+                                        }
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            −R
+                                        </Box>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Smazat tabulku">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            editor
+                                                .chain()
+                                                .focus()
+                                                .deleteTable()
+                                                .run()
+                                        }
+                                        sx={{ color: "error.main" }}
+                                    >
+                                        <Delete fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </>
+                        )}
+
+                        {show("media") && (
+                            <Tooltip title="Vložit YouTube video">
+                                <IconButton
+                                    size="small"
+                                    onClick={addYoutubeVideo}
+                                >
+                                    <OndemandVideo fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+
+                        <Tooltip title="Rozbalovací sekce">
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    editor.chain().focus().setDetails().run()
+                                }
+                                color={
+                                    editor.isActive("details")
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                <UnfoldMore fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+
+                {show("buttons") && (
+                    <>
+                        <Tooltip title="Vložit tlačítka">
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    const { selection } = editor.state;
+                                    const selNode = (
+                                        selection as unknown as {
+                                            node?: {
+                                                type: {
+                                                    name: string;
+                                                };
+                                            };
+                                        }
+                                    ).node;
+                                    if (selNode?.type.name === "buttonNode") {
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .wrapIn("buttonGroup")
+                                            .run();
+                                    } else {
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .insertContent({
+                                                type: "buttonGroup",
                                                 content: [
                                                     {
-                                                        type: "text",
-                                                        text: "Pojem",
+                                                        type: "buttonNode",
+                                                        attrs: {
+                                                            label: "Tlačítko",
+                                                            href: "",
+                                                            variant:
+                                                                "contained",
+                                                        },
+                                                    },
+                                                ],
+                                            })
+                                            .run();
+                                    }
+                                }}
+                            >
+                                <SmartButton fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+
+                {show("definitionList") && (
+                    <Tooltip title="Definiční seznam">
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                editor
+                                    .chain()
+                                    .focus()
+                                    .insertContent({
+                                        type: "definitionList",
+                                        content: [
+                                            {
+                                                type: "definitionTerm",
+                                                content: [
+                                                    {
+                                                        type: "paragraph",
+                                                        content: [
+                                                            {
+                                                                type: "text",
+                                                                text: "Pojem",
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                            {
+                                                type: "definitionDescription",
+                                                content: [
+                                                    {
+                                                        type: "paragraph",
+                                                        content: [
+                                                            {
+                                                                type: "text",
+                                                                text: "Definice",
+                                                            },
+                                                        ],
                                                     },
                                                 ],
                                             },
                                         ],
-                                    },
-                                    {
-                                        type: "definitionDescription",
-                                        content: [
-                                            {
-                                                type: "paragraph",
-                                                content: [
-                                                    {
-                                                        type: "text",
-                                                        text: "Definice",
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            })
-                            .run()
-                    }
-                    color={
-                        editor.isActive("definitionList")
-                            ? "primary"
-                            : "default"
-                    }
-                >
-                    <Subject fontSize="small" />
-                </IconButton>
-            </Tooltip>
-            </>}
-
-            <Box sx={{ flex: 1 }} />
-
-            {/* Undo/Redo */}
-            <Tooltip title="Zpet (Ctrl+Z)">
-                <span>
-                    <IconButton
-                        size="small"
-                        onClick={() => editor.chain().focus().undo().run()}
-                        disabled={!editor.can().undo()}
-                    >
-                        <Undo fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-
-            <Tooltip title="Znovu (Ctrl+Y)">
-                <span>
-                    <IconButton
-                        size="small"
-                        onClick={() => editor.chain().focus().redo().run()}
-                        disabled={!editor.can().redo()}
-                    >
-                        <Redo fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-
-            <Dialog
-                open={linkDialogOpen}
-                onClose={closeLinkDialog}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>
-                    {linkEditing ? "Upravit odkaz" : "Přidat odkaz"}
-                </DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="URL odkazu"
-                        type="url"
-                        value={linkUrl}
-                        onChange={(e) => setLinkUrl(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                submitLink();
+                                    })
+                                    .run()
                             }
-                        }}
-                        placeholder="https://example.com"
-                        fullWidth
-                        variant="outlined"
-                    />
-                    {showLinkTextField && (
+                            color={
+                                editor.isActive("definitionList")
+                                    ? "primary"
+                                    : "default"
+                            }
+                        >
+                            <Subject fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                )}
+
+                <Box sx={{ flex: 1 }} />
+
+                {/* Undo/Redo */}
+                <Tooltip title="Zpet (Ctrl+Z)">
+                    <span>
+                        <IconButton
+                            size="small"
+                            onClick={() => editor.chain().focus().undo().run()}
+                            disabled={!editor.can().undo()}
+                        >
+                            <Undo fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+
+                <Tooltip title="Znovu (Ctrl+Y)">
+                    <span>
+                        <IconButton
+                            size="small"
+                            onClick={() => editor.chain().focus().redo().run()}
+                            disabled={!editor.can().redo()}
+                        >
+                            <Redo fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+
+                <Dialog
+                    open={linkDialogOpen}
+                    onClose={closeLinkDialog}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle>
+                        ©{linkEditing ? "Upravit odkaz" : "Přidat odkaz"}
+                    </DialogTitle>
+                    <DialogContent>
                         <TextField
+                            autoFocus
                             margin="dense"
-                            label="Text odkazu (volitelne)"
-                            value={linkText}
-                            onChange={(e) => setLinkText(e.target.value)}
+                            label="URL odkazu"
+                            type="url"
+                            value={linkUrl}
+                            onChange={(e) => setLinkUrl(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                     e.preventDefault();
                                     submitLink();
                                 }
                             }}
-                            placeholder="Pokud nevyplnite, zobrazi se URL"
+                            placeholder="https://example.com"
                             fullWidth
                             variant="outlined"
                         />
-                    )}
-                    <Autocomplete<LinkTarget>
-                        sx={{ mt: 2 }}
-                        options={linkTargets ?? []}
-                        loading={linkTargetsLoading}
-                        groupBy={(option) => option.group}
-                        getOptionLabel={(option) => option.label}
-                        isOptionEqualToValue={(option, value) =>
-                            option.url === value.url
-                        }
-                        value={null}
-                        onChange={(_, value) => handleTargetSelect(value)}
-                        blurOnSelect
-                        renderInput={(params) => (
+                        {showLinkTextField && (
                             <TextField
-                                {...params}
-                                label="Vybrat stránku webu"
-                                placeholder="Vyhledat stranku nebo podsekci"
+                                margin="dense"
+                                label="Text odkazu (volitelne)"
+                                value={linkText}
+                                onChange={(e) => setLinkText(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        submitLink();
+                                    }
+                                }}
+                                placeholder="Pokud nevyplnite, zobrazi se URL"
+                                fullWidth
                                 variant="outlined"
                             />
                         )}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    {linkEditing && (
-                        <Button onClick={removeLink} color="error">
-                            Odebrat odkaz
-                        </Button>
-                    )}
-                    <Box sx={{ flex: 1 }} />
-                    <Button onClick={closeLinkDialog}>Zrušit</Button>
-                    <Button
-                        onClick={submitLink}
-                        variant="contained"
-                        disabled={linkUrl.trim() === ""}
-                    >
-                        {linkEditing ? "Uložit" : "Přidat"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Button dialog */}
-            <Dialog
-                open={btnDialogOpen}
-                onClose={() =>
-                    setBtnDialogOpen(false)
-                }
-                maxWidth="xs"
-                fullWidth
-            >
-                <DialogTitle>
-                    {btnEditing
-                        ? "Upravit tlačítko"
-                        : "Vložit tlačítko"}
-                </DialogTitle>
-                <DialogContent
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                        pt: "8px !important",
-                    }}
-                >
-                    <TextField
-                        autoFocus
-                        label="Text tlačítka"
-                        value={btnLabel}
-                        onChange={(e) =>
-                            setBtnLabel(e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                    />
-                    <TextField
-                        label="Odkaz (URL)"
-                        value={btnHref}
-                        onChange={(e) =>
-                            setBtnHref(e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                    />
-                    <Autocomplete<LinkTarget>
-                        options={linkTargets ?? []}
-                        loading={linkTargetsLoading}
-                        groupBy={(option) =>
-                            option.group
-                        }
-                        getOptionLabel={(option) =>
-                            option.label
-                        }
-                        isOptionEqualToValue={(
-                            option,
-                            value,
-                        ) => option.url === value.url}
-                        value={null}
-                        onChange={(_, value) => {
-                            if (value) {
-                                setBtnHref(value.url);
-                                if (
-                                    btnLabel ===
-                                        "Tlačítko" ||
-                                    btnLabel === ""
-                                ) {
-                                    setBtnLabel(
-                                        value.label,
-                                    );
-                                }
+                        <Autocomplete<LinkTarget>
+                            sx={{ mt: 2 }}
+                            options={linkTargets ?? []}
+                            loading={linkTargetsLoading}
+                            groupBy={(option) => option.group}
+                            getOptionLabel={(option) => option.label}
+                            isOptionEqualToValue={(option, value) =>
+                                option.url === value.url
                             }
-                        }}
-                        blurOnSelect
-                        size="small"
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Vybrat stránku webu"
-                                placeholder="Vyhledat stránku"
-                                variant="outlined"
-                            />
+                            value={null}
+                            onChange={(_, value) => handleTargetSelect(value)}
+                            blurOnSelect
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Vybrat stránku webu"
+                                    placeholder="Vyhledat stranku nebo podsekci"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        {linkEditing && (
+                            <Button onClick={removeLink} color="error">
+                                Odebrat odkaz
+                            </Button>
                         )}
-                    />
-                    <ToggleButtonGroup
-                        exclusive
-                        value={btnVariant}
-                        onChange={(_, v) => {
-                            if (v) setBtnVariant(v);
+                        <Box sx={{ flex: 1 }} />
+                        <Button onClick={closeLinkDialog}>Zrušit</Button>
+                        <Button
+                            onClick={submitLink}
+                            variant="contained"
+                            disabled={linkUrl.trim() === ""}
+                        >
+                            {linkEditing ? "Uložit" : "Přidat"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Button dialog */}
+                <Dialog
+                    open={btnDialogOpen}
+                    onClose={() => setBtnDialogOpen(false)}
+                    maxWidth="xs"
+                    fullWidth
+                >
+                    <DialogTitle>
+                        {btnEditing ? "Upravit tlačítko" : "Vložit tlačítko"}
+                    </DialogTitle>
+                    <DialogContent
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            pt: "8px !important",
                         }}
-                        size="small"
-                        fullWidth
                     >
-                        <ToggleButton value="contained">
-                            Vyplněné
-                        </ToggleButton>
-                        <ToggleButton value="outlined">
-                            Obrysové
-                        </ToggleButton>
-                        <ToggleButton value="text">
-                            Textové
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() =>
-                            setBtnDialogOpen(false)
-                        }
-                    >
-                        Zrušit
-                    </Button>
-                    <Button
-                        onClick={submitBtn}
-                        variant="contained"
-                        disabled={!btnLabel.trim()}
-                    >
-                        {btnEditing
-                            ? "Uložit"
-                            : "Vložit"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                        <TextField
+                            autoFocus
+                            label="Text tlačítka"
+                            value={btnLabel}
+                            onChange={(e) => setBtnLabel(e.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            label="Odkaz (URL)"
+                            value={btnHref}
+                            onChange={(e) => setBtnHref(e.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <Autocomplete<LinkTarget>
+                            options={linkTargets ?? []}
+                            loading={linkTargetsLoading}
+                            groupBy={(option) => option.group}
+                            getOptionLabel={(option) => option.label}
+                            isOptionEqualToValue={(option, value) =>
+                                option.url === value.url
+                            }
+                            value={null}
+                            onChange={(_, value) => {
+                                if (value) {
+                                    setBtnHref(value.url);
+                                    if (
+                                        btnLabel === "Tlačítko" ||
+                                        btnLabel === ""
+                                    ) {
+                                        setBtnLabel(value.label);
+                                    }
+                                }
+                            }}
+                            blurOnSelect
+                            size="small"
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Vybrat stránku webu"
+                                    placeholder="Vyhledat stránku"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                        <ToggleButtonGroup
+                            exclusive
+                            value={btnVariant}
+                            onChange={(_, v) => {
+                                if (v) setBtnVariant(v);
+                            }}
+                            size="small"
+                            fullWidth
+                        >
+                            <ToggleButton value="contained">
+                                Vyplněné
+                            </ToggleButton>
+                            <ToggleButton value="outlined">
+                                Obrysové
+                            </ToggleButton>
+                            <ToggleButton value="text">Textové</ToggleButton>
+                        </ToggleButtonGroup>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setBtnDialogOpen(false)}>
+                            Zrušit
+                        </Button>
+                        <Button
+                            onClick={submitBtn}
+                            variant="contained"
+                            disabled={!btnLabel.trim()}
+                        >
+                            {btnEditing ? "Uložit" : "Vložit"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </Box>
     );
@@ -1809,10 +1829,7 @@ function ensureTrailingParagraph(ed: Editor) {
     ) {
         const endPos = doc.content.size;
         ed.view.dispatch(
-            ed.state.tr.insert(
-                endPos,
-                ed.state.schema.nodes.paragraph.create(),
-            ),
+            ed.state.tr.insert(endPos, ed.state.schema.nodes.paragraph.create())
         );
     }
 }
@@ -1885,14 +1902,14 @@ export function RichTextEditor({
                 tr.replaceWith(
                     from,
                     to,
-                    placeholderType.create({ key, label }),
+                    placeholderType.create({ key, label })
                 );
             }
             ed.view.dispatch(
-                tr.setMeta("addToHistory", false).setMeta("preventUpdate", true),
+                tr.setMeta("addToHistory", false).setMeta("preventUpdate", true)
             );
         },
-        [placeholders, placeholderMap],
+        [placeholders, placeholderMap]
     );
 
     const getContent = useCallback(
@@ -1901,15 +1918,14 @@ export function RichTextEditor({
             if (!isMarkdown) {
                 content = ed.getHTML();
             } else {
-                const md =
-                    ed.storage as unknown as {
-                        markdown: MarkdownStorage;
-                    };
+                const md = ed.storage as unknown as {
+                    markdown: MarkdownStorage;
+                };
                 content = md.markdown.getMarkdown();
             }
             return content.replace(/\n+$/, "");
         },
-        [isMarkdown],
+        [isMarkdown]
     );
 
     const editor = useEditor({
@@ -1938,12 +1954,7 @@ export function RichTextEditor({
                 },
             }),
             TextAlign.configure({
-                types: [
-                    "heading",
-                    "paragraph",
-                    "buttonNode",
-                    "buttonGroup",
-                ],
+                types: ["heading", "paragraph", "buttonNode", "buttonGroup"],
             }),
             Typography,
             Youtube.configure({
@@ -1974,7 +1985,9 @@ export function RichTextEditor({
                       }),
                   ]
                 : []),
-            PlaceholderExtension.configure({ placeholders: placeholders ?? [] }),
+            PlaceholderExtension.configure({
+                placeholders: placeholders ?? [],
+            }),
         ],
         content: value,
         editable,
@@ -2043,7 +2056,8 @@ export function RichTextEditor({
             )}
             <Box
                 sx={{
-                    p: 2,
+                    px: 1,
+                    py: 0,
                     backgroundColor: "background.paper",
                     ...(editable
                         ? {
@@ -2112,12 +2126,11 @@ export function RichTextEditor({
                         "& dl": {
                             display: "grid",
                             gridTemplateColumns: "auto 1fr",
-                            gap: "4px",
                             columnGap: "24px",
                             margin: "0.5em 0",
                         },
                         "& dt": {
-                            fontWeight: 600,
+                            fontWeight: 700,
                             gridColumn: 1,
                         },
                         "& dd": {

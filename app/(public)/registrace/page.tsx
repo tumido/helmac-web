@@ -1,7 +1,7 @@
 import { Container, Typography, Box } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
-import { getRegistrationStatus, getActiveYear, getOptionCountsForYear } from "@/lib/services";
+import { getRegistrationStatus, getOptionCountsForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatDate } from "@/lib/utils/date";
 import { getPublicSession } from "@/lib/public-auth";
@@ -13,10 +13,7 @@ export const metadata = {
 };
 
 export default async function RegistracePage() {
-    const [status, activeYear] = await Promise.all([
-        getRegistrationStatus(),
-        getActiveYear(),
-    ]);
+    const status = await getRegistrationStatus();
 
     if (!status.isOpen) {
         return (
@@ -24,7 +21,7 @@ export default async function RegistracePage() {
                 <PageHeader
                     title="Registrace"
                     subtitle="Registrace není momentálně otevřena"
-                    backgroundImage={activeYear?.headerPhoto || undefined}
+                    icon="tied-scroll"
                 />
                 <Container maxWidth="md" sx={{ pb: 8 }}>
                     <Box
@@ -61,7 +58,7 @@ export default async function RegistracePage() {
                 <PageHeader
                     title="Registrace"
                     subtitle={`Registrace na ${status.year?.title}`}
-                    backgroundImage={activeYear?.headerPhoto || undefined}
+                    icon="tied-scroll"
                 />
                 <Container maxWidth="md" sx={{ pb: 8 }}>
                     <Box
@@ -99,7 +96,7 @@ export default async function RegistracePage() {
             <PageHeader
                 title="Registrace"
                 subtitle={`Zaregistrujte se na ${status.year?.title}`}
-                backgroundImage={activeYear?.headerPhoto || undefined}
+                icon="tied-scroll"
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <DynamicRegistrationForm

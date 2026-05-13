@@ -1,12 +1,7 @@
-import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CardMedia,
-    Typography,
-} from "@mui/material";
+import { Box, Button, CardMedia, Typography } from "@mui/material";
 import { MarkdownContent } from "@/components/ui/markdown-content";
+import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
+import { grainyMaskHorizontal } from "@/lib/utils/grainy-mask";
 import type { CardBlock } from "@/lib/types/content-blocks";
 
 interface CardBlockRendererProps {
@@ -15,25 +10,43 @@ interface CardBlockRendererProps {
 
 export function CardBlockRenderer({ block }: CardBlockRendererProps) {
     return (
-        <Card
-            variant="outlined"
+        <Box
             sx={{
+                position: "relative",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                borderRadius: 2,
-                overflow: "hidden",
+                mx: 2,
+                backgroundColor: "rgba(128, 128, 128, 0.08)",
+                "&:hover img": { filter: "none" },
             }}
         >
+            <OrnamentalUnderline
+                sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: -1,
+                    right: -1,
+                    mt: 0,
+                    mx: 0,
+                    zIndex: 1,
+                }}
+            />
             {block.imageUrl && (
                 <CardMedia
                     component="img"
                     image={block.imageUrl}
                     alt={block.title}
-                    sx={{ height: 260, objectFit: "cover" }}
+                    sx={{
+                        height: 140,
+                        objectFit: "cover",
+                        ...grainyMaskHorizontal,
+                        filter: "grayscale(0.3) sepia(0.15) saturate(1.1) brightness(0.9)",
+                        transition: "filter 0.4s ease",
+                    }}
                 />
             )}
-            <CardContent
+            <Box
                 sx={{
                     flex: 1,
                     display: "flex",
@@ -81,7 +94,18 @@ export function CardBlockRenderer({ block }: CardBlockRendererProps) {
                         )}
                     </Box>
                 )}
-            </CardContent>
-        </Card>
+            </Box>
+            <OrnamentalUnderline
+                sx={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: -1,
+                    right: -1,
+                    mt: 0,
+                    mx: 0,
+                    transform: "scaleY(-1)",
+                }}
+            />
+        </Box>
     );
 }

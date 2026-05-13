@@ -1,27 +1,31 @@
+import { Metadata } from "next";
 import { Container } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { NewsFeed } from "@/components/public/features/news/NewsFeed";
-import { getLatestNewsForActiveYear, getActiveYear } from "@/lib/services";
+import { NewsActionButton } from "@/components/public/features/news";
+import { getLatestNewsForActiveYear } from "@/lib/services";
 
-export const metadata = {
+export const metadata: Metadata = {
     title: "Novinky | Helmáč",
     description: "Novinky a aktuality z akce Helmáč",
 };
 
 export default async function NovinkyPage() {
-    const [news, activeYear] = await Promise.all([
-        getLatestNewsForActiveYear(20),
-        getActiveYear(),
-    ]);
+    const rawNews = await getLatestNewsForActiveYear(100);
+    const news = rawNews.map((item) => ({
+        ...item,
+        actionButtons:
+            (item.actionButtons as unknown as NewsActionButton[]) ?? [],
+    }));
 
     return (
         <>
             <PageHeader
                 title="Novinky"
                 subtitle="Sledujte nejnovější zprávy a aktualizace"
-                backgroundImage={activeYear?.headerPhoto || undefined}
+                icon="trumpet-flag"
             />
-            <Container maxWidth="md" sx={{ pb: 8 }}>
+            <Container maxWidth="lg" sx={{ pt: 4, pb: 8, px: { lg: "220px" } }}>
                 <NewsFeed news={news} />
             </Container>
         </>

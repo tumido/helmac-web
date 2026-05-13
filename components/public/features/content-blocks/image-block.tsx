@@ -1,4 +1,5 @@
 import { Box, Typography } from "@mui/material";
+import { grainyMaskBoth } from "@/lib/utils/grainy-mask";
 import type { ImageBlock } from "@/lib/types/content-blocks";
 
 interface ImageBlockRendererProps {
@@ -18,6 +19,10 @@ export function ImageBlockRenderer({ block }: ImageBlockRendererProps) {
                     maxWidth: "100%",
                     height: "auto",
                     borderRadius: 1,
+                    ...grainyMaskBoth,
+                    filter: "grayscale(0.3) sepia(0.15) saturate(1.1) brightness(0.9)",
+                    transition: "filter 0.4s ease",
+                    "&:hover": { filter: "none" },
                 }}
             />
             {block.caption && (

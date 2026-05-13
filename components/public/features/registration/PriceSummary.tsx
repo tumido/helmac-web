@@ -65,7 +65,7 @@ export function PriceSummary({
                 const mainQty = parseQuantities(mainValues[field.name]);
                 if (visibleMainFields.has(field.id)) {
                     for (const opt of def.options) {
-                        const qty = Number(mainQty[opt.name]) || 0;
+                        const qty = Number(mainQty[opt.id]) || 0;
                         if (qty <= 0) continue;
                         const unitPrice = opt.prices[tierIdx] ?? 0;
                         const price = unitPrice * qty;
@@ -81,7 +81,7 @@ export function PriceSummary({
                             if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
                         }
                         for (const opt of def.options) {
-                            const qty = Number(personQty[opt.name]) || 0;
+                            const qty = Number(personQty[opt.id]) || 0;
                             if (qty <= 0) continue;
                             const unitPrice = opt.prices[tierIdx] ?? 0;
                             const price = unitPrice * qty;
@@ -106,7 +106,7 @@ export function PriceSummary({
                 const mainSelected = parseSelected(mainValues[field.name]);
                 if (mainSelected.length > 0 && visibleMainFields.has(field.id)) {
                     for (const optName of mainSelected) {
-                        const opt = def.options.find((o) => o.name === optName);
+                        const opt = def.options.find((o) => o.id === optName);
                         if (opt) {
                             const price = opt.prices[tierIdx] ?? 0;
                             mainLines.push({ label: field.label, optionName: opt.name, price });
@@ -123,7 +123,7 @@ export function PriceSummary({
                             if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
                         }
                         for (const optName of personSelected) {
-                            const opt = def.options.find((o) => o.name === optName);
+                            const opt = def.options.find((o) => o.id === optName);
                             if (!opt) continue;
                             const price = opt.prices[tierIdx] ?? 0;
                             let apEntry = apLines.find((a) => a.personIndex === idx);
@@ -139,7 +139,7 @@ export function PriceSummary({
                 // pricing_select
                 const mainVal = String(mainValues[field.name] ?? "");
                 if (mainVal && visibleMainFields.has(field.id)) {
-                    const opt = def.options.find((o) => o.name === mainVal);
+                    const opt = def.options.find((o) => o.id === mainVal);
                     if (opt) {
                         const price = opt.prices[tierIdx] ?? 0;
                         mainLines.push({ label: field.label, optionName: opt.name, price });
@@ -154,7 +154,7 @@ export function PriceSummary({
                         if (visibleAPFieldsPerPerson && visibleAPFieldsPerPerson[idx]) {
                             if (!visibleAPFieldsPerPerson[idx].has(field.id)) return;
                         }
-                        const opt = def.options.find((o) => o.name === personVal);
+                        const opt = def.options.find((o) => o.id === personVal);
                         if (!opt) return;
                         const price = opt.prices[tierIdx] ?? 0;
                         let apEntry = apLines.find((a) => a.personIndex === idx);

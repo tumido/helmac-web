@@ -25,6 +25,7 @@ export const createSectionSchema = z.object({
         .min(1, "Název je povinný")
         .max(200, "Název je příliš dlouhý"),
     subtitle: z.string().max(200, "Podtitulek je příliš dlouhý").optional(),
+    description: z.string().max(500).optional(),
     icon: z.string().optional(),
     content: z
         .string()
@@ -51,6 +52,7 @@ export const updateSectionSchema = z.object({
         .max(200, "Název je příliš dlouhý")
         .optional(),
     subtitle: z.string().max(200, "Podtitulek je příliš dlouhý").optional(),
+    description: z.string().max(500).optional(),
     icon: z.string().optional(),
     content: z
         .string()
@@ -95,6 +97,8 @@ export const createSectionTypeSchema = z.object({
     pageSubtitle: z.string().max(200).optional(),
     metaTitle: z.string().max(200).optional(),
     metaDescription: z.string().max(500).optional(),
+    featuredOnIndex: z.coerce.boolean().optional(),
+    description: z.string().max(500).optional(),
 });
 
 export const updateSectionTypeSchema = z.object({
@@ -121,6 +125,8 @@ export const updateSectionTypeSchema = z.object({
     pageSubtitle: z.string().max(200).optional(),
     metaTitle: z.string().max(200).optional(),
     metaDescription: z.string().max(500).optional(),
+    featuredOnIndex: z.coerce.boolean().optional(),
+    description: z.string().max(500).optional(),
 });
 
 export type CreateSectionInput = z.infer<typeof createSectionSchema>;

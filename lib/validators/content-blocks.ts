@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const layoutSchema = z.object({
     x: z.number().int().min(0),
-    y: z.number().min(0),
+    y: z.number().min(0).nullable().transform((v) => v ?? 0),
     w: z.number().int().min(1).max(12),
     h: z.number().min(1),
 });
@@ -27,7 +27,7 @@ const dividerBlockSchema = z.object({
     type: z.literal("divider"),
     id: z.string().min(1),
     layout: layoutSchema,
-    variant: z.enum(["simple", "ornate"]),
+    variant: z.enum(["simple", "simple-reversed", "ornate"]),
 });
 
 const cardButtonSchema = z.object({

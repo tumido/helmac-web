@@ -1,17 +1,17 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
     Drawer,
     Box,
     List,
     ListItem,
     ListItemText,
-    Typography,
-    Divider,
 } from "@mui/material";
-import { AccountCircle, PersonOutline } from "@mui/icons-material";
 import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
+import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
+import { GameIcon } from "@/lib/icons";
 import { NavItem } from "./Navigation";
 import type { PublicUserInfo } from "./ThemeWrapper";
 
@@ -31,40 +31,156 @@ export function MobileMenu({
     publicUser,
 }: MobileMenuProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get("tab");
 
     return (
         <Drawer
             anchor="right"
             open={open}
             onClose={onClose}
+            elevation={0}
             sx={{
                 "& .MuiDrawer-paper": {
                     width: 280,
-                    backgroundColor: "background.default",
+                    backgroundColor: "background.paper",
+                    borderLeft: "1.5px solid",
+                    borderColor: "primary.main",
                 },
             }}
         >
-            <Box sx={{ p: 3 }}>
-                <Typography
-                    variant="h6"
+            <Box sx={{ p: 2 }}>
+                <Box
                     sx={{
-                        fontFamily: '"Cinzel", serif',
-                        fontWeight: 700,
-                        color: "primary.main",
-                        letterSpacing: "0.1em",
-                        mb: 2,
+                        display: "flex",
+                        justifyContent: "center",
+                        mb: 1,
                     }}
                 >
-                    HELMÁČ
-                </Typography>
-
-                <Divider sx={{ mb: 2 }} />
+                    <Image
+                        src="/images/helmac-logo-centered.svg"
+                        alt="HELMÁČ"
+                        width={48}
+                        height={48}
+                    />
+                </Box>
 
                 <List disablePadding>
                     {items.map((item) => {
                         const isActive = pathname === item.href;
                         const hasSubItems =
                             item.subItems && item.subItems.length > 0;
+
+                        if (hasSubItems) {
+                            return (
+                                <Box key={item.href}>
+                                    <ListItem disablePadding>
+                                        <ListItemLinkButton
+                                            href={item.href}
+                                            onClick={onClose}
+                                            disableRipple
+                                            sx={{
+                                                "&:hover": {
+                                                    backgroundColor:
+                                                        "transparent",
+                                                },
+                                            }}
+                                        >
+                                            <ListItemText
+                                                primary={item.label}
+                                                primaryTypographyProps={{
+                                                    fontFamily: '"Cinzel", serif',
+                                                    fontWeight: 400,
+                                                    color: "text.primary",
+                                                    textTransform: "uppercase",
+                                                    fontSize: "0.875rem",
+                                                    letterSpacing: "0.1em",
+                                                }}
+                                            />
+                                        </ListItemLinkButton>
+                                    </ListItem>
+                                    <Box sx={{ pl: 2 }}>
+                                        {item.subItems!.map((sub) => {
+                                            const isSubActive =
+                                                isActive &&
+                                                activeTab === sub.id;
+
+                                            return (
+                                                <ListItem
+                                                    key={sub.id}
+                                                    disablePadding
+                                                >
+                                                    <ListItemLinkButton
+                                                        href={sub.href}
+                                                        onClick={onClose}
+                                                        disableRipple
+                                                        sx={{
+                                                            py: 0.5,
+                                                            gap: 1,
+                                                            borderBottom:
+                                                                "1.5px solid transparent",
+                                                            borderColor:
+                                                                isSubActive
+                                                                    ? "primary.main"
+                                                                    : "transparent",
+                                                            "&:hover": {
+                                                                backgroundColor:
+                                                                    "transparent",
+                                                                color: "primary.main",
+                                                                borderColor:
+                                                                    "primary.main",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Box
+                                                            component="span"
+                                                            sx={{
+                                                                width: "1.5em",
+                                                                flexShrink: 0,
+                                                                display:
+                                                                    "inline-flex",
+                                                                justifyContent:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            <GameIcon
+                                                                name={
+                                                                    sub.icon ||
+                                                                    "polar-star"
+                                                                }
+                                                                sx={{
+                                                                    fontSize:
+                                                                        "1.5em",
+                                                                    color: "primary.main",
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                        <ListItemText
+                                                            primary={sub.label}
+                                                            primaryTypographyProps={{
+                                                                fontFamily:
+                                                                    '"Cinzel", serif',
+                                                                fontSize:
+                                                                    "0.875rem",
+                                                                letterSpacing:
+                                                                    "0.1em",
+                                                                color: isSubActive
+                                                                    ? "primary.main"
+                                                                    : "text.secondary",
+                                                                fontWeight:
+                                                                    isSubActive
+                                                                        ? 700
+                                                                        : 400,
+                                                            }}
+                                                        />
+                                                    </ListItemLinkButton>
+                                                </ListItem>
+                                            );
+                                        })}
+                                    </Box>
+                                </Box>
+                            );
+                        }
 
                         return (
                             <Box key={item.href}>
@@ -73,59 +189,46 @@ export function MobileMenu({
                                         href={item.href}
                                         onClick={onClose}
                                         sx={{
-                                            borderLeft: isActive
-                                                ? "3px solid"
-                                                : "3px solid transparent",
-                                            borderColor: isActive
-                                                ? "primary.main"
-                                                : "transparent",
-                                            backgroundColor: isActive
-                                                ? "action.selected"
-                                                : "transparent",
+                                            position: "relative",
+                                            overflow: "visible",
+                                            "&:hover": {
+                                                backgroundColor:
+                                                    "transparent",
+                                            },
                                         }}
                                     >
                                         <ListItemText
                                             primary={item.label}
                                             primaryTypographyProps={{
+                                                fontFamily: '"Cinzel", serif',
                                                 fontWeight: isActive
                                                     ? 700
                                                     : 400,
+                                                color: isActive
+                                                    ? "primary.main"
+                                                    : "text.primary",
+                                                textTransform: "uppercase",
+                                                fontSize: "0.875rem",
+                                                letterSpacing: "0.1em",
                                             }}
                                         />
                                     </ListItemLinkButton>
                                 </ListItem>
-
-                                {hasSubItems &&
-                                    item.subItems!.map((sub) => (
-                                        <ListItem key={sub.id} disablePadding>
-                                            <ListItemLinkButton
-                                                href={sub.href}
-                                                onClick={onClose}
-                                                sx={{
-                                                    pl: 4,
-                                                    borderLeft:
-                                                        "3px solid transparent",
-                                                }}
-                                            >
-                                                <ListItemText
-                                                    primary={sub.label}
-                                                    primaryTypographyProps={{
-                                                        fontSize: "0.875rem",
-                                                        color: "text.secondary",
-                                                    }}
-                                                />
-                                            </ListItemLinkButton>
-                                        </ListItem>
-                                    ))}
+                                {isActive && (
+                                    <OrnamentalUnderline
+                                        sx={{
+                                            mx: 2,
+                                            mt: 0,
+                                        }}
+                                    />
+                                )}
                             </Box>
                         );
                     })}
                 </List>
 
-                {registrationOpen && (
-                    <>
-                        <Divider sx={{ my: 2 }} />
-
+                <Box sx={{ mt: 2, px: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    {registrationOpen && (
                         <LinkButton
                             href="/registrace"
                             variant="contained"
@@ -136,18 +239,15 @@ export function MobileMenu({
                         >
                             Registrace
                         </LinkButton>
-                    </>
-                )}
+                    )}
 
-                <Divider sx={{ my: 2 }} />
-
-                {publicUser ? (
+                    {publicUser ? (
                     <LinkButton
                         href="/ucet"
                         variant="outlined"
                         fullWidth
                         onClick={onClose}
-                        startIcon={<AccountCircle />}
+                        startIcon={<GameIcon name="visored-helm" sx={{ fontSize: "1.5rem" }} />}
                         sx={{
                             color: "primary.main",
                             borderColor: "primary.main",
@@ -161,11 +261,12 @@ export function MobileMenu({
                         variant="outlined"
                         fullWidth
                         onClick={onClose}
-                        startIcon={<PersonOutline />}
+                        startIcon={<GameIcon name="skeleton-key" sx={{ fontSize: "1.5rem" }} />}
                     >
                         Přihlásit se
                     </LinkButton>
                 )}
+                </Box>
             </Box>
         </Drawer>
     );

@@ -16,6 +16,7 @@ export default function AccountLayout({
             <PageHeader
                 title="Můj účet"
                 subtitle="Správa vašeho účtu a registrací"
+                icon="visored-helm"
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 <Box
