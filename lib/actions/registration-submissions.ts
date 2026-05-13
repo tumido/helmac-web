@@ -11,6 +11,7 @@ import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 
 interface ActionResult {
     success?: boolean;
@@ -142,8 +143,13 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             )
             : null;
 
-        const placeholders = buildPlaceholders({
+        const displaySubmissionData = resolveSubmissionDataForDisplay(
             submissionData,
+            allInputFields,
+            formData.pricingDefinitions,
+        );
+        const placeholders = buildPlaceholders({
+            submissionData: displaySubmissionData,
             variableSymbol: submission.variableSymbol,
             totalPrice: submission.totalPrice,
             bankAccount,

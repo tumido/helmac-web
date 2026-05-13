@@ -57,11 +57,12 @@ export function computePricingSummary({
         if (!def) continue;
 
         if (field.type === "pricing_quantity") {
-            // Quantity-based pricing: value is a JSON object { optionName: quantity }
+            // Quantity JSON is keyed by opt.id (post-redesign form); tolerate
+            // opt.name as a fallback for legacy submissions.
             if (visibleFieldIds.has(field.id)) {
                 const mainQty = parseQuantities(submissionData[field.name]);
                 for (const opt of def.options) {
-                    const qty = Number(mainQty[opt.name]) || 0;
+                    const qty = Number(mainQty[opt.id] ?? mainQty[opt.name]) || 0;
                     if (qty <= 0) continue;
                     selections.push({ def, optionName: opt.name, quantity: qty });
                 }
@@ -75,7 +76,7 @@ export function computePricingSummary({
                     }
                     const personQty = parseQuantities(person[field.name]);
                     for (const opt of def.options) {
-                        const qty = Number(personQty[opt.name]) || 0;
+                        const qty = Number(personQty[opt.id] ?? personQty[opt.name]) || 0;
                         if (qty <= 0) continue;
                         selections.push({ def, optionName: opt.name, quantity: qty });
                     }
@@ -84,8 +85,10 @@ export function computePricingSummary({
         } else if (field.type === "pricing_multi_select") {
             const mainSelected = parseSelected(submissionData[field.name]);
             if (mainSelected.length > 0 && visibleFieldIds.has(field.id)) {
-                for (const optName of mainSelected) {
-                    const opt = def.options.find((o) => o.name === optName);
+                for (const optKey of mainSelected) {
+                    const opt =
+                        def.options.find((o) => o.id === optKey) ??
+                        def.options.find((o) => o.name === optKey);
                     if (opt) {
                         selections.push({ def, optionName: opt.name, quantity: 1 });
                     }
@@ -99,8 +102,10 @@ export function computePricingSummary({
                     if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
                         return;
                     }
-                    for (const optName of personSelected) {
-                        const opt = def.options.find((o) => o.name === optName);
+                    for (const optKey of personSelected) {
+                        const opt =
+                            def.options.find((o) => o.id === optKey) ??
+                            def.options.find((o) => o.name === optKey);
                         if (opt) {
                             selections.push({ def, optionName: opt.name, quantity: 1 });
                         }
@@ -108,10 +113,12 @@ export function computePricingSummary({
                 });
             }
         } else {
-            // Option-based pricing (pricing_select): value is an option name
+            // pricing_select: value is opt.id (post-redesign) or opt.name (legacy)
             const mainVal = String(submissionData[field.name] ?? "");
             if (mainVal && visibleFieldIds.has(field.id)) {
-                const opt = def.options.find((o) => o.name === mainVal);
+                const opt =
+                    def.options.find((o) => o.id === mainVal) ??
+                    def.options.find((o) => o.name === mainVal);
                 if (opt) {
                     selections.push({ def, optionName: opt.name, quantity: 1 });
                 }
@@ -125,7 +132,9 @@ export function computePricingSummary({
                     if (apVisibleFieldIdsPerPerson[idx] && !apVisibleFieldIdsPerPerson[idx].has(field.id)) {
                         return;
                     }
-                    const opt = def.options.find((o) => o.name === personVal);
+                    const opt =
+                        def.options.find((o) => o.id === personVal) ??
+                        def.options.find((o) => o.name === personVal);
                     if (opt) {
                         selections.push({ def, optionName: opt.name, quantity: 1 });
                     }

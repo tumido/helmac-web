@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
 import { formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllFields, isInputField } from "@/lib/types/registration-form";
-import type { FormField } from "@/lib/types/registration-form";
+import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
+import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { ParsedBankTransaction } from "@/lib/utils/fio-api";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 
 export interface MatchResult {
     total: number;
@@ -44,22 +45,33 @@ export async function processTransactions(
     const bankAccount = await getGlobalBankAccount();
 
     // Cache form fields per formId for email placeholders and section conditions
-    const formFieldsCache = new Map<string, FormField[]>();
+    interface CachedForm {
+        fields: FormField[];
+        inputFields: InputField[];
+        pricingDefinitions: PricingDefinition[];
+    }
+    const formFieldsCache = new Map<string, CachedForm>();
 
-    async function getFormFields(formId: string): Promise<FormField[]> {
-        if (formFieldsCache.has(formId)) return formFieldsCache.get(formId)!;
+    async function getFormFields(formId: string): Promise<CachedForm> {
+        const cached = formFieldsCache.get(formId);
+        if (cached) return cached;
         const form = await db.registrationForm.findUnique({
             where: { id: formId },
             select: { fields: true },
         });
         if (!form) {
-            formFieldsCache.set(formId, []);
-            return [];
+            const empty: CachedForm = { fields: [], inputFields: [], pricingDefinitions: [] };
+            formFieldsCache.set(formId, empty);
+            return empty;
         }
         const formData = migrateFormData(form.fields);
-        const fields = getAllFields(formData.fields);
-        formFieldsCache.set(formId, fields);
-        return fields;
+        const value: CachedForm = {
+            fields: getAllFields(formData.fields),
+            inputFields: getAllInputFields(formData.fields),
+            pricingDefinitions: formData.pricingDefinitions,
+        };
+        formFieldsCache.set(formId, value);
+        return value;
     }
 
     for (const tx of transactions) {
@@ -170,7 +182,8 @@ export async function processTransactions(
                 year.paymentEmailBody
             ) {
                 try {
-                    const fields = await getFormFields(submission.formId);
+                    const cachedForm = await getFormFields(submission.formId);
+                    const { fields, inputFields, pricingDefinitions } = cachedForm;
                     const emailField = fields.find((f) => isInputField(f) && f.type === "email");
                     const submissionData = submission.data as Record<string, unknown>;
                     const recipientEmail = emailField && isInputField(emailField)
@@ -186,8 +199,13 @@ export async function processTransactions(
                             )
                             : null;
 
-                        const placeholders = buildPlaceholders({
+                        const displaySubmissionData = resolveSubmissionDataForDisplay(
                             submissionData,
+                            inputFields,
+                            pricingDefinitions,
+                        );
+                        const placeholders = buildPlaceholders({
+                            submissionData: displaySubmissionData,
                             variableSymbol: tx.variableSymbol,
                             totalPrice,
                             bankAccount: bankAccountFormatted,

@@ -5,10 +5,11 @@ import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
 import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllFields, isInputField } from "@/lib/types/registration-form";
+import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
-import type { FormField, PricingSummaryData } from "@/lib/types/registration-form";
+import type { FormField, InputField, PricingDefinition, PricingSummaryData } from "@/lib/types/registration-form";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 
 export const dynamic = "force-dynamic";
 
@@ -58,24 +59,33 @@ export async function GET(request: NextRequest) {
     const emailErrors: string[] = [];
 
     // Cache form fields per formId to avoid repeated DB lookups
-    const formFieldsCache = new Map<string, FormField[]>();
+    interface CachedForm {
+        fields: FormField[];
+        inputFields: InputField[];
+        pricingDefinitions: PricingDefinition[];
+    }
+    const formFieldsCache = new Map<string, CachedForm>();
 
-    async function getFormInputFields(formId: string): Promise<FormField[]> {
-        if (formFieldsCache.has(formId)) {
-            return formFieldsCache.get(formId)!;
-        }
+    async function getFormInputFields(formId: string): Promise<CachedForm> {
+        const cached = formFieldsCache.get(formId);
+        if (cached) return cached;
         const form = await db.registrationForm.findUnique({
             where: { id: formId },
             select: { fields: true },
         });
         if (!form) {
-            formFieldsCache.set(formId, []);
-            return [];
+            const empty: CachedForm = { fields: [], inputFields: [], pricingDefinitions: [] };
+            formFieldsCache.set(formId, empty);
+            return empty;
         }
         const formData = migrateFormData(form.fields);
-        const fields = getAllFields(formData.fields);
-        formFieldsCache.set(formId, fields);
-        return fields;
+        const value: CachedForm = {
+            fields: getAllFields(formData.fields),
+            inputFields: getAllInputFields(formData.fields),
+            pricingDefinitions: formData.pricingDefinitions,
+        };
+        formFieldsCache.set(formId, value);
+        return value;
     }
 
     for (const submission of submissions) {
@@ -111,8 +121,9 @@ export async function GET(request: NextRequest) {
                 year.priceChangeEmailBody
             ) {
                 try {
-                    const inputFields = await getFormInputFields(submission.formId);
-                    const emailField = inputFields.find((f) => isInputField(f) && f.type === "email");
+                    const cachedForm = await getFormInputFields(submission.formId);
+                    const { fields: allFormFields, inputFields, pricingDefinitions } = cachedForm;
+                    const emailField = allFormFields.find((f) => isInputField(f) && f.type === "email");
                     const submissionData = submission.data as Record<string, unknown>;
                     const recipientEmail = emailField && isInputField(emailField)
                         ? String(submissionData[emailField.name] ?? "")
@@ -127,8 +138,13 @@ export async function GET(request: NextRequest) {
                             )
                             : null;
 
-                        const placeholders = buildPlaceholders({
+                        const displaySubmissionData = resolveSubmissionDataForDisplay(
                             submissionData,
+                            inputFields,
+                            pricingDefinitions,
+                        );
+                        const placeholders = buildPlaceholders({
+                            submissionData: displaySubmissionData,
                             variableSymbol: submission.variableSymbol,
                             totalPrice,
                             bankAccount: bankAccountFormatted,
@@ -146,7 +162,7 @@ export async function GET(request: NextRequest) {
                             body: year.priceChangeEmailBody,
                             sections: (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? [],
                             rawSubmissionData: submissionData,
-                            allFields: inputFields,
+                            allFields: allFormFields,
                         });
                         const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 

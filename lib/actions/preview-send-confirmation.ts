@@ -25,6 +25,7 @@ import {
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import { buildVisibleFieldIds } from "@/lib/utils/visible-fields";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 
 const PREVIEW_VARIABLE_SYMBOL = "00000000";
 
@@ -153,7 +154,12 @@ export async function sendPreviewConfirmation(
               )
             : null;
 
-    const rawSubmissionForPlaceholders: Record<string, unknown> = { ...submissionData };
+    const displaySubmissionData = resolveSubmissionDataForDisplay(
+        submissionData,
+        allInputFields,
+        formDataStored.pricingDefinitions,
+    );
+    const rawSubmissionForPlaceholders: Record<string, unknown> = { ...displaySubmissionData };
     if (typedAP.length > 0) {
         rawSubmissionForPlaceholders.additionalPeople = typedAP;
     }

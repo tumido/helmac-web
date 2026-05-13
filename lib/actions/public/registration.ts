@@ -10,6 +10,7 @@ import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { parseQuantities } from "@/lib/utils/pricing-field-values";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
@@ -465,8 +466,13 @@ export async function submitDynamicRegistration(
             )
             : null;
 
-        const placeholders = buildPlaceholders({
+        const displaySubmissionData = resolveSubmissionDataForDisplay(
             submissionData,
+            allInputFields,
+            formDataStored.pricingDefinitions,
+        );
+        const placeholders = buildPlaceholders({
+            submissionData: displaySubmissionData,
             variableSymbol,
             totalPrice,
             bankAccount,
