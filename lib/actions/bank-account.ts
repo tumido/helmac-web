@@ -31,6 +31,7 @@ export async function updateGlobalBankAccount(formData: FormData) {
         bankAccountPrefix: formData.get("bankAccountPrefix") || null,
         bankAccountNumber: formData.get("bankAccountNumber") || null,
         bankAccountBankCode: formData.get("bankAccountBankCode") || null,
+        bankSwift: formData.get("bankSwift") || null,
     };
 
     const validated = updateBankAccountSchema.safeParse(rawData);
@@ -43,6 +44,7 @@ export async function updateGlobalBankAccount(formData: FormData) {
             bankAccountPrefix: validated.data.bankAccountPrefix,
             bankAccountNumber: validated.data.bankAccountNumber,
             bankAccountBankCode: validated.data.bankAccountBankCode,
+            bankSwift: validated.data.bankSwift,
         });
 
         revalidatePath("/admin/nastaveni/banka");

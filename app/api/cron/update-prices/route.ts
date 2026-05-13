@@ -137,6 +137,13 @@ export async function GET(request: NextRequest) {
                                 globalBank.bankAccountPrefix ?? undefined,
                             )
                             : null;
+                        const iban = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
+                            ? czechAccountToIBAN(
+                                globalBank.bankAccountNumber,
+                                globalBank.bankAccountBankCode,
+                                globalBank.bankAccountPrefix ?? undefined,
+                            )
+                            : null;
 
                         const displaySubmissionData = resolveSubmissionDataForDisplay(
                             submissionData,
@@ -148,6 +155,8 @@ export async function GET(request: NextRequest) {
                             variableSymbol: submission.variableSymbol,
                             totalPrice,
                             bankAccount: bankAccountFormatted,
+                            iban,
+                            swift: globalBank?.bankSwift ?? null,
                             yearNumber: year.year,
                             yearTitle: year.title,
                             yearSubtitle: year.subtitle,
@@ -169,19 +178,12 @@ export async function GET(request: NextRequest) {
 
                         // Generate QR payment image if bank account is configured
                         let qrImageBuffer: Buffer | null = null;
-                        if (globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode && totalPrice > 0) {
-                            const iban = czechAccountToIBAN(
-                                globalBank.bankAccountNumber,
-                                globalBank.bankAccountBankCode,
-                                globalBank.bankAccountPrefix ?? undefined,
-                            );
-                            if (iban) {
-                                qrImageBuffer = await generateQRPaymentImage({
-                                    iban,
-                                    amount: totalPrice,
-                                    variableSymbol: submission.variableSymbol ?? undefined,
-                                });
-                            }
+                        if (totalPrice > 0 && iban) {
+                            qrImageBuffer = await generateQRPaymentImage({
+                                iban,
+                                amount: totalPrice,
+                                variableSymbol: submission.variableSymbol ?? undefined,
+                            });
                         }
 
                         const sent = await sendConfirmationEmail({

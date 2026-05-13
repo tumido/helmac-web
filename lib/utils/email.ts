@@ -137,6 +137,8 @@ export function buildPlaceholders(opts: {
     variableSymbol: string | null;
     totalPrice: number | null;
     bankAccount: string | null;
+    iban: string | null;
+    swift: string | null;
     yearNumber: number;
     yearTitle: string;
     yearSubtitle: string | null;
@@ -172,6 +174,8 @@ export function buildPlaceholders(opts: {
     placeholders.variabilniSymbol = opts.variableSymbol ?? "";
     placeholders.celkovaCena = opts.totalPrice != null ? `${opts.totalPrice} Kč` : "";
     placeholders.cisloUctu = opts.bankAccount ?? "";
+    placeholders.iban = opts.iban ?? "";
+    placeholders.swift = opts.swift ?? "";
     placeholders.rok = String(opts.yearNumber);
     placeholders.nazevRocniku = opts.yearTitle;
     placeholders.podtitulek = opts.yearSubtitle ?? "";

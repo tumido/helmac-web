@@ -17,16 +17,19 @@ interface BankAccountSettingsProps {
     bankAccountPrefix: string | null;
     bankAccountNumber: string | null;
     bankAccountBankCode: string | null;
+    bankSwift: string | null;
 }
 
 export function BankAccountSettings({
     bankAccountPrefix,
     bankAccountNumber,
     bankAccountBankCode,
+    bankSwift,
 }: BankAccountSettingsProps) {
     const [bankPrefix, setBankPrefix] = useState(bankAccountPrefix ?? "");
     const [bankNumber, setBankNumber] = useState(bankAccountNumber ?? "");
     const [bankCode, setBankCode] = useState(bankAccountBankCode ?? "");
+    const [swift, setSwift] = useState(bankSwift ?? "");
     const [bankSaving, setBankSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +43,7 @@ export function BankAccountSettings({
         fd.set("bankAccountPrefix", bankPrefix);
         fd.set("bankAccountNumber", bankNumber);
         fd.set("bankAccountBankCode", bankCode);
+        fd.set("bankSwift", swift);
         const result = await updateGlobalBankAccount(fd);
         if (result.error) {
             setError(typeof result.error === "string" ? result.error : Object.values(result.error).flat().join(", "));
@@ -53,6 +57,7 @@ export function BankAccountSettings({
         setBankPrefix(bankAccountPrefix ?? "");
         setBankNumber(bankAccountNumber ?? "");
         setBankCode(bankAccountBankCode ?? "");
+        setSwift(bankSwift ?? "");
         setBankEditing(false);
         setError(null);
     };
@@ -104,8 +109,8 @@ export function BankAccountSettings({
                     <Box
                         sx={{
                             display: "flex",
-                            alignItems: "center",
-                            gap: 1,
+                            flexDirection: "column",
+                            gap: 0.5,
                             px: 2,
                             py: 1,
                             borderRadius: 1,
@@ -119,6 +124,11 @@ export function BankAccountSettings({
                             </Typography>
                             /{bankCode}
                         </Typography>
+                        {swift && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "monospace" }}>
+                                SWIFT: {swift}
+                            </Typography>
+                        )}
                     </Box>
                 ) : (
                     <>
@@ -151,6 +161,19 @@ export function BankAccountSettings({
                                 size="small"
                                 sx={{ width: 100 }}
                                 inputProps={{ maxLength: 4 }}
+                            />
+                        </Box>
+                        <Box sx={{ mt: 2 }}>
+                            <TextField
+                                label="SWIFT / BIC"
+                                value={swift}
+                                onChange={(e) => setSwift(e.target.value)}
+                                disabled={bankSaving}
+                                size="small"
+                                fullWidth
+                                inputProps={{ maxLength: 11, style: { textTransform: "uppercase", fontFamily: "monospace" } }}
+                                placeholder="např. GIBACZPX"
+                                helperText="SWIFT/BIC kód banky pro zahraniční platby (8 nebo 11 znaků, volitelné)"
                             />
                         </Box>
                         {!hasSavedBank && (

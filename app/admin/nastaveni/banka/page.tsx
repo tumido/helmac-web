@@ -23,6 +23,7 @@ export default async function BankaPage() {
                 bankAccountPrefix={bankAccount?.bankAccountPrefix ?? null}
                 bankAccountNumber={bankAccount?.bankAccountNumber ?? null}
                 bankAccountBankCode={bankAccount?.bankAccountBankCode ?? null}
+                bankSwift={bankAccount?.bankSwift ?? null}
             />
 
             <FioTokenSettings

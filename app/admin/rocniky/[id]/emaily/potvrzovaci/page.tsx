@@ -54,6 +54,8 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
         { key: "variabilniSymbol", label: "Variabilní symbol" },
         { key: "celkovaCena", label: "Celková cena" },
         { key: "cisloUctu", label: "Číslo účtu" },
+        { key: "iban", label: "IBAN" },
+        { key: "swift", label: "SWIFT" },
         { key: "rok", label: "Rok" },
         { key: "nazevRocniku", label: "Název ročníku" },
         { key: "podtitulek", label: "Podtitulek" },

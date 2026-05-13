@@ -219,7 +219,7 @@ export function RegistrationSuccess({
                                             </Typography>
                                         </Box>
                                         <Divider sx={{ my: 1.5 }} />
-                                        <Box>
+                                        <Box sx={{ mb: 2 }}>
                                             <Typography
                                                 variant="body2"
                                                 color="text.secondary"
@@ -237,6 +237,48 @@ export function RegistrationSuccess({
                                                 {paymentData.variableSymbol}
                                             </Typography>
                                         </Box>
+                                        <Divider sx={{ my: 1.5 }} />
+                                        <Box sx={{ mb: paymentData.swift ? 2 : 0 }}>
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                            >
+                                                IBAN:
+                                            </Typography>
+                                            <Typography
+                                                variant="body1"
+                                                fontWeight={600}
+                                                sx={{
+                                                    fontFamily: "monospace",
+                                                    wordBreak: "break-all",
+                                                }}
+                                            >
+                                                {paymentData.iban}
+                                            </Typography>
+                                        </Box>
+                                        {paymentData.swift && (
+                                            <>
+                                                <Divider sx={{ my: 1.5 }} />
+                                                <Box>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                    >
+                                                        SWIFT / BIC:
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body1"
+                                                        fontWeight={600}
+                                                        sx={{
+                                                            fontFamily: "monospace",
+                                                            letterSpacing: 1,
+                                                        }}
+                                                    >
+                                                        {paymentData.swift}
+                                                    </Typography>
+                                                </Box>
+                                            </>
+                                        )}
                                     </Box>
                                 </Box>
                             </Paper>

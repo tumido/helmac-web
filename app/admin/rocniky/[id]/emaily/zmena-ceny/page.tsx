@@ -57,6 +57,8 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
         { key: "staraCena", label: "Původní cena" },
         { key: "novaCena", label: "Nová cena" },
         { key: "cisloUctu", label: "Číslo účtu" },
+        { key: "iban", label: "IBAN" },
+        { key: "swift", label: "SWIFT" },
         { key: "rok", label: "Rok" },
         { key: "nazevRocniku", label: "Název ročníku" },
         { key: "podtitulek", label: "Podtitulek" },

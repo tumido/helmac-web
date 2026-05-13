@@ -155,6 +155,14 @@ export async function sendPreviewConfirmation(
                   globalBank.bankAccountPrefix ?? undefined,
               )
             : null;
+    const iban =
+        globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
+            ? czechAccountToIBAN(
+                  globalBank.bankAccountNumber,
+                  globalBank.bankAccountBankCode,
+                  globalBank.bankAccountPrefix ?? undefined,
+              )
+            : null;
 
     const displaySubmissionData = resolveSubmissionDataForDisplay(
         submissionData,
@@ -171,6 +179,8 @@ export async function sendPreviewConfirmation(
         variableSymbol: PREVIEW_VARIABLE_SYMBOL,
         totalPrice,
         bankAccount,
+        iban,
+        swift: globalBank?.bankSwift ?? null,
         yearNumber: year.year,
         yearTitle: year.title,
         yearSubtitle: year.subtitle,
@@ -192,24 +202,12 @@ export async function sendPreviewConfirmation(
     const renderedBody = replacePlaceholders(bodyWithSections, placeholders);
 
     let qrImageBuffer: Buffer | null = null;
-    if (
-        totalPrice &&
-        totalPrice > 0 &&
-        globalBank?.bankAccountNumber &&
-        globalBank?.bankAccountBankCode
-    ) {
-        const iban = czechAccountToIBAN(
-            globalBank.bankAccountNumber,
-            globalBank.bankAccountBankCode,
-            globalBank.bankAccountPrefix ?? undefined,
-        );
-        if (iban) {
-            qrImageBuffer = await generateQRPaymentImage({
-                iban,
-                amount: totalPrice,
-                variableSymbol: PREVIEW_VARIABLE_SYMBOL,
-            });
-        }
+    if (totalPrice && totalPrice > 0 && iban) {
+        qrImageBuffer = await generateQRPaymentImage({
+            iban,
+            amount: totalPrice,
+            variableSymbol: PREVIEW_VARIABLE_SYMBOL,
+        });
     }
 
     try {

@@ -1,7 +1,7 @@
 import { Prisma, BankTransactionMatchStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
-import { formatCzechAccount } from "@/lib/utils/spayd";
+import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
 import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
@@ -198,6 +198,13 @@ export async function processTransactions(
                                 bankAccount.bankAccountPrefix ?? undefined,
                             )
                             : null;
+                        const iban = bankAccount?.bankAccountNumber && bankAccount?.bankAccountBankCode
+                            ? czechAccountToIBAN(
+                                bankAccount.bankAccountNumber,
+                                bankAccount.bankAccountBankCode,
+                                bankAccount.bankAccountPrefix ?? undefined,
+                            )
+                            : null;
 
                         const displaySubmissionData = resolveSubmissionDataForDisplay(
                             submissionData,
@@ -209,6 +216,8 @@ export async function processTransactions(
                             variableSymbol: tx.variableSymbol,
                             totalPrice,
                             bankAccount: bankAccountFormatted,
+                            iban,
+                            swift: bankAccount?.bankSwift ?? null,
                             yearNumber: year.year,
                             yearTitle: year.title,
                             yearSubtitle: year.subtitle,

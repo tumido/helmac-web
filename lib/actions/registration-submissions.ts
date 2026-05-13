@@ -142,6 +142,13 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                 globalBank.bankAccountPrefix ?? undefined,
             )
             : null;
+        const iban = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
+            ? czechAccountToIBAN(
+                globalBank.bankAccountNumber,
+                globalBank.bankAccountBankCode,
+                globalBank.bankAccountPrefix ?? undefined,
+            )
+            : null;
 
         const displaySubmissionData = resolveSubmissionDataForDisplay(
             submissionData,
@@ -153,6 +160,8 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             variableSymbol: submission.variableSymbol,
             totalPrice: submission.totalPrice,
             bankAccount,
+            iban,
+            swift: globalBank?.bankSwift ?? null,
             yearNumber: submission.year.year,
             yearTitle: submission.year.title,
             yearSubtitle: submission.year.subtitle,
@@ -174,21 +183,13 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             submission.totalPrice &&
             submission.totalPrice > 0 &&
             submission.variableSymbol &&
-            globalBank?.bankAccountNumber &&
-            globalBank?.bankAccountBankCode
+            iban
         ) {
-            const iban = czechAccountToIBAN(
-                globalBank.bankAccountNumber,
-                globalBank.bankAccountBankCode,
-                globalBank.bankAccountPrefix ?? undefined,
-            );
-            if (iban) {
-                qrImageBuffer = await generateQRPaymentImage({
-                    iban,
-                    amount: submission.totalPrice,
-                    variableSymbol: submission.variableSymbol,
-                });
-            }
+            qrImageBuffer = await generateQRPaymentImage({
+                iban,
+                amount: submission.totalPrice,
+                variableSymbol: submission.variableSymbol,
+            });
         }
 
         const sent = await sendConfirmationEmail({

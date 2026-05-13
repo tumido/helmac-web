@@ -26,6 +26,7 @@ export interface PaymentData {
     variableSymbol: string;
     bankAccount: string;
     iban: string;
+    swift: string | null;
     spaydString: string;
 }
 
@@ -451,6 +452,7 @@ export async function submitDynamicRegistration(
                         globalBank.bankAccountPrefix ?? undefined,
                     ),
                     iban,
+                    swift: globalBank.bankSwift ?? null,
                     spaydString,
                 };
             }
@@ -468,6 +470,15 @@ export async function submitDynamicRegistration(
             )
             : null;
 
+        const iban = paymentData?.iban
+            ?? (globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
+                ? czechAccountToIBAN(
+                    globalBank.bankAccountNumber,
+                    globalBank.bankAccountBankCode,
+                    globalBank.bankAccountPrefix ?? undefined,
+                )
+                : null);
+
         const displaySubmissionData = resolveSubmissionDataForDisplay(
             submissionData,
             allInputFields,
@@ -478,6 +489,8 @@ export async function submitDynamicRegistration(
             variableSymbol,
             totalPrice,
             bankAccount,
+            iban,
+            swift: globalBank?.bankSwift ?? null,
             yearNumber: activeYear.year,
             yearTitle: activeYear.title,
             yearSubtitle: activeYear.subtitle,

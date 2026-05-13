@@ -19,6 +19,15 @@ export const updateBankAccountSchema = z.object({
         .optional()
         .nullable()
         .transform((v) => v || null),
+    bankSwift: z
+        .string()
+        .regex(
+            /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/i,
+            "SWIFT/BIC musí mít 8 nebo 11 znaků (písmena a číslice)",
+        )
+        .optional()
+        .nullable()
+        .transform((v) => (v ? v.toUpperCase().replace(/\s/g, "") : null)),
 }).superRefine((data, ctx) => {
     const hasAny = data.bankAccountPrefix || data.bankAccountNumber || data.bankAccountBankCode;
     if (hasAny) {
