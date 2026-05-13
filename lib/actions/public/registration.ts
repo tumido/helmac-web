@@ -3,12 +3,13 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { InputField, OptionCounts, AdditionalPersonData, CapacityLimit } from "@/lib/types/registration-form";
+import type { InputField, OptionCounts, AdditionalPersonData, CapacityLimit, PricingDefinition } from "@/lib/types/registration-form";
 import { getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
+import { parseQuantities } from "@/lib/utils/pricing-field-values";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
@@ -47,6 +48,7 @@ function validateCapacityLimits(
     submissionData: Record<string, unknown>,
     additionalPeople: AdditionalPersonData[],
     allInputFields: InputField[],
+    pricingDefinitions: PricingDefinition[],
     optionCounts: OptionCounts,
 ): { fieldName: string; error: string } | null {
     for (const limit of capacityLimits) {
@@ -57,24 +59,42 @@ function validateCapacityLimits(
 
         // Count how many times this value appears in current submission
         let submittedCount = 0;
-        const mainVal = String(submissionData[field.name] ?? "");
-        if (field.type === "pricing_multi_select" && mainVal.startsWith("[")) {
-            try {
-                const arr = JSON.parse(mainVal);
-                if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
-            } catch { /* ignore */ }
-        } else if (mainVal === limit.value) {
-            submittedCount++;
-        }
-        for (const person of additionalPeople) {
-            const personVal = String(person[field.name] ?? "");
-            if (field.type === "pricing_multi_select" && personVal.startsWith("[")) {
+
+        if (field.type === "pricing_quantity") {
+            // Sum quantities for this option across main + AP. Quantity JSON is
+            // keyed by opt.id in the form; tolerate opt.name as a fallback.
+            const def = pricingDefinitions.find((d) => d.id === field.pricingId);
+            const opt = def?.options.find((o) => o.name === limit.value);
+            const sumQty = (raw: unknown): number => {
+                const qMap = parseQuantities(raw);
+                const byId = opt ? Number(qMap[opt.id]) || 0 : 0;
+                const byName = Number(qMap[limit.value]) || 0;
+                return byId || byName;
+            };
+            submittedCount += sumQty(submissionData[field.name]);
+            for (const person of additionalPeople) {
+                submittedCount += sumQty(person[field.name]);
+            }
+        } else {
+            const mainVal = String(submissionData[field.name] ?? "");
+            if (field.type === "pricing_multi_select" && mainVal.startsWith("[")) {
                 try {
-                    const arr = JSON.parse(personVal);
+                    const arr = JSON.parse(mainVal);
                     if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
                 } catch { /* ignore */ }
-            } else if (personVal === limit.value) {
+            } else if (mainVal === limit.value) {
                 submittedCount++;
+            }
+            for (const person of additionalPeople) {
+                const personVal = String(person[field.name] ?? "");
+                if (field.type === "pricing_multi_select" && personVal.startsWith("[")) {
+                    try {
+                        const arr = JSON.parse(personVal);
+                        if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
+                    } catch { /* ignore */ }
+                } else if (personVal === limit.value) {
+                    submittedCount++;
+                }
             }
         }
 
@@ -311,6 +331,7 @@ export async function submitDynamicRegistration(
             submissionData,
             parsedAP,
             allInputFields,
+            formDataStored.pricingDefinitions,
             optionCounts,
         );
         if (capacityError) {

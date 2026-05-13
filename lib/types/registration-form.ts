@@ -202,6 +202,25 @@ export function getDisabledOptionsForField(
     return disabled;
 }
 
+/**
+ * Returns optionValue -> remaining capacity for a given field. Only options that
+ * have a configured capacity limit appear in the result. Missing entries mean no limit.
+ */
+export function getRemainingCapacityForField(
+    fieldId: string,
+    fieldName: string,
+    capacityLimits: CapacityLimit[],
+    optionCounts?: OptionCounts,
+): Record<string, number> {
+    const remaining: Record<string, number> = {};
+    for (const limit of capacityLimits) {
+        if (limit.fieldId !== fieldId) continue;
+        const currentCount = optionCounts?.[fieldName]?.[limit.value] ?? 0;
+        remaining[limit.value] = Math.max(0, limit.maxCount - currentCount);
+    }
+    return remaining;
+}
+
 // --- Pricing summary (stored in DB) ---
 
 export interface PricingTier {

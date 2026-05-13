@@ -1,6 +1,12 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
 import type { OptionCounts, OptionPeople } from "@/lib/types/registration-form";
+import { getAllInputFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
+
+// fieldName -> map of opt.id (and opt.name) -> opt.name, used to translate stored
+// quantity-field JSON keys back to option names so OptionCounts stays name-keyed.
+type QuantityFieldMap = Record<string, Record<string, string>>;
 
 export const getRegistrationStatus = cache(async () => {
     const activeYear = await db.year.findFirst({
@@ -118,7 +124,11 @@ export async function getOptionCountsForYearFresh(yearId: string): Promise<Optio
     return computeOptionCounts(yearId);
 }
 
-function countValues(counts: OptionCounts, data: Record<string, unknown>): void {
+function countValues(
+    counts: OptionCounts,
+    data: Record<string, unknown>,
+    quantityFields: QuantityFieldMap,
+): void {
     for (const [name, val] of Object.entries(data)) {
         if (name === "additionalPeople") continue;
         const str = String(val ?? "");
@@ -133,6 +143,23 @@ function countValues(counts: OptionCounts, data: Record<string, unknown>): void 
                     for (const item of arr) {
                         const s = String(item);
                         if (s) counts[name][s] = (counts[name][s] || 0) + 1;
+                    }
+                    continue;
+                }
+            } catch { /* not JSON, treat as plain string */ }
+        }
+
+        // Handle JSON object values (pricing_quantity): sum quantities per option,
+        // translating opt.id / opt.name keys to opt.name so OptionCounts stays name-keyed.
+        if (str.startsWith("{") && quantityFields[name]) {
+            try {
+                const obj = JSON.parse(str);
+                if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+                    const keyToName = quantityFields[name];
+                    for (const [key, qty] of Object.entries(obj)) {
+                        const optName = keyToName[key] ?? key;
+                        const n = Number(qty) || 0;
+                        if (n > 0) counts[name][optName] = (counts[name][optName] || 0) + n;
                     }
                     continue;
                 }
@@ -205,28 +232,55 @@ export const getOptionPeopleForYear = cache(async (yearId: string, personFieldNa
 });
 
 async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
-    const submissions = await db.registrationSubmission.findMany({
-        where: {
-            yearId,
-            status: { notIn: ["CANCELLED", "REJECTED"] },
-        },
-        select: { data: true },
-    });
+    const [submissions, form] = await Promise.all([
+        db.registrationSubmission.findMany({
+            where: {
+                yearId,
+                status: { notIn: ["CANCELLED", "REJECTED"] },
+            },
+            select: { data: true },
+        }),
+        db.registrationForm.findUnique({
+            where: { yearId },
+            select: { fields: true },
+        }),
+    ]);
+
+    const quantityFields = buildQuantityFieldMap(form?.fields);
 
     const counts: OptionCounts = {};
     for (const sub of submissions) {
         const data = sub.data as Record<string, unknown>;
         // Count main person values
-        countValues(counts, data);
+        countValues(counts, data, quantityFields);
         // Count additional people values
         const ap = data.additionalPeople;
         if (Array.isArray(ap)) {
             for (const person of ap) {
                 if (person && typeof person === "object") {
-                    countValues(counts, person as Record<string, unknown>);
+                    countValues(counts, person as Record<string, unknown>, quantityFields);
                 }
             }
         }
     }
     return counts;
+}
+
+function buildQuantityFieldMap(rawFields: unknown): QuantityFieldMap {
+    if (!rawFields) return {};
+    const formData = migrateFormData(rawFields);
+    const inputFields = getAllInputFields(formData.fields);
+    const map: QuantityFieldMap = {};
+    for (const field of inputFields) {
+        if (field.type !== "pricing_quantity" || !field.pricingId) continue;
+        const def = formData.pricingDefinitions.find((d) => d.id === field.pricingId);
+        if (!def) continue;
+        const keyToName: Record<string, string> = {};
+        for (const opt of def.options) {
+            keyToName[opt.id] = opt.name;
+            keyToName[opt.name] = opt.name;
+        }
+        map[field.name] = keyToName;
+    }
+    return map;
 }

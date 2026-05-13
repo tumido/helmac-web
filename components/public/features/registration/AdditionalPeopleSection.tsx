@@ -22,6 +22,7 @@ import {
     buildMergedDataForAP,
     getAPFieldNames,
 } from "@/lib/utils/additional-people";
+import { getQuantityRemainingForField } from "@/lib/utils/quantity-remaining";
 
 interface AdditionalPeopleSectionProps {
     formData: RegistrationFormData;
@@ -281,6 +282,21 @@ export function AdditionalPeopleSection({
                                     formData.capacityLimits,
                                     optionCounts
                                 );
+                                // "Others" = main person + all other AP except this one
+                                const others: Array<Record<string, unknown>> = [
+                                    mainValues,
+                                    ...people.filter(
+                                        (_, i) => i !== personIndex
+                                    ),
+                                ];
+                                const remainingCap =
+                                    getQuantityRemainingForField(
+                                        field,
+                                        formData.pricingDefinitions,
+                                        formData.capacityLimits,
+                                        optionCounts,
+                                        others,
+                                    );
 
                                 return (
                                     <DynamicFormField
@@ -301,6 +317,7 @@ export function AdditionalPeopleSection({
                                         priceTiers={formData.priceTiers}
                                         namePrefix={`ap_${personIndex}_`}
                                         disabledOptions={disabledOpts}
+                                        remainingCapacity={remainingCap}
                                     />
                                 );
                             })}

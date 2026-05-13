@@ -39,6 +39,7 @@ interface DynamicFormFieldProps {
     priceTiers?: string[];
     namePrefix?: string; // Prefix for HTML name attributes (used by AP fields to avoid DOM conflicts)
     disabledOptions?: Set<string>; // Option values that are at capacity
+    remainingCapacity?: Record<string, number>; // For pricing_quantity: optionName -> remaining units
 }
 
 export function DynamicFormField({
@@ -50,6 +51,7 @@ export function DynamicFormField({
     priceTiers,
     namePrefix,
     disabledOptions,
+    remainingCapacity,
 }: DynamicFormFieldProps) {
     const [showAllTiers, setShowAllTiers] = useState(false);
 
@@ -757,6 +759,15 @@ export function DynamicFormField({
                                 opt.prices[opt.prices.length - 1] ??
                                 0;
                             const priceTag = `${unitPrice > 0 ? "+" : ""}${formatPrice(unitPrice)}`;
+                            // `remaining` = max units this person can hold without exceeding
+                            // the global cap (callers pre-subtract other persons' selections).
+                            const remaining = remainingCapacity?.[opt.name];
+                            const hasLimit = remaining !== undefined;
+                            const atCap = hasLimit && qty >= remaining;
+                            // Units still available globally (this person's qty included).
+                            const left = hasLimit ? Math.max(0, remaining - qty) : 0;
+                            const soldOut = hasLimit && left === 0 && qty === 0;
+                            const unitLabel = qDef.unitName ?? "";
                             return (
                                 <Box
                                     key={opt.id}
@@ -778,6 +789,7 @@ export function DynamicFormField({
                                                 ? "primary.50"
                                                 : "transparent",
                                         transition: "all 0.2s ease",
+                                        opacity: soldOut ? 0.6 : 1,
                                     }}
                                 >
                                     <Box
@@ -799,6 +811,17 @@ export function DynamicFormField({
                                                 color="text.secondary"
                                             >
                                                 {opt.description}
+                                            </Typography>
+                                        )}
+                                        {hasLimit && (
+                                            <Typography
+                                                variant="caption"
+                                                color={soldOut ? "error" : "text.secondary"}
+                                                sx={{ display: "block", mt: 0.25 }}
+                                            >
+                                                {soldOut
+                                                    ? "Vyprodáno"
+                                                    : `Zbývá ${left}${unitLabel ? " " + unitLabel : ""}`}
                                             </Typography>
                                         )}
                                     </Box>
@@ -847,12 +870,16 @@ export function DynamicFormField({
                                             onClick={() =>
                                                 handleQtyChange(opt.id, 1)
                                             }
+                                            disabled={atCap}
                                             sx={{
                                                 color: "primary.main",
                                                 border: "1px solid",
                                                 borderColor: "primary.main",
                                                 width: 28,
                                                 height: 28,
+                                                "&.Mui-disabled": {
+                                                    borderColor: "action.disabledBackground",
+                                                },
                                             }}
                                         >
                                             <Add sx={{ fontSize: 16 }} />

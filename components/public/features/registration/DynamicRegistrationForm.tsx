@@ -40,6 +40,7 @@ import {
     hasAdditionalPeopleFields,
     getDisabledOptionsForField,
 } from "@/lib/types/registration-form";
+import { getQuantityRemainingForField } from "@/lib/utils/quantity-remaining";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
 import {
@@ -416,6 +417,16 @@ export function DynamicRegistrationForm({
                                                               optionCounts
                                                           )
                                                         : undefined;
+                                                const remainingCap =
+                                                    isInputField(field)
+                                                        ? getQuantityRemainingForField(
+                                                              field,
+                                                              formData.pricingDefinitions,
+                                                              formData.capacityLimits,
+                                                              optionCounts,
+                                                              additionalPeople,
+                                                          )
+                                                        : undefined;
 
                                                 return (
                                                     <Fade
@@ -447,6 +458,9 @@ export function DynamicRegistrationForm({
                                                                 }
                                                                 disabledOptions={
                                                                     disabledOpts
+                                                                }
+                                                                remainingCapacity={
+                                                                    remainingCap
                                                                 }
                                                             />
                                                         </Box>

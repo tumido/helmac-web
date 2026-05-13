@@ -45,10 +45,16 @@ export function CapacityLimitsEditor({
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    // Only fields that have options (select, radio, pricing_select, pricing_multi_select)
+    // Only fields that have options (select, radio, pricing_select, pricing_multi_select, pricing_quantity)
     const eligibleFields = allInputFields.filter(
-        (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select" || f.type === "pricing_multi_select"
+        (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select" || f.type === "pricing_multi_select" || f.type === "pricing_quantity"
     );
+
+    const getUnitNameForField = (fieldId: string): string | undefined => {
+        const field = eligibleFields.find((f) => f.id === fieldId);
+        if (!field || field.type !== "pricing_quantity" || !field.pricingId) return undefined;
+        return pricingDefinitions.find((d) => d.id === field.pricingId)?.unitName;
+    };
 
     const getFieldLabel = (fieldId: string) => {
         return eligibleFields.find((f) => f.id === fieldId)?.label ?? "(neznámé pole)";
@@ -149,6 +155,10 @@ export function CapacityLimitsEditor({
                             const currentCount = getCurrentCount(limit.fieldId, limit.value);
                             const ratio = limit.maxCount > 0 ? currentCount / limit.maxCount : 0;
                             const isFull = currentCount >= limit.maxCount;
+                            const unitName = getUnitNameForField(limit.fieldId);
+                            const chipLabel = unitName
+                                ? `${currentCount}/${limit.maxCount} ${unitName}`
+                                : `${currentCount}/${limit.maxCount}`;
 
                             return (
                                 <Box
@@ -180,7 +190,7 @@ export function CapacityLimitsEditor({
                                     </Box>
 
                                     <Chip
-                                        label={`${currentCount}/${limit.maxCount}`}
+                                        label={chipLabel}
                                         size="small"
                                         color={isFull ? "error" : "default"}
                                         variant={isFull ? "filled" : "outlined"}
