@@ -360,14 +360,27 @@ export interface RuleRowProps {
 export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUpdate, onDelete, canDelete, compact = false }: RuleRowProps) {
     const targetField = allFields.find((f) => f.id === rule.fieldId);
     const targetInput = targetField && isInputField(targetField) ? targetField : null;
-    const showValue = rule.operator !== "is_set" && rule.operator !== "is_not_set";
+    const isQuantityField = targetInput?.type === "pricing_quantity";
+    const showValue =
+        rule.operator !== "is_set" &&
+        rule.operator !== "is_not_set";
 
     const fieldSelect = (
         <FormControl size="small" sx={{ flex: 1, minWidth: compact ? 140 : undefined }}>
             <InputLabel>Pole</InputLabel>
             <Select
                 value={rule.fieldId || ""}
-                onChange={(e) => onUpdate({ fieldId: e.target.value, value: "" })}
+                onChange={(e) => {
+                    const newFieldId = e.target.value;
+                    const newField = inputFields.find((f) => f.id === newFieldId);
+                    const updates: Partial<ConditionRule> = { fieldId: newFieldId, value: "" };
+                    if (newField?.type === "pricing_quantity") {
+                        updates.operator = "quantity_gt_zero";
+                    } else if (rule.operator === "quantity_gt_zero") {
+                        updates.operator = "equals";
+                    }
+                    onUpdate(updates);
+                }}
                 label="Pole"
             >
                 {inputFields.map((f) => (
@@ -383,14 +396,20 @@ export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUp
         <FormControl size="small" sx={{ minWidth: compact ? 150 : 160 }}>
             <InputLabel>Operátor</InputLabel>
             <Select
-                value={rule.operator || "equals"}
+                value={rule.operator || (isQuantityField ? "quantity_gt_zero" : "equals")}
                 onChange={(e) => onUpdate({ operator: e.target.value as ConditionRule["operator"] })}
                 label="Operátor"
             >
-                <MenuItem value="equals">se rovná</MenuItem>
-                <MenuItem value="not_equals">se nerovná</MenuItem>
-                <MenuItem value="is_set">je vyplněno</MenuItem>
-                <MenuItem value="is_not_set">není vyplněno</MenuItem>
+                {isQuantityField
+                    ? [
+                          <MenuItem key="quantity_gt_zero" value="quantity_gt_zero">počet &gt; 0</MenuItem>,
+                      ]
+                    : [
+                          <MenuItem key="equals" value="equals">se rovná</MenuItem>,
+                          <MenuItem key="not_equals" value="not_equals">se nerovná</MenuItem>,
+                          <MenuItem key="is_set" value="is_set">je vyplněno</MenuItem>,
+                          <MenuItem key="is_not_set" value="is_not_set">není vyplněno</MenuItem>,
+                      ]}
             </Select>
         </FormControl>
     );
@@ -521,13 +540,20 @@ export function FieldValuePicker({
         );
     }
 
-    if ((targetField.type === "pricing_select" || targetField.type === "pricing_multi_select") && targetField.pricingId && pricingDefinitions) {
+    if (
+        (targetField.type === "pricing_select" ||
+            targetField.type === "pricing_multi_select" ||
+            targetField.type === "pricing_quantity") &&
+        targetField.pricingId &&
+        pricingDefinitions
+    ) {
         const def = pricingDefinitions.find((d) => d.id === targetField.pricingId);
         if (def) {
+            const label = targetField.type === "pricing_quantity" ? "Volba" : "Hodnota";
             return (
                 <FormControl size="small" fullWidth>
-                    <InputLabel>Hodnota</InputLabel>
-                    <Select value={value} onChange={(e) => onChange(e.target.value)} label="Hodnota">
+                    <InputLabel>{label}</InputLabel>
+                    <Select value={value} onChange={(e) => onChange(e.target.value)} label={label}>
                         {def.options.map((opt) => (
                             <MenuItem key={opt.id} value={opt.name}>{opt.name}</MenuItem>
                         ))}

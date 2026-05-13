@@ -24,6 +24,7 @@ const OPTION_FIELD_TYPES = new Set([
     "checkbox",
     "pricing_select",
     "pricing_multi_select",
+    "pricing_quantity",
 ]);
 
 async function getYearEmailStatus(yearId: string) {

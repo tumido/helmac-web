@@ -54,15 +54,13 @@ export function getFieldOptionValues(
     }
     if (
         (field.type === "pricing_select" ||
-            field.type === "pricing_multi_select") &&
+            field.type === "pricing_multi_select" ||
+            field.type === "pricing_quantity") &&
         field.pricingId &&
         pricingDefinitions
     ) {
         const def = pricingDefinitions.find((d) => d.id === field.pricingId);
         return def ? def.options.map((o) => o.name) : [];
-    }
-    if (field.type === "pricing_quantity") {
-        return []; // Quantity fields use numeric values, not option names
     }
     return [];
 }

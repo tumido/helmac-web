@@ -98,6 +98,13 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                             <Chip label={conditionalEmail.conditionValue ?? ""} size="small" sx={{ mx: 0.5 }} />
                         </>
                     )}
+                    {conditionalEmail.conditionOperator === "quantity_gt_zero" && (
+                        <>
+                            {" – počet pro "}
+                            <Chip label={conditionalEmail.conditionValue ?? ""} size="small" sx={{ mx: 0.5 }} />
+                            {" > 0"}
+                        </>
+                    )}
                 </Typography>
             </Box>
 

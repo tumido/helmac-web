@@ -10,6 +10,7 @@ const OPERATOR_SYMBOL: Record<NonNullable<ConditionRule["operator"]>, string> = 
     not_equals: "≠",
     is_set: "vyplněno",
     is_not_set: "nevyplněno",
+    quantity_gt_zero: "počet > 0",
 };
 
 function describeValue(

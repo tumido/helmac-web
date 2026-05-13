@@ -1,5 +1,6 @@
 import type { FormCondition, FormField } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
+import { parseQuantities } from "@/lib/utils/pricing-field-values";
 
 export function evaluateCondition(
     condition: FormCondition,
@@ -28,7 +29,14 @@ export function evaluateCondition(
                     } catch { /* ignore */ }
                 }
 
-                if (rule.operator === "is_set" || rule.operator === "is_not_set") {
+                if (rule.operator === "quantity_gt_zero") {
+                    if (targetField.type === "pricing_quantity") {
+                        const quantities = parseQuantities(rawData[targetField.name]);
+                        passes = Number(quantities[rule.value ?? ""]) > 0;
+                    } else {
+                        passes = false;
+                    }
+                } else if (rule.operator === "is_set" || rule.operator === "is_not_set") {
                     let isSet: boolean;
                     if (parsedArr !== null) {
                         isSet = parsedArr.length > 0;

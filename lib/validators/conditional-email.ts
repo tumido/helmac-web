@@ -13,12 +13,15 @@ export const createConditionalEmailSchema = z
             .string()
             .min(1, "Název pole podmínky je povinný"),
         conditionOperator: z
-            .enum(["equals", "is_set", "is_not_set"])
+            .enum(["equals", "is_set", "is_not_set", "quantity_gt_zero"])
             .default("equals"),
         conditionValue: z.string().optional(),
     })
     .superRefine((data, ctx) => {
-        if (data.conditionOperator === "equals" && !data.conditionValue) {
+        const needsValue =
+            data.conditionOperator === "equals" ||
+            data.conditionOperator === "quantity_gt_zero";
+        if (needsValue && !data.conditionValue) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["conditionValue"],

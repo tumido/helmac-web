@@ -15,7 +15,7 @@ export async function createConditionalEmail(
         name: string;
         conditionFieldId: string;
         conditionFieldName: string;
-        conditionOperator: "equals" | "is_set" | "is_not_set";
+        conditionOperator: "equals" | "is_set" | "is_not_set" | "quantity_gt_zero";
         conditionValue?: string;
     },
 ) {
@@ -39,7 +39,8 @@ export async function createConditionalEmail(
                 conditionFieldName: validated.data.conditionFieldName,
                 conditionOperator: validated.data.conditionOperator,
                 conditionValue:
-                    validated.data.conditionOperator === "equals"
+                    validated.data.conditionOperator === "equals" ||
+                    validated.data.conditionOperator === "quantity_gt_zero"
                         ? validated.data.conditionValue ?? null
                         : null,
             },

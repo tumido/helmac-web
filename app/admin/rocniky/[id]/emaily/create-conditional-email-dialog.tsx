@@ -19,7 +19,7 @@ import {
 import { Add } from "@mui/icons-material";
 import { createConditionalEmail } from "@/lib/actions/conditional-emails";
 
-type ConditionOperator = "equals" | "is_set" | "is_not_set";
+type ConditionOperator = "equals" | "is_set" | "is_not_set" | "quantity_gt_zero";
 
 interface FieldOption {
     id: string;
@@ -48,7 +48,8 @@ export function CreateConditionalEmailDialog({
     const [isPending, startTransition] = useTransition();
 
     const selectedField = availableFields.find((f) => f.id === selectedFieldId);
-    const valueRequired = operator === "equals";
+    const isQuantityField = selectedField?.type === "pricing_quantity";
+    const valueRequired = operator === "equals" || operator === "quantity_gt_zero";
 
     const handleOpen = () => {
         setOpen(true);
@@ -132,8 +133,15 @@ export function CreateConditionalEmailDialog({
                             <Select
                                 value={selectedFieldId}
                                 onChange={(e) => {
-                                    setSelectedFieldId(e.target.value);
+                                    const newFieldId = e.target.value;
+                                    setSelectedFieldId(newFieldId);
                                     setSelectedValue("");
+                                    const newField = availableFields.find((f) => f.id === newFieldId);
+                                    if (newField?.type === "pricing_quantity") {
+                                        setOperator("quantity_gt_zero");
+                                    } else if (operator === "quantity_gt_zero") {
+                                        setOperator("equals");
+                                    }
                                 }}
                                 label="Pole podmínky"
                             >
@@ -156,20 +164,28 @@ export function CreateConditionalEmailDialog({
                                     }}
                                     label="Operátor"
                                 >
-                                    <MenuItem value="equals">Konkrétní hodnota</MenuItem>
-                                    <MenuItem value="is_set">Cokoli vybráno</MenuItem>
-                                    <MenuItem value="is_not_set">Nic nevybráno</MenuItem>
+                                    {isQuantityField
+                                        ? [
+                                              <MenuItem key="quantity_gt_zero" value="quantity_gt_zero">
+                                                  Počet &gt; 0
+                                              </MenuItem>,
+                                          ]
+                                        : [
+                                              <MenuItem key="equals" value="equals">Konkrétní hodnota</MenuItem>,
+                                              <MenuItem key="is_set" value="is_set">Cokoli vybráno</MenuItem>,
+                                              <MenuItem key="is_not_set" value="is_not_set">Nic nevybráno</MenuItem>,
+                                          ]}
                                 </Select>
                             </FormControl>
                         )}
 
-                        {selectedField && operator === "equals" && (
+                        {selectedField && valueRequired && (
                             <FormControl fullWidth disabled={isPending}>
-                                <InputLabel>Hodnota</InputLabel>
+                                <InputLabel>{isQuantityField ? "Volba" : "Hodnota"}</InputLabel>
                                 <Select
                                     value={selectedValue}
                                     onChange={(e) => setSelectedValue(e.target.value)}
-                                    label="Hodnota"
+                                    label={isQuantityField ? "Volba" : "Hodnota"}
                                 >
                                     {selectedField.type === "checkbox" ? (
                                         [
