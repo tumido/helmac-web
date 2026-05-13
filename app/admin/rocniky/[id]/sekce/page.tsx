@@ -51,6 +51,8 @@ export default async function SekcePage({
                     pageSubtitle: st.pageSubtitle,
                     metaTitle: st.metaTitle,
                     metaDescription: st.metaDescription,
+                    featuredOnIndex: st.featuredOnIndex,
+                    description: st.description,
                     sections: st.sections.map((s) => ({
                         id: s.id,
                         title: s.title,

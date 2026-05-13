@@ -13,12 +13,14 @@ import { Prisma } from "@prisma/client";
 export type ProgramEventActionState = {
     error?: {
         startTime?: string[];
+        endTime?: string[];
         title?: string[];
         description?: string[];
         location?: string[];
         imageUrl?: string[];
         tags?: string[];
         storyContent?: string[];
+        actionButtons?: string[];
         _form?: string[];
     };
     success?: boolean;
@@ -49,13 +51,26 @@ export async function createProgramEvent(
         }
     }
 
+    // Parse action buttons
+    let actionButtons;
+    const actionButtonsRaw = formData.get("actionButtons") as string | null;
+    try {
+        actionButtons = actionButtonsRaw
+            ? JSON.parse(actionButtonsRaw)
+            : [];
+    } catch {
+        actionButtons = [];
+    }
+
     const rawData = {
         startTime: formData.get("startTime"),
+        endTime: formData.get("endTime") || undefined,
         title: formData.get("title"),
         description: formData.get("description"),
         location: formData.get("location"),
         imageUrl: formData.get("imageUrl") || undefined,
         tags,
+        actionButtons,
     };
 
     const validated = createProgramEventSchema.safeParse(rawData);
@@ -83,11 +98,13 @@ export async function createProgramEvent(
             data: {
                 dayId,
                 startTime: validated.data.startTime,
+                endTime: validated.data.endTime || null,
                 title: validated.data.title,
                 description: validated.data.description,
                 location: validated.data.location,
                 imageUrl: validated.data.imageUrl || null,
                 tags: validated.data.tags,
+                actionButtons: validated.data.actionButtons ?? [],
                 isPublished: true,
                 sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
             },
@@ -129,13 +146,26 @@ export async function updateProgramEvent(
         }
     }
 
+    // Parse action buttons
+    let actionButtons;
+    const actionButtonsRaw = formData.get("actionButtons") as string | null;
+    try {
+        actionButtons = actionButtonsRaw
+            ? JSON.parse(actionButtonsRaw)
+            : [];
+    } catch {
+        actionButtons = [];
+    }
+
     const rawData = {
         startTime: formData.get("startTime"),
+        endTime: formData.get("endTime") || undefined,
         title: formData.get("title"),
         description: formData.get("description"),
         location: formData.get("location"),
         imageUrl: formData.get("imageUrl") || undefined,
         tags,
+        actionButtons,
     };
 
     const validated = updateProgramEventSchema.safeParse(rawData);
@@ -158,11 +188,13 @@ export async function updateProgramEvent(
             where: { id: eventId },
             data: {
                 startTime: validated.data.startTime,
+                endTime: validated.data.endTime || null,
                 title: validated.data.title,
                 description: validated.data.description,
                 location: validated.data.location,
                 imageUrl: validated.data.imageUrl || null,
                 tags: validated.data.tags,
+                actionButtons: validated.data.actionButtons ?? [],
                 isPublished: true,
             },
         });

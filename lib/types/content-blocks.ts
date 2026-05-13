@@ -21,7 +21,7 @@ export interface ImageBlock {
     caption: string;
 }
 
-export type DividerVariant = "simple" | "ornate";
+export type DividerVariant = "simple" | "simple-reversed" | "ornate";
 
 export interface DividerBlock {
     type: "divider";
@@ -121,7 +121,8 @@ interface LegacyCardBlock {
     buttons?: CardButton[];
 }
 
-export function normalizeBlocks(blocks: unknown[]): ContentBlock[] {
+export function normalizeBlocks(blocks: unknown[] | unknown): ContentBlock[] {
+    if (!Array.isArray(blocks)) return [];
     return blocks.map((block) => {
         const b = block as Record<string, unknown>;
         if (b.type === "card" && !Array.isArray(b.buttons)) {
@@ -151,8 +152,10 @@ export function normalizeBlocks(blocks: unknown[]): ContentBlock[] {
 
 export function blocksToMarkdown(blocks: ContentBlock[]): string {
     const sorted = [...blocks].sort((a, b) => {
-        if (a.layout.y !== b.layout.y) return a.layout.y - b.layout.y;
-        return a.layout.x - b.layout.x;
+        const ay = a.layout?.y ?? 0;
+        const by = b.layout?.y ?? 0;
+        if (ay !== by) return ay - by;
+        return (a.layout?.x ?? 0) - (b.layout?.x ?? 0);
     });
 
     const parts: string[] = [];

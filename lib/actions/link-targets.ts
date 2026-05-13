@@ -72,7 +72,7 @@ export async function getLinkTargets(yearId?: string): Promise<LinkTarget[]> {
         ...sectionTargets,
         ...news.map((n) => ({
             label: `Novinky | ${n.title}`,
-            url: `/novinky/${n.slug}`,
+            url: `/novinky#${n.slug}`,
             group: "Novinky",
         })),
         ...programDays.map((d) => ({

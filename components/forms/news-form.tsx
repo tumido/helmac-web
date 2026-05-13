@@ -1,29 +1,39 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useEffect, useActionState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import {
+    Autocomplete,
     Box,
     Button,
-    TextField,
-    Alert,
     CircularProgress,
-    Card,
-    CardContent,
-    CardActions,
-    MenuItem,
-    Typography,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     IconButton,
-    Switch,
-    FormControlLabel,
+    MenuItem,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Alert,
 } from "@mui/material";
-import { Save, Refresh } from "@mui/icons-material";
+import { Save, Add, Delete } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createNews, updateNews, NewsActionState } from "@/lib/actions/news";
-import { ImageUploader } from "@/components/admin/image-uploader";
-import { generateSlug } from "@/lib/utils/slugify";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
-import { TocPreview } from "@/components/admin/toc-preview";
+import {
+    getLinkTargets,
+    type LinkTarget,
+} from "@/lib/actions/link-targets";
+
+type ButtonVariant = "contained" | "outlined" | "text";
+
+interface ActionButton {
+    label: string;
+    url: string;
+    variant?: ButtonVariant;
+}
 
 interface NewsFormProps {
     mode: "create" | "edit";
@@ -31,12 +41,9 @@ interface NewsFormProps {
     newsId?: string;
     defaultValues?: {
         yearId?: string;
-        slug?: string;
         title?: string;
-        excerpt?: string | null;
         content?: string;
-        coverImage?: string | null;
-        showToc?: boolean;
+        actionButtons?: ActionButton[];
     };
     cancelHref?: string;
     redirectTo?: string;
@@ -52,7 +59,11 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
             variant="contained"
             disabled={pending}
             startIcon={
-                pending ? <CircularProgress size={20} color="inherit" /> : <Save />
+                pending ? (
+                    <CircularProgress size={20} color="inherit" />
+                ) : (
+                    <Save />
+                )
             }
         >
             {pending
@@ -64,233 +75,388 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
     );
 }
 
-export function NewsForm({ mode, years, newsId, defaultValues, cancelHref = "/admin/novinky", redirectTo, hideYearSelect }: NewsFormProps) {
-    const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
-    const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
-    const [content, setContent] = useState(defaultValues?.content || "");
-    const [title, setTitle] = useState(defaultValues?.title || "");
-    const [slug, setSlug] = useState(defaultValues?.slug || "");
-    const [slugManuallyEdited, setSlugManuallyEdited] = useState(mode === "edit");
-    const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
+export function NewsForm({
+    mode,
+    years,
+    newsId,
+    defaultValues,
+    cancelHref = "/admin/novinky",
+    redirectTo,
+    hideYearSelect,
+}: NewsFormProps) {
+    const selectedYearId =
+        defaultValues?.yearId || years[0]?.id || "";
+    const [content, setContent] = useState(
+        defaultValues?.content || ""
+    );
+    const [actionButtons, setActionButtons] = useState<ActionButton[]>(
+        defaultValues?.actionButtons || []
+    );
+
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [btnLabel, setBtnLabel] = useState("");
+    const [btnUrl, setBtnUrl] = useState("");
+    const [btnVariant, setBtnVariant] = useState<ButtonVariant>("contained");
+
+    const [linkTargets, setLinkTargets] = useState<LinkTarget[] | null>(null);
+    const [, startLoadTargets] = useTransition();
+
+    useEffect(() => {
+        startLoadTargets(async () => {
+            const targets = await getLinkTargets(selectedYearId);
+            setLinkTargets(targets);
+        });
+    }, [selectedYearId]);
+
+    const openAddDialog = () => {
+        setBtnLabel("");
+        setBtnUrl("");
+        setBtnVariant("contained");
+        setEditingIndex(null);
+        setDialogOpen(true);
+    };
+
+    const openEditDialog = (index: number) => {
+        const btn = actionButtons[index];
+        setBtnLabel(btn.label);
+        setBtnUrl(btn.url);
+        setBtnVariant(btn.variant || "contained");
+        setEditingIndex(index);
+        setDialogOpen(true);
+    };
+
+    const submitButton = () => {
+        if (editingIndex !== null) {
+            const updated = actionButtons.map((btn, i) =>
+                i === editingIndex
+                    ? { label: btnLabel, url: btnUrl, variant: btnVariant }
+                    : btn
+            );
+            setActionButtons(updated);
+        } else {
+            setActionButtons([
+                ...actionButtons,
+                { label: btnLabel, url: btnUrl, variant: btnVariant },
+            ]);
+        }
+        setDialogOpen(false);
+    };
+
+    const deleteButton = (index: number) => {
+        setActionButtons(actionButtons.filter((_, i) => i !== index));
+    };
 
     const action =
         mode === "create"
-            ? async (prevState: NewsActionState, formData: FormData) => {
-                  const yearId = formData.get("yearId") as string;
-                  return createNews(yearId, prevState, formData);
+            ? async (
+                  prevState: NewsActionState,
+                  formData: FormData
+              ) => {
+                  const yearId = formData.get(
+                      "yearId"
+                  ) as string;
+                  return createNews(
+                      yearId,
+                      prevState,
+                      formData
+                  );
               }
             : updateNews.bind(null, newsId as string);
 
-    const [state, formAction] = useActionState<NewsActionState, FormData>(
-        action,
-        null
-    );
+    const [state, formAction] = useActionState<
+        NewsActionState,
+        FormData
+    >(action, null);
 
     return (
-        <Card
-            sx={{
-                height: "calc(100dvh - 180px)",
-                display: "flex",
-                flexDirection: "column",
-            }}
-        >
+        <Box component="form" action={formAction}>
+            {/* Header */}
             <Box
-                component="form"
-                action={formAction}
                 sx={{
                     display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
-                    minHeight: 0,
+                    gap: 2,
+                    mb: 2,
                 }}
             >
-                <CardContent
+                <Box
                     sx={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 3,
-                        flex: 1,
-                        overflow: "auto",
-                        minHeight: 0,
+                        gap: 1,
+                        width: 360,
                     }}
                 >
-                    {state?.error?._form && (
-                        <Alert severity="error">{state.error._form[0]}</Alert>
-                    )}
-
-                    {redirectTo && (
-                        <input type="hidden" name="redirectTo" value={redirectTo} />
-                    )}
-
-                    {mode === "create" && hideYearSelect && (
-                        <input type="hidden" name="yearId" value={selectedYearId} />
-                    )}
-
-                    {mode === "create" && !hideYearSelect && (
-                        <TextField
-                            select
-                            required
-                            fullWidth
-                            id="yearId"
-                            name="yearId"
-                            label="Ročník"
-                            defaultValue={selectedYearId}
-                        >
-                            {years.map((year) => (
-                                <MenuItem key={year.id} value={year.id}>
-                                    {year.year} - {year.title}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                    )}
-
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gridTemplateColumns: {
-                                xs: "1fr",
-                                sm: "2fr 1fr",
-                            },
-                            gap: 3,
-                        }}
-                    >
-                        <TextField
-                            required
-                            fullWidth
-                            id="title"
-                            name="title"
-                            label="Název novinky"
-                            value={title}
-                            onChange={(e) => {
-                                const newTitle = e.target.value;
-                                setTitle(newTitle);
-                                if (!slugManuallyEdited) {
-                                    setSlug(generateSlug(newTitle));
-                                }
-                            }}
-                            error={!!state?.error?.title}
-                            helperText={state?.error?.title?.[0]}
-                        />
-
-                        <TextField
-                            required
-                            fullWidth
-                            id="slug"
-                            name="slug"
-                            label="URL slug"
-                            value={slug}
-                            onChange={(e) => {
-                                setSlug(e.target.value);
-                                setSlugManuallyEdited(true);
-                            }}
-                            error={!!state?.error?.slug}
-                            helperText={
-                                state?.error?.slug?.[0] ||
-                                "Pouze malá písmena, čísla a pomlčky"
-                            }
-                            placeholder="např. nová-akce"
-                            InputProps={{
-                                endAdornment: slugManuallyEdited && mode === "create" ? (
-                                    <IconButton
-                                        size="small"
-                                        title="Generovat z názvu"
-                                        onClick={() => {
-                                            setSlug(generateSlug(title));
-                                            setSlugManuallyEdited(false);
-                                        }}
-                                    >
-                                        <Refresh fontSize="small" />
-                                    </IconButton>
-                                ) : undefined,
-                            }}
-                        />
-                    </Box>
-
                     <TextField
-                        fullWidth
-                        id="excerpt"
-                        name="excerpt"
-                        label="Perex (krátký popis)"
-                        defaultValue={defaultValues?.excerpt || ""}
-                        error={!!state?.error?.excerpt}
+                        required
+                        size="small"
+                        id="title"
+                        name="title"
+                        label="Název novinky"
+                        defaultValue={
+                            defaultValues?.title || ""
+                        }
+                        error={!!state?.error?.title}
                         helperText={
-                            state?.error?.excerpt?.[0] || "Zobrazí se v přehledu novinek"
+                            state?.error?.title?.[0]
                         }
-                        multiline
-                        rows={2}
-                        inputProps={{ maxLength: 500 }}
                     />
-
-                    <TocPreview show={showToc} content={content}>
-                        <Box
-                            sx={{
-                                flex: 1,
-                                minHeight: 200,
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                        >
-                            <Typography
-                                variant="subtitle2"
-                                sx={{ mb: 1, flexShrink: 0 }}
+                    {mode === "create" &&
+                        !hideYearSelect && (
+                            <TextField
+                                select
+                                required
+                                size="small"
+                                id="yearId"
+                                name="yearId"
+                                label="Ročník"
+                                defaultValue={
+                                    selectedYearId
+                                }
                             >
-                                Obsah *
-                            </Typography>
-                            <RichTextEditor
-                                value={content}
-                                onChange={setContent}
-                                minHeight={200}
-                                yearId={selectedYearId}
-                            />
-                            <input type="hidden" name="content" value={content} />
-                            {state?.error?.content && (
-                                <Typography
-                                    variant="caption"
-                                    color="error"
-                                    sx={{ mt: 0.5, flexShrink: 0 }}
-                                >
-                                    {state.error.content[0]}
-                                </Typography>
-                            )}
-                        </Box>
-                    </TocPreview>
-
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Titulní obrázek (volitelné)
-                        </Typography>
-                        <ImageUploader
-                            value={coverImage}
-                            onChange={setCoverImage}
-                        />
-                        <input type="hidden" name="coverImage" value={coverImage} />
-                        {state?.error?.coverImage && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                                {state.error.coverImage[0]}
-                            </Typography>
+                                {years.map((year) => (
+                                    <MenuItem
+                                        key={year.id}
+                                        value={year.id}
+                                    >
+                                        {year.year} -{" "}
+                                        {year.title}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                         )}
-                    </Box>
-
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                name="showToc"
-                                value="true"
-                                checked={showToc}
-                                onChange={(e) => setShowToc(e.target.checked)}
-                            />
-                        }
-                        label="Zobrazit obsah"
-                    />
-                </CardContent>
-
-                <CardActions sx={{ px: 2, pb: 2 }}>
-                    <SubmitButton mode={mode} />
-                    <LinkButton href={cancelHref}>
+                </Box>
+                <Box sx={{ flex: 1 }} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 1,
+                        alignItems: "flex-start",
+                    }}
+                >
+                    <LinkButton
+                        href={cancelHref}
+                        variant="outlined"
+                    >
                         Zrušit
                     </LinkButton>
-                </CardActions>
+                    <SubmitButton mode={mode} />
+                </Box>
             </Box>
-        </Card>
+
+            {mode === "create" && hideYearSelect && (
+                <input
+                    type="hidden"
+                    name="yearId"
+                    value={selectedYearId}
+                />
+            )}
+
+            {redirectTo && (
+                <input
+                    type="hidden"
+                    name="redirectTo"
+                    value={redirectTo}
+                />
+            )}
+
+            {state?.error?._form && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error._form[0]}
+                </Alert>
+            )}
+            {state?.error?.content && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {state.error.content[0]}
+                </Alert>
+            )}
+
+            <input
+                type="hidden"
+                name="content"
+                value={content}
+            />
+            <input
+                type="hidden"
+                name="actionButtons"
+                value={JSON.stringify(actionButtons)}
+            />
+
+            <RichTextEditor
+                value={content}
+                onChange={setContent}
+                minHeight={200}
+                yearId={selectedYearId}
+            />
+
+            {/* Button list — card-style inline preview */}
+            <Box
+                sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 0.5,
+                    alignItems: "center",
+                    mt: 2,
+                }}
+            >
+                {actionButtons.map((btn, i) => (
+                    <Button
+                        key={i}
+                        variant={btn.variant || "contained"}
+                        onClick={() => openEditDialog(i)}
+                        endIcon={
+                            <Delete
+                                sx={{
+                                    fontSize:
+                                        "14px !important",
+                                    opacity: 0,
+                                    transition:
+                                        "opacity 0.15s",
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteButton(i);
+                                }}
+                            />
+                        }
+                        sx={{
+                            textTransform: "none",
+                            "&:hover .MuiButton-endIcon svg":
+                                {
+                                    opacity: 1,
+                                },
+                        }}
+                    >
+                        {btn.label || "(bez textu)"}
+                    </Button>
+                ))}
+                {actionButtons.length === 0 ? (
+                    <Button
+                        size="small"
+                        startIcon={<Add />}
+                        onClick={openAddDialog}
+                    >
+                        Přidat tlačítko
+                    </Button>
+                ) : (
+                    <IconButton
+                        size="small"
+                        onClick={openAddDialog}
+                        sx={{ color: "primary.main" }}
+                    >
+                        <Add sx={{ fontSize: 18 }} />
+                    </IconButton>
+                )}
+            </Box>
+
+            {/* Button dialog */}
+            <Dialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle>
+                    {editingIndex !== null
+                        ? "Upravit tlačítko"
+                        : "Přidat tlačítko"}
+                </DialogTitle>
+                <DialogContent
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        pt: "8px !important",
+                    }}
+                >
+                    <TextField
+                        autoFocus
+                        label="Text tlačítka"
+                        value={btnLabel}
+                        onChange={(e) =>
+                            setBtnLabel(e.target.value)
+                        }
+                        fullWidth
+                        size="small"
+                    />
+                    <TextField
+                        label="Odkaz (URL)"
+                        value={btnUrl}
+                        onChange={(e) =>
+                            setBtnUrl(e.target.value)
+                        }
+                        fullWidth
+                        size="small"
+                    />
+                    <Autocomplete<LinkTarget>
+                        options={linkTargets ?? []}
+                        groupBy={(option) => option.group}
+                        getOptionLabel={(option) =>
+                            option.label
+                        }
+                        isOptionEqualToValue={(
+                            option,
+                            value
+                        ) => option.url === value.url}
+                        value={null}
+                        onChange={(_, value) => {
+                            if (value) {
+                                setBtnUrl(value.url);
+                                if (!btnLabel) {
+                                    setBtnLabel(
+                                        value.label
+                                    );
+                                }
+                            }
+                        }}
+                        blurOnSelect
+                        size="small"
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Vybrat stránku webu"
+                                placeholder="Vyhledat stránku"
+                                variant="outlined"
+                            />
+                        )}
+                    />
+                    <ToggleButtonGroup
+                        exclusive
+                        value={btnVariant}
+                        onChange={(_, v) => {
+                            if (v) setBtnVariant(v);
+                        }}
+                        size="small"
+                        fullWidth
+                    >
+                        <ToggleButton value="contained">
+                            Vyplněné
+                        </ToggleButton>
+                        <ToggleButton value="outlined">
+                            Obrysové
+                        </ToggleButton>
+                        <ToggleButton value="text">
+                            Textové
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setDialogOpen(false)}
+                    >
+                        Zrušit
+                    </Button>
+                    <Button
+                        onClick={submitButton}
+                        variant="contained"
+                        disabled={!btnLabel.trim()}
+                    >
+                        {editingIndex !== null
+                            ? "Uložit"
+                            : "Přidat"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Container, Grid, Typography, Box } from "@mui/material";
 import { CalendarMonth } from "@mui/icons-material";
 import { PageHeader, Card } from "@/components/public/ui";
-import { getArchivedYears, getActiveYear } from "@/lib/services";
+import { getArchivedYears } from "@/lib/services";
 import { formatDate } from "@/lib/utils/date";
 
 export const metadata = {
@@ -11,17 +11,14 @@ export const metadata = {
 };
 
 export default async function ArchivPage() {
-    const [years, activeYear] = await Promise.all([
-        getArchivedYears(),
-        getActiveYear(),
-    ]);
+    const years = await getArchivedYears();
 
     return (
         <>
             <PageHeader
                 title="Archiv"
                 subtitle="Nahlédněte do minulých ročníků"
-                backgroundImage={activeYear?.headerPhoto || undefined}
+                icon="open-treasure-chest"
             />
             <Container maxWidth="lg" sx={{ pb: 8 }}>
                 {years.length === 0 ? (

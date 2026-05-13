@@ -4,6 +4,7 @@ export { SectionTitle } from "./SectionTitle";
 export { Card } from "./Card";
 export { HeroSection } from "./HeroSection";
 export { DecorativeDivider } from "./Divider";
+export { OrnamentalUnderline } from "./OrnamentalUnderline";
 export { PageHeader } from "./PageHeader";
 export { ThemeToggle } from "./ThemeToggle";
 export { ScrollToTop } from "./ScrollToTop";

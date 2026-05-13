@@ -24,7 +24,6 @@ async function getNews(filters: { q?: string; yearId?: string }) {
         where.OR = [
             { title: { contains: filters.q, mode: "insensitive" } },
             { content: { contains: filters.q, mode: "insensitive" } },
-            { excerpt: { contains: filters.q, mode: "insensitive" } },
         ];
     }
 

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
     AppBar,
     Toolbar,
@@ -13,19 +14,13 @@ import {
     Tooltip,
 } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
-import {
-    Menu as MenuIcon,
-    AccountCircle,
-    PersonOutline,
-} from "@mui/icons-material";
+import { Menu as MenuIcon } from "@mui/icons-material";
+import { GameIcon } from "@/lib/icons";
 import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "@/components/public/ui";
 import type { NavigationData } from "@/lib/services/navigation";
-import {
-    STATIC_NAV_BEFORE,
-    STATIC_NAV_AFTER,
-} from "@/lib/navigation";
+import { STATIC_NAV_BEFORE, STATIC_NAV_AFTER } from "@/lib/navigation";
 import type { PublicUserInfo } from "./ThemeWrapper";
 
 interface HeaderProps {
@@ -51,65 +46,55 @@ export function Header({
     };
 
     const navItems: NavItem[] = useMemo(() => {
-        const beforeItems: NavItem[] =
-            STATIC_NAV_BEFORE.map((item) => {
-                if (
-                    item.href === "/program" &&
-                    navigationData?.program &&
-                    navigationData.program.length > 1
-                ) {
-                    return {
-                        label: item.label,
-                        href: item.href,
-                        subItems:
-                            navigationData.program.map(
-                                (sub) => ({
-                                    id: sub.id,
-                                    label: sub.label,
-                                    href: `${item.href}?tab=${sub.id}`,
-                                })
-                            ),
-                    };
-                }
+        const beforeItems: NavItem[] = STATIC_NAV_BEFORE.map((item) => {
+            if (
+                item.href === "/program" &&
+                navigationData?.program &&
+                navigationData.program.length > 1
+            ) {
                 return {
                     label: item.label,
                     href: item.href,
-                };
-            });
-
-        const sectionItems: NavItem[] = (
-            navigationData?.sections || []
-        ).map((section) => {
-            if (section.subItems.length > 1) {
-                return {
-                    label: section.label,
-                    href: section.href,
-                    subItems: section.subItems.map(
-                        (sub) => ({
-                            id: sub.id,
-                            label: sub.label,
-                            href: `${section.href}?tab=${sub.id}`,
-                        })
-                    ),
+                    subItems: navigationData.program.map((sub) => ({
+                        id: sub.id,
+                        label: sub.label,
+                        href: `${item.href}?tab=${sub.id}`,
+                    })),
                 };
             }
             return {
-                label: section.label,
-                href: section.href,
+                label: item.label,
+                href: item.href,
             };
         });
 
-        const afterItems: NavItem[] =
-            STATIC_NAV_AFTER.map((item) => ({
-                label: item.label,
-                href: item.href,
-            }));
+        const sectionItems: NavItem[] = (navigationData?.sections || []).map(
+            (section) => {
+                if (section.subItems.length > 1) {
+                    return {
+                        label: section.label,
+                        href: section.href,
+                        subItems: section.subItems.map((sub) => ({
+                            id: sub.id,
+                            label: sub.label,
+                            href: `${section.href}?tab=${sub.id}`,
+                            icon: sub.icon,
+                        })),
+                    };
+                }
+                return {
+                    label: section.label,
+                    href: section.href,
+                };
+            }
+        );
 
-        return [
-            ...beforeItems,
-            ...sectionItems,
-            ...afterItems,
-        ];
+        const afterItems: NavItem[] = STATIC_NAV_AFTER.map((item) => ({
+            label: item.label,
+            href: item.href,
+        }));
+
+        return [...beforeItems, ...sectionItems, ...afterItems];
     }, [navigationData]);
 
     return (
@@ -118,37 +103,50 @@ export function Header({
                 position="sticky"
                 elevation={trigger ? 4 : 0}
                 sx={{
-                    backgroundColor: trigger
-                        ? "background.paper"
-                        : "transparent",
+                    backgroundColor: "background.paper",
+                    backgroundImage: "none",
                     transition: "all 0.3s ease-in-out",
-                    borderBottom: trigger ? 1 : 0,
                     borderColor: "divider",
+                    overflow: "visible",
                 }}
             >
                 <Container maxWidth="lg">
                     <Toolbar
                         disableGutters
                         sx={{
-                            justifyContent:
-                                "space-between",
+                            justifyContent: "space-between",
+                            pb: 0,
                         }}
                     >
-                        <Typography
+                        <Box
                             component={Link}
                             href="/"
-                            variant="h5"
                             sx={{
-                                fontFamily:
-                                    '"Cinzel", serif',
-                                fontWeight: 700,
-                                color: "primary.main",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.5,
                                 textDecoration: "none",
-                                letterSpacing: "0.1em",
                             }}
                         >
-                            HELMÁČ
-                        </Typography>
+                            <Image
+                                src="/images/helmac-logo-centered.svg"
+                                alt="HELMÁČ"
+                                width={30}
+                                height={42}
+                                priority
+                            />
+                            <Typography
+                                variant="h5"
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: 700,
+                                    color: "#898787",
+                                    letterSpacing: "0.1em",
+                                }}
+                            >
+                                HELMÁČ
+                            </Typography>
+                        </Box>
 
                         <Navigation items={navItems} />
 
@@ -172,7 +170,7 @@ export function Header({
                                             color: "primary.main",
                                         }}
                                     >
-                                        <AccountCircle />
+                                        <GameIcon name="visored-helm" sx={{ fontSize: "1.5rem" }} />
                                     </IconButton>
                                 </Tooltip>
                             ) : (
@@ -182,7 +180,7 @@ export function Header({
                                         href="/prihlaseni"
                                         color="inherit"
                                     >
-                                        <PersonOutline />
+                                        <GameIcon name="skeleton-key" sx={{ fontSize: "1.5rem" }} />
                                     </IconButton>
                                 </Tooltip>
                             )}
@@ -190,9 +188,7 @@ export function Header({
                                 color="inherit"
                                 aria-label="otevřít menu"
                                 edge="end"
-                                onClick={
-                                    handleDrawerToggle
-                                }
+                                onClick={handleDrawerToggle}
                             >
                                 <MenuIcon />
                             </IconButton>
@@ -231,7 +227,7 @@ export function Header({
                                             color: "primary.main",
                                         }}
                                     >
-                                        <AccountCircle />
+                                        <GameIcon name="visored-helm" sx={{ fontSize: "1.5rem" }} />
                                     </IconButton>
                                 </Tooltip>
                             ) : (
@@ -241,7 +237,7 @@ export function Header({
                                         href="/prihlaseni"
                                         color="inherit"
                                     >
-                                        <PersonOutline />
+                                        <GameIcon name="skeleton-key" sx={{ fontSize: "1.5rem" }} />
                                     </IconButton>
                                 </Tooltip>
                             )}

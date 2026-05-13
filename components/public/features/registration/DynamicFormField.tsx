@@ -17,7 +17,7 @@ import {
     IconButton,
 } from "@mui/material";
 import { Add, Remove, ExpandMore } from "@mui/icons-material";
-import { DecorativeDivider } from "@/components/public/ui";
+import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -56,18 +56,16 @@ export function DynamicFormField({
     if (!isInputField(field)) {
         if (field.type === "heading") {
             return (
-                <Box id={`section-${field.id}`} sx={{ mt: 4 }}>
-                    <Typography
-                        variant="h4"
-                        sx={{
-                            color: "primary.main",
-                            textAlign: "center",
-                            mb: 1,
-                        }}
-                    >
-                        {field.text}
-                    </Typography>
-                    <DecorativeDivider variant="ornate" my={2} />
+                <Box
+                    id={`section-${field.id}`}
+                    sx={{ mt: 4, textAlign: "center", mb: { xs: 4, md: 6 } }}
+                >
+                    <Box sx={{ display: "inline-block" }}>
+                        <Typography variant="h3" component="h3">
+                            {field.text}
+                        </Typography>
+                        <OrnamentalUnderline />
+                    </Box>
                 </Box>
             );
         }
@@ -90,11 +88,7 @@ export function DynamicFormField({
                                 }
                             />
                         }
-                        label={
-                            <Typography variant="body2">
-                                {label}
-                            </Typography>
-                        }
+                        label={<Typography variant="body2">{label}</Typography>}
                     />
                     <input
                         type="hidden"
@@ -158,7 +152,8 @@ export function DynamicFormField({
                         >
                             {options.map((opt) => {
                                 const isSelected = String(value) === opt;
-                                const isDisabled = disabledOptions?.has(opt) ?? false;
+                                const isDisabled =
+                                    disabledOptions?.has(opt) ?? false;
                                 const meta = field.optionMeta?.[opt];
                                 return (
                                     <Box
@@ -166,9 +161,16 @@ export function DynamicFormField({
                                         role="radio"
                                         aria-checked={isSelected}
                                         tabIndex={0}
-                                        onClick={() => !isDisabled && onChange(field.name, opt)}
+                                        onClick={() =>
+                                            !isDisabled &&
+                                            onChange(field.name, opt)
+                                        }
                                         onKeyDown={(e) => {
-                                            if ((e.key === " " || e.key === "Enter") && !isDisabled) {
+                                            if (
+                                                (e.key === " " ||
+                                                    e.key === "Enter") &&
+                                                !isDisabled
+                                            ) {
                                                 e.preventDefault();
                                                 onChange(field.name, opt);
                                             }
@@ -183,16 +185,25 @@ export function DynamicFormField({
                                             flexDirection: "column",
                                             overflow: "hidden",
                                             border: "2px solid",
-                                            borderColor: isSelected ? "primary.main" : "divider",
+                                            borderColor: isSelected
+                                                ? "primary.main"
+                                                : "divider",
                                             borderRadius: 2,
-                                            backgroundColor: isSelected ? "primary.50" : "transparent",
-                                            cursor: isDisabled ? "not-allowed" : "pointer",
+                                            backgroundColor: isSelected
+                                                ? "primary.50"
+                                                : "transparent",
+                                            cursor: isDisabled
+                                                ? "not-allowed"
+                                                : "pointer",
                                             opacity: isDisabled ? 0.5 : 1,
                                             transition: "all 0.2s ease",
                                             userSelect: "none",
-                                            "&:hover": isDisabled ? {} : {
-                                                borderColor: "primary.main",
-                                            },
+                                            "&:hover": isDisabled
+                                                ? {}
+                                                : {
+                                                      borderColor:
+                                                          "primary.main",
+                                                  },
                                         }}
                                     >
                                         {meta?.imageUrl && (
@@ -214,7 +225,9 @@ export function DynamicFormField({
                                                 textAlign: "center",
                                                 py: 1.5,
                                                 px: 1,
-                                                color: isSelected ? "primary.main" : "text.primary",
+                                                color: isSelected
+                                                    ? "primary.main"
+                                                    : "text.primary",
                                             }}
                                         >
                                             {opt}
@@ -223,8 +236,14 @@ export function DynamicFormField({
                                 );
                             })}
                         </Box>
-                        <input type="hidden" name={htmlName} value={String(value)} />
-                        {error && <FormHelperText error>{error}</FormHelperText>}
+                        <input
+                            type="hidden"
+                            name={htmlName}
+                            value={String(value)}
+                        />
+                        {error && (
+                            <FormHelperText error>{error}</FormHelperText>
+                        )}
                     </Box>
                 );
             }
@@ -400,10 +419,7 @@ export function DynamicFormField({
                         format="DD.MM.YYYY"
                         sx={{
                             "& .MuiPickersInputBase-root": {
-                                backgroundColor: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "#2A2A2A"
-                                        : "#DED9CE",
+                                backgroundColor: "background.input",
                                 borderRadius: "4px",
                             },
                             "& .MuiPickersInputBase-input": {
@@ -452,22 +468,29 @@ export function DynamicFormField({
             const defTiers = def.usePriceTiers ? (priceTiers ?? []) : [];
             const currentTier = getCurrentTierIndex(defTiers);
             const defCount = def.options.length;
-            const defCols = defCount % 3 === 0 ? 3 : defCount % 2 === 0 ? 2 : Math.min(defCount, 3);
+            const defCols =
+                defCount % 3 === 0
+                    ? 3
+                    : defCount % 2 === 0
+                      ? 2
+                      : Math.min(defCount, 3);
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                         {label}
                     </Typography>
-                    <Box sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                            xs: "repeat(2, 1fr)",
-                            md: `repeat(${defCols}, 1fr)`,
-                        },
-                        gap: 1,
-                    }}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "repeat(2, 1fr)",
+                                md: `repeat(${defCols}, 1fr)`,
+                            },
+                            gap: 1,
+                        }}
+                    >
                         {def.options.map((opt) => {
-                            const isSelected = String(value) === opt.name;
+                            const isSelected = String(value) === opt.id;
                             const isDisabled =
                                 disabledOptions?.has(opt.name) ?? false;
                             const currentPrice =
@@ -480,7 +503,7 @@ export function DynamicFormField({
                                     key={opt.id}
                                     onClick={() =>
                                         !isDisabled &&
-                                        onChange(field.name, opt.name)
+                                        onChange(field.name, opt.id)
                                     }
                                     sx={{
                                         display: "flex",
@@ -519,8 +542,7 @@ export function DynamicFormField({
                                         <Typography
                                             variant="body1"
                                             fontWeight={600}
-                                            sx={{
-                                            }}
+                                            sx={{}}
                                         >
                                             {opt.name}
                                         </Typography>
@@ -661,7 +683,10 @@ export function DynamicFormField({
                     <input
                         type="hidden"
                         name={htmlName}
-                        value={String(value)}
+                        value={
+                            def.options.find((o) => o.id === String(value))
+                                ?.name ?? String(value)
+                        }
                     />
                     {error && <FormHelperText error>{error}</FormHelperText>}
                 </Box>
@@ -673,9 +698,7 @@ export function DynamicFormField({
                 (d) => d.id === field.pricingId
             );
             if (!qDef) return null;
-            const qDefTiers = qDef.usePriceTiers
-                ? (priceTiers ?? [])
-                : [];
+            const qDefTiers = qDef.usePriceTiers ? (priceTiers ?? []) : [];
             const qCurrentTier = getCurrentTierIndex(qDefTiers);
 
             let qQuantities: Record<string, number> = {};
@@ -697,10 +720,7 @@ export function DynamicFormField({
                 /* empty */
             }
 
-            const handleQtyChange = (
-                optName: string,
-                delta: number
-            ) => {
+            const handleQtyChange = (optName: string, delta: number) => {
                 const current = Number(qQuantities[optName]) || 0;
                 const next = Math.max(0, current + delta);
                 const updated = { ...qQuantities, [optName]: next };
@@ -708,7 +728,12 @@ export function DynamicFormField({
             };
 
             const qCount = qDef.options.length;
-            const qCols = qCount % 3 === 0 ? 3 : qCount % 2 === 0 ? 2 : Math.min(qCount, 3);
+            const qCols =
+                qCount % 3 === 0
+                    ? 3
+                    : qCount % 2 === 0
+                      ? 2
+                      : Math.min(qCount, 3);
 
             return (
                 <Box>
@@ -726,8 +751,7 @@ export function DynamicFormField({
                         }}
                     >
                         {qDef.options.map((opt) => {
-                            const qty =
-                                Number(qQuantities[opt.name]) || 0;
+                            const qty = Number(qQuantities[opt.id]) || 0;
                             const unitPrice =
                                 opt.prices[qCurrentTier] ??
                                 opt.prices[opt.prices.length - 1] ??
@@ -739,8 +763,7 @@ export function DynamicFormField({
                                     sx={{
                                         display: "flex",
                                         alignItems: "center",
-                                        justifyContent:
-                                            "space-between",
+                                        justifyContent: "space-between",
                                         gap: 1.5,
                                         px: 2,
                                         py: 1,
@@ -754,8 +777,7 @@ export function DynamicFormField({
                                             qty > 0
                                                 ? "primary.50"
                                                 : "transparent",
-                                        transition:
-                                            "all 0.2s ease",
+                                        transition: "all 0.2s ease",
                                     }}
                                 >
                                     <Box
@@ -767,8 +789,7 @@ export function DynamicFormField({
                                         <Typography
                                             variant="body1"
                                             fontWeight={600}
-                                            sx={{
-                                            }}
+                                            sx={{}}
                                         >
                                             {opt.name}
                                         </Typography>
@@ -793,16 +814,12 @@ export function DynamicFormField({
                                             <IconButton
                                                 size="small"
                                                 onClick={() =>
-                                                    handleQtyChange(
-                                                        opt.name,
-                                                        -1
-                                                    )
+                                                    handleQtyChange(opt.id, -1)
                                                 }
                                                 sx={{
                                                     color: "primary.main",
                                                     border: "1px solid",
-                                                    borderColor:
-                                                        "primary.main",
+                                                    borderColor: "primary.main",
                                                     width: 28,
                                                     height: 28,
                                                 }}
@@ -828,23 +845,17 @@ export function DynamicFormField({
                                         <IconButton
                                             size="small"
                                             onClick={() =>
-                                                handleQtyChange(
-                                                    opt.name,
-                                                    1
-                                                )
+                                                handleQtyChange(opt.id, 1)
                                             }
                                             sx={{
                                                 color: "primary.main",
                                                 border: "1px solid",
-                                                borderColor:
-                                                    "primary.main",
+                                                borderColor: "primary.main",
                                                 width: 28,
                                                 height: 28,
                                             }}
                                         >
-                                            <Add
-                                                sx={{ fontSize: 16 }}
-                                            />
+                                            <Add sx={{ fontSize: 16 }} />
                                         </IconButton>
                                     </Box>
                                     {unitPrice !== 0 && (
@@ -863,68 +874,48 @@ export function DynamicFormField({
                             );
                         })}
                     </Box>
-                    {error && (
-                        <FormHelperText error>
-                            {error}
-                        </FormHelperText>
-                    )}
+                    {error && <FormHelperText error>{error}</FormHelperText>}
                     {qDefTiers.length > 1 && (
                         <>
                             <Collapse in={showAllTiers}>
                                 <Box sx={{ mt: 1, pl: 1 }}>
                                     {qDef.options.map((opt) => (
-                                        <Box
-                                            key={opt.id}
-                                            sx={{ mb: 0.5 }}
-                                        >
+                                        <Box key={opt.id} sx={{ mb: 0.5 }}>
                                             <Typography
                                                 variant="caption"
                                                 fontWeight={600}
                                             >
                                                 {opt.name}:
                                             </Typography>
-                                            {qDefTiers.map(
-                                                (tier, idx) => {
-                                                    if (
-                                                        idx ===
-                                                            qCurrentTier ||
-                                                        opt.prices[
-                                                            idx
-                                                        ] === 0
-                                                    )
-                                                        return null;
-                                                    return (
-                                                        <Typography
-                                                            key={idx}
-                                                            variant="caption"
-                                                            color="text.secondary"
-                                                            sx={{
-                                                                ml: 1,
-                                                            }}
-                                                        >
-                                                            do{" "}
-                                                            {formatDate(
-                                                                tier
-                                                            )}
-                                                            :{" "}
-                                                            {formatPrice(
-                                                                opt.prices[
-                                                                    idx
-                                                                ]
-                                                            )}
-                                                        </Typography>
-                                                    );
-                                                }
-                                            )}
+                                            {qDefTiers.map((tier, idx) => {
+                                                if (
+                                                    idx === qCurrentTier ||
+                                                    opt.prices[idx] === 0
+                                                )
+                                                    return null;
+                                                return (
+                                                    <Typography
+                                                        key={idx}
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        sx={{
+                                                            ml: 1,
+                                                        }}
+                                                    >
+                                                        do {formatDate(tier)}:{" "}
+                                                        {formatPrice(
+                                                            opt.prices[idx]
+                                                        )}
+                                                    </Typography>
+                                                );
+                                            })}
                                         </Box>
                                     ))}
                                 </Box>
                             </Collapse>
                             <Typography
                                 variant="body2"
-                                onClick={() =>
-                                    setShowAllTiers((prev) => !prev)
-                                }
+                                onClick={() => setShowAllTiers((prev) => !prev)}
                                 sx={{
                                     cursor: "pointer",
                                     color: "primary.main",
@@ -976,31 +967,38 @@ export function DynamicFormField({
                 /* empty */
             }
 
-            const handleToggleOption = (optName: string) => {
-                const newSelected = msSelected.includes(optName)
-                    ? msSelected.filter((n) => n !== optName)
-                    : [...msSelected, optName];
+            const handleToggleOption = (optId: string) => {
+                const newSelected = msSelected.includes(optId)
+                    ? msSelected.filter((n) => n !== optId)
+                    : [...msSelected, optId];
                 onChange(field.name, JSON.stringify(newSelected));
             };
 
             const msCount = msDef.options.length;
-            const msCols = msCount % 3 === 0 ? 3 : msCount % 2 === 0 ? 2 : Math.min(msCount, 3);
+            const msCols =
+                msCount % 3 === 0
+                    ? 3
+                    : msCount % 2 === 0
+                      ? 2
+                      : Math.min(msCount, 3);
 
             return (
                 <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                         {label}
                     </Typography>
-                    <Box sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                            xs: "repeat(2, 1fr)",
-                            md: `repeat(${msCols}, 1fr)`,
-                        },
-                        gap: 1,
-                    }}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "repeat(2, 1fr)",
+                                md: `repeat(${msCols}, 1fr)`,
+                            },
+                            gap: 1,
+                        }}
+                    >
                         {msDef.options.map((opt) => {
-                            const isSelected = msSelected.includes(opt.name);
+                            const isSelected = msSelected.includes(opt.id);
                             const isDisabled =
                                 disabledOptions?.has(opt.name) ?? false;
                             const msCurrentPrice =
@@ -1013,7 +1011,7 @@ export function DynamicFormField({
                                     key={opt.id}
                                     onClick={() =>
                                         !isDisabled &&
-                                        handleToggleOption(opt.name)
+                                        handleToggleOption(opt.id)
                                     }
                                     sx={{
                                         display: "flex",
@@ -1224,7 +1222,13 @@ export function DynamicFormField({
                     <input
                         type="hidden"
                         name={htmlName}
-                        value={String(value)}
+                        value={JSON.stringify(
+                            msSelected.map(
+                                (id) =>
+                                    msDef.options.find((o) => o.id === id)
+                                        ?.name ?? id
+                            )
+                        )}
                     />
                     {error && <FormHelperText error>{error}</FormHelperText>}
                 </Box>

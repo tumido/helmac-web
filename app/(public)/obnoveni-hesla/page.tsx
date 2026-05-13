@@ -1,5 +1,5 @@
-import { Container, Typography, Paper } from "@mui/material";
-import { PageHeader } from "@/components/public/ui";
+import { Container, Typography } from "@mui/material";
+import { PageHeader, Card } from "@/components/public/ui";
 import { NewPasswordForm } from "@/components/forms/new-password-form";
 
 export const metadata = {
@@ -19,24 +19,21 @@ export default async function ObnoveniHeslaPage({
             <>
                 <PageHeader
                     title="Obnovení hesla"
+                    icon="skeleton-key"
                     subtitle="Neplatný odkaz"
                 />
                 <Container maxWidth="sm" sx={{ pb: 8 }}>
-                    <Paper
-                        elevation={2}
+                    <Card
                         sx={{
-                            mt: -4,
-                            p: 4,
-                            position: "relative",
-                            zIndex: 1,
-                            backgroundColor: "background.paper",
+                            mt: 4,
                             textAlign: "center",
                         }}
                     >
                         <Typography color="error">
-                            Chybí ověřovací token. Zkontrolujte odkaz z emailu.
+                            Chybí ověřovací token. Zkontrolujte odkaz
+                            z emailu.
                         </Typography>
-                    </Paper>
+                    </Card>
                 </Container>
             </>
         );
@@ -49,18 +46,13 @@ export default async function ObnoveniHeslaPage({
                 subtitle="Nastavte si nové heslo"
             />
             <Container maxWidth="sm" sx={{ pb: 8 }}>
-                <Paper
-                    elevation={2}
+                <Card
                     sx={{
-                        mt: -4,
-                        p: 4,
-                        position: "relative",
-                        zIndex: 1,
-                        backgroundColor: "background.paper",
+                        mt: 4,
                     }}
                 >
                     <NewPasswordForm token={token} />
-                </Paper>
+                </Card>
             </Container>
         </>
     );

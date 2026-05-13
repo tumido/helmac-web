@@ -24,7 +24,7 @@ export default async function EditSekce({
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     {
@@ -53,6 +53,7 @@ export default async function EditSekce({
                 defaultValues={{
                     title: section.title,
                     subtitle: section.subtitle,
+                    description: section.description,
                     content:
                         section.content as unknown as ContentBlock[],
                     showToc: section.showToc,

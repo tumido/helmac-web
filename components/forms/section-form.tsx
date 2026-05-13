@@ -10,6 +10,7 @@ import {
     CircularProgress,
     Switch,
     FormControlLabel,
+    Typography,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
@@ -21,6 +22,7 @@ import {
 import { BlockEditor } from "@/components/admin/block-editor";
 import { IconPicker } from "@/components/admin/icon-picker";
 import { TocPreview } from "@/components/admin/toc-preview";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 
 interface SectionFormProps {
@@ -32,6 +34,7 @@ interface SectionFormProps {
     defaultValues?: {
         title?: string;
         subtitle?: string | null;
+        description?: string | null;
         content?: ContentBlock[];
         showToc?: boolean;
         icon?: string | null;
@@ -72,13 +75,14 @@ export function SectionForm({
     defaultValues,
 }: SectionFormProps) {
     const [blocks, setBlocks] = useState<ContentBlock[]>(
-        defaultValues?.content || []
+        Array.isArray(defaultValues?.content) ? defaultValues.content : []
     );
-    const [showToc, setShowToc] = useState(
-        defaultValues?.showToc || false
-    );
+    const [showToc, setShowToc] = useState(defaultValues?.showToc || false);
     const [icon, setIcon] = useState<string | null>(
         defaultValues?.icon || null
+    );
+    const [description, setDescription] = useState(
+        defaultValues?.description || ""
     );
 
     const action =
@@ -86,10 +90,10 @@ export function SectionForm({
             ? createSection.bind(null, sectionTypeId)
             : updateSection.bind(null, sectionId as string);
 
-    const [state, formAction] = useActionState<
-        SectionActionState,
-        FormData
-    >(action, null);
+    const [state, formAction] = useActionState<SectionActionState, FormData>(
+        action,
+        null
+    );
 
     return (
         <Box component="form" action={formAction}>
@@ -99,6 +103,7 @@ export function SectionForm({
                     display: "flex",
                     gap: 2,
                     mb: 2,
+                    alignItems: "flex-start",
                 }}
             >
                 <IconPicker value={icon} onChange={setIcon} />
@@ -125,10 +130,56 @@ export function SectionForm({
                         id="subtitle"
                         name="subtitle"
                         label="Podtitulek"
-                        defaultValue={
-                            defaultValues?.subtitle || ""
-                        }
+                        defaultValue={defaultValues?.subtitle || ""}
                     />
+                </Box>
+                <Box
+                    sx={{
+                        width: 360,
+                        flexShrink: 0,
+                        alignSelf: "flex-start",
+                    }}
+                >
+                    <input
+                        type="hidden"
+                        name="description"
+                        value={description}
+                    />
+                    <Box
+                        sx={{
+                            border: 1,
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            overflow: "hidden",
+                        }}
+                    >
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                                display: "block",
+                                px: 1.5,
+                                pt: 1,
+                                pb: 0.5,
+                                backgroundColor:
+                                    "grey.50",
+                                borderBottom: 1,
+                                borderColor: "divider",
+                            }}
+                        >
+                            Popis pro úvodní stránku
+                        </Typography>
+                        <RichTextEditor
+                            value={description}
+                            onChange={setDescription}
+                            format="markdown"
+                            minHeight={48}
+                            allowedTools={[
+                                "basicFormatting",
+                            ]}
+                            placeholder="Krátký popis sekce…"
+                        />
+                    </Box>
                 </Box>
                 <Box sx={{ flex: 1 }} />
                 <Box
@@ -140,10 +191,7 @@ export function SectionForm({
                     }}
                 >
                     <Box sx={{ display: "flex", gap: 1 }}>
-                        <LinkButton
-                            href={cancelHref}
-                            variant="outlined"
-                        >
+                        <LinkButton href={cancelHref} variant="outlined">
                             Zrušit
                         </LinkButton>
                         <SubmitButton mode={mode} />
@@ -156,9 +204,7 @@ export function SectionForm({
                                 value="true"
                                 size="small"
                                 checked={showToc}
-                                onChange={(e) =>
-                                    setShowToc(e.target.checked)
-                                }
+                                onChange={(e) => setShowToc(e.target.checked)}
                             />
                         }
                         label="Zobrazit obsah"

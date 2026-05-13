@@ -17,6 +17,7 @@ import {
     ViewList,
     Newspaper,
     PhotoLibrary,
+    PlaylistPlay,
     AppRegistration,
     Description,
     People,
@@ -52,7 +53,8 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
     const base = `/admin/rocniky/${yearData.id}`;
 
     const isExactMatch = (href: string) => pathname === href;
-    const isPrefixMatch = (href: string) => pathname.startsWith(href + "/") || pathname === href;
+    const isPrefixMatch = (href: string) =>
+        pathname.startsWith(href + "/") || pathname === href;
 
     const mainItems = [
         { text: "Přehled", href: base, icon: BarChart, exact: true },
@@ -60,25 +62,102 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
 
     const contentItems = [
         { text: "Obsah", href: `${base}/obsah`, icon: Article, exact: true },
-        { text: "Program", href: `${base}/program`, icon: CalendarMonth, indented: true },
-        { text: "Sekce", href: `${base}/sekce`, icon: ViewList, indented: true },
-        { text: "Novinky", href: `${base}/novinky`, icon: Newspaper, indented: true },
-        { text: "Galerie", href: `${base}/galerie`, icon: PhotoLibrary, indented: true },
+        {
+            text: "Úvodní stránka",
+            href: `${base}/uvod`,
+            icon: PlaylistPlay,
+            indented: true,
+        },
+        {
+            text: "Program",
+            href: `${base}/program`,
+            icon: CalendarMonth,
+            indented: true,
+        },
+        {
+            text: "Sekce",
+            href: `${base}/sekce`,
+            icon: ViewList,
+            indented: true,
+        },
+        {
+            text: "Novinky",
+            href: `${base}/novinky`,
+            icon: Newspaper,
+            indented: true,
+        },
+        {
+            text: "Galerie",
+            href: `${base}/galerie`,
+            icon: PhotoLibrary,
+            indented: true,
+        },
     ];
 
     const registrationItems = [
-        { text: "Registrace", href: `${base}/registrace`, icon: AppRegistration, exact: true, roles: ["SUPER_ADMIN", "ADMIN"] },
-        { text: "Formulář", href: `${base}/registrace/formular`, icon: Description, indented: true },
-        { text: "Přihlášky", href: `${base}/registrace/prihlasky`, icon: People, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
-        { text: "Transakce", href: `${base}/registrace/transakce`, icon: Receipt, indented: true, roles: ["SUPER_ADMIN", "ADMIN"] },
-        { text: "Úspěšná registrace", href: `${base}/registrace/success-page`, icon: CheckCircleOutline, indented: true },
-    ].filter((item) => !item.roles || (userRole && item.roles.includes(userRole)));
+        {
+            text: "Registrace",
+            href: `${base}/registrace`,
+            icon: AppRegistration,
+            exact: true,
+            roles: ["SUPER_ADMIN", "ADMIN"],
+        },
+        {
+            text: "Formulář",
+            href: `${base}/registrace/formular`,
+            icon: Description,
+            indented: true,
+        },
+        {
+            text: "Přihlášky",
+            href: `${base}/registrace/prihlasky`,
+            icon: People,
+            indented: true,
+            roles: ["SUPER_ADMIN", "ADMIN"],
+        },
+        {
+            text: "Transakce",
+            href: `${base}/registrace/transakce`,
+            icon: Receipt,
+            indented: true,
+            roles: ["SUPER_ADMIN", "ADMIN"],
+        },
+        {
+            text: "Úspěšná registrace",
+            href: `${base}/registrace/success-page`,
+            icon: CheckCircleOutline,
+            indented: true,
+        },
+    ].filter(
+        (item) => !item.roles || (userRole && item.roles.includes(userRole))
+    );
 
-    const emailItems: { text: string; href: string; icon: typeof Email; exact?: boolean; indented?: boolean }[] = [
+    const emailItems: {
+        text: string;
+        href: string;
+        icon: typeof Email;
+        exact?: boolean;
+        indented?: boolean;
+    }[] = [
         { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },
-        { text: "Potvrzovací", href: `${base}/emaily/potvrzovaci`, icon: MarkEmailRead, indented: true },
-        { text: "Změna ceny", href: `${base}/emaily/zmena-ceny`, icon: PriceChange, indented: true },
-        { text: "Platba", href: `${base}/emaily/platba`, icon: Payment, indented: true },
+        {
+            text: "Potvrzovací",
+            href: `${base}/emaily/potvrzovaci`,
+            icon: MarkEmailRead,
+            indented: true,
+        },
+        {
+            text: "Změna ceny",
+            href: `${base}/emaily/zmena-ceny`,
+            icon: PriceChange,
+            indented: true,
+        },
+        {
+            text: "Platba",
+            href: `${base}/emaily/platba`,
+            icon: Payment,
+            indented: true,
+        },
         ...yearData.conditionalEmails.map((ce) => ({
             text: ce.name,
             href: `${base}/emaily/podmineny/${ce.id}`,
@@ -92,7 +171,11 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
             {/* Back link */}
             <List disablePadding>
                 <ListItem disablePadding>
-                    <ListItemLinkButton href="/admin/rocniky" onClick={onClose} sx={{ py: 1.5 }}>
+                    <ListItemLinkButton
+                        href="/admin/rocniky"
+                        onClick={onClose}
+                        sx={{ py: 1.5 }}
+                    >
                         <ListItemIcon sx={{ minWidth: 36 }}>
                             <ArrowBack fontSize="small" />
                         </ListItemIcon>
@@ -120,7 +203,9 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
                                 onClick={onClose}
                                 sx={selectedSx}
                             >
-                                <ListItemIcon><Icon /></ListItemIcon>
+                                <ListItemIcon>
+                                    <Icon />
+                                </ListItemIcon>
                                 <ListItemText primary={item.text} />
                             </ListItemLinkButton>
                         </ListItem>
@@ -147,7 +232,9 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
                                     ...(item.indented ? { pl: 4 } : {}),
                                 }}
                             >
-                                <ListItemIcon><Icon /></ListItemIcon>
+                                <ListItemIcon>
+                                    <Icon />
+                                </ListItemIcon>
                                 <ListItemText primary={item.text} />
                             </ListItemLinkButton>
                         </ListItem>
@@ -174,7 +261,9 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
                                     ...(item.indented ? { pl: 4 } : {}),
                                 }}
                             >
-                                <ListItemIcon><Icon /></ListItemIcon>
+                                <ListItemIcon>
+                                    <Icon />
+                                </ListItemIcon>
                                 <ListItemText primary={item.text} />
                             </ListItemLinkButton>
                         </ListItem>
@@ -201,7 +290,9 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
                                     ...(item.indented ? { pl: 4 } : {}),
                                 }}
                             >
-                                <ListItemIcon><Icon /></ListItemIcon>
+                                <ListItemIcon>
+                                    <Icon />
+                                </ListItemIcon>
                                 <ListItemText primary={item.text} />
                             </ListItemLinkButton>
                         </ListItem>
@@ -219,7 +310,9 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
                         onClick={onClose}
                         sx={selectedSx}
                     >
-                        <ListItemIcon><Settings /></ListItemIcon>
+                        <ListItemIcon>
+                            <Settings />
+                        </ListItemIcon>
                         <ListItemText primary="Nastavení" />
                     </ListItemLinkButton>
                 </ListItem>

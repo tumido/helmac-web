@@ -18,16 +18,19 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Box } from "@mui/material";
+import { Box, Divider } from "@mui/material";
 import { DragIndicator } from "@mui/icons-material";
 import { builderPalette as p } from "@/components/admin/email-builder/palette";
 
+type SortableVariant = "standalone" | "flat";
+
 interface SortableItemProps {
     id: string;
+    variant: SortableVariant;
     children: React.ReactNode;
 }
 
-function SortableItem({ id, children }: SortableItemProps) {
+function SortableItem({ id, variant, children }: SortableItemProps) {
     const {
         attributes,
         listeners,
@@ -50,14 +53,19 @@ function SortableItem({ id, children }: SortableItemProps) {
             sx={{
                 display: "flex",
                 alignItems: "center",
-                mb: "4px",
-                "&:last-child": { mb: 0 },
-                backgroundColor: p.surface,
-                border: `1px solid ${p.line}`,
-                borderRadius: "10px",
                 transition: "box-shadow 140ms ease",
+                ...(variant === "standalone" && {
+                    mb: "4px",
+                    "&:last-child": { mb: 0 },
+                    backgroundColor: p.surface,
+                    border: `1px solid ${p.line}`,
+                    borderRadius: "10px",
+                }),
                 ...(isDragging && {
                     boxShadow: `0 4px 12px rgba(0,0,0,0.1)`,
+                    ...(variant === "flat" && {
+                        backgroundColor: "background.paper",
+                    }),
                 }),
             }}
         >
@@ -93,6 +101,7 @@ interface SortableListProps<T> {
     getId: (item: T) => string;
     renderItem: (item: T) => React.ReactNode;
     onReorder: (newOrder: string[]) => void | Promise<void>;
+    variant?: SortableVariant;
 }
 
 export function SortableList<T>({
@@ -100,6 +109,7 @@ export function SortableList<T>({
     getId,
     renderItem,
     onReorder,
+    variant = "standalone",
 }: SortableListProps<T>) {
     const dndId = useId();
     const [localItems, setLocalItems] = useState(items);
@@ -156,13 +166,17 @@ export function SortableList<T>({
                 strategy={verticalListSortingStrategy}
             >
                 <Box>
-                    {localItems.map((item) => (
-                        <SortableItem
-                            key={getId(item)}
-                            id={getId(item)}
-                        >
-                            {renderItem(item)}
-                        </SortableItem>
+                    {localItems.map((item, index) => (
+                        <Box key={getId(item)}>
+                            {variant === "flat" &&
+                                index > 0 && <Divider />}
+                            <SortableItem
+                                id={getId(item)}
+                                variant={variant}
+                            >
+                                {renderItem(item)}
+                            </SortableItem>
+                        </Box>
                     ))}
                 </Box>
             </SortableContext>

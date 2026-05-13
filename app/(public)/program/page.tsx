@@ -1,12 +1,16 @@
 import { Suspense } from "react";
 import { Container, Typography } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
-import { ProgramSchedule } from "@/components/public/features/program";
+import {
+    ProgramSchedule,
+    ProgramDayTabsNav,
+} from "@/components/public/features/program";
+import type { ProgramScheduleData } from "@/components/public/features/program";
+import type { ActionButton } from "@/components/public/features/program/program.types";
 import {
     getProgramScheduleForActiveYear,
     getAllPublishedTags,
 } from "@/lib/services/program";
-import { getActiveYear } from "@/lib/services";
 
 export const metadata = {
     title: "Program | Helmáč",
@@ -14,20 +18,43 @@ export const metadata = {
 };
 
 export default async function ProgramPage() {
-    const [scheduleData, allTags, activeYear] = await Promise.all([
+    const [rawSchedule, allTags] = await Promise.all([
         getProgramScheduleForActiveYear(),
         getAllPublishedTags(),
-        getActiveYear(),
     ]);
+
+    const scheduleData: ProgramScheduleData | null = rawSchedule
+        ? {
+              ...rawSchedule,
+              days: rawSchedule.days.map((day) => ({
+                  ...day,
+                  events: day.events.map((event) => ({
+                      ...event,
+                      actionButtons:
+                          (event.actionButtons as unknown as ActionButton[]) ??
+                          [],
+                  })),
+              })),
+          }
+        : null;
 
     return (
         <>
             <PageHeader
                 title="Program"
                 subtitle="Kompletní harmonogram akce"
-                backgroundImage={activeYear?.headerPhoto || undefined}
-            />
-            <Container maxWidth="md" sx={{ pb: 8 }}>
+                icon="sundial"
+            >
+                {scheduleData && scheduleData.days.length > 0 && (
+                    <Suspense>
+                        <ProgramDayTabsNav days={scheduleData.days} />
+                    </Suspense>
+                )}
+            </PageHeader>
+            <Container
+                maxWidth="lg"
+                sx={{ pb: 8, px: { lg: "220px" } }}
+            >
                 {scheduleData && scheduleData.days.length > 0 ? (
                     <Suspense>
                         <ProgramSchedule data={scheduleData} allTags={allTags} />

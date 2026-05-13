@@ -35,6 +35,7 @@ export const getPublishedEventsForDay = cache(async (dayId: string) => {
         select: {
             id: true,
             startTime: true,
+            endTime: true,
             title: true,
             description: true,
             location: true,
@@ -92,12 +93,14 @@ export const getProgramScheduleForActiveYear = cache(async () => {
                 select: {
                     id: true,
                     startTime: true,
+                    endTime: true,
                     title: true,
                     description: true,
                     location: true,
                     imageUrl: true,
                     tags: true,
                     storyContent: true,
+                    actionButtons: true,
                 },
             },
         },

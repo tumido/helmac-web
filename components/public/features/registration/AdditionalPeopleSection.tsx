@@ -1,13 +1,10 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import {
-    Box,
-    Button,
-    Typography,
-    Paper,
-} from "@mui/material";
+import { Box, Button, Typography, Paper } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { Add, Close } from "@mui/icons-material";
+import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
 import type {
     RegistrationFormData,
     InputField,
@@ -15,10 +12,16 @@ import type {
     OptionCounts,
     AdditionalPersonData,
 } from "@/lib/types/registration-form";
-import { MAX_ADDITIONAL_PEOPLE, getDisabledOptionsForField } from "@/lib/types/registration-form";
+import {
+    MAX_ADDITIONAL_PEOPLE,
+    getDisabledOptionsForField,
+} from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { evaluateAPVisibleFields } from "./useConditionalFields";
-import { buildMergedDataForAP, getAPFieldNames } from "@/lib/utils/additional-people";
+import {
+    buildMergedDataForAP,
+    getAPFieldNames,
+} from "@/lib/utils/additional-people";
 
 interface AdditionalPeopleSectionProps {
     formData: RegistrationFormData;
@@ -47,8 +50,15 @@ export function AdditionalPeopleSection({
 
         let hasUpdates = false;
         const updatedPeople = people.map((person) => {
-            const mergedData = buildMergedDataForAP(mainValues, person, apFieldNames);
-            const visibleFieldIds = evaluateAPVisibleFields(formData, mergedData);
+            const mergedData = buildMergedDataForAP(
+                mainValues,
+                person,
+                apFieldNames
+            );
+            const visibleFieldIds = evaluateAPVisibleFields(
+                formData,
+                mergedData
+            );
             let personUpdated = false;
             const newPerson = { ...person };
 
@@ -58,18 +68,34 @@ export function AdditionalPeopleSection({
                 if (currentValue !== "" && currentValue !== undefined) continue;
 
                 if (field.type === "pricing_select" && field.pricingId) {
-                    const def = formData.pricingDefinitions.find(d => d.id === field.pricingId);
+                    const def = formData.pricingDefinitions.find(
+                        (d) => d.id === field.pricingId
+                    );
                     if (!def) continue;
-                    const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
-                    const enabledOptions = def.options.filter(o => !disabledOpts.has(o.name));
+                    const disabledOpts = getDisabledOptionsForField(
+                        field.id,
+                        field.name,
+                        formData.capacityLimits,
+                        optionCounts
+                    );
+                    const enabledOptions = def.options.filter(
+                        (o) => !disabledOpts.has(o.name)
+                    );
                     if (enabledOptions.length === 1) {
-                        newPerson[field.name] = enabledOptions[0].name;
+                        newPerson[field.name] = enabledOptions[0].id;
                         personUpdated = true;
                     }
                 } else if (field.type === "select" || field.type === "radio") {
                     if (!field.options || field.options.length === 0) continue;
-                    const disabledOpts = getDisabledOptionsForField(field.id, field.name, formData.capacityLimits, optionCounts);
-                    const enabledOptions = field.options.filter(o => !disabledOpts.has(o));
+                    const disabledOpts = getDisabledOptionsForField(
+                        field.id,
+                        field.name,
+                        formData.capacityLimits,
+                        optionCounts
+                    );
+                    const enabledOptions = field.options.filter(
+                        (o) => !disabledOpts.has(o)
+                    );
                     if (enabledOptions.length === 1) {
                         newPerson[field.name] = enabledOptions[0];
                         personUpdated = true;
@@ -84,7 +110,15 @@ export function AdditionalPeopleSection({
         if (hasUpdates) {
             onPeopleChange(updatedPeople);
         }
-    }, [people, apFields, mainValues, formData, optionCounts, apFieldNames, onPeopleChange]);
+    }, [
+        people,
+        apFields,
+        mainValues,
+        formData,
+        optionCounts,
+        apFieldNames,
+        onPeopleChange,
+    ]);
 
     const handleAddPerson = useCallback(() => {
         if (people.length >= MAX_ADDITIONAL_PEOPLE) return;
@@ -103,29 +137,53 @@ export function AdditionalPeopleSection({
         onPeopleChange([...people, newPerson]);
     }, [people, apFields, onPeopleChange]);
 
-    const handleRemovePerson = useCallback((index: number) => {
-        onPeopleChange(people.filter((_, i) => i !== index));
-    }, [people, onPeopleChange]);
+    const handleRemovePerson = useCallback(
+        (index: number) => {
+            onPeopleChange(people.filter((_, i) => i !== index));
+        },
+        [people, onPeopleChange]
+    );
 
-    const handleFieldChange = useCallback((personIndex: number, name: string, value: string | number | boolean) => {
-        const updated = [...people];
-        updated[personIndex] = { ...updated[personIndex], [name]: value };
-        onPeopleChange(updated);
-    }, [people, onPeopleChange]);
+    const handleFieldChange = useCallback(
+        (
+            personIndex: number,
+            name: string,
+            value: string | number | boolean
+        ) => {
+            const updated = [...people];
+            updated[personIndex] = { ...updated[personIndex], [name]: value };
+            onPeopleChange(updated);
+        },
+        [people, onPeopleChange]
+    );
 
     return (
         <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-                Další osoby
-            </Typography>
-            <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 2 }}
+            <Box
+                sx={{
+                    textAlign: "center",
+                    mb: { xs: 4, md: 6 },
+                }}
             >
-                Můžete přidat další osoby, které registrujete
-                společně s vámi.
-            </Typography>
+                <Box sx={{ display: "inline-block" }}>
+                    <Typography variant="h3" component="h3">
+                        Další osoby
+                    </Typography>
+                    <OrnamentalUnderline />
+                </Box>
+                <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{
+                        mt: 2,
+                        fontStyle: "italic",
+                        letterSpacing: "0.03em",
+                    }}
+                >
+                    Můžete přidat další osoby, které registrujete společně s
+                    vámi.
+                </Typography>
+            </Box>
 
             {people.map((person, personIndex) => {
                 const mergedData = buildMergedDataForAP(
@@ -165,8 +223,7 @@ export function AdditionalPeopleSection({
                                         width: 32,
                                         height: 32,
                                         borderRadius: "50%",
-                                        backgroundColor:
-                                            "primary.main",
+                                        backgroundColor: "primary.main",
                                         color: "primary.contrastText",
                                         display: "flex",
                                         alignItems: "center",
@@ -188,16 +245,17 @@ export function AdditionalPeopleSection({
                             <Button
                                 size="small"
                                 variant="outlined"
-                                color="error"
                                 startIcon={<Close />}
-                                onClick={() =>
-                                    handleRemovePerson(personIndex)
-                                }
+                                onClick={() => handleRemovePerson(personIndex)}
+                                color="primary"
                                 sx={{
                                     borderWidth: 2,
                                     textTransform: "none",
                                     fontFamily: "inherit",
                                     letterSpacing: 0,
+                                    "&:hover": {
+                                        borderWidth: 2,
+                                    },
                                 }}
                             >
                                 Odebrat
@@ -212,32 +270,24 @@ export function AdditionalPeopleSection({
                             }}
                         >
                             {apFields.map((field) => {
-                                if (!visibleFieldIds.has(field.id))
-                                    return null;
+                                if (!visibleFieldIds.has(field.id)) return null;
 
                                 const value =
                                     person[field.name] ??
-                                    (field.type === "checkbox"
-                                        ? false
-                                        : "");
-                                const disabledOpts =
-                                    getDisabledOptionsForField(
-                                        field.id,
-                                        field.name,
-                                        formData.capacityLimits,
-                                        optionCounts
-                                    );
+                                    (field.type === "checkbox" ? false : "");
+                                const disabledOpts = getDisabledOptionsForField(
+                                    field.id,
+                                    field.name,
+                                    formData.capacityLimits,
+                                    optionCounts
+                                );
 
                                 return (
                                     <DynamicFormField
                                         key={field.id}
                                         field={field}
                                         value={value}
-                                        error={
-                                            personErrors?.[
-                                                field.name
-                                            ]?.[0]
-                                        }
+                                        error={personErrors?.[field.name]?.[0]}
                                         onChange={(name, val) =>
                                             handleFieldChange(
                                                 personIndex,
@@ -248,9 +298,7 @@ export function AdditionalPeopleSection({
                                         pricingDefinitions={
                                             formData.pricingDefinitions
                                         }
-                                        priceTiers={
-                                            formData.priceTiers
-                                        }
+                                        priceTiers={formData.priceTiers}
                                         namePrefix={`ap_${personIndex}_`}
                                         disabledOptions={disabledOpts}
                                     />
@@ -275,9 +323,10 @@ export function AdditionalPeopleSection({
                         "&:hover": {
                             borderColor: "primary.main",
                             backgroundColor: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "rgba(201, 162, 39, 0.05)"
-                                    : "rgba(201, 162, 39, 0.08)",
+                                alpha(
+                                    theme.palette.primary.main,
+                                    theme.palette.mode === "dark" ? 0.05 : 0.08
+                                ),
                         },
                     }}
                 >
@@ -291,12 +340,8 @@ export function AdditionalPeopleSection({
                     <Typography variant="body1" fontWeight={600}>
                         Přidat další osobu
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                    >
-                        Registrujte další účastníky v rámci jedné
-                        registrace
+                    <Typography variant="body2" color="text.secondary">
+                        Registrujte další účastníky v rámci jedné registrace
                     </Typography>
                 </Box>
             ) : (
@@ -304,9 +349,7 @@ export function AdditionalPeopleSection({
                     startIcon={<Add />}
                     variant="outlined"
                     onClick={handleAddPerson}
-                    disabled={
-                        people.length >= MAX_ADDITIONAL_PEOPLE
-                    }
+                    disabled={people.length >= MAX_ADDITIONAL_PEOPLE}
                 >
                     Přidat další osobu
                 </Button>

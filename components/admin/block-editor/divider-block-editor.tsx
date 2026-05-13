@@ -11,6 +11,7 @@ import type { DividerBlock, DividerVariant } from "@/lib/types/content-blocks";
 
 const VARIANTS: { value: DividerVariant; label: string }[] = [
     { value: "simple", label: "Jednoduchý" },
+    { value: "simple-reversed", label: "Převrácený" },
     { value: "ornate", label: "Ozdobný" },
 ];
 
@@ -61,9 +62,7 @@ export function DividerBlockEditor({
                 >
                     {VARIANTS.map(({ value, label }) => (
                         <ToggleButton key={value} value={value}>
-                            <Typography variant="caption">
-                                {label}
-                            </Typography>
+                            <Typography variant="caption">{label}</Typography>
                         </ToggleButton>
                     ))}
                 </ToggleButtonGroup>
@@ -78,10 +77,7 @@ export function DividerBlockEditor({
                 }}
             >
                 <Box sx={{ width: "100%" }}>
-                    <DecorativeDivider
-                        variant={block.variant}
-                        my={0}
-                    />
+                    <DecorativeDivider variant={block.variant} sx={{ my: 0 }} />
                 </Box>
             </Box>
         </Box>

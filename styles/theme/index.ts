@@ -1,4 +1,4 @@
-export { publicTheme } from "./publicTheme";
-export { publicLightTheme } from "./publicLightTheme";
+export { publicTheme, publicLightTheme } from "./publicThemeBase";
 export { adminTheme } from "./adminTheme";
-export { medievalColors, medievalLightColors, adminColors } from "./colors";
+export { darkPalette, lightPalette, adminColors } from "./colors";
+export type { MedievalPalette } from "./colors";

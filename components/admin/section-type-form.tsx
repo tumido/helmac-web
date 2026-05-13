@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState, useEffect } from "react";
+import { useState, useActionState } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -15,8 +15,12 @@ import {
     AccordionSummary,
     AccordionDetails,
     Typography,
+    FormControlLabel,
+    Switch,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
+import { IconPicker } from "@/components/admin/icon-picker";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import {
     createSectionType,
     updateSectionType,
@@ -45,6 +49,8 @@ interface SectionTypeFormProps {
         pageSubtitle?: string | null;
         metaTitle?: string | null;
         metaDescription?: string | null;
+        featuredOnIndex?: boolean;
+        description?: string | null;
     };
     open: boolean;
     onClose: () => void;
@@ -65,8 +71,17 @@ export function SectionTypeForm({
     const [slug, setSlug] = useState(
         defaultValues?.slug || ""
     );
+    const [icon, setIcon] = useState<string | null>(
+        defaultValues?.icon || null
+    );
+    const [featuredOnIndex, setFeaturedOnIndex] = useState(
+        defaultValues?.featuredOnIndex ?? false
+    );
+    const [description, setDescription] = useState(
+        defaultValues?.description || ""
+    );
 
-    const action =
+    const serverAction =
         mode === "create"
             ? createSectionType.bind(null, yearId)
             : updateSectionType.bind(null, typeId as string);
@@ -74,14 +89,17 @@ export function SectionTypeForm({
     const [state, formAction, isPending] = useActionState<
         SectionTypeActionState,
         FormData
-    >(action, null);
-
-    useEffect(() => {
-        if (state?.success) {
-            onClose();
-            router.refresh();
-        }
-    }, [state, onClose, router]);
+    >(
+        async (prev, formData) => {
+            const result = await serverAction(prev, formData);
+            if (result?.success) {
+                onClose();
+                router.refresh();
+            }
+            return result;
+        },
+        null,
+    );
 
     const handleLabelChange = (value: string) => {
         if (!slugManual) {
@@ -112,44 +130,81 @@ export function SectionTypeForm({
                         </Alert>
                     )}
 
-                    <TextField
-                        autoFocus
-                        required
-                        fullWidth
-                        margin="dense"
-                        name="label"
-                        label="Název"
-                        defaultValue={
-                            defaultValues?.label || ""
-                        }
-                        error={!!state?.error?.label}
-                        helperText={
-                            state?.error?.label?.[0]
-                        }
-                        onChange={(e) =>
-                            handleLabelChange(
-                                e.target.value
-                            )
-                        }
+                    <input
+                        type="hidden"
+                        name="icon"
+                        value={icon || ""}
                     />
-
-                    <TextField
-                        required
-                        fullWidth
-                        margin="dense"
-                        name="slug"
-                        label="Slug (URL)"
-                        value={slug}
-                        onChange={(e) => {
-                            setSlug(e.target.value);
-                            setSlugManual(true);
+                    <input
+                        type="hidden"
+                        name="featuredOnIndex"
+                        value={String(featuredOnIndex)}
+                    />
+                    <input
+                        type="hidden"
+                        name="description"
+                        value={description}
+                    />
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 3,
+                            alignItems: "flex-start",
                         }}
-                        error={!!state?.error?.slug}
-                        helperText={
-                            state?.error?.slug?.[0] ||
-                            `Veřejná stránka bude na /${slug}`
-                        }
-                    />
+                    >
+                        <IconPicker
+                            value={icon}
+                            onChange={setIcon}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                            <TextField
+                                autoFocus
+                                required
+                                fullWidth
+                                margin="dense"
+                                name="label"
+                                label="Název"
+                                defaultValue={
+                                    defaultValues?.label ||
+                                    ""
+                                }
+                                error={
+                                    !!state?.error?.label
+                                }
+                                helperText={
+                                    state?.error
+                                        ?.label?.[0]
+                                }
+                                onChange={(e) =>
+                                    handleLabelChange(
+                                        e.target.value
+                                    )
+                                }
+                            />
+                            <TextField
+                                required
+                                fullWidth
+                                margin="dense"
+                                name="slug"
+                                label="Slug (URL)"
+                                value={slug}
+                                onChange={(e) => {
+                                    setSlug(
+                                        e.target.value
+                                    );
+                                    setSlugManual(true);
+                                }}
+                                error={
+                                    !!state?.error?.slug
+                                }
+                                helperText={
+                                    state?.error
+                                        ?.slug?.[0] ||
+                                    `Veřejná stránka bude na /${slug}`
+                                }
+                            />
+                        </Box>
+                    </Box>
 
                     <Accordion
                         disableGutters
@@ -213,6 +268,61 @@ export function SectionTypeForm({
                                 multiline
                                 rows={2}
                             />
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={
+                                            featuredOnIndex
+                                        }
+                                        onChange={(e) =>
+                                            setFeaturedOnIndex(
+                                                e.target
+                                                    .checked
+                                            )
+                                        }
+                                    />
+                                }
+                                label="Zobrazit na úvodní stránce"
+                                sx={{ mt: 1 }}
+                            />
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ ml: 4 }}
+                            >
+                                Pouze jeden typ sekcí může
+                                být zobrazený na úvodní
+                                stránce.
+                            </Typography>
+                            <Box sx={{ mt: 2 }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ mb: 0.5 }}
+                                >
+                                    Popis pro úvodní
+                                    stránku
+                                </Typography>
+                                <RichTextEditor
+                                    value={description}
+                                    onChange={
+                                        setDescription
+                                    }
+                                    format="markdown"
+                                    minHeight={60}
+                                    allowedTools={[
+                                        "basicFormatting",
+                                    ]}
+                                    placeholder="Krátký popis zobrazený na úvodní stránce…"
+                                />
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    Zobrazí se jako
+                                    podtitulek sekce na
+                                    úvodní stránce.
+                                </Typography>
+                            </Box>
                         </AccordionDetails>
                     </Accordion>
                 </DialogContent>

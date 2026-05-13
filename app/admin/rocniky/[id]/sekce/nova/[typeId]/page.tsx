@@ -23,7 +23,7 @@ export default async function NovaSekce({
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     {

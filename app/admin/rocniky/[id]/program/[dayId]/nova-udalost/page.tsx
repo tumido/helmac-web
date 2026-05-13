@@ -1,16 +1,20 @@
-import { Container, Typography, Box } from "@mui/material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
-import { getProgramDayWithEvents, getAllTagsForYear } from "@/lib/services/program";
+import {
+    getProgramDayWithEvents,
+    getAllTagsForYear,
+} from "@/lib/services/program";
 import { ProgramEventForm } from "@/components/forms/program-event-form";
 import { PageHeader } from "@/components/admin/page-header";
+import { formatDate } from "@/lib/utils/date";
 
 interface NewEventPageProps {
     params: Promise<{ id: string; dayId: string }>;
 }
 
-import { formatDate } from "@/lib/utils/date";
-
-export default async function NewEventPage({ params }: NewEventPageProps) {
+export default async function NewEventPage({
+    params,
+}: NewEventPageProps) {
     const { id, dayId } = await params;
     const [day, existingTags] = await Promise.all([
         getProgramDayWithEvents(dayId),
@@ -22,22 +26,29 @@ export default async function NewEventPage({ params }: NewEventPageProps) {
     }
 
     return (
-        <Container maxWidth="sm">
+        <Container maxWidth="md">
             <PageHeader
                 breadcrumbs={[
-                    { label: "Rocniky", href: "/admin/rocniky" },
-                    { label: `${day.year.year}`, href: `/admin/rocniky/${day.year.id}` },
-                    { label: "Program", href: `/admin/rocniky/${day.year.id}/program` },
-                    { label: day.label, href: `/admin/rocniky/${day.year.id}/program/${day.id}` },
-                    { label: "Nova udalost" },
+                    {
+                        label: "Ročníky",
+                        href: "/admin/rocniky",
+                    },
+                    {
+                        label: `${day.year.year}`,
+                        href: `/admin/rocniky/${day.year.id}`,
+                    },
+                    {
+                        label: "Program",
+                        href: `/admin/rocniky/${day.year.id}/program`,
+                    },
+                    {
+                        label: day.label,
+                        href: `/admin/rocniky/${day.year.id}/program/${day.id}`,
+                    },
+                    { label: "Nová událost" },
                 ]}
-                title="Nova udalost"
+                title={`Nová událost — ${day.label}, ${formatDate(day.date)}`}
             />
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.secondary">
-                    {day.label} - {formatDate(day.date)}
-                </Typography>
-            </Box>
 
             <ProgramEventForm
                 mode="create"

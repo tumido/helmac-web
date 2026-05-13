@@ -16,6 +16,7 @@ export const getSectionTypesForYear = cache(async (yearId: string) => {
                     id: true,
                     title: true,
                     subtitle: true,
+                    description: true,
                     icon: true,
                     content: true,
                     showToc: true,
@@ -35,6 +36,7 @@ export const getSectionById = cache(async (sectionId: string) => {
             id: true,
             title: true,
             subtitle: true,
+            description: true,
             icon: true,
             content: true,
             showToc: true,
@@ -65,6 +67,8 @@ export const getSectionTypeById = cache(async (typeId: string) => {
             pageSubtitle: true,
             metaTitle: true,
             metaDescription: true,
+            featuredOnIndex: true,
+            description: true,
         },
     });
 });
@@ -93,6 +97,7 @@ export const getSectionTypeBySlugForActiveYear = cache(
                 id: true,
                 label: true,
                 slug: true,
+                icon: true,
                 pageTitle: true,
                 pageSubtitle: true,
                 metaTitle: true,
@@ -103,6 +108,7 @@ export const getSectionTypeBySlugForActiveYear = cache(
                         id: true,
                         title: true,
                         subtitle: true,
+                        description: true,
                         icon: true,
                         content: true,
                         showToc: true,
@@ -143,3 +149,40 @@ export const getSectionTypesForActiveYear = cache(async () => {
         },
     });
 });
+
+export const getFeaturedSectionTypeForActiveYear = cache(
+    async () => {
+        const activeYear = await db.year.findFirst({
+            where: { isActive: true, isArchived: false },
+            select: { id: true },
+        });
+
+        if (!activeYear) return null;
+
+        return db.sectionType.findFirst({
+            where: {
+                yearId: activeYear.id,
+                featuredOnIndex: true,
+            },
+            select: {
+                id: true,
+                label: true,
+                slug: true,
+                icon: true,
+                pageTitle: true,
+                pageSubtitle: true,
+                description: true,
+                sections: {
+                    orderBy: { sortOrder: "asc" },
+                    select: {
+                        id: true,
+                        title: true,
+                        subtitle: true,
+                        description: true,
+                        icon: true,
+                    },
+                },
+            },
+        });
+    }
+);

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { getRegistrationStatus } from "@/lib/services";
 import { formatDate } from "@/lib/utils/date";
+import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
+import { GameIcon } from "@/lib/icons";
+import { paperGrainSx } from "@/lib/utils/texture-overlay";
 
 export async function RegistrationCTA() {
     const status = await getRegistrationStatus();
@@ -18,6 +21,7 @@ export async function RegistrationCTA() {
                         textAlign: "center",
                         py: { xs: 6, md: 10 },
                         color: "primary.contrastText",
+                        position: "relative",
                     }}
                 >
                     <Typography
@@ -26,20 +30,31 @@ export async function RegistrationCTA() {
                         sx={{
                             fontFamily: '"Cinzel", serif',
                             color: "primary.contrastText",
-                            mb: 2,
+                            mb: 1,
                             fontSize: {
-                                xs: "1.5rem",
-                                sm: "2rem",
-                                md: "2.5rem",
+                                xs: "1.8rem",
+                                sm: "2.5rem",
+                                md: "3rem",
                             },
+                            textShadow: "0 2px 8px rgba(0,0,0,0.3)",
                         }}
                     >
                         Registrace se otevře{" "}
                         {formatDate(status.registrationStartDate)}
                     </Typography>
+                    <OrnamentalUnderline
+                        sx={{ color: "primary.contrastText" }}
+                    />
                     <Typography
                         variant="body1"
-                        sx={{ opacity: 0.9, maxWidth: 600, mx: "auto" }}
+                        sx={{
+                            opacity: 0.9,
+                            maxWidth: 600,
+                            mx: "auto",
+                            mt: 2,
+                            letterSpacing: "0.02em",
+                            color: "primary.contrastText",
+                        }}
                     >
                         Sledujte novinky, ať nepromeškáte začátek registrací.
                     </Typography>
@@ -49,65 +64,103 @@ export async function RegistrationCTA() {
     }
 
     return (
-        <Container maxWidth="md">
-            <Box
-                sx={{
-                    textAlign: "center",
-                    py: { xs: 6, md: 10 },
-                }}
-            >
-                <Typography
-                    variant="h3"
-                    component="h2"
+        <Box
+            sx={{
+                position: "relative",
+                ...paperGrainSx,
+            }}
+        >
+            <Container maxWidth="md">
+                <Box
                     sx={{
-                        fontFamily: '"Cinzel", serif',
-                        color: "primary.contrastText",
-                        mb: 2,
-                        fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+                        textAlign: "center",
+                        py: { xs: 6, md: 10 },
+                        position: "relative",
+                        zIndex: 1,
                     }}
                 >
-                    Připojte se k dobrodružství
-                </Typography>
-                <Typography
-                    variant="body1"
-                    sx={{
-                        opacity: 0.9,
-                        mb: 4,
-                        maxWidth: 600,
-                        mx: "auto",
-                        color: "primary.contrastText",
-                    }}
-                >
-                    Registrace na {status.year?.title} je otevřena. Pojďte zažít
-                    nezapomenutelný LARP zážitek.
-                </Typography>
-                <Link href="/registrace" style={{ textDecoration: "none" }}>
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        size="large"
+                    <Typography
+                        variant="h3"
+                        component="h2"
                         sx={{
-                            px: 5,
-                            py: 1.5,
-                            fontSize: "1.1rem",
+                            fontFamily: '"Cinzel", serif',
+                            color: "primary.contrastText",
+                            mb: 1,
+                            fontSize: {
+                                xs: "1.8rem",
+                                sm: "2.5rem",
+                                md: "3rem",
+                            },
+                            textShadow: "0 2px 8px rgba(0,0,0,0.3)",
                         }}
                     >
-                        Zaregistrovat se
-                    </Button>
-                </Link>
-                {status.registrationCount > 0 && (
+                        Připojte se k dobrodružství
+                    </Typography>
+                    <OrnamentalUnderline
+                        sx={{ color: "primary.contrastText" }}
+                    />
                     <Typography
                         variant="body1"
                         sx={{
+                            opacity: 0.9,
+                            mb: 4,
                             mt: 2,
-                            opacity: 0.7,
+                            maxWidth: 600,
+                            mx: "auto",
                             color: "primary.contrastText",
+                            letterSpacing: "0.02em",
                         }}
                     >
-                        Již {status.registrationCount} registrovaných účastníků
+                        Registrace na {status.year?.title} je otevřena. Pojďte
+                        zažít nezapomenutelný LARP zážitek.
                     </Typography>
-                )}
-            </Box>
-        </Container>
+                    <Link href="/registrace" style={{ textDecoration: "none" }}>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            size="large"
+                            sx={{
+                                px: 6,
+                                py: 2,
+                                fontSize: "1.2rem",
+                                boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                                transition:
+                                    "transform 0.2s ease, box-shadow 0.2s ease",
+                                "&:hover": {
+                                    transform: "translateY(-2px)",
+                                    boxShadow: "0 6px 25px rgba(0,0,0,0.4)",
+                                },
+                            }}
+                        >
+                            Zaregistrovat se
+                        </Button>
+                    </Link>
+                    {status.registrationCount > 0 && (
+                        <Box
+                            sx={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mt: 3,
+                                backgroundColor: "rgba(13, 13, 13, 0.15)",
+                                borderRadius: 20,
+                                px: 2.5,
+                                py: 0.75,
+                                color: "primary.contrastText",
+                            }}
+                        >
+                            <GameIcon
+                                name="knight-banner"
+                                sx={{ fontSize: "1.2rem" }}
+                            />
+                            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                Již {status.registrationCount} registrovaných
+                                účastníků
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+            </Container>
+        </Box>
     );
 }

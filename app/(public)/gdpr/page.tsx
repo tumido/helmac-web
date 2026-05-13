@@ -15,7 +15,7 @@ export default async function GdprPage() {
 
     return (
         <>
-            <PageHeader title="GDPR" subtitle="Ochrana osobních údajů" />
+            <PageHeader title="GDPR" subtitle="Ochrana osobních údajů" icon="locked-chest" />
 
             <Container maxWidth="md" sx={{ pb: 8 }}>
                 {setting?.value ? (

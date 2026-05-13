@@ -6,3 +6,4 @@ export * from "./registration";
 export * from "./program";
 export * from "./sections";
 export * from "./navigation";
+export * from "./homepage-steps";

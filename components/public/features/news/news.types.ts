@@ -1,12 +1,14 @@
+export interface NewsActionButton {
+    label: string;
+    url: string;
+    variant?: "contained" | "outlined";
+}
+
 export interface NewsItem {
     id: string;
     slug: string;
     title: string;
-    excerpt: string | null;
-    coverImage: string | null;
-    publishedAt: Date | null;
-}
-
-export interface NewsDetail extends NewsItem {
     content: string;
+    actionButtons: NewsActionButton[];
+    publishedAt: Date | null;
 }

@@ -5,9 +5,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import { Box, Button, Typography } from "@mui/material";
+import { alpha, Box, Button, type Theme, Typography } from "@mui/material";
 import type { Components } from "react-markdown";
 import { generateSlug } from "@/lib/utils/slugify";
+import { DecorativeDivider } from "@/components/public/ui/Divider";
+import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
+import { grainyMaskBoth } from "@/lib/utils/grainy-mask";
 
 const sanitizeSchema = {
     ...defaultSchema,
@@ -25,22 +28,10 @@ const sanitizeSchema = {
     ],
     attributes: {
         ...defaultSchema.attributes,
-        span: [
-            ...(defaultSchema.attributes?.span ?? []),
-            "style",
-        ],
-        p: [
-            ...(defaultSchema.attributes?.p ?? []),
-            "style",
-        ],
-        h2: [
-            ...(defaultSchema.attributes?.h2 ?? []),
-            "style",
-        ],
-        h3: [
-            ...(defaultSchema.attributes?.h3 ?? []),
-            "style",
-        ],
+        span: [...(defaultSchema.attributes?.span ?? []), "style"],
+        p: [...(defaultSchema.attributes?.p ?? []), "style"],
+        h2: [...(defaultSchema.attributes?.h2 ?? []), "style"],
+        h3: [...(defaultSchema.attributes?.h3 ?? []), "style"],
         a: [
             ...(defaultSchema.attributes?.a ?? []),
             "dataButton",
@@ -54,19 +45,11 @@ const sanitizeSchema = {
             "dataButton",
             "dataHref",
         ],
-        iframe: [
-            "src",
-            "allowFullScreen",
-            "allow",
-            "frameBorder",
-        ],
+        iframe: ["src", "allowFullScreen", "allow", "frameBorder"],
     },
 };
 
-const ALIGN_MAP: Record<
-    string,
-    "flex-start" | "center" | "flex-end"
-> = {
+const ALIGN_MAP: Record<string, "flex-start" | "center" | "flex-end"> = {
     left: "flex-start",
     center: "center",
     right: "flex-end",
@@ -82,9 +65,7 @@ function groupConsecutiveButtons(md: string): string {
 
     function flushGroup() {
         if (group.length === 0) return;
-        result.push(
-            `<div class="button-row" data-align="${groupAlign}">`,
-        );
+        result.push(`<div class="button-row" data-align="${groupAlign}">`);
         result.push(...group);
         result.push("</div>");
         group = [];
@@ -98,10 +79,7 @@ function groupConsecutiveButtons(md: string): string {
                 groupAlign = match[1] || "center";
             }
             group.push(line);
-        } else if (
-            line.trim() === "" &&
-            group.length > 0
-        ) {
+        } else if (line.trim() === "" && group.length > 0) {
             continue;
         } else {
             flushGroup();
@@ -117,13 +95,10 @@ interface MarkdownContentProps {
     tocIds?: Map<string, string>;
 }
 
-export function MarkdownContent({
-    content,
-    tocIds,
-}: MarkdownContentProps) {
+export function MarkdownContent({ content, tocIds }: MarkdownContentProps) {
     const processed = useMemo(
         () => groupConsecutiveButtons(content),
-        [content],
+        [content]
     );
 
     const components = useMemo<Components>(
@@ -134,8 +109,7 @@ export function MarkdownContent({
                         ? children
                         : extractText(children);
                 const id =
-                    tocIds?.get(text) ??
-                    (generateSlug(text) || undefined);
+                    tocIds?.get(text) ?? (generateSlug(text) || undefined);
                 return (
                     <Typography
                         variant="h5"
@@ -143,8 +117,15 @@ export function MarkdownContent({
                         id={id}
                         style={style}
                         sx={{
-                            fontSize: "1.5rem",
-                            fontWeight: 600,
+                            fontFamily: '"Cinzel", serif',
+                            fontSize: {
+                                xs: "1.3rem",
+                                sm: "1.5rem",
+                            },
+                            fontWeight: 700,
+                            color: "primary.main",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.02em",
                             mt: 3,
                             mb: 1,
                             scrollMarginTop: "80px",
@@ -160,8 +141,7 @@ export function MarkdownContent({
                         ? children
                         : extractText(children);
                 const id =
-                    tocIds?.get(text) ??
-                    (generateSlug(text) || undefined);
+                    tocIds?.get(text) ?? (generateSlug(text) || undefined);
                 return (
                     <Typography
                         variant="h6"
@@ -191,25 +171,14 @@ export function MarkdownContent({
                 </Typography>
             ),
             a: ({ children, href, node }) => {
-                const dataButton = node?.properties
-                    ?.dataButton as string | undefined;
+                const dataButton = node?.properties?.dataButton as
+                    | string
+                    | undefined;
                 if (dataButton) {
                     const variant = (
-                        [
-                            "contained",
-                            "outlined",
-                            "text",
-                        ] as const
-                    ).includes(
-                        dataButton as
-                            | "contained"
-                            | "outlined"
-                            | "text",
-                    )
-                        ? (dataButton as
-                              | "contained"
-                              | "outlined"
-                              | "text")
+                        ["contained", "outlined", "text"] as const
+                    ).includes(dataButton as "contained" | "outlined" | "text")
+                        ? (dataButton as "contained" | "outlined" | "text")
                         : "contained";
                     return (
                         <Button
@@ -236,21 +205,20 @@ export function MarkdownContent({
                 );
             },
             div: ({ children, node }) => {
-                const className = node?.properties
-                    ?.className as string[] | undefined;
-                const dataButton = node?.properties
-                    ?.dataButton as string | undefined;
+                const className = node?.properties?.className as
+                    | string[]
+                    | undefined;
+                const dataButton = node?.properties?.dataButton as
+                    | string
+                    | undefined;
                 if (className?.includes("button-row")) {
-                    const align = (node?.properties
-                        ?.dataAlign ||
+                    const align = (node?.properties?.dataAlign ||
                         "center") as string;
                     return (
                         <Box
                             sx={{
                                 display: "flex",
-                                justifyContent:
-                                    ALIGN_MAP[align] ||
-                                    "center",
+                                justifyContent: ALIGN_MAP[align] || "center",
                                 flexWrap: "wrap",
                                 gap: 1,
                                 my: 1,
@@ -262,24 +230,11 @@ export function MarkdownContent({
                 }
                 if (dataButton) {
                     const variant = (
-                        [
-                            "contained",
-                            "outlined",
-                            "text",
-                        ] as const
-                    ).includes(
-                        dataButton as
-                            | "contained"
-                            | "outlined"
-                            | "text",
-                    )
-                        ? (dataButton as
-                              | "contained"
-                              | "outlined"
-                              | "text")
+                        ["contained", "outlined", "text"] as const
+                    ).includes(dataButton as "contained" | "outlined" | "text")
+                        ? (dataButton as "contained" | "outlined" | "text")
                         : "contained";
-                    const href = node?.properties
-                        ?.dataHref as
+                    const href = node?.properties?.dataHref as
                         | string
                         | undefined;
                     return (
@@ -306,6 +261,10 @@ export function MarkdownContent({
                         borderRadius: 2,
                         my: 2,
                         display: "block",
+                        ...grainyMaskBoth,
+                        filter: "grayscale(0.3) sepia(0.15) saturate(1.1) brightness(0.9)",
+                        transition: "filter 0.4s ease",
+                        "&:hover": { filter: "none" },
                     }}
                 />
             ),
@@ -331,21 +290,43 @@ export function MarkdownContent({
                         borderCollapse: "collapse",
                         width: "100%",
                         my: 2,
+                        "& tbody tr:not(:last-child)": {
+                            borderBottom: "1px solid",
+                            borderColor: "primary.main",
+                        },
+                        "& tbody td:first-of-type": {
+                            whiteSpace: "nowrap",
+                        },
+                        "& td:not(:last-of-type), & th:not(:last-of-type)": {
+                            borderRight: "1px solid",
+                            borderColor: (theme: Theme) =>
+                                alpha(theme.palette.primary.main, 0.25),
+                        },
                     }}
                 >
                     {children}
+                </Box>
+            ),
+            thead: ({ children }) => (
+                <Box component="thead">
+                    {children}
+                    <tr>
+                        <td colSpan={100} style={{ padding: 0 }}>
+                            <OrnamentalUnderline sx={{ mx: 0, mt: 0.5 }} />
+                        </td>
+                    </tr>
                 </Box>
             ),
             th: ({ children }) => (
                 <Box
                     component="th"
                     sx={{
-                        border: "1px solid",
-                        borderColor: "divider",
                         p: 1,
-                        backgroundColor: "#4b4b4b",
-                        color: "#fff",
-                        fontWeight: 600,
+                        color: "primary.main",
+                        fontWeight: 700,
+                        textAlign: "left",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
                     }}
                 >
                     {children}
@@ -355,8 +336,6 @@ export function MarkdownContent({
                 <Box
                     component="td"
                     sx={{
-                        border: "1px solid",
-                        borderColor: "divider",
                         p: 1,
                     }}
                 >
@@ -370,8 +349,9 @@ export function MarkdownContent({
                         my: 2,
                         display: "grid",
                         gridTemplateColumns: "auto 1fr",
-                        gap: 0.5,
                         columnGap: 3,
+                        "& p": { mb: 0 },
+                        "& dt p": { fontWeight: "inherit" },
                     }}
                 >
                     {children}
@@ -381,7 +361,7 @@ export function MarkdownContent({
                 <Box
                     component="dt"
                     sx={{
-                        fontWeight: 600,
+                        fontWeight: 700,
                         gridColumn: 1,
                     }}
                 >
@@ -400,17 +380,7 @@ export function MarkdownContent({
                     {children}
                 </Box>
             ),
-            hr: () => (
-                <Box
-                    component="hr"
-                    sx={{
-                        border: "none",
-                        borderTop: "2px solid",
-                        borderColor: "divider",
-                        my: 3,
-                    }}
-                />
-            ),
+            hr: () => <DecorativeDivider variant="simple" sx={{ my: 3 }} />,
             ul: ({ children }) => (
                 <Box
                     component="ul"
@@ -487,7 +457,7 @@ export function MarkdownContent({
                 />
             ),
         }),
-        [tocIds],
+        [tocIds]
     );
 
     return (
@@ -500,10 +470,7 @@ export function MarkdownContent({
         >
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[
-                    rehypeRaw,
-                    [rehypeSanitize, sanitizeSchema],
-                ]}
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
                 components={components}
             >
                 {processed}
@@ -515,8 +482,7 @@ export function MarkdownContent({
 function extractText(node: unknown): string {
     if (typeof node === "string") return node;
     if (typeof node === "number") return String(node);
-    if (Array.isArray(node))
-        return node.map(extractText).join("");
+    if (Array.isArray(node)) return node.map(extractText).join("");
     if (
         node &&
         typeof node === "object" &&
@@ -524,8 +490,7 @@ function extractText(node: unknown): string {
         (node as { props?: { children?: unknown } }).props
     ) {
         return extractText(
-            (node as { props: { children?: unknown } })
-                .props.children,
+            (node as { props: { children?: unknown } }).props.children
         );
     }
     return "";

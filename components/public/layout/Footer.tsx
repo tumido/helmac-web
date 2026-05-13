@@ -6,7 +6,6 @@ import {
     Container,
     Typography,
     Link as MuiLink,
-    Divider,
     IconButton,
 } from "@mui/material";
 import { STATIC_NAV_BEFORE, STATIC_NAV_AFTER } from "@/lib/navigation";
@@ -63,9 +62,7 @@ export function Footer({ dates, navigationData }: FooterProps) {
         <Box
             component="footer"
             sx={{
-                borderTop: 1,
-                borderColor: "divider",
-                mt: 8,
+                mt: 0,
             }}
         >
             <Container maxWidth="lg">
@@ -159,8 +156,6 @@ export function Footer({ dates, navigationData }: FooterProps) {
                         ))}
                     </Box>
                 </Box>
-
-                <Divider />
 
                 <Box
                     sx={{

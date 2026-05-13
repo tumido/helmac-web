@@ -1,28 +1,18 @@
 import { z } from "zod";
 
+const actionButtonSchema = z.object({
+    label: z.string().min(1),
+    url: z.string().min(1),
+    variant: z.enum(["contained", "outlined", "text"]).optional(),
+});
+
 export const createNewsSchema = z.object({
-    slug: z
-        .string()
-        .min(1, "Slug je povinny")
-        .max(100, "Slug je prilis dlouhy")
-        .regex(
-            /^[a-z0-9-]+$/,
-            "Slug muze obsahovat pouze mala pismena, cisla a pomlcky"
-        ),
     title: z
         .string()
         .min(1, "Nazev je povinny")
         .max(200, "Nazev je prilis dlouhy"),
-    excerpt: z.string().max(500, "Perex je prilis dlouhy").optional(),
     content: z.string().min(1, "Obsah je povinny"),
-    coverImage: z
-        .string()
-        .refine(
-            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
-            "Neplatna URL obrazku"
-        )
-        .optional(),
-    showToc: z.coerce.boolean().optional(),
+    actionButtons: z.array(actionButtonSchema).optional(),
     isPublished: z.coerce.boolean().optional(),
     publishedAt: z.coerce.date().optional().nullable(),
 });

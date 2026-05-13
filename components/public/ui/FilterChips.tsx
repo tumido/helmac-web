@@ -2,6 +2,7 @@
 
 import { ReactElement } from "react";
 import { Box, Chip, SxProps, Theme, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 export interface FilterChipItem {
     key: string;
@@ -23,7 +24,6 @@ export function FilterChips({
     sx,
 }: FilterChipsProps) {
     const theme = useTheme();
-    const isDark = theme.palette.mode === "dark";
 
     const chipStyles = (selected: boolean) => ({
         borderRadius: "50px",
@@ -34,9 +34,7 @@ export function FilterChips({
         border: "2px solid",
         borderColor: selected
             ? "primary.main"
-            : isDark
-              ? "rgba(255, 255, 255, 0.25)"
-              : "rgba(45, 42, 38, 0.25)",
+            : alpha(theme.palette.text.primary, 0.25),
         backgroundColor: selected ? "primary.main" : "transparent",
         color: selected ? "primary.contrastText" : "text.primary",
         transition: "all 0.2s ease-in-out",
@@ -51,10 +49,10 @@ export function FilterChips({
         "&:hover": {
             backgroundColor: selected
                 ? "primary.dark"
-                : "rgba(201, 162, 39, 0.15)",
+                : alpha(theme.palette.primary.main, 0.15),
             borderColor: selected
                 ? "primary.dark"
-                : "rgba(201, 162, 39, 0.5)",
+                : alpha(theme.palette.primary.main, 0.5),
         },
     });
 
@@ -69,9 +67,10 @@ export function FilterChips({
                     height: 4,
                 },
                 "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: isDark
-                        ? "rgba(201, 162, 39, 0.3)"
-                        : "rgba(154, 123, 26, 0.4)",
+                    backgroundColor: alpha(
+                        theme.palette.primary.main,
+                        0.3
+                    ),
                     borderRadius: 2,
                 },
                 ...((sx ?? {}) as Record<string, unknown>),

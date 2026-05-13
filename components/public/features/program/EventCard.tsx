@@ -5,12 +5,14 @@ import {
     Box,
     Typography,
     Button,
-    Card as MuiCard,
     CardMedia,
     Link as MuiLink,
     Collapse,
+    Chip,
     useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { grainyMaskHorizontal } from "@/lib/utils/grainy-mask";
 import {
     Place,
     ArrowForward,
@@ -22,9 +24,9 @@ import {
     FestivalOutlined,
 } from "@mui/icons-material";
 import { ReactElement } from "react";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { ProgramEvent } from "./program.types";
 
-// Map location keywords to icons
 function getLocationIcon(location: string): ReactElement {
     const locLower = location.toLowerCase();
 
@@ -40,14 +42,27 @@ function getLocationIcon(location: string): ReactElement {
     if (locLower.includes("ohen") || locLower.includes("oheň")) {
         return <LocalFireDepartment fontSize="small" />;
     }
-    if (locLower.includes("strelnic") || locLower.includes("střelnic")) {
+    if (
+        locLower.includes("strelnic") ||
+        locLower.includes("střelnic")
+    ) {
         return <EmojiEvents fontSize="small" />;
     }
-    if (locLower.includes("cvicist") || locLower.includes("cvičišt")) {
+    if (
+        locLower.includes("cvicist") ||
+        locLower.includes("cvičišt")
+    ) {
         return <School fontSize="small" />;
     }
 
     return <Place fontSize="small" />;
+}
+
+function formatTimeRange(event: ProgramEvent): string {
+    if (event.endTime) {
+        return `${event.startTime}–${event.endTime}`;
+    }
+    return event.startTime;
 }
 
 interface EventCardProps {
@@ -55,239 +70,315 @@ interface EventCardProps {
     onOpenDetails?: () => void;
 }
 
-const LINE_CLAMP = 3;
+const LINE_CLAMP = 2;
 
 export function EventCard({ event, onOpenDetails }: EventCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [needsExpansion, setNeedsExpansion] = useState(false);
     const theme = useTheme();
-    const isDark = theme.palette.mode === "dark";
     const hasStoryContent =
         event.storyContent !== null && event.storyContent !== undefined;
+    const buttons = Array.isArray(event.actionButtons)
+        ? event.actionButtons
+        : [];
 
-    const handleTextRef = (element: HTMLParagraphElement | null) => {
+    const handleTextRef = (element: HTMLDivElement | null) => {
         if (element) {
-            const isOverflowing = element.scrollHeight > element.clientHeight;
+            const isOverflowing =
+                element.scrollHeight > element.clientHeight;
             setNeedsExpansion(isOverflowing);
         }
     };
 
     return (
-        <Box sx={{ display: "flex", position: "relative" }}>
-            {/* Timeline line */}
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "row",
+                py: 2,
+                px: { xs: 2, sm: 3 },
+                "&:hover img": { filter: "none" },
+            }}
+        >
+            {/* Content */}
             <Box
                 sx={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 3,
-                    backgroundColor: "primary.main",
-                    borderRadius: 1,
-                }}
-            />
-
-            <MuiCard
-                sx={{
                     flex: 1,
-                    ml: 3,
                     display: "flex",
-                    flexDirection: "row",
-                    overflow: "hidden",
-                    border: "1px solid",
-                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(45, 42, 38, 0.15)",
-                    borderRadius: 2,
-                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(45, 42, 38, 0.03)",
-                    transition: "all 0.2s ease-in-out",
-                    "&:hover": {
-                        borderColor: "rgba(201, 162, 39, 0.3)",
-                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(45, 42, 38, 0.05)",
-                    },
+                    flexDirection: "column",
+                    gap: 0.5,
                 }}
             >
-                {/* Content */}
+                {/* Title row */}
                 <Box
                     sx={{
-                        flex: 1,
                         display: "flex",
-                        flexDirection: "column",
-                        p: { xs: 2, sm: 2.5 },
-                        minHeight: 160,
+                        alignItems: "baseline",
+                        gap: 1.5,
+                        flexWrap: "wrap",
                     }}
                 >
-                    {/* Time */}
-                    <Typography
-                        variant="body1"
-                        sx={{
-                            color: "primary.main",
-                            fontWeight: 700,
-                            fontFamily: "monospace",
-                            fontSize: "1.1rem",
-                            mb: 1,
-                        }}
-                    >
-                        {event.startTime}
-                    </Typography>
-
-                    {/* Title */}
                     <Typography
                         variant="h6"
                         component="h3"
                         sx={{
                             fontFamily: '"Cinzel", serif',
                             fontWeight: 700,
-                            fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                            fontSize: {
+                                xs: "1.15rem",
+                                sm: "1.3rem",
+                            },
                             textTransform: "uppercase",
                             letterSpacing: "0.02em",
-                            mb: 1,
                             lineHeight: 1.3,
                         }}
                     >
                         {event.title}
                     </Typography>
 
-                    {/* Description */}
-                    <Collapse in={isExpanded} collapsedSize={60}>
+                    {event.endTime && (
                         <Typography
-                            ref={!isExpanded ? handleTextRef : undefined}
                             variant="body2"
                             sx={{
-                                color: "text.secondary",
+                                color: "text.muted",
+                                fontFamily: "monospace",
+                                fontSize: "0.9rem",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            do {event.endTime}
+                        </Typography>
+                    )}
+                </Box>
+
+                {/* Location */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        color: "primary.main",
+                    }}
+                >
+                    {getLocationIcon(event.location)}
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            fontWeight: 500,
+                            fontSize: "0.9rem",
+                            color: "inherit",
+                        }}
+                    >
+                        {event.location}
+                    </Typography>
+
+                    {event.tags.length > 0 && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 0.5,
+                                ml: 1,
+                            }}
+                        >
+                            {event.tags.map((tag) => (
+                                <Chip
+                                    key={tag}
+                                    label={tag}
+                                    size="small"
+                                    sx={{
+                                        height: 22,
+                                        fontSize: "0.75rem",
+                                        borderRadius: "10px",
+                                        backgroundColor: alpha(
+                                            theme.palette
+                                                .primary.main,
+                                            0.1
+                                        ),
+                                        color: "primary.main",
+                                        "& .MuiChip-label": {
+                                            px: 0.75,
+                                        },
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                </Box>
+
+                {/* Description */}
+                <Box sx={{ mt: 0.5 }}>
+                    <Collapse in={isExpanded} collapsedSize={48}>
+                        <Box
+                            ref={
+                                !isExpanded
+                                    ? handleTextRef
+                                    : undefined
+                            }
+                            sx={{
                                 ...(!isExpanded && {
                                     display: "-webkit-box",
                                     WebkitLineClamp: LINE_CLAMP,
-                                    WebkitBoxOrient: "vertical",
+                                    WebkitBoxOrient:
+                                        "vertical",
                                     overflow: "hidden",
                                 }),
                                 lineHeight: 1.5,
-                                fontSize: "0.9rem",
+                                "& p": {
+                                    m: 0,
+                                },
                             }}
                         >
-                            {event.description}
-                        </Typography>
+                            <MarkdownContent
+                                content={
+                                    event.description
+                                }
+                            />
+                        </Box>
                     </Collapse>
 
-                    {/* Expand link */}
-                    {needsExpansion && !isExpanded && (
-                        <MuiLink
-                            component="button"
-                            variant="body2"
-                            onClick={() => setIsExpanded(true)}
+                    {buttons.length > 0 && (
+                        <Box
                             sx={{
-                                alignSelf: "flex-start",
-                                mt: 0.5,
-                                color: "primary.main",
-                                cursor: "pointer",
-                                textDecoration: "none",
-                                fontSize: "0.85rem",
-                                "&:hover": {
-                                    textDecoration: "underline",
-                                },
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mt: 1,
                             }}
                         >
-                            více...
-                        </MuiLink>
-                    )}
-                    {isExpanded && (
-                        <MuiLink
-                            component="button"
-                            variant="body2"
-                            onClick={() => setIsExpanded(false)}
-                            sx={{
-                                alignSelf: "flex-start",
-                                mt: 0.5,
-                                color: "primary.main",
-                                cursor: "pointer",
-                                textDecoration: "none",
-                                fontSize: "0.85rem",
-                                "&:hover": {
-                                    textDecoration: "underline",
-                                },
-                            }}
-                        >
-                            méně
-                        </MuiLink>
+                            {buttons.map((btn) => (
+                                <Button
+                                    key={btn.url}
+                                    href={btn.url}
+                                    variant={
+                                        btn.variant ??
+                                        "contained"
+                                    }
+                                    size="small"
+                                    sx={{
+                                        textTransform:
+                                            "none",
+                                    }}
+                                >
+                                    {btn.label}
+                                </Button>
+                            ))}
+                        </Box>
                     )}
 
-                    {/* Spacer */}
-                    <Box sx={{ flex: 1, minHeight: 8 }} />
-
-                    {/* Details button */}
-                    {hasStoryContent && (
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            endIcon={<ArrowForward sx={{ fontSize: "0.9rem !important" }} />}
-                            onClick={onOpenDetails}
-                            sx={{
-                                alignSelf: "flex-start",
-                                borderRadius: "20px",
-                                borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
-                                color: "text.secondary",
-                                fontSize: "0.75rem",
-                                fontWeight: 500,
-                                px: 2,
-                                py: 0.5,
-                                mb: 1.5,
-                                textTransform: "none",
-                                "&:hover": {
-                                    backgroundColor: "rgba(201, 162, 39, 0.1)",
-                                    borderColor: "rgba(201, 162, 39, 0.5)",
-                                    color: "primary.main",
-                                },
-                            }}
-                        >
-                            Vice info
-                        </Button>
-                    )}
-
-                    {/* Location */}
                     <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 0.75,
-                            color: "primary.main",
+                            gap: 2,
+                            mt: 0.5,
                         }}
                     >
-                        {getLocationIcon(event.location)}
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                fontWeight: 500,
-                                fontSize: "0.9rem",
-                            }}
-                        >
-                            {event.location}
-                        </Typography>
+                        {needsExpansion && !isExpanded && (
+                            <MuiLink
+                                component="button"
+                                variant="body2"
+                                onClick={() => setIsExpanded(true)}
+                                sx={{
+                                    color: "primary.main",
+                                    cursor: "pointer",
+                                    textDecoration: "none",
+                                    fontSize: "0.85rem",
+                                    "&:hover": {
+                                        textDecoration:
+                                            "underline",
+                                    },
+                                }}
+                            >
+                                více...
+                            </MuiLink>
+                        )}
+                        {isExpanded && (
+                            <MuiLink
+                                component="button"
+                                variant="body2"
+                                onClick={() =>
+                                    setIsExpanded(false)
+                                }
+                                sx={{
+                                    color: "primary.main",
+                                    cursor: "pointer",
+                                    textDecoration: "none",
+                                    fontSize: "0.85rem",
+                                    "&:hover": {
+                                        textDecoration:
+                                            "underline",
+                                    },
+                                }}
+                            >
+                                méně
+                            </MuiLink>
+                        )}
+
+                        {hasStoryContent && (
+                            <Button
+                                variant="text"
+                                size="small"
+                                endIcon={
+                                    <ArrowForward
+                                        sx={{
+                                            fontSize:
+                                                "0.85rem !important",
+                                        }}
+                                    />
+                                }
+                                onClick={onOpenDetails}
+                                sx={{
+                                    color: "primary.main",
+                                    fontSize: "0.85rem",
+                                    fontWeight: 500,
+                                    px: 0.5,
+                                    py: 0,
+                                    minWidth: "auto",
+                                    textTransform: "none",
+                                    "&:hover": {
+                                        backgroundColor:
+                                            "transparent",
+                                        textDecoration:
+                                            "underline",
+                                    },
+                                }}
+                            >
+                                Více info
+                            </Button>
+                        )}
                     </Box>
                 </Box>
+            </Box>
 
-                {/* Image (optional) - on the right */}
-                {event.imageUrl && (
-                    <Box
+            {/* Image (optional) */}
+            {event.imageUrl && (
+                <Box
+                    sx={{
+                        width: { xs: 70, sm: 100 },
+                        flexShrink: 0,
+                        ml: 2,
+                        display: "flex",
+                        alignItems: "flex-start",
+                    }}
+                >
+                    <CardMedia
+                        component="img"
+                        image={event.imageUrl}
+                        alt={event.title}
                         sx={{
-                            width: { xs: 100, sm: 140 },
-                            flexShrink: 0,
-                            p: 1.5,
-                            display: "flex",
-                            alignItems: "flex-start",
+                            width: "100%",
+                            height: { xs: 60, sm: 80 },
+                            objectFit: "cover",
+                            borderRadius: 1,
+                            ...grainyMaskHorizontal,
+                            filter: "grayscale(0.3) sepia(0.15) saturate(1.1) brightness(0.9)",
+                            transition: "filter 0.4s ease",
                         }}
-                    >
-                        <CardMedia
-                            component="img"
-                            image={event.imageUrl}
-                            alt={event.title}
-                            sx={{
-                                width: "100%",
-                                height: { xs: 80, sm: 110 },
-                                objectFit: "cover",
-                                borderRadius: 1.5,
-                            }}
-                        />
-                    </Box>
-                )}
-            </MuiCard>
+                    />
+                </Box>
+            )}
         </Box>
     );
 }
+
+export { formatTimeRange };

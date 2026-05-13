@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Box, Grid, Button, Typography } from "@mui/material";
-import { ArrowForward } from "@mui/icons-material";
 import { getLatestAlbumsForActiveYear } from "@/lib/services";
 import { AlbumCard } from "./AlbumCard";
+import { AnimatedSection } from "@/components/public/ui/AnimatedSection";
+import { GameIcon } from "@/lib/icons";
 
 export async function GalleryPreview() {
     const albums = await getLatestAlbumsForActiveYear(4);
@@ -10,9 +11,7 @@ export async function GalleryPreview() {
     if (albums.length === 0) {
         return (
             <Box sx={{ textAlign: "center", py: 4 }}>
-                <Typography color="text.secondary">
-                    Zatím žádná alba
-                </Typography>
+                <Typography color="text.secondary">Zatím žádná alba</Typography>
             </Box>
         );
     }
@@ -20,15 +19,25 @@ export async function GalleryPreview() {
     return (
         <>
             <Grid container spacing={4} justifyContent="center">
-                {albums.map((album) => (
+                {albums.map((album, index) => (
                     <Grid item key={album.id} xs={12} sm={6} md={3}>
-                        <AlbumCard album={album} />
+                        <AnimatedSection delay={index * 100}>
+                            <AlbumCard album={album} />
+                        </AnimatedSection>
                     </Grid>
                 ))}
             </Grid>
-            <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Box sx={{ textAlign: "center", mt: 6 }}>
                 <Link href="/galerie" style={{ textDecoration: "none" }}>
-                    <Button variant="outlined" endIcon={<ArrowForward />}>
+                    <Button
+                        variant="outlined"
+                        startIcon={
+                            <GameIcon
+                                name="castle"
+                                sx={{ fontSize: "1.2rem" }}
+                            />
+                        }
+                    >
                         Celá galerie
                     </Button>
                 </Link>

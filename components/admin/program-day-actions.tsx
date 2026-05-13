@@ -17,6 +17,7 @@ import { Delete } from "@mui/icons-material";
 import { deleteProgramDay } from "@/lib/actions/program-days";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/lib/hooks/use-toast";
+import { builderPalette as p } from "@/components/admin/email-builder/palette";
 
 interface ProgramDayActionsProps {
     dayId: string;
@@ -30,17 +31,15 @@ export function ProgramDayActions({
     const router = useRouter();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] =
+        useState(false);
 
     const handleDelete = async () => {
         setLoading(true);
-        setError(null);
         const result = await deleteProgramDay(dayId);
         setLoading(false);
         setDeleteDialogOpen(false);
         if (result.error) {
-            setError(result.error);
             toast.error(result.error);
         } else {
             toast.success("Den programu byl smazán");
@@ -50,39 +49,54 @@ export function ProgramDayActions({
 
     if (loading) {
         return (
-            <Box sx={{ display: "flex", alignItems: "center", px: 1 }}>
-                <CircularProgress size={20} />
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    px: 1,
+                }}
+            >
+                <CircularProgress size={16} />
             </Box>
         );
     }
 
     return (
         <>
-            <Box sx={{ display: "flex", gap: 0.5 }}>
-                <Tooltip title="Smazat den">
-                    <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => setDeleteDialogOpen(true)}
-                    >
-                        <Delete />
-                    </IconButton>
-                </Tooltip>
-            </Box>
+            <Tooltip title="Smazat den">
+                <IconButton
+                    size="small"
+                    onClick={() =>
+                        setDeleteDialogOpen(true)
+                    }
+                    sx={{
+                        color: p.ink3,
+                        "&:hover": { color: p.negInk },
+                    }}
+                >
+                    <Delete sx={{ fontSize: 16 }} />
+                </IconButton>
+            </Tooltip>
 
             <Dialog
                 open={deleteDialogOpen}
-                onClose={() => setDeleteDialogOpen(false)}
+                onClose={() =>
+                    setDeleteDialogOpen(false)
+                }
             >
-                <DialogTitle>Smazat den programu?</DialogTitle>
+                <DialogTitle>
+                    Smazat den programu?
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Opravdu chcete smazat tento den programu?
+                        Opravdu chcete smazat tento den
+                        programu?
                         {eventsCount > 0 && (
                             <>
                                 {" "}
                                 <strong>
-                                    Bude smazano take {eventsCount}{" "}
+                                    Bude smazano take{" "}
+                                    {eventsCount}{" "}
                                     {eventsCount === 1
                                         ? "udalost"
                                         : eventsCount < 5
@@ -95,15 +109,20 @@ export function ProgramDayActions({
                         <br />
                         Tato akce je nevratná.
                     </DialogContentText>
-                    {error && (
-                        <DialogContentText color="error" sx={{ mt: 2 }}>
-                            {error}
-                        </DialogContentText>
-                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Zrušit</Button>
-                    <Button onClick={handleDelete} color="error" variant="contained">
+                    <Button
+                        onClick={() =>
+                            setDeleteDialogOpen(false)
+                        }
+                    >
+                        Zrušit
+                    </Button>
+                    <Button
+                        onClick={handleDelete}
+                        color="error"
+                        variant="contained"
+                    >
                         Smazat
                     </Button>
                 </DialogActions>

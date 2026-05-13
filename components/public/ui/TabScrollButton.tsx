@@ -49,7 +49,14 @@ export function TabScrollButton(props: TabScrollButtonProps) {
     );
 
     return (
-        <Box ref={wrapperRef} sx={{ display: "inline-flex" }}>
+        <Box
+            ref={wrapperRef}
+            sx={{
+                display: "inline-flex",
+                width: props.disabled ? 0 : "auto",
+                overflow: "hidden",
+            }}
+        >
             <MuiTabScrollButton
                 {...props}
                 onClick={handleClick}

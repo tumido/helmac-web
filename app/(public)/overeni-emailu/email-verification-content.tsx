@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box, Typography, Button, Alert, CircularProgress } from "@mui/material";
-import { CheckCircleOutline, ErrorOutline, MailOutline } from "@mui/icons-material";
+import { GameIcon } from "@/lib/icons";
 import { verifyEmail } from "@/lib/actions/public/verify-email";
 import { resendVerification } from "@/lib/actions/public/auth";
 
@@ -58,7 +58,7 @@ export function EmailVerificationContent({ email }: EmailVerificationContentProp
     if (status === "success") {
         return (
             <Box sx={{ textAlign: "center", py: 4 }}>
-                <CheckCircleOutline sx={{ fontSize: 64, color: "success.main", mb: 2 }} />
+                <GameIcon name="laurel-crown" sx={{ fontSize: 64, color: "primary.main", mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
                     {message || "Email byl úspěšně ověřen"}
                 </Typography>
@@ -76,7 +76,7 @@ export function EmailVerificationContent({ email }: EmailVerificationContentProp
     if (status === "pending") {
         return (
             <Box sx={{ textAlign: "center", py: 4 }}>
-                <MailOutline sx={{ fontSize: 64, color: "primary.main", mb: 2 }} />
+                <GameIcon name="envelope" sx={{ fontSize: 64, color: "primary.main", mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
                     Zkontrolujte svůj email
                 </Typography>
@@ -107,7 +107,7 @@ export function EmailVerificationContent({ email }: EmailVerificationContentProp
     // Error state
     return (
         <Box sx={{ textAlign: "center", py: 4 }}>
-            <ErrorOutline sx={{ fontSize: 64, color: "error.main", mb: 2 }} />
+            <GameIcon name="broken-axe" sx={{ fontSize: 64, color: "primary.main", mb: 2 }} />
             <Typography variant="h6" gutterBottom>
                 {message || "Ověření se nezdařilo"}
             </Typography>

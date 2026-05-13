@@ -1,5 +1,4 @@
-import { Container, Typography, Box, Button } from "@mui/material";
-import { OpenInNew } from "@mui/icons-material";
+import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { NewsForm } from "@/components/forms/news-form";
@@ -37,7 +36,7 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Novinky", href: "/admin/novinky" },
@@ -45,30 +44,6 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
                 ]}
                 title="Upravit novinku"
             />
-            <Box sx={{ mb: 4 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        flexWrap: "wrap",
-                        gap: 2,
-                        mb: 1,
-                    }}
-                >
-                    <Button
-                        href={`/${news.year.year}/novinky/${news.slug}`}
-                        target="_blank"
-                        variant="outlined"
-                        startIcon={<OpenInNew />}
-                    >
-                        Nahled
-                    </Button>
-                </Box>
-                <Typography color="text.secondary">
-                    {news.year.year} - {news.title}
-                </Typography>
-            </Box>
 
             <NewsForm
                 mode="edit"
@@ -76,12 +51,9 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
                 newsId={news.id}
                 defaultValues={{
                     yearId: news.yearId,
-                    slug: news.slug,
                     title: news.title,
-                    excerpt: news.excerpt,
                     content: news.content,
-                    coverImage: news.coverImage,
-                    showToc: news.showToc,
+                    actionButtons: news.actionButtons as { label: string; url: string; variant?: "contained" | "outlined" }[],
                 }}
             />
         </Container>

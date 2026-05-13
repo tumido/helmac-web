@@ -10,6 +10,7 @@ import {
     Chip,
     useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
     Close,
     AccessTime,
@@ -27,6 +28,7 @@ import {
     Shield,
 } from "@mui/icons-material";
 import { ReactElement } from "react";
+import { grainyMaskBoth } from "@/lib/utils/grainy-mask";
 import { ProgramEvent } from "./program.types";
 import { Prisma } from "@prisma/client";
 
@@ -157,7 +159,6 @@ export function EventDetailModal({
     onClose,
 }: EventDetailModalProps) {
     const theme = useTheme();
-    const isDark = theme.palette.mode === "dark";
 
     if (!event) return null;
 
@@ -214,7 +215,9 @@ export function EventDetailModal({
                         >
                             <AccessTime fontSize="small" />
                             <Typography variant="body2" fontWeight="bold">
-                                {event.startTime}
+                                {event.endTime
+                                    ? `${event.startTime}–${event.endTime}`
+                                    : event.startTime}
                             </Typography>
                         </Box>
                         <Box
@@ -247,10 +250,10 @@ export function EventDetailModal({
                                     sx={{
                                         borderRadius: "50px",
                                         height: 28,
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.85rem",
                                         fontWeight: 500,
                                         border: "1.5px solid",
-                                        borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(45, 42, 38, 0.25)",
+                                        borderColor: alpha(theme.palette.text.primary, 0.25),
                                         backgroundColor: "transparent",
                                         color: "text.primary",
                                         "& .MuiChip-icon": {
@@ -292,6 +295,10 @@ export function EventDetailModal({
                             objectFit: "cover",
                             borderRadius: 1,
                             mb: 3,
+                            ...grainyMaskBoth,
+                            filter: "grayscale(0.3) sepia(0.15) saturate(1.1) brightness(0.9)",
+                            transition: "filter 0.4s ease",
+                            "&:hover": { filter: "none" },
                         }}
                     />
                 )}

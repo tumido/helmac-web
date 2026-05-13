@@ -24,7 +24,7 @@ export default async function YearNewNewsPage({ params }: YearNewNewsPageProps) 
     }
 
     return (
-        <Container maxWidth="md">
+        <Container maxWidth={false}>
             <PageHeader
                 breadcrumbs={[
                     { label: "Ročníky", href: "/admin/rocniky" },

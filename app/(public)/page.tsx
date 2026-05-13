@@ -1,16 +1,27 @@
 import { Box, Typography } from "@mui/material";
 import { HeroSection, Section, SectionTitle } from "@/components/public/ui";
+import { DecorativeDivider } from "@/components/public/ui/Divider";
 import { formatDate, formatEventDateRange } from "@/lib/utils/date";
 import { NewsPreview } from "@/components/public/features/news/NewsPreview";
 import { GalleryPreview } from "@/components/public/features/gallery/GalleryPreview";
+import { EventHighlights } from "@/components/public/features/highlights/EventHighlights";
+import { HowToJoin } from "@/components/public/features/highlights/HowToJoin";
 import { RegistrationCTA } from "@/components/public/features/registration/RegistrationCTA";
-import { getActiveYear, getRegistrationStatus } from "@/lib/services";
+import {
+    getActiveYear,
+    getRegistrationStatus,
+    getFeaturedSectionTypeForActiveYear,
+    getHomepageStepsForActiveYear,
+} from "@/lib/services";
 
 export default async function HomePage() {
-    const [activeYear, regStatus] = await Promise.all([
-        getActiveYear(),
-        getRegistrationStatus(),
-    ]);
+    const [activeYear, regStatus, featuredSectionType, homepageSteps] =
+        await Promise.all([
+            getActiveYear(),
+            getRegistrationStatus(),
+            getFeaturedSectionTypeForActiveYear(),
+            getHomepageStepsForActiveYear(),
+        ]);
 
     const eventDate = formatEventDateRange(
         activeYear?.startDate,
@@ -36,9 +47,9 @@ export default async function HomePage() {
                     <Typography
                         variant="h6"
                         sx={{
-                            opacity: 0.85,
-                            fontFamily: '"Merriweather", serif',
-                            fontWeight: 300,
+                            fontFamily: '"Lato", sans-serif',
+                            fontWeight: 500,
+                            color: "text.primary",
                         }}
                     >
                         Registrace se otevře{" "}
@@ -47,25 +58,92 @@ export default async function HomePage() {
                 )}
             </HeroSection>
 
+            <DecorativeDivider variant="ornate" sx={{ my: 0 }} />
+
             <Section>
                 <SectionTitle
                     title="Novinky"
-                    subtitle="Sledujte nejnovější zprávy a aktualizace"
+                    subtitle="Sleduj nejnovější zprávy a aktualizace"
+                    icon="trumpet-flag"
                 />
                 <NewsPreview />
             </Section>
 
-            <Section backgroundColor="background.paper">
+            <DecorativeDivider
+                variant="ornate"
+                sx={{ my: 0, transform: "translateY(50%)" }}
+            />
+
+            <Section
+                backgroundColor="background.paper"
+                animationDelay={100}
+                sx={{ pb: { xs: 0, md: 0 } }}
+            >
                 <SectionTitle
                     title="Galerie"
-                    subtitle="Nahlédněte do světa Helmáče"
+                    subtitle="Nahlédni do světa Helmáče"
+                    icon="wood-frame"
                 />
                 <GalleryPreview />
+                <DecorativeDivider
+                    variant="ornate"
+                    sx={{
+                        mt: { xs: 8 },
+                        mb: 0,
+                        transform: "translateY(50%)",
+                    }}
+                />
             </Section>
 
-            <Box sx={{ backgroundColor: "primary.main" }}>
+            {featuredSectionType && featuredSectionType.sections.length > 0 && (
+                <>
+                    <Section animationDelay={100}>
+                        <SectionTitle
+                            title={
+                                featuredSectionType.pageTitle ||
+                                featuredSectionType.label
+                            }
+                            subtitle={
+                                featuredSectionType.description ||
+                                featuredSectionType.pageSubtitle ||
+                                undefined
+                            }
+                            icon={featuredSectionType.icon || "crossed-swords"}
+                        />
+                        <EventHighlights
+                            sections={featuredSectionType.sections}
+                            slug={featuredSectionType.slug}
+                        />
+                    </Section>
+
+                    <DecorativeDivider
+                        variant="ornate"
+                        sx={{ my: 0, transform: "translateY(50%)" }}
+                    />
+                </>
+            )}
+
+            {homepageSteps.length > 0 && (
+                <Section backgroundColor="background.paper" animationDelay={100}>
+                    <SectionTitle
+                        title="Jak se zúčastnit"
+                        subtitle="Tři jednoduché kroky a můžeš být u toho"
+                        icon="journey"
+                    />
+                    <HowToJoin steps={homepageSteps} />
+                </Section>
+            )}
+
+            <Box
+                sx={{
+                    background:
+                        "linear-gradient(135deg, #9A7B1A 0%, #C9A227 30%, #E5C158 50%, #C9A227 70%, #9A7B1A 100%)",
+                    position: "relative",
+                }}
+            >
                 <RegistrationCTA />
             </Box>
+            <DecorativeDivider variant="ornate" />
         </>
     );
 }
