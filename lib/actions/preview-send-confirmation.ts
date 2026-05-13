@@ -11,8 +11,11 @@ import {
 } from "@/lib/types/registration-form";
 import type {
     AdditionalPersonData,
+    ConditionRule,
+    FormCondition,
     RegistrationFormData,
 } from "@/lib/types/registration-form";
+import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import {
@@ -49,7 +52,7 @@ export type SendPreviewConfirmationInput = z.input<typeof sendPreviewSchema>;
 
 export async function sendPreviewConfirmation(
     input: SendPreviewConfirmationInput,
-): Promise<{ success?: true; error?: string }> {
+): Promise<{ success?: true; conditionalSentCount?: number; error?: string }> {
     try {
         await requireAdmin();
     } catch {
@@ -223,9 +226,82 @@ export async function sendPreviewConfirmation(
         if (!sent) {
             return { error: "Nepodařilo se odeslat email" };
         }
-        return { success: true };
     } catch (error) {
         console.error("Failed to send preview confirmation email:", error);
         return { error: "Nepodařilo se odeslat email" };
     }
+
+    let conditionalSentCount = 0;
+    try {
+        const conditionalEmails = await db.conditionalEmail.findMany({
+            where: { yearId: year.id, enabled: true },
+            select: {
+                id: true,
+                name: true,
+                conditionFieldId: true,
+                conditionOperator: true,
+                conditionValue: true,
+                subject: true,
+                body: true,
+                bcc: true,
+                accountId: true,
+                sections: true,
+            },
+        });
+
+        for (const ce of conditionalEmails) {
+            if (!ce.subject || !ce.body) continue;
+
+            const synth: FormCondition = {
+                id: ce.id,
+                name: ce.name,
+                rules: [
+                    {
+                        type: "field_value",
+                        fieldId: ce.conditionFieldId,
+                        operator: ce.conditionOperator as ConditionRule["operator"],
+                        value: ce.conditionValue ?? "",
+                    },
+                ],
+            };
+            if (
+                !evaluateCondition(
+                    synth,
+                    submissionData,
+                    allFields,
+                    formDataStored.pricingDefinitions,
+                )
+            ) {
+                continue;
+            }
+
+            const ceSubject = replacePlaceholders(ce.subject, placeholders);
+            const ceBodyWithSections = appendConditionalSections({
+                body: ce.body,
+                sections:
+                    (ce.sections as unknown as EmailConditionalSection[]) ?? [],
+                rawSubmissionData: rawSubmissionForPlaceholders,
+                allFields,
+                pricingDefinitions: formDataStored.pricingDefinitions,
+            });
+            const ceBody = replacePlaceholders(ceBodyWithSections, placeholders);
+
+            const ceSent = await sendConfirmationEmail({
+                to: recipientEmail,
+                subject: ceSubject,
+                body: ceBody,
+                bcc: ce.bcc ?? undefined,
+                qrImageBuffer: qrImageBuffer ?? undefined,
+                accountId: ce.accountId,
+            });
+            if (ceSent) conditionalSentCount++;
+        }
+    } catch (condEmailError) {
+        console.error(
+            "Failed to send preview conditional emails:",
+            condEmailError,
+        );
+    }
+
+    return { success: true, conditionalSentCount };
 }

@@ -159,10 +159,14 @@ export function DynamicRegistrationForm({
                 additionalPeople,
             });
             if (result.success) {
+                const condCount = result.conditionalSentCount ?? 0;
                 setPreviewSnackbar({
                     open: true,
                     severity: "success",
-                    message: "Testovací email byl odeslán.",
+                    message:
+                        condCount > 0
+                            ? `Testovací email byl odeslán (včetně ${condCount} podmíněných).`
+                            : "Testovací email byl odeslán.",
                 });
             } else {
                 setPreviewSnackbar({
