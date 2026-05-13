@@ -178,6 +178,7 @@ export async function submitDynamicRegistration(
         formDataStored.conditions,
         rawData,
         allFields,
+        formDataStored.pricingDefinitions,
     );
 
     // Only validate visible input fields
@@ -259,6 +260,7 @@ export async function submitDynamicRegistration(
                 formDataStored.conditions,
                 mergedRaw,
                 allFields,
+                formDataStored.pricingDefinitions,
             );
 
             apVisibleFieldIdsPerPerson.push(apVisibleFieldIds);
@@ -505,6 +507,7 @@ export async function submitDynamicRegistration(
                     sections: (activeYear.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
                     rawSubmissionData: submissionData,
                     allFields,
+                    pricingDefinitions: formDataStored.pricingDefinitions,
                 });
                 const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
@@ -561,7 +564,7 @@ export async function submitDynamicRegistration(
                             value: ce.conditionValue ?? "",
                         }],
                     };
-                    if (!evaluateCondition(synth, submissionData, allFields)) continue;
+                    if (!evaluateCondition(synth, submissionData, allFields, formDataStored.pricingDefinitions)) continue;
 
                     const ceSubject = replacePlaceholders(ce.subject, placeholders);
                     const ceBodyWithSections = appendConditionalSections({
@@ -569,6 +572,7 @@ export async function submitDynamicRegistration(
                         sections: (ce.sections as unknown as EmailConditionalSection[]) ?? [],
                         rawSubmissionData: submissionData,
                         allFields,
+                        pricingDefinitions: formDataStored.pricingDefinitions,
                     });
                     const ceBody = replacePlaceholders(ceBodyWithSections, placeholders);
 

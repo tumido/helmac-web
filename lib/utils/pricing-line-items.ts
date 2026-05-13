@@ -26,7 +26,7 @@ function evaluateVisibleFields(
         if (isConditionBlock(el)) {
             const condition = conditionMap.get(el.conditionId);
             if (!condition) continue;
-            if (evaluateCondition(condition, values, allFields)) {
+            if (evaluateCondition(condition, values, allFields, formData.pricingDefinitions)) {
                 for (const child of el.children) visible.add(child.id);
             }
         } else {
@@ -116,10 +116,12 @@ export function computePricingLineItems(
         );
 
         if (field.type === "pricing_quantity") {
+            // Quantity JSON is keyed by opt.id post-redesign; tolerate opt.name
+            // for legacy submissions.
             const mainQty = parseQuantities(submissionData[field.name]);
             if (visibleMain.has(field.id)) {
                 for (const opt of def.options) {
-                    const qty = Number(mainQty[opt.name]) || 0;
+                    const qty = Number(mainQty[opt.id] ?? mainQty[opt.name]) || 0;
                     if (qty <= 0) continue;
                     const unitPrice = opt.prices[tierIdx] ?? 0;
                     addLine(mainLines, {
@@ -134,7 +136,7 @@ export function computePricingLineItems(
                     if (!visibleAPPerPerson[idx]?.has(field.id)) return;
                     const personQty = parseQuantities(person[field.name]);
                     for (const opt of def.options) {
-                        const qty = Number(personQty[opt.name]) || 0;
+                        const qty = Number(personQty[opt.id] ?? personQty[opt.name]) || 0;
                         if (qty <= 0) continue;
                         const unitPrice = opt.prices[tierIdx] ?? 0;
                         const group = ensureAPGroup(apLines, idx);
@@ -149,8 +151,10 @@ export function computePricingLineItems(
         } else if (field.type === "pricing_multi_select") {
             const mainSelected = parseSelected(submissionData[field.name]);
             if (mainSelected.length > 0 && visibleMain.has(field.id)) {
-                for (const optName of mainSelected) {
-                    const opt = def.options.find((o) => o.name === optName);
+                for (const optKey of mainSelected) {
+                    const opt =
+                        def.options.find((o) => o.id === optKey) ??
+                        def.options.find((o) => o.name === optKey);
                     if (!opt) continue;
                     addLine(mainLines, {
                         label: field.label,
@@ -163,8 +167,10 @@ export function computePricingLineItems(
                 additionalPeople.forEach((person, idx) => {
                     if (!visibleAPPerPerson[idx]?.has(field.id)) return;
                     const personSelected = parseSelected(person[field.name]);
-                    for (const optName of personSelected) {
-                        const opt = def.options.find((o) => o.name === optName);
+                    for (const optKey of personSelected) {
+                        const opt =
+                            def.options.find((o) => o.id === optKey) ??
+                            def.options.find((o) => o.name === optKey);
                         if (!opt) continue;
                         const group = ensureAPGroup(apLines, idx);
                         group.lines.push({
@@ -178,7 +184,9 @@ export function computePricingLineItems(
         } else {
             const mainVal = String(submissionData[field.name] ?? "");
             if (mainVal && visibleMain.has(field.id)) {
-                const opt = def.options.find((o) => o.name === mainVal);
+                const opt =
+                    def.options.find((o) => o.id === mainVal) ??
+                    def.options.find((o) => o.name === mainVal);
                 if (opt) {
                     addLine(mainLines, {
                         label: field.label,
@@ -192,7 +200,9 @@ export function computePricingLineItems(
                     if (!visibleAPPerPerson[idx]?.has(field.id)) return;
                     const personVal = String(person[field.name] ?? "");
                     if (!personVal) return;
-                    const opt = def.options.find((o) => o.name === personVal);
+                    const opt =
+                        def.options.find((o) => o.id === personVal) ??
+                        def.options.find((o) => o.name === personVal);
                     if (!opt) return;
                     const group = ensureAPGroup(apLines, idx);
                     group.lines.push({

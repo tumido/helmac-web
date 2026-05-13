@@ -118,6 +118,7 @@ export async function sendPreviewConfirmation(
         formDataStored.conditions,
         submissionData,
         allFields,
+        formDataStored.pricingDefinitions,
     );
 
     const apVisibleFieldIdsPerPerson = typedAP.map((person) => {
@@ -130,6 +131,7 @@ export async function sendPreviewConfirmation(
             formDataStored.conditions,
             merged,
             allFields,
+            formDataStored.pricingDefinitions,
         );
     });
 
@@ -185,6 +187,7 @@ export async function sendPreviewConfirmation(
             [],
         rawSubmissionData: rawSubmissionForPlaceholders,
         allFields,
+        pricingDefinitions: formDataStored.pricingDefinitions,
     });
     const renderedBody = replacePlaceholders(bodyWithSections, placeholders);
 

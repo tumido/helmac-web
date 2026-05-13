@@ -222,6 +222,7 @@ export async function processTransactions(
                             sections: (year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? [],
                             rawSubmissionData: submissionData,
                             allFields: fields,
+                            pricingDefinitions,
                         });
                         const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 

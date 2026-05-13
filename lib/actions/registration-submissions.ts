@@ -164,6 +164,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             sections: (submission.year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
             rawSubmissionData: submissionData,
             allFields,
+            pricingDefinitions: formData.pricingDefinitions,
         });
         const body = replacePlaceholders(bodyWithSections, placeholders);
 

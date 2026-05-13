@@ -1,11 +1,38 @@
-import type { FormCondition, FormField } from "@/lib/types/registration-form";
+import type {
+    FormCondition,
+    FormField,
+    InputField,
+    PricingDefinition,
+} from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { parseQuantities } from "@/lib/utils/pricing-field-values";
+
+/**
+ * Rule values authored in the condition editor are option *names* (the editor
+ * uses `<MenuItem value={opt.name}>`). Submission data stores option *ids*
+ * post-redesign. Translate a stored value into the option name (with both-
+ * direction tolerance) so equality checks line up regardless of which world
+ * the data originated in.
+ */
+function pricingValueToName(
+    field: InputField,
+    value: string,
+    pricingDefinitions: PricingDefinition[] | undefined,
+): string {
+    if (!field.pricingId || !pricingDefinitions) return value;
+    const def = pricingDefinitions.find((d) => d.id === field.pricingId);
+    if (!def) return value;
+    const opt =
+        def.options.find((o) => o.id === value) ??
+        def.options.find((o) => o.name === value);
+    return opt?.name ?? value;
+}
 
 export function evaluateCondition(
     condition: FormCondition,
     rawData: Record<string, unknown>,
     allFields: FormField[],
+    pricingDefinitions?: PricingDefinition[],
 ): boolean {
     let result: boolean | null = null;
     for (let i = 0; i < condition.rules.length; i++) {
@@ -25,9 +52,19 @@ export function evaluateCondition(
                 if (targetField.type === "pricing_multi_select" && currentValue.startsWith("[")) {
                     try {
                         const arr = JSON.parse(currentValue);
-                        if (Array.isArray(arr)) parsedArr = arr;
+                        if (Array.isArray(arr)) {
+                            parsedArr = arr.map((v) =>
+                                pricingValueToName(targetField, String(v), pricingDefinitions),
+                            );
+                        }
                     } catch { /* ignore */ }
                 }
+
+                // Normalise scalar pricing_select values (id → name).
+                const normalizedValue =
+                    targetField.type === "pricing_select"
+                        ? pricingValueToName(targetField, currentValue, pricingDefinitions)
+                        : currentValue;
 
                 if (rule.operator === "quantity_gt_zero" || rule.operator === "quantity_any_gt_zero") {
                     if (targetField.type === "pricing_quantity") {
@@ -35,7 +72,20 @@ export function evaluateCondition(
                         if (rule.operator === "quantity_any_gt_zero") {
                             passes = Object.values(quantities).some((q) => Number(q) > 0);
                         } else {
-                            passes = Number(quantities[rule.value ?? ""]) > 0;
+                            // quantity_gt_zero: look up the option by id first
+                            // (post-redesign keys) then by name (legacy / rule
+                            // value is the option name from the editor).
+                            const key = rule.value ?? "";
+                            const def = targetField.pricingId
+                                ? pricingDefinitions?.find((d) => d.id === targetField.pricingId)
+                                : undefined;
+                            const opt = def?.options.find(
+                                (o) => o.name === key || o.id === key,
+                            );
+                            const qty = opt
+                                ? Number(quantities[opt.id] ?? quantities[opt.name]) || 0
+                                : Number(quantities[key]) || 0;
+                            passes = qty > 0;
                         }
                     } else {
                         passes = false;
@@ -55,8 +105,8 @@ export function evaluateCondition(
                     passes = rule.operator === "equals" ? includes : !includes;
                 } else {
                     passes = rule.operator === "equals"
-                        ? currentValue === rule.value
-                        : currentValue !== rule.value;
+                        ? normalizedValue === rule.value
+                        : normalizedValue !== rule.value;
                 }
             }
         }

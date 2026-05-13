@@ -5,7 +5,7 @@ import { generateSPAYD } from "@/lib/utils/spayd";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/utils/encryption";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
-import type { FormField } from "@/lib/types/registration-form";
+import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 
 // Cache transporters by account ID
@@ -93,13 +93,21 @@ export function appendConditionalSections(opts: {
     sections: EmailConditionalSection[];
     rawSubmissionData: Record<string, unknown>;
     allFields: FormField[];
+    pricingDefinitions?: PricingDefinition[];
 }): string {
-    const { body, sections, rawSubmissionData, allFields } = opts;
+    const { body, sections, rawSubmissionData, allFields, pricingDefinitions } = opts;
     if (!sections || sections.length === 0) return body;
 
     const matched = [...sections]
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .filter((s) => evaluateCondition(s.condition, rawSubmissionData, allFields));
+        .filter((s) =>
+            evaluateCondition(
+                s.condition,
+                rawSubmissionData,
+                allFields,
+                pricingDefinitions,
+            ),
+        );
 
     if (matched.length === 0) return body;
 

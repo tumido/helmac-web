@@ -163,6 +163,7 @@ export async function GET(request: NextRequest) {
                             sections: (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? [],
                             rawSubmissionData: submissionData,
                             allFields: allFormFields,
+                            pricingDefinitions,
                         });
                         const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
