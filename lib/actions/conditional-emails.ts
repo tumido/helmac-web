@@ -15,7 +15,7 @@ export async function createConditionalEmail(
         name: string;
         conditionFieldId: string;
         conditionFieldName: string;
-        conditionOperator: "equals" | "is_set" | "is_not_set" | "quantity_gt_zero";
+        conditionOperator: "equals" | "is_set" | "is_not_set" | "quantity_gt_zero" | "quantity_any_gt_zero";
         conditionValue?: string;
     },
 ) {

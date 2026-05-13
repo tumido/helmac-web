@@ -44,6 +44,7 @@ function renderConditionText(
     if (operator === "is_set") return `${label} – cokoli vybráno`;
     if (operator === "is_not_set") return `${label} – nic nevybráno`;
     if (operator === "quantity_gt_zero") return `${label} – počet pro "${value ?? ""}" > 0`;
+    if (operator === "quantity_any_gt_zero") return `${label} – jakákoli volba > 0`;
     return `${label} = "${value ?? ""}"`;
 }
 

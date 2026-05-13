@@ -11,6 +11,7 @@ const OPERATOR_SYMBOL: Record<NonNullable<ConditionRule["operator"]>, string> = 
     is_set: "vyplněno",
     is_not_set: "nevyplněno",
     quantity_gt_zero: "počet > 0",
+    quantity_any_gt_zero: "jakákoli > 0",
 };
 
 function describeValue(
@@ -122,7 +123,10 @@ export function SectionTokens({
                 const fieldLabel = field && isInputField(field) ? field.label : "(nevybráno)";
                 const operator = rule.operator ?? "equals";
                 const opLabel = OPERATOR_SYMBOL[operator];
-                const showValue = operator !== "is_set" && operator !== "is_not_set";
+                const showValue =
+                    operator !== "is_set" &&
+                    operator !== "is_not_set" &&
+                    operator !== "quantity_any_gt_zero";
                 const valueLabel = showValue ? describeValue(rule, field, pricingDefinitions) : "";
                 const isNeg = operator === "not_equals";
                 const connector = rule.connector ?? "AND";

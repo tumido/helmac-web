@@ -105,6 +105,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                             {" > 0"}
                         </>
                     )}
+                    {conditionalEmail.conditionOperator === "quantity_any_gt_zero" && " – jakákoli volba > 0"}
                 </Typography>
             </Box>
 

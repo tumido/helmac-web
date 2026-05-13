@@ -19,7 +19,7 @@ import {
 import { Add } from "@mui/icons-material";
 import { createConditionalEmail } from "@/lib/actions/conditional-emails";
 
-type ConditionOperator = "equals" | "is_set" | "is_not_set" | "quantity_gt_zero";
+type ConditionOperator = "equals" | "is_set" | "is_not_set" | "quantity_gt_zero" | "quantity_any_gt_zero";
 
 interface FieldOption {
     id: string;
@@ -167,7 +167,10 @@ export function CreateConditionalEmailDialog({
                                     {isQuantityField
                                         ? [
                                               <MenuItem key="quantity_gt_zero" value="quantity_gt_zero">
-                                                  Počet &gt; 0
+                                                  Konkrétní volba: počet &gt; 0
+                                              </MenuItem>,
+                                              <MenuItem key="quantity_any_gt_zero" value="quantity_any_gt_zero">
+                                                  Jakákoli volba: počet &gt; 0
                                               </MenuItem>,
                                           ]
                                         : [

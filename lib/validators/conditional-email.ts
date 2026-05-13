@@ -13,7 +13,7 @@ export const createConditionalEmailSchema = z
             .string()
             .min(1, "Název pole podmínky je povinný"),
         conditionOperator: z
-            .enum(["equals", "is_set", "is_not_set", "quantity_gt_zero"])
+            .enum(["equals", "is_set", "is_not_set", "quantity_gt_zero", "quantity_any_gt_zero"])
             .default("equals"),
         conditionValue: z.string().optional(),
     })

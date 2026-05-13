@@ -29,10 +29,14 @@ export function evaluateCondition(
                     } catch { /* ignore */ }
                 }
 
-                if (rule.operator === "quantity_gt_zero") {
+                if (rule.operator === "quantity_gt_zero" || rule.operator === "quantity_any_gt_zero") {
                     if (targetField.type === "pricing_quantity") {
                         const quantities = parseQuantities(rawData[targetField.name]);
-                        passes = Number(quantities[rule.value ?? ""]) > 0;
+                        if (rule.operator === "quantity_any_gt_zero") {
+                            passes = Object.values(quantities).some((q) => Number(q) > 0);
+                        } else {
+                            passes = Number(quantities[rule.value ?? ""]) > 0;
+                        }
                     } else {
                         passes = false;
                     }

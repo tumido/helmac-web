@@ -363,7 +363,8 @@ export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUp
     const isQuantityField = targetInput?.type === "pricing_quantity";
     const showValue =
         rule.operator !== "is_set" &&
-        rule.operator !== "is_not_set";
+        rule.operator !== "is_not_set" &&
+        rule.operator !== "quantity_any_gt_zero";
 
     const fieldSelect = (
         <FormControl size="small" sx={{ flex: 1, minWidth: compact ? 140 : undefined }}>
@@ -402,7 +403,8 @@ export function RuleRow({ rule, inputFields, allFields, pricingDefinitions, onUp
             >
                 {isQuantityField
                     ? [
-                          <MenuItem key="quantity_gt_zero" value="quantity_gt_zero">počet &gt; 0</MenuItem>,
+                          <MenuItem key="quantity_gt_zero" value="quantity_gt_zero">konkrétní volba: počet &gt; 0</MenuItem>,
+                          <MenuItem key="quantity_any_gt_zero" value="quantity_any_gt_zero">jakákoli volba: počet &gt; 0</MenuItem>,
                       ]
                     : [
                           <MenuItem key="equals" value="equals">se rovná</MenuItem>,
