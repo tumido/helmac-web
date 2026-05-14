@@ -11,6 +11,9 @@ import {
     HorizontalRule,
     DragIndicator,
     ViewAgenda,
+    Pin,
+    TableChart,
+    Dashboard,
 } from "@mui/icons-material";
 import GridLayout, {
     type Layout,
@@ -24,6 +27,9 @@ import { RichTextBlockEditor } from "./richtext-block-editor";
 import { ImageBlockEditor } from "./image-block-editor";
 import { DividerBlockEditor } from "./divider-block-editor";
 import { CardBlockEditor } from "./card-block-editor";
+import { StatSingleBlockEditor } from "./stat-single-block-editor";
+import { StatTableBlockEditor } from "./stat-table-block-editor";
+import { StatCardsBlockEditor } from "./stat-cards-block-editor";
 import type {
     ContentBlock,
     ContentBlockType,
@@ -38,6 +44,9 @@ const BLOCK_META: Record<
     image: { label: "Obrázek", icon: <ImageIcon fontSize="small" /> },
     divider: { label: "Oddělovač", icon: <HorizontalRule fontSize="small" /> },
     card: { label: "Karta", icon: <ViewAgenda fontSize="small" /> },
+    stat_single: { label: "Statistika", icon: <Pin fontSize="small" /> },
+    stat_table: { label: "Tabulka statistik", icon: <TableChart fontSize="small" /> },
+    stat_cards: { label: "Karty statistik", icon: <Dashboard fontSize="small" /> },
 };
 
 const ROW_HEIGHT = 30;
@@ -182,6 +191,30 @@ export function BlockEditor({ value: rawValue, onChange, yearId }: BlockEditorPr
             case "card":
                 return (
                     <CardBlockEditor
+                        block={block}
+                        onChange={(b) => handleUpdateBlock(block.id, b)}
+                        yearId={yearId}
+                    />
+                );
+            case "stat_single":
+                return (
+                    <StatSingleBlockEditor
+                        block={block}
+                        onChange={(b) => handleUpdateBlock(block.id, b)}
+                        yearId={yearId}
+                    />
+                );
+            case "stat_table":
+                return (
+                    <StatTableBlockEditor
+                        block={block}
+                        onChange={(b) => handleUpdateBlock(block.id, b)}
+                        yearId={yearId}
+                    />
+                );
+            case "stat_cards":
+                return (
+                    <StatCardsBlockEditor
                         block={block}
                         onChange={(b) => handleUpdateBlock(block.id, b)}
                         yearId={yearId}

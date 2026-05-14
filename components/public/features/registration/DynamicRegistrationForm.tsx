@@ -31,6 +31,7 @@ import type {
     FormField,
 } from "@/lib/types/registration-form";
 import type { ContentBlock } from "@/lib/types/content-blocks";
+import type { RegistrationStats } from "@/lib/services/registration";
 import {
     isInputField,
     getAllFields,
@@ -72,6 +73,7 @@ interface DynamicRegistrationFormProps {
     isLoggedIn?: boolean;
     publicEmail?: string;
     successContent?: ContentBlock[] | null;
+    stats?: Record<string, RegistrationStats>;
 }
 
 function buildInitialValues(
@@ -104,6 +106,7 @@ export function DynamicRegistrationForm({
     isLoggedIn,
     publicEmail,
     successContent,
+    stats,
 }: DynamicRegistrationFormProps) {
     const [values, setValues] = useState<SubmissionData>(() =>
         buildInitialValues(formData, publicEmail)
@@ -374,6 +377,7 @@ export function DynamicRegistrationForm({
                 totalPrice={state.totalPrice}
                 paymentData={state.paymentData}
                 successContent={successContent}
+                stats={stats}
             />
         );
     }

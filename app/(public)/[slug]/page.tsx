@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/public/ui";
 import { SectionContent, SectionTabsNav } from "@/components/public/features/sections";
 import { getSectionTypeBySlugForActiveYear } from "@/lib/services/sections";
+import { getFilteredRegistrationStats } from "@/lib/services/registration";
+import type { RegistrationStats } from "@/lib/services/registration";
+import { extractStatBlocks } from "@/lib/types/content-blocks";
 import type { Metadata } from "next";
 import type { SectionItem } from "@/components/public/features/sections";
 
@@ -39,8 +42,29 @@ export default async function SectionPage({
         notFound();
     }
 
-    const { sectionType } = result;
+    const { sectionType, year } = result;
     const sections = sectionType.sections as unknown as SectionItem[];
+
+    const allStatBlocks = sections.flatMap((s) =>
+        Array.isArray(s.content)
+            ? extractStatBlocks(s.content)
+            : []
+    );
+    let stats: Record<string, RegistrationStats> | undefined;
+    if (allStatBlocks.length > 0) {
+        const entries = await Promise.all(
+            allStatBlocks.map(async (b) =>
+                [
+                    b.id,
+                    await getFilteredRegistrationStats(
+                        year.id,
+                        b.filter
+                    ),
+                ] as const
+            )
+        );
+        stats = Object.fromEntries(entries);
+    }
 
     return (
         <>
@@ -65,7 +89,7 @@ export default async function SectionPage({
                 sx={{ position: "relative", pb: 8 }}
             >
                 <Suspense>
-                    <SectionContent sections={sections} />
+                    <SectionContent sections={sections} stats={stats} />
                 </Suspense>
             </Container>
         </>

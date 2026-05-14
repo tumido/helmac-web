@@ -49,11 +49,128 @@ export interface CardBlock {
     buttons: CardButton[];
 }
 
+export type BuiltinMetric =
+    | "registrations"
+    | "people"
+    | "paid_total"
+    | "unpaid_total"
+    | "confirmed"
+    | "pending"
+    | "waitlist";
+
+export type FieldAggregation =
+    | "count"
+    | "sum"
+    | "average"
+    | "enumerate";
+
+export interface StatMetricConfig {
+    id: string;
+    source?: "builtin" | "field";
+    metric: string;
+    aggregation?: FieldAggregation;
+    label?: string;
+    icon?: string;
+    filter?: StatFilter;
+}
+
+export type StatSuffixSource = "manual" | "capacity" | "total";
+
+export interface StatSuffix {
+    source: StatSuffixSource;
+    text?: string;
+}
+
+export interface StatFieldFilter {
+    fieldName: string;
+    value: string;
+}
+
+export interface StatFilter {
+    statuses?: string[];
+    isPaid?: boolean;
+    fieldFilters?: StatFieldFilter[];
+}
+
+export interface StatSingleBlock {
+    type: "stat_single";
+    id: string;
+    layout: BlockLayout;
+    source?: "builtin" | "field";
+    metric: string;
+    aggregation?: FieldAggregation;
+    label?: string;
+    icon?: string;
+    suffix?: StatSuffix;
+    filter?: StatFilter;
+}
+
+export type StatTableAlign = "left" | "center" | "right";
+
+export interface StatTableBlock {
+    type: "stat_table";
+    id: string;
+    layout: BlockLayout;
+    source?: "builtin" | "field";
+    title?: string;
+    align?: StatTableAlign;
+    metrics: StatMetricConfig[];
+    filter?: StatFilter;
+}
+
+export interface StatCardsBlock {
+    type: "stat_cards";
+    id: string;
+    layout: BlockLayout;
+    source?: "builtin" | "field";
+    metric: string;
+    aggregation?: FieldAggregation;
+    label?: string;
+    icon?: string;
+    iconMap?: Record<string, string>;
+    suffix?: StatSuffix;
+    filter?: StatFilter;
+}
+
+export const BUILTIN_METRIC_LABELS: Record<BuiltinMetric, string> = {
+    registrations: "Registrací",
+    people: "Účastníků",
+    paid_total: "Zaplaceno",
+    unpaid_total: "Nezaplaceno",
+    confirmed: "Potvrzených",
+    pending: "Čekajících",
+    waitlist: "Na čekací listině",
+};
+
+export const BUILTIN_CURRENCY_METRICS: BuiltinMetric[] = [
+    "paid_total",
+    "unpaid_total",
+];
+
+export const FIELD_AGGREGATION_LABELS: Record<
+    FieldAggregation,
+    string
+> = {
+    count: "Počet",
+    sum: "Součet",
+    average: "Průměr",
+    enumerate: "Výpis",
+};
+
+export function isBuiltinMetric(
+    key: string
+): key is BuiltinMetric {
+    return key in BUILTIN_METRIC_LABELS;
+}
+
 export type ContentBlock =
     | RichTextBlock
     | ImageBlock
     | DividerBlock
-    | CardBlock;
+    | CardBlock
+    | StatSingleBlock
+    | StatTableBlock
+    | StatCardsBlock;
 
 export type ContentBlockType = ContentBlock["type"];
 
@@ -106,6 +223,32 @@ export function createBlock(type: ContentBlockType): ContentBlock {
                 text: "",
                 buttons: [],
             };
+        case "stat_single":
+            return {
+                type: "stat_single",
+                id,
+                layout: { x: 0, y: Infinity, w: 4, h: 6 },
+                source: "builtin" as const,
+                metric: "registrations",
+            };
+        case "stat_table":
+            return {
+                type: "stat_table",
+                id,
+                layout: { x: 0, y: Infinity, w: 6, h: 8 },
+                metrics: [
+                    { id: crypto.randomUUID(), source: "builtin" as const, metric: "registrations" },
+                    { id: crypto.randomUUID(), source: "builtin" as const, metric: "people" },
+                ],
+            };
+        case "stat_cards":
+            return {
+                type: "stat_cards",
+                id,
+                layout: { x: 0, y: Infinity, w: 12, h: 6 },
+                source: "builtin" as const,
+                metric: "registrations",
+            };
     }
 }
 
@@ -148,6 +291,30 @@ export function normalizeBlocks(blocks: unknown[] | unknown): ContentBlock[] {
         }
         return block as ContentBlock;
     });
+}
+
+export function hasStatBlocks(blocks: unknown[]): boolean {
+    return blocks.some((b) => {
+        const block = b as Record<string, unknown>;
+        return (
+            block.type === "stat_single" ||
+            block.type === "stat_table" ||
+            block.type === "stat_cards"
+        );
+    });
+}
+
+export function extractStatBlocks(
+    blocks: unknown[]
+): (StatSingleBlock | StatTableBlock | StatCardsBlock)[] {
+    return blocks.filter((b) => {
+        const block = b as Record<string, unknown>;
+        return (
+            block.type === "stat_single" ||
+            block.type === "stat_table" ||
+            block.type === "stat_cards"
+        );
+    }) as (StatSingleBlock | StatTableBlock | StatCardsBlock)[];
 }
 
 export function blocksToMarkdown(blocks: ContentBlock[]): string {

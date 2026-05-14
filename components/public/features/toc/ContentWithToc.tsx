@@ -11,13 +11,15 @@ import { BlockRenderer } from "@/components/public/features/content-blocks";
 import { TableOfContents } from "./TableOfContents";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 import { blocksToMarkdown } from "@/lib/types/content-blocks";
+import type { RegistrationStats } from "@/lib/services/registration";
 
 interface ContentWithTocProps {
     content: ContentBlock[] | string;
     showToc: boolean;
+    stats?: Record<string, RegistrationStats>;
 }
 
-export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
+export function ContentWithToc({ content, showToc, stats }: ContentWithTocProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const mobileTocRef = useRef<HTMLDivElement>(null);
     const [headerHeight, setHeaderHeight] = useState(64);
@@ -68,7 +70,7 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
 
     if (!hasToc) {
         if (isBlocks) {
-            return <BlockRenderer blocks={content} />;
+            return <BlockRenderer blocks={content} stats={stats} />;
         }
         return <MarkdownContent content={content} />;
     }
@@ -119,7 +121,7 @@ export function ContentWithToc({ content, showToc }: ContentWithTocProps) {
             >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     {isBlocks ? (
-                        <BlockRenderer blocks={content} tocIds={tocIdMap} />
+                        <BlockRenderer blocks={content} tocIds={tocIdMap} stats={stats} />
                     ) : (
                         <MarkdownContent content={content} tocIds={tocIdMap} />
                     )}

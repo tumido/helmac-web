@@ -26,9 +26,10 @@ const BATCH_SIZE = 60;
 interface IconPickerProps {
     value: string | null;
     onChange: (icon: string | null) => void;
+    renderTrigger?: (onClick: () => void, currentValue: string | null) => React.ReactNode;
 }
 
-export function IconPicker({ value, onChange }: IconPickerProps) {
+export function IconPicker({ value, onChange, renderTrigger }: IconPickerProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [tags, setTags] = useState<string[]>([]);
@@ -77,40 +78,46 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 
     return (
         <>
-            <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setOpen(true)}
-                sx={{
-                    width: 80,
-                    minWidth: 80,
-                    height: 80,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "2px dashed",
-                    borderColor: value ? "primary.main" : "divider",
-                    borderStyle: value ? "solid" : "dashed",
-                    borderRadius: 2,
-                    cursor: "pointer",
-                    backgroundColor: value ? "action.selected" : "transparent",
-                    transition: "all 0.2s",
-                    "&:hover": {
-                        borderColor: "primary.main",
-                        backgroundColor: "action.hover",
-                    },
-                }}
-            >
-                {value ? (
-                    <GameIcon
-                        name={value}
-                        sx={{ fontSize: 36, color: "text.primary" }}
-                    />
-                ) : (
-                    <Add sx={{ fontSize: 24, color: "text.disabled" }} />
-                )}
-            </Button>
-            <input type="hidden" name="icon" value={value || ""} />
+            {renderTrigger ? (
+                renderTrigger(() => setOpen(true), value)
+            ) : (
+                <>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setOpen(true)}
+                        sx={{
+                            width: 80,
+                            minWidth: 80,
+                            height: 80,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "2px dashed",
+                            borderColor: value ? "primary.main" : "divider",
+                            borderStyle: value ? "solid" : "dashed",
+                            borderRadius: 2,
+                            cursor: "pointer",
+                            backgroundColor: value ? "action.selected" : "transparent",
+                            transition: "all 0.2s",
+                            "&:hover": {
+                                borderColor: "primary.main",
+                                backgroundColor: "action.hover",
+                            },
+                        }}
+                    >
+                        {value ? (
+                            <GameIcon
+                                name={value}
+                                sx={{ fontSize: 36, color: "text.primary" }}
+                            />
+                        ) : (
+                            <Add sx={{ fontSize: 24, color: "text.disabled" }} />
+                        )}
+                    </Button>
+                    <input type="hidden" name="icon" value={value || ""} />
+                </>
+            )}
 
             <Dialog
                 open={open}
