@@ -60,6 +60,10 @@ import {
     type RegistrationState,
 } from "@/lib/actions/public/registration";
 import { sendPreviewConfirmation } from "@/lib/actions/preview-send-confirmation";
+import {
+    getPreviewSuccessData,
+    type PreviewSuccessResult,
+} from "@/lib/actions/preview-success-data";
 
 interface DynamicRegistrationFormProps {
     formData: RegistrationFormData;
@@ -120,6 +124,9 @@ export function DynamicRegistrationForm({
         message: "",
     });
     const [previewSending, setPreviewSending] = useState(false);
+    const [successPreview, setSuccessPreview] =
+        useState<Extract<PreviewSuccessResult, { success: true }> | null>(null);
+    const [loadingSuccessPreview, setLoadingSuccessPreview] = useState(false);
 
     const [state, formAction, isPending] = useActionState<
         RegistrationState | null,
@@ -183,6 +190,37 @@ export function DynamicRegistrationForm({
             });
         } finally {
             setPreviewSending(false);
+        }
+    }, [previewYearId, values, additionalPeople]);
+
+    const handleShowSuccessPreview = useCallback(async () => {
+        if (!previewYearId) return;
+        setLoadingSuccessPreview(true);
+        try {
+            const result = await getPreviewSuccessData({
+                yearId: previewYearId,
+                submissionData: values,
+                additionalPeople,
+            });
+            if ("success" in result && result.success) {
+                setSuccessPreview(result);
+            } else {
+                setPreviewSnackbar({
+                    open: true,
+                    severity: "error",
+                    message:
+                        ("error" in result && result.error) ||
+                        "Nepodařilo se načíst náhled",
+                });
+            }
+        } catch {
+            setPreviewSnackbar({
+                open: true,
+                severity: "error",
+                message: "Nepodařilo se načíst náhled",
+            });
+        } finally {
+            setLoadingSuccessPreview(false);
         }
     }, [previewYearId, values, additionalPeople]);
 
@@ -315,6 +353,28 @@ export function DynamicRegistrationForm({
             return evaluateAPVisibleFields(formData, merged);
         });
     }, [showAPSection, additionalPeople, values, formData]);
+
+    if (previewMode && successPreview) {
+        return (
+            <Box>
+                <Box sx={{ mb: 2, textAlign: "center" }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => setSuccessPreview(null)}
+                    >
+                        Zpět na náhled formuláře
+                    </Button>
+                </Box>
+                <RegistrationSuccess
+                    message={successPreview.message}
+                    variableSymbol={successPreview.variableSymbol}
+                    totalPrice={successPreview.totalPrice ?? undefined}
+                    paymentData={successPreview.paymentData ?? undefined}
+                    successContent={successContent}
+                />
+            </Box>
+        );
+    }
 
     if (!previewMode && state?.success) {
         return (
@@ -570,7 +630,15 @@ export function DynamicRegistrationForm({
                                       : "Odeslat registraci"}
                             </Button>
                             {previewMode && previewYearId && (
-                                <Box sx={{ mt: 2 }}>
+                                <Box
+                                    sx={{
+                                        mt: 2,
+                                        display: "flex",
+                                        gap: 1,
+                                        justifyContent: "center",
+                                        flexWrap: "wrap",
+                                    }}
+                                >
                                     <Button
                                         type="button"
                                         variant="outlined"
@@ -586,6 +654,19 @@ export function DynamicRegistrationForm({
                                         {previewSending
                                             ? "Odesílám..."
                                             : "Odeslat potvrzovací email (test)"}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outlined"
+                                        color="primary"
+                                        size="large"
+                                        onClick={handleShowSuccessPreview}
+                                        disabled={loadingSuccessPreview}
+                                        sx={{ px: 4, py: 1.25 }}
+                                    >
+                                        {loadingSuccessPreview
+                                            ? "Načítám..."
+                                            : "Náhled potvrzovací stránky"}
                                     </Button>
                                 </Box>
                             )}
