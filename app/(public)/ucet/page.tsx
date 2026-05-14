@@ -14,6 +14,7 @@ import {
 } from "@/lib/utils/spayd";
 import { formatDate } from "@/lib/utils/date";
 import { GameIcon } from "@/lib/icons";
+import { AccountStatTile } from "@/components/public/ui/AccountStatTile";
 import { RegistrationHistoryTable } from "@/components/public/features/account/registration-detail-dialog";
 import { ChangePasswordForm } from "@/components/forms/change-password-form";
 
@@ -21,8 +22,8 @@ export default async function AccountPage() {
     const session = await getPublicSession();
     if (!session) {
         redirect(
-            "/api/public/signout?redirect="
-            + encodeURIComponent("/vytvorit-ucet?deleted=1"),
+            "/api/public/signout?redirect=" +
+                encodeURIComponent("/vytvorit-ucet?deleted=1")
         );
     }
 
@@ -174,279 +175,48 @@ export default async function AccountPage() {
                 <Grid
                     container
                     spacing={0}
-                    justifyContent="center"
-                    sx={{ flex: 1, minWidth: 0 }}
+                    sx={{
+                        flex: 2,
+                        minWidth: 0,
+                        justifyContent: { xs: "center", md: "end" },
+                    }}
                 >
-                    <Grid item xs={3}>
-                        <Box
-                            component="a"
-                            href="#registrace"
-                            sx={{
-                                display: "block",
-                                textAlign: "center",
-                                textDecoration: "none",
-                                color: "inherit",
-                                px: { xs: 1.5, md: 3 },
-                                py: { xs: 3, md: 4 },
-                                borderRadius: 2,
-                                transition: "all 0.3s ease",
-                                "&:hover": {
-                                    backgroundColor: "rgba(201, 162, 39, 0.04)",
-                                    "& .stat-icon": {
-                                        backgroundColor:
-                                            "rgba(201, 162, 39, 0.12)",
-                                        borderColor: "primary.main",
-                                    },
-                                },
-                            }}
-                        >
-                            <Box
-                                className="stat-icon"
-                                sx={{
-                                    width: 72,
-                                    height: 72,
-                                    mx: "auto",
-                                    mb: 2.5,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    borderRadius: "50%",
-                                    border: "2px solid",
-                                    borderColor: "divider",
-                                    backgroundColor: "rgba(201, 162, 39, 0.03)",
-                                    transition: "all 0.3s ease",
-                                }}
-                            >
-                                <GameIcon
-                                    name="tied-scroll"
-                                    sx={{
-                                        fontSize: "2rem",
-                                        color: "text.secondary",
-                                    }}
-                                />
-                            </Box>
-                            <Typography
-                                variant="h4"
-                                component="p"
-                                sx={{
-                                    mb: 0.5,
-                                    color: "text.primary",
-                                }}
-                            >
-                                {totalRegistrations}
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    lineHeight: 1.7,
-                                    opacity: 0.7,
-                                    color: "text.secondary",
-                                }}
-                            >
-                                {totalRegistrations === 1
-                                    ? "Registrace"
-                                    : "Registrací"}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={3}>
-                        <Box
-                            component="a"
-                            href="#registrace"
-                            sx={{
-                                display: "block",
-                                textAlign: "center",
-                                textDecoration: "none",
-                                color: "inherit",
-                                px: { xs: 1.5, md: 3 },
-                                py: { xs: 3, md: 4 },
-                                borderRadius: 2,
-                                transition: "all 0.3s ease",
-                                "&:hover": {
-                                    backgroundColor: "rgba(201, 162, 39, 0.04)",
-                                    "& .stat-icon": {
-                                        backgroundColor:
-                                            "rgba(201, 162, 39, 0.12)",
-                                        borderColor: "primary.main",
-                                    },
-                                },
-                            }}
-                        >
-                            <Box
-                                className="stat-icon"
-                                sx={{
-                                    width: 72,
-                                    height: 72,
-                                    mx: "auto",
-                                    mb: 2.5,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    borderRadius: "50%",
-                                    border: "2px solid",
-                                    borderColor:
-                                        pendingCount > 0
-                                            ? "primary.dark"
-                                            : "divider",
-                                    backgroundColor:
-                                        pendingCount > 0
-                                            ? "rgba(201, 162, 39, 0.06)"
-                                            : "rgba(201, 162, 39, 0.03)",
-                                    transition: "all 0.3s ease",
-                                }}
-                            >
-                                <GameIcon
-                                    name="crown-coin"
-                                    sx={{
-                                        fontSize: "2rem",
-                                        color:
-                                            pendingCount > 0
-                                                ? "primary.main"
-                                                : "text.secondary",
-                                    }}
-                                />
-                            </Box>
-                            <Typography
-                                variant="h4"
-                                component="p"
-                                sx={{
-                                    mb: 0.5,
-                                    color:
-                                        pendingCount > 0
-                                            ? "primary.main"
-                                            : "text.primary",
-                                }}
-                            >
-                                {pendingCount}
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    lineHeight: 1.7,
-                                    opacity: pendingCount > 0 ? 1 : 0.7,
-                                    ...(pendingCount > 0 && {
-                                        color: "primary.main",
-                                    }),
-                                }}
-                            >
-                                {pendingCount === 1
-                                    ? "Nezaplacená platba"
-                                    : "Nezaplacených plateb"}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={3}>
-                        <Box
-                            sx={{
-                                display: "block",
-                                textAlign: "center",
-                                px: { xs: 1.5, md: 3 },
-                                py: { xs: 3, md: 4 },
-                                borderRadius: 2,
-                                opacity: 0.4,
-                                cursor: "default",
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 72,
-                                    height: 72,
-                                    mx: "auto",
-                                    mb: 2.5,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    borderRadius: "50%",
-                                    border: "2px solid",
-                                    borderColor: "divider",
-                                    backgroundColor: "rgba(201, 162, 39, 0.03)",
-                                }}
-                            >
-                                <GameIcon
-                                    name="open-treasure-chest"
-                                    sx={{
-                                        fontSize: "2rem",
-                                        color: "text.secondary",
-                                    }}
-                                />
-                            </Box>
-                            <Typography
-                                variant="body1"
-                                component="p"
-                                sx={{
-                                    mb: 0.5,
-                                    fontWeight: 500,
-                                }}
-                            >
-                                Již brzy
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    lineHeight: 1.7,
-                                    opacity: 0.7,
-                                }}
-                            >
-                                Dokoupit balíčky
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={3}>
-                        <Box
-                            sx={{
-                                display: "block",
-                                textAlign: "center",
-                                px: { xs: 1.5, md: 3 },
-                                py: { xs: 3, md: 4 },
-                                borderRadius: 2,
-                                opacity: 0.4,
-                                cursor: "default",
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 72,
-                                    height: 72,
-                                    mx: "auto",
-                                    mb: 2.5,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    borderRadius: "50%",
-                                    border: "2px solid",
-                                    borderColor: "divider",
-                                    backgroundColor: "rgba(201, 162, 39, 0.03)",
-                                }}
-                            >
-                                <GameIcon
-                                    name="anvil-impact"
-                                    sx={{
-                                        fontSize: "2rem",
-                                        color: "text.secondary",
-                                    }}
-                                />
-                            </Box>
-                            <Typography
-                                variant="body1"
-                                component="p"
-                                sx={{
-                                    mb: 0.5,
-                                    fontWeight: 500,
-                                }}
-                            >
-                                Již brzy
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    lineHeight: 1.7,
-                                    opacity: 0.7,
-                                }}
-                            >
-                                Přihlásit na workshopy
-                            </Typography>
-                        </Box>
-                    </Grid>
+                    <AccountStatTile
+                        icon="tied-scroll"
+                        href="#registrace"
+                        value={totalRegistrations}
+                        label={
+                            totalRegistrations === 1
+                                ? "Registrace"
+                                : "Registrací"
+                        }
+                    />
+                    <AccountStatTile
+                        icon="crown-coin"
+                        href="#registrace"
+                        value={pendingCount}
+                        highlighted={pendingCount > 0}
+                        label={
+                            pendingCount === 1
+                                ? "Nezaplacená platba"
+                                : "Nezaplacených plateb"
+                        }
+                    />
+                    <AccountStatTile
+                        icon="open-treasure-chest"
+                        label="Dokoupit balíčky"
+                        disabled
+                    />
+                    <AccountStatTile
+                        icon="anvil-impact"
+                        label="Přihlásit na workshopy"
+                        disabled
+                    />
+                    <AccountStatTile
+                        icon="meeple-group"
+                        label="Přidat lidi do registrace"
+                        disabled
+                    />
                 </Grid>
             </Box>
 
