@@ -5,6 +5,7 @@ import {
     PUBLIC_SESSION_MAX_AGE,
     type PublicJWTPayload,
 } from "./public-auth.config";
+import { db } from "./db";
 
 function getPublicJWTSecret(): Uint8Array {
     return new TextEncoder().encode(process.env.PUBLIC_JWT_SECRET!);
@@ -66,7 +67,18 @@ export async function getPublicSession(): Promise<PublicJWTPayload | null> {
 
     try {
         const { payload } = await jwtVerify(token, getPublicJWTSecret());
-        return payload as unknown as PublicJWTPayload;
+        const session = payload as unknown as PublicJWTPayload;
+
+        const user = await db.publicUser.findUnique({
+            where: { id: session.sub },
+            select: { id: true },
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        return session;
     } catch {
         return null;
     }
