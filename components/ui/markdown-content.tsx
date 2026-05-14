@@ -11,6 +11,7 @@ import { generateSlug } from "@/lib/utils/slugify";
 import { DecorativeDivider } from "@/components/public/ui/Divider";
 import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
 import { grainyMaskBoth } from "@/lib/utils/grainy-mask";
+import { storageUrl } from "@/lib/utils/storage";
 
 const sanitizeSchema = {
     ...defaultSchema,
@@ -263,7 +264,7 @@ export function MarkdownContent({
             img: ({ src, alt }) => (
                 <Box
                     component="img"
-                    src={src}
+                    src={storageUrl(src)}
                     alt={alt ?? ""}
                     sx={{
                         maxWidth: "100%",

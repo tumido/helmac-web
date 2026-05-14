@@ -665,9 +665,9 @@ async function seedYear() {
             registrationOpen: false,
             registrationStartDate: new Date("2026-05-14"),
             headerPhoto:
-                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1773960844595-idebyi.webp",
+                "/uploads/seed-1773960844595-idebyi.webp",
             heroPhoto:
-                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1773960850206-tuiuf3.webp",
+                "/uploads/seed-1773960850206-tuiuf3.webp",
         },
     });
     console.log("Year 2026:", year2026.title);
@@ -1286,7 +1286,7 @@ async function seedAlbums(yearId: string) {
             description: "Fotogalerie od Fraglina Fraglinoviče",
             externalUrl: "https://www.rajce.idnes.cz/fraglin/album/helmac-2025",
             coverImage:
-                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1777836163116-8rj5js.png",
+                "/uploads/seed-1777836163116-8rj5js.png",
             isPublished: true,
             sortOrder: 0,
         },
@@ -1297,7 +1297,7 @@ async function seedAlbums(yearId: string) {
             description: "Fotogalerie od Jakuba Drachmáče Řezníčka",
             externalUrl: "https://photos.app.goo.gl/hxhESsTYCZhLM25U8",
             coverImage:
-                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1777835692484-dv4s3s.jpg",
+                "/uploads/seed-1777835692484-dv4s3s.jpg",
             isPublished: true,
             sortOrder: 1,
         },
@@ -1308,7 +1308,7 @@ async function seedAlbums(yearId: string) {
             description: "Fotogalerie od Libora Ječného",
             externalUrl: "https://eu.zonerama.com/Bitvy/Album/13659000",
             coverImage:
-                "https://vqgv1mhndudhvlpf.public.blob.vercel-storage.com/uploads/1777836068372-cu85su.jpg",
+                "/uploads/seed-1777836068372-cu85su.jpg",
             isPublished: true,
             sortOrder: 2,
         },

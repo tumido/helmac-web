@@ -229,7 +229,6 @@ export function DynamicRegistrationForm({
         }
 
         if (Object.keys(updates).length > 0) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-select single enabled option based on capacity constraints
             setValues((prev) => {
                 const next = { ...prev };
                 let changed = false;

@@ -1,5 +1,6 @@
 import { Typography, Box } from "@mui/material";
 import { Card } from "@/components/public/ui";
+import { storageUrl } from "@/lib/utils/storage";
 import { AlbumPreview } from "./gallery.types";
 
 interface AlbumCardProps {
@@ -27,7 +28,7 @@ export function AlbumCard({ album }: AlbumCardProps) {
                 style={{ textDecoration: "none", color: "inherit" }}
             >
                 <Card
-                    image={album.coverImage || undefined}
+                    image={storageUrl(album.coverImage) || undefined}
                     imageAlt={album.title}
                     imageHeight={180}
                     sx={{ cursor: "pointer" }}

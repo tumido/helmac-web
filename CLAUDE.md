@@ -30,7 +30,7 @@
 | dayjs | - | Date manipulation |
 | Nodemailer | 8.x | Email sending |
 | notistack | 3.x | Toast notifications |
-| Vercel Blob | 2.x | File storage (production) |
+| Cloudflare R2 | - | File storage (production, S3-compatible) |
 | Tailwind CSS | 3.x | Utility CSS (limited use, MUI primary) |
 
 ## Code Style

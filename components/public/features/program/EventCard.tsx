@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material";
 import { ReactElement } from "react";
 import { MarkdownContent } from "@/components/ui/markdown-content";
+import { storageUrl } from "@/lib/utils/storage";
 import { ProgramEvent } from "./program.types";
 
 function getLocationIcon(location: string): ReactElement {
@@ -363,7 +364,7 @@ export function EventCard({ event, onOpenDetails }: EventCardProps) {
                 >
                     <CardMedia
                         component="img"
-                        image={event.imageUrl}
+                        image={storageUrl(event.imageUrl)}
                         alt={event.title}
                         sx={{
                             width: "100%",

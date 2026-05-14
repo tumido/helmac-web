@@ -2,6 +2,7 @@ import { Box, Button, CardMedia, Typography } from "@mui/material";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
 import { grainyMaskHorizontal } from "@/lib/utils/grainy-mask";
+import { storageUrl } from "@/lib/utils/storage";
 import type { CardBlock } from "@/lib/types/content-blocks";
 
 interface CardBlockRendererProps {
@@ -35,7 +36,7 @@ export function CardBlockRenderer({ block }: CardBlockRendererProps) {
             {block.imageUrl && (
                 <CardMedia
                     component="img"
-                    image={block.imageUrl}
+                    image={storageUrl(block.imageUrl)}
                     alt={block.title}
                     sx={{
                         height: 140,

@@ -30,6 +30,7 @@ import {
 import { ReactElement } from "react";
 import { grainyMaskBoth } from "@/lib/utils/grainy-mask";
 import { ProgramEvent } from "./program.types";
+import { storageUrl } from "@/lib/utils/storage";
 import { Prisma } from "@prisma/client";
 
 // Map tags to icons
@@ -287,7 +288,7 @@ export function EventDetailModal({
                 {event.imageUrl && (
                     <Box
                         component="img"
-                        src={event.imageUrl}
+                        src={storageUrl(event.imageUrl)}
                         alt={event.title}
                         sx={{
                             width: "100%",

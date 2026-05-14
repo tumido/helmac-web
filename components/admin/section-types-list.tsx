@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useId, useEffect } from "react";
+import { useState, useCallback, useRef, useId } from "react";
 import {
     Typography,
     Box,
@@ -582,14 +582,12 @@ export function SectionTypesList({
         useState(false);
 
     const originTypeRef = useRef<string | null>(null);
-    const prevLengthRef = useRef(sectionTypes.length);
+    const [prevLength, setPrevLength] = useState(sectionTypes.length);
 
-    useEffect(() => {
-        if (sectionTypes.length !== prevLengthRef.current) {
-            prevLengthRef.current = sectionTypes.length;
-            setLocalTypes(sectionTypes);
-        }
-    }, [sectionTypes]);
+    if (sectionTypes.length !== prevLength) {
+        setPrevLength(sectionTypes.length);
+        setLocalTypes(sectionTypes);
+    }
 
     const sensors = useSensors(
         useSensor(PointerSensor, {

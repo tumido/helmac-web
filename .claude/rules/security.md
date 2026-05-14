@@ -18,7 +18,11 @@ paths:
   - `ENCRYPTION_KEY` - AES-256 key for email account passwords (64-char hex)
 - Optional vars:
   - `DIRECT_URL` - Direct database connection for Prisma
-  - `BLOB_READ_WRITE_TOKEN` - Vercel Blob storage
+  - `R2_ACCOUNT_ID` - Cloudflare R2 account
+  - `R2_ACCESS_KEY_ID` - R2 API access key
+  - `R2_SECRET_ACCESS_KEY` - R2 API secret key
+  - `R2_BUCKET_NAME` - R2 bucket name
+  - `NEXT_PUBLIC_STORAGE_URL` - Public base URL for stored files
   - `CRON_SECRET` - Bearer token for cron endpoints
 
 ## Input Validation

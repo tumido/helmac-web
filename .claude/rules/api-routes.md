@@ -28,4 +28,4 @@ export async function POST(request: NextRequest) {
 - Check auth first
 - Validate file type against `ALLOWED_TYPES` and size against `MAX_FILE_SIZE`
 - Sanitize filenames
-- Use Vercel Blob in production (`process.env.VERCEL`), local `public/uploads/` in development
+- Use Cloudflare R2 in production (`process.env.R2_BUCKET_NAME`), local `public/uploads/` in development

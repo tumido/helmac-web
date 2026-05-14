@@ -3,7 +3,7 @@ import { Box, Button, Typography } from "@mui/material";
 import { getLatestNewsForActiveYear } from "@/lib/services";
 import { NewsFeed } from "./NewsFeed";
 import { NewsActionButton } from "./news.types";
-import { DecorativeDivider } from "@/components/public/ui/Divider";
+
 import { GameIcon } from "@/lib/icons";
 
 export async function NewsPreview() {

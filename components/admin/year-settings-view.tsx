@@ -12,6 +12,7 @@ import {
 import { Edit } from "@mui/icons-material";
 import { YearForm } from "@/components/forms/year-form";
 import { formatDate } from "@/lib/utils/date";
+import { storageUrl } from "@/lib/utils/storage";
 
 interface YearSettingsViewProps {
     yearId: string;
@@ -109,7 +110,7 @@ export function YearSettingsView({ yearId, defaultValues }: YearSettingsViewProp
                     {defaultValues.headerPhoto ? (
                         <Box
                             component="img"
-                            src={defaultValues.headerPhoto}
+                            src={storageUrl(defaultValues.headerPhoto)}
                             alt="Foto záhlaví podstránek"
                             sx={{ display: "block", mt: 0.5, height: 120, objectFit: "cover", borderRadius: 1 }}
                         />
@@ -125,7 +126,7 @@ export function YearSettingsView({ yearId, defaultValues }: YearSettingsViewProp
                     {defaultValues.heroPhoto ? (
                         <Box
                             component="img"
-                            src={defaultValues.heroPhoto}
+                            src={storageUrl(defaultValues.heroPhoto)}
                             alt="Foto hlavní sekce"
                             sx={{ display: "block", mt: 0.5, height: 120, objectFit: "cover", borderRadius: 1 }}
                         />
