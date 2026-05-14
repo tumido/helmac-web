@@ -46,6 +46,7 @@ export async function updatePublicRegistration(
             publicUserId: true,
             status: true,
             data: true,
+            isTest: true,
             year: { select: { registrationOpen: true } },
             form: { select: { fields: true } },
         },
@@ -55,7 +56,7 @@ export async function updatePublicRegistration(
         return { success: false, message: "Nepovolený přístup" };
     }
 
-    if (!registration.year.registrationOpen) {
+    if (!registration.isTest && !registration.year.registrationOpen) {
         return { success: false, message: "Registrace ročníku je uzavřena" };
     }
 

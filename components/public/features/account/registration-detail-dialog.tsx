@@ -1028,7 +1028,7 @@ export function RegistrationHistoryTable({
                         formData.fields as FormElement[]
                     );
                     const canEdit =
-                        reg.year.registrationOpen &&
+                        (reg.year.registrationOpen || reg.isTest) &&
                         reg.status !== "CANCELLED" &&
                         reg.status !== "REJECTED" &&
                         allFields.some(isFieldEditable);
