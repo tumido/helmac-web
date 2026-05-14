@@ -5,7 +5,6 @@ import { Box, Typography, Paper, Divider } from "@mui/material";
 import { Check } from "@mui/icons-material";
 import { formatPrice } from "@/lib/utils/pricing";
 import { QRCodeSVG } from "qrcode.react";
-import { DecorativeDivider } from "@/components/public/ui";
 import { BlockRenderer } from "@/components/public/features/content-blocks";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 import type { RegistrationStats } from "@/lib/services/registration";
@@ -133,10 +132,6 @@ export function RegistrationSuccess({
                                 >
                                     Platební údaje
                                 </Typography>
-                                <DecorativeDivider
-                                    variant="ornate"
-                                    sx={{ my: 2 }}
-                                />
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -304,10 +299,6 @@ export function RegistrationSuccess({
                                 >
                                     Platební údaje
                                 </Typography>
-                                <DecorativeDivider
-                                    variant="ornate"
-                                    sx={{ my: 2 }}
-                                />
                                 {totalPrice != null && (
                                     <Box
                                         sx={{

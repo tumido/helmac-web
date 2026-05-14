@@ -221,20 +221,65 @@ export function DynamicFormField({
                                                 }}
                                             />
                                         )}
-                                        <Typography
-                                            variant="body1"
-                                            fontWeight={isSelected ? 700 : 600}
+                                        <Box
                                             sx={{
                                                 textAlign: "center",
                                                 py: 1.5,
                                                 px: 1,
-                                                color: isSelected
-                                                    ? "primary.main"
-                                                    : "text.primary",
                                             }}
                                         >
-                                            {opt}
-                                        </Typography>
+                                            <Typography
+                                                variant="body1"
+                                                fontWeight={
+                                                    isSelected ? 700 : 600
+                                                }
+                                                sx={{
+                                                    color: isSelected
+                                                        ? "primary.main"
+                                                        : "text.primary",
+                                                }}
+                                            >
+                                                {opt}
+                                            </Typography>
+                                            {(() => {
+                                                const remaining =
+                                                    remainingCapacity?.[opt];
+                                                if (remaining === undefined)
+                                                    return null;
+                                                if (isDisabled) {
+                                                    return (
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                display:
+                                                                    "inline-block",
+                                                                mt: 0.5,
+                                                                px: 1,
+                                                                py: 0.25,
+                                                                borderRadius: 1,
+                                                                backgroundColor:
+                                                                    "action.disabledBackground",
+                                                                fontWeight: 600,
+                                                            }}
+                                                        >
+                                                            Kapacita vyčerpána
+                                                        </Typography>
+                                                    );
+                                                }
+                                                return (
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        sx={{
+                                                            display: "block",
+                                                            mt: 0.25,
+                                                        }}
+                                                    >
+                                                        Zbývá {remaining}
+                                                    </Typography>
+                                                );
+                                            })()}
+                                        </Box>
                                     </Box>
                                 );
                             })}
@@ -557,22 +602,42 @@ export function DynamicFormField({
                                                 {opt.description}
                                             </Typography>
                                         )}
-                                        {isDisabled && (
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    px: 1,
-                                                    py: 0.25,
-                                                    borderRadius: 1,
-                                                    backgroundColor:
-                                                        "error.main",
-                                                    color: "error.contrastText",
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                Kapacita vyčerpána
-                                            </Typography>
-                                        )}
+                                        {(() => {
+                                            const remaining =
+                                                remainingCapacity?.[opt.name];
+                                            if (isDisabled) {
+                                                return (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{
+                                                            px: 1,
+                                                            py: 0.25,
+                                                            borderRadius: 1,
+                                                            backgroundColor:
+                                                                "action.disabledBackground",
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        Kapacita vyčerpána
+                                                    </Typography>
+                                                );
+                                            }
+                                            if (remaining !== undefined) {
+                                                return (
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        sx={{
+                                                            display: "block",
+                                                            mt: 0.25,
+                                                        }}
+                                                    >
+                                                        Zbývá {remaining}
+                                                    </Typography>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
                                     </Box>
                                     {priceTag && (
                                         <Typography
@@ -1120,22 +1185,45 @@ export function DynamicFormField({
                                                     {opt.description}
                                                 </Typography>
                                             )}
-                                            {isDisabled && (
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        px: 1,
-                                                        py: 0.25,
-                                                        borderRadius: 1,
-                                                        backgroundColor:
-                                                            "error.main",
-                                                        color: "error.contrastText",
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
-                                                    Kapacita vyčerpána
-                                                </Typography>
-                                            )}
+                                            {(() => {
+                                                const remaining =
+                                                    remainingCapacity?.[
+                                                        opt.name
+                                                    ];
+                                                if (isDisabled) {
+                                                    return (
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                px: 1,
+                                                                py: 0.25,
+                                                                borderRadius: 1,
+                                                                backgroundColor:
+                                                                    "action.disabledBackground",
+                                                                fontWeight: 600,
+                                                            }}
+                                                        >
+                                                            Kapacita vyčerpána
+                                                        </Typography>
+                                                    );
+                                                }
+                                                if (remaining !== undefined) {
+                                                    return (
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{
+                                                                display:
+                                                                    "block",
+                                                                mt: 0.25,
+                                                            }}
+                                                        >
+                                                            Zbývá {remaining}
+                                                        </Typography>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                         </Box>
                                     </Box>
                                     {msPriceTag && (

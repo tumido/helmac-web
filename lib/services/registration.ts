@@ -99,6 +99,7 @@ export const getRegistrationStatsForYear = cache(
             db.registrationSubmission.findMany({
                 where: {
                     yearId,
+                    isTest: false,
                     status: { notIn: ["CANCELLED", "REJECTED"] },
                 },
                 select: { data: true },
@@ -106,6 +107,7 @@ export const getRegistrationStatsForYear = cache(
             db.registrationSubmission.aggregate({
                 where: {
                     yearId,
+                    isTest: false,
                     isPaid: true,
                     status: { notIn: ["CANCELLED", "REJECTED"] },
                 },
@@ -114,19 +116,20 @@ export const getRegistrationStatsForYear = cache(
             db.registrationSubmission.aggregate({
                 where: {
                     yearId,
+                    isTest: false,
                     isPaid: false,
                     status: { notIn: ["CANCELLED", "REJECTED"] },
                 },
                 _sum: { totalPrice: true },
             }),
             db.registrationSubmission.count({
-                where: { yearId, status: "CONFIRMED" },
+                where: { yearId, isTest: false, status: "CONFIRMED" },
             }),
             db.registrationSubmission.count({
-                where: { yearId, status: "PENDING" },
+                where: { yearId, isTest: false, status: "PENDING" },
             }),
             db.registrationSubmission.count({
-                where: { yearId, status: "WAITLIST" },
+                where: { yearId, isTest: false, status: "WAITLIST" },
             }),
             db.registrationForm.findUnique({
                 where: { yearId },
@@ -355,6 +358,7 @@ export async function getFilteredRegistrationStats(
 
     const baseWhere = {
         yearId,
+        isTest: false,
         status: statusWhere,
         ...paidWhere,
     };

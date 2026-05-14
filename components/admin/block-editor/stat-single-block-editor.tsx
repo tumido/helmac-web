@@ -296,6 +296,15 @@ export function StatSingleBlockEditor({
         const fs = stats.fields?.[block.metric];
         if (!fs) return "0";
         const agg = block.aggregation ?? "count";
+        const filteredOption =
+            block.filter?.fieldFilters?.find(
+                (ff) => ff.fieldName === block.metric
+            )?.value;
+        if (filteredOption !== undefined && agg === "count") {
+            return (
+                fs.counts?.[filteredOption] ?? 0
+            ).toLocaleString("cs-CZ");
+        }
         const fmt = (n: number) =>
             fs.isCurrency
                 ? formatPrice(n)
@@ -315,9 +324,26 @@ export function StatSingleBlockEditor({
         if (block.suffix.source === "manual")
             return block.suffix.text ?? null;
         if (block.suffix.source === "capacity") {
-            const cap =
-                stats.capacityLimits?.[block.metric]?.[""];
-            return cap !== undefined ? `/ ${cap}` : null;
+            const limits =
+                stats.capacityLimits?.[block.metric];
+            if (!limits) return null;
+            const filteredOption =
+                block.filter?.fieldFilters?.find(
+                    (ff) => ff.fieldName === block.metric
+                )?.value;
+            if (filteredOption !== undefined) {
+                const cap = limits[filteredOption];
+                return cap !== undefined
+                    ? `/ ${cap}`
+                    : null;
+            }
+            const values = Object.values(limits);
+            if (values.length === 0) return null;
+            const total = values.reduce(
+                (a, b) => a + b,
+                0
+            );
+            return `/ ${total}`;
         }
         if (block.suffix.source === "total") {
             const fs = stats.fields?.[block.metric];
