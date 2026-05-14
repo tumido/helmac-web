@@ -1,0 +1,5 @@
+// @meta {"label":"Dveře","author":"delapouite","tags":["Prostředí"]}
+const paths = [
+    "M105 41v398h302V41H105zm55 174c18.1 0 33 14.9 33 33s-14.9 33-33 33-33-14.9-33-33 14.9-33 33-33zm0 18c-8.4 0-15 6.6-15 15s6.6 15 15 15 15-6.6 15-15-6.6-15-15-15zM73 457v30h366v-30H73z",
+];
+export default paths;
