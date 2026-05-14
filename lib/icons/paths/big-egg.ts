@@ -1,0 +1,5 @@
+// @meta {"label":"Velké vejce","author":"sbed","tags":["Jídlo a pití","Příroda"]}
+const paths = [
+    "M256 16C166 16 76 196 76 316c0 90 60 180 180 180s180-90 180-180c0-120-90-300-180-300z",
+];
+export default paths;
