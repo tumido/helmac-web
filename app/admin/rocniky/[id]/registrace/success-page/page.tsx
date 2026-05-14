@@ -1,7 +1,7 @@
 import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSuccessContentEditor } from "@/components/admin/registration-success-content-editor";
 import type { ContentBlock } from "@/lib/types/content-blocks";
@@ -23,7 +23,7 @@ async function getYear(yearId: string) {
 }
 
 export default async function SuccessPagePage({ params }: SuccessPagePageProps) {
-    await requireAdmin();
+    await requireEditor();
     const { id } = await params;
     const year = await getYear(id);
 

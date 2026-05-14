@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import type { RegistrationFormData } from "@/lib/types/registration-form";
 import type { Prisma } from "@prisma/client";
 
 export async function saveFormPreview(yearId: string, data: RegistrationFormData): Promise<{ token: string }> {
-    await requireAdmin();
+    await requireEditor();
 
     const jsonData = JSON.parse(JSON.stringify(data)) as Prisma.InputJsonValue;
 

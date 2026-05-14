@@ -1,8 +1,8 @@
-import { Container, Typography, Grid, Paper, Box, IconButton } from "@mui/material";
+import { Container, Typography, Grid, Paper, Box, IconButton, Chip } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { SubmissionEditForm } from "@/components/forms/submission-edit-form";
@@ -20,11 +20,17 @@ interface SubmissionDetailPageProps {
 }
 
 export default async function SubmissionDetailPage({ params }: SubmissionDetailPageProps) {
-    await requireAdmin();
+    const session = await requireEditor();
+    const isEditor = session.user?.role === "EDITOR";
     const { id: yearId, submissionId } = await params;
     const submission = await getSubmissionById(submissionId);
 
     if (!submission || submission.yearId !== yearId) {
+        notFound();
+    }
+
+    // Editor may only view test submissions.
+    if (isEditor && !submission.isTest) {
         notFound();
     }
 
@@ -46,12 +52,21 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                 ]}
                 title="Detail registrace"
             />
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 1 }}>
                 <NextLink href={`/admin/rocniky/${yearId}/registrace/prihlasky`} passHref legacyBehavior>
                     <IconButton size="small" sx={{ mr: 1 }}>
                         <ArrowBack />
                     </IconButton>
                 </NextLink>
+                {submission.isTest && (
+                    <Chip
+                        label="TEST"
+                        color="warning"
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 700 }}
+                    />
+                )}
                 <Typography variant="body2" color="text.secondary">
                     Vytvořeno: {formatDateTime(submission.createdAt)}
                     {submission.paidAt && ` • Zaplaceno: ${formatDateTime(submission.paidAt)}`}
@@ -70,6 +85,7 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                             data={data}
                             pricingDefinitions={pricingDefinitions}
                             apFields={apFields}
+                            readOnly={isEditor}
                         />
                     </Paper>
                 </Grid>
@@ -84,36 +100,40 @@ export default async function SubmissionDetailPage({ params }: SubmissionDetailP
                             totalPrice={submission.totalPrice}
                         />
                     </Paper>
-                    <Paper sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
-                            Potvrzovací email
-                        </Typography>
-                        <ResendEmailButton
-                            submissionId={submissionId}
-                            emailSent={submission.emailSent}
-                            emailSentAt={submission.emailSentAt}
-                        />
-                    </Paper>
-                    <Paper sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
-                            Poznámka admina
-                        </Typography>
-                        <AdminNoteDetail
-                            submissionId={submissionId}
-                            adminNote={submission.adminNote}
-                        />
-                    </Paper>
-                    <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
-                            Správa
-                        </Typography>
-                        <SubmissionActions
-                            submissionId={submissionId}
-                            yearId={yearId}
-                            status={submission.status}
-                            isPaid={submission.isPaid}
-                        />
-                    </Paper>
+                    {!isEditor && (
+                        <>
+                            <Paper sx={{ p: 3, mb: 3 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Potvrzovací email
+                                </Typography>
+                                <ResendEmailButton
+                                    submissionId={submissionId}
+                                    emailSent={submission.emailSent}
+                                    emailSentAt={submission.emailSentAt}
+                                />
+                            </Paper>
+                            <Paper sx={{ p: 3, mb: 3 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Poznámka admina
+                                </Typography>
+                                <AdminNoteDetail
+                                    submissionId={submissionId}
+                                    adminNote={submission.adminNote}
+                                />
+                            </Paper>
+                            <Paper sx={{ p: 3 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Správa
+                                </Typography>
+                                <SubmissionActions
+                                    submissionId={submissionId}
+                                    yearId={yearId}
+                                    status={submission.status}
+                                    isPaid={submission.isPaid}
+                                />
+                            </Paper>
+                        </>
+                    )}
                 </Grid>
             </Grid>
         </Container>

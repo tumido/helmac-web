@@ -57,6 +57,7 @@ interface SubmissionsTableProps {
     fieldFilter: string | null;
     valueFilter: string | null;
     eventStartDate?: Date | null;
+    readOnly?: boolean;
 }
 
 function renderDisplayValue(field: InputField, displayData: Record<string, unknown>): string {
@@ -73,7 +74,7 @@ function renderDisplayValue(field: InputField, displayData: Record<string, unkno
 type SortKey = string;
 type SortDirection = "asc" | "desc";
 
-export function SubmissionsTable({ submissions, fields, allInputFields: allInputFieldsProp, pricingDefinitions, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate }: SubmissionsTableProps) {
+export function SubmissionsTable({ submissions, fields, allInputFields: allInputFieldsProp, pricingDefinitions, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate, readOnly = false }: SubmissionsTableProps) {
     const router = useRouter();
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -388,10 +389,12 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
                                         </Tooltip>
                                     </TableCell>
                                     <TableCell onClick={(e) => e.stopPropagation()}>
-                                        <AdminNoteButton
-                                            submissionId={submission.id}
-                                            adminNote={submission.adminNote}
-                                        />
+                                        {!readOnly && (
+                                            <AdminNoteButton
+                                                submissionId={submission.id}
+                                                adminNote={submission.adminNote}
+                                            />
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <Typography variant="body2" noWrap>
@@ -399,7 +402,7 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
                                         </Typography>
                                     </TableCell>
                                     <TableCell onClick={(e) => e.stopPropagation()}>
-                                        {!submission.isPaid && (
+                                        {!readOnly && !submission.isPaid && (
                                             <Button
                                                 variant="outlined"
                                                 size="small"

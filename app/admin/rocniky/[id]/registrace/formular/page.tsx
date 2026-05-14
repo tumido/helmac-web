@@ -1,6 +1,7 @@
-import { Container } from "@mui/material";
+import { Container, Alert } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireEditor } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { FormBuilder } from "@/components/admin/form-builder";
 import { migrateFormData } from "@/lib/utils/form-migration";
@@ -47,6 +48,8 @@ function extractEmailFieldNames(subject: string | null, body: string | null): st
 }
 
 export default async function FormularPage({ params }: FormularPageProps) {
+    const session = await requireEditor();
+    const isEditor = session.user?.role === "EDITOR";
     const { id } = await params;
     const year = await getYearWithForm(id);
 
@@ -92,11 +95,17 @@ export default async function FormularPage({ params }: FormularPageProps) {
                 ]}
                 title="Registrační formulář"
             />
+            {isEditor && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    Formulář je zobrazen pouze pro čtení.
+                </Alert>
+            )}
             <FormBuilder
                 yearId={year.id}
                 initialFormData={formData}
                 emailFieldNames={uniqueEmailFieldNames}
                 conditionalEmails={conditionalEmails}
+                readOnly={isEditor}
             />
         </Container>
     );

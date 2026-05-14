@@ -1,8 +1,8 @@
-import { Container, Box, Chip, Alert } from "@mui/material";
+import { Container, Box, Chip, Alert, Button } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
 import { FieldValueFilter } from "@/components/admin/field-value-filter";
@@ -56,11 +56,16 @@ async function getYearWithSubmissions(yearId: string, testFilter: TestFilter) {
 }
 
 export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyPageProps) {
-    await requireAdmin();
+    const session = await requireEditor();
+    const isEditor = session.user?.role === "EDITOR";
     const { id } = await params;
     const { status, paid, field: fieldParam, value: valueParam, test } = await searchParams;
-    const testFilter: TestFilter =
-        test === "test" || test === "all" ? test : "real";
+    // Editor can only ever see test registrations.
+    const testFilter: TestFilter = isEditor
+        ? "test"
+        : test === "test" || test === "all"
+          ? test
+          : "real";
     const year = await getYearWithSubmissions(id, testFilter);
 
     if (!year) {
@@ -145,25 +150,29 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                     color="primary"
                     variant="outlined"
                 />
-                <LinkButton
-                    href={`/api/registrace/${year.id}/export`}
-                    variant="outlined"
-                    startIcon={<Download />}
-                    size="small"
-                >
-                    Export CSV
-                </LinkButton>
-                {hasActiveFilter && (
-                    <LinkButton
-                        href={`/api/registrace/${year.id}/export?${filterQueryString}`}
-                        variant="outlined"
-                        startIcon={<Download />}
-                        size="small"
-                    >
-                        Export filtrovaných CSV
-                    </LinkButton>
+                {!isEditor && (
+                    <>
+                        <LinkButton
+                            href={`/api/registrace/${year.id}/export`}
+                            variant="outlined"
+                            startIcon={<Download />}
+                            size="small"
+                        >
+                            Export CSV
+                        </LinkButton>
+                        {hasActiveFilter && (
+                            <LinkButton
+                                href={`/api/registrace/${year.id}/export?${filterQueryString}`}
+                                variant="outlined"
+                                startIcon={<Download />}
+                                size="small"
+                            >
+                                Export filtrovaných CSV
+                            </LinkButton>
+                        )}
+                        <ValidatePaymentsButton />
+                    </>
                 )}
-                <ValidatePaymentsButton />
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
                 <LinkButton
@@ -221,27 +230,43 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 </LinkButton>
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-                <LinkButton
-                    href={`${basePath}?${[statusParam, paidParam].filter(Boolean).join("&") || ""}`}
-                    variant={testFilter === "real" ? "contained" : "outlined"}
-                    size="small"
-                >
-                    Reálné
-                </LinkButton>
-                <LinkButton
-                    href={`${basePath}?${[statusParam, paidParam, "test=test"].filter(Boolean).join("&")}`}
-                    variant={testFilter === "test" ? "contained" : "outlined"}
-                    size="small"
-                >
-                    Testovací
-                </LinkButton>
-                <LinkButton
-                    href={`${basePath}?${[statusParam, paidParam, "test=all"].filter(Boolean).join("&")}`}
-                    variant={testFilter === "all" ? "contained" : "outlined"}
-                    size="small"
-                >
-                    Vše (vč. test)
-                </LinkButton>
+                {isEditor ? (
+                    <>
+                        <Button variant="outlined" size="small" disabled>
+                            Reálné
+                        </Button>
+                        <Button variant="contained" size="small" disabled>
+                            Testovací
+                        </Button>
+                        <Button variant="outlined" size="small" disabled>
+                            Vše (vč. test)
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <LinkButton
+                            href={`${basePath}?${[statusParam, paidParam].filter(Boolean).join("&") || ""}`}
+                            variant={testFilter === "real" ? "contained" : "outlined"}
+                            size="small"
+                        >
+                            Reálné
+                        </LinkButton>
+                        <LinkButton
+                            href={`${basePath}?${[statusParam, paidParam, "test=test"].filter(Boolean).join("&")}`}
+                            variant={testFilter === "test" ? "contained" : "outlined"}
+                            size="small"
+                        >
+                            Testovací
+                        </LinkButton>
+                        <LinkButton
+                            href={`${basePath}?${[statusParam, paidParam, "test=all"].filter(Boolean).join("&")}`}
+                            variant={testFilter === "all" ? "contained" : "outlined"}
+                            size="small"
+                        >
+                            Vše (vč. test)
+                        </LinkButton>
+                    </>
+                )}
             </Box>
             {filterableFields.length > 0 && (
                 <FieldValueFilter
@@ -263,6 +288,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 fieldFilter={fieldFilter}
                 valueFilter={valueFilter}
                 eventStartDate={year.startDate}
+                readOnly={isEditor}
             />
         </Container>
     );

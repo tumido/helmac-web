@@ -379,7 +379,7 @@ export async function updateRegistrationSuccessContent(
     formData: FormData,
 ) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

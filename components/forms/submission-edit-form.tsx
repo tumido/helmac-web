@@ -32,9 +32,10 @@ interface SubmissionEditFormProps {
     data: Record<string, unknown>;
     pricingDefinitions?: PricingDefinition[];
     apFields?: InputField[];
+    readOnly?: boolean;
 }
 
-export function SubmissionEditForm({ submissionId, fields, data, pricingDefinitions, apFields }: SubmissionEditFormProps) {
+export function SubmissionEditForm({ submissionId, fields, data, pricingDefinitions, apFields, readOnly = false }: SubmissionEditFormProps) {
     const [values, setValues] = useState<Record<string, unknown>>({ ...data });
     const [apPeople, setAPPeople] = useState<AdditionalPersonData[]>(() => {
         const ap = data.additionalPeople;
@@ -84,7 +85,19 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
     };
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box
+            component="fieldset"
+            disabled={readOnly}
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                border: "none",
+                p: 0,
+                m: 0,
+                minWidth: 0,
+            }}
+        >
             {error && <Alert severity="error">{error}</Alert>}
             {success && <Alert severity="success">Data byla uložena</Alert>}
 
@@ -472,16 +485,18 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                 </Box>
             )}
 
-            <Box>
-                <Button
-                    variant="contained"
-                    startIcon={<Save />}
-                    onClick={handleSave}
-                    disabled={saving}
-                >
-                    {saving ? "Ukládám..." : "Uložit změny"}
-                </Button>
-            </Box>
+            {!readOnly && (
+                <Box>
+                    <Button
+                        variant="contained"
+                        startIcon={<Save />}
+                        onClick={handleSave}
+                        disabled={saving}
+                    >
+                        {saving ? "Ukládám..." : "Uložit změny"}
+                    </Button>
+                </Box>
+            )}
         </Box>
     );
 }

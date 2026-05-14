@@ -100,6 +100,7 @@ export const getSubmissionById = cache(async (id: string) => {
             emailSent: true,
             emailSentAt: true,
             adminNote: true,
+            isTest: true,
             createdAt: true,
             updatedAt: true,
             form: {

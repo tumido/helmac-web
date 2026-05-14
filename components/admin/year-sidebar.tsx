@@ -113,7 +113,7 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
             href: `${base}/registrace/prihlasky`,
             icon: People,
             indented: true,
-            roles: ["SUPER_ADMIN", "ADMIN"],
+            roles: ["SUPER_ADMIN", "ADMIN", "EDITOR"],
         },
         {
             text: "Transakce",

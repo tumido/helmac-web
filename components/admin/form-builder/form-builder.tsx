@@ -94,6 +94,7 @@ interface FormBuilderProps {
     initialFormData: RegistrationFormData;
     emailFieldNames?: string[];
     conditionalEmails?: ConditionalEmailInfo[];
+    readOnly?: boolean;
 }
 
 export function FormBuilder({
@@ -101,6 +102,7 @@ export function FormBuilder({
     initialFormData,
     emailFieldNames = [],
     conditionalEmails = [],
+    readOnly = false,
 }: FormBuilderProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -1151,17 +1153,19 @@ export function FormBuilder({
                     </Button>
                 )}
 
-                <Button
-                    variant="contained"
-                    startIcon={<Save />}
-                    onClick={handleSave}
-                    disabled={
-                        saving ||
-                        (elements.length === 0 && conditions.length === 0)
-                    }
-                >
-                    {saving ? "Ukládám..." : "Uložit formulář"}
-                </Button>
+                {!readOnly && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Save />}
+                        onClick={handleSave}
+                        disabled={
+                            saving ||
+                            (elements.length === 0 && conditions.length === 0)
+                        }
+                    >
+                        {saving ? "Ukládám..." : "Uložit formulář"}
+                    </Button>
+                )}
             </Paper>
 
             <Tabs
@@ -1179,6 +1183,12 @@ export function FormBuilder({
             </Tabs>
 
             {builderTab === 0 && (
+                <Box
+                    sx={{
+                        pointerEvents: readOnly ? "none" : undefined,
+                        userSelect: readOnly ? "text" : undefined,
+                    }}
+                >
                 <DndContext
                     sensors={sensors}
                     collisionDetection={collisionDetection}
@@ -1204,44 +1214,46 @@ export function FormBuilder({
                                 fieldExternalUsages={fieldExternalUsagesMap}
                             />
 
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    gap: 1,
-                                    mt: 2,
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                {isMobile && (
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<Add />}
-                                        onClick={() =>
-                                            setTypeSelectorOpen(true)
-                                        }
-                                    >
-                                        Přidat pole
-                                    </Button>
-                                )}
-                                <Box sx={{ flex: 1 }} />
-                                {hasElements && (
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        startIcon={<Delete />}
-                                        onClick={() =>
-                                            setDeleteConfirmOpen(true)
-                                        }
-                                        disabled={deleting}
-                                    >
-                                        Smazat formulář
-                                    </Button>
-                                )}
-                            </Box>
+                            {!readOnly && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        gap: 1,
+                                        mt: 2,
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    {isMobile && (
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<Add />}
+                                            onClick={() =>
+                                                setTypeSelectorOpen(true)
+                                            }
+                                        >
+                                            Přidat pole
+                                        </Button>
+                                    )}
+                                    <Box sx={{ flex: 1 }} />
+                                    {hasElements && (
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            startIcon={<Delete />}
+                                            onClick={() =>
+                                                setDeleteConfirmOpen(true)
+                                            }
+                                            disabled={deleting}
+                                        >
+                                            Smazat formulář
+                                        </Button>
+                                    )}
+                                </Box>
+                            )}
                         </Box>
 
                         {/* Right column: palette (desktop only) */}
-                        {!isMobile && (
+                        {!isMobile && !readOnly && (
                             <Box
                                 sx={{
                                     width: 220,
@@ -1270,26 +1282,41 @@ export function FormBuilder({
                         {renderDragOverlay()}
                     </DragOverlay>
                 </DndContext>
+                </Box>
             )}
 
             {builderTab === 1 && (
-                <ConditionEditor
-                    conditions={conditions}
-                    allFields={allFields}
-                    elements={elements}
-                    onChange={setConditions}
-                    pricingDefinitions={pricingDefinitions}
-                />
+                <Box
+                    sx={{
+                        pointerEvents: readOnly ? "none" : undefined,
+                        userSelect: readOnly ? "text" : undefined,
+                    }}
+                >
+                    <ConditionEditor
+                        conditions={conditions}
+                        allFields={allFields}
+                        elements={elements}
+                        onChange={setConditions}
+                        pricingDefinitions={pricingDefinitions}
+                    />
+                </Box>
             )}
 
             {builderTab === 2 && (
-                <PricingEditor
-                    pricingDefinitions={pricingDefinitions}
-                    priceTiers={priceTiers}
-                    onPriceTiersChange={setPriceTiers}
-                    elements={elements}
-                    onChange={setPricingDefinitions}
-                />
+                <Box
+                    sx={{
+                        pointerEvents: readOnly ? "none" : undefined,
+                        userSelect: readOnly ? "text" : undefined,
+                    }}
+                >
+                    <PricingEditor
+                        pricingDefinitions={pricingDefinitions}
+                        priceTiers={priceTiers}
+                        onPriceTiersChange={setPriceTiers}
+                        elements={elements}
+                        onChange={setPricingDefinitions}
+                    />
+                </Box>
             )}
 
             <FieldTypeSelector

@@ -619,7 +619,7 @@ export function DynamicRegistrationForm({
                                 {isPending
                                     ? "Odesílám..."
                                     : previewMode
-                                      ? "Odeslat registraci (test)"
+                                      ? "Odeslat registraci (test - bez emailu)"
                                       : "Odeslat registraci"}
                             </Button>
                             {previewMode && previewYearId && (
