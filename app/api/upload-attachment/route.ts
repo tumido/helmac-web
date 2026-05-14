@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { put } from "@vercel/blob";
+import { uploadToR2 } from "@/lib/r2";
+import { storageUrl } from "@/lib/utils/storage";
 import { requireEditor } from "@/lib/auth";
 import {
     ATTACHMENT_ALLOWED_TYPES,
@@ -62,12 +63,13 @@ export async function POST(request: NextRequest) {
         const storedFilename = generateFilename(sanitized);
 
         let url: string;
+        const key = `email-attachments/${storedFilename}`;
 
-        if (process.env.VERCEL) {
-            const blob = await put(`email-attachments/${storedFilename}`, file, {
-                access: "public",
-            });
-            url = blob.url;
+        if (process.env.R2_BUCKET_NAME) {
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            await uploadToR2(key, buffer, file.type);
+            url = storageUrl(key);
         } else {
             if (!existsSync(UPLOAD_DIR)) {
                 await mkdir(UPLOAD_DIR, { recursive: true });
