@@ -531,7 +531,8 @@ export function DynamicFormField({
                         sx={{
                             display: "grid",
                             gridTemplateColumns: {
-                                xs: "repeat(2, 1fr)",
+                                xs: "1fr",
+                                sm: "repeat(2, 1fr)",
                                 md: `repeat(${defCols}, 1fr)`,
                             },
                             gap: 1,
@@ -812,7 +813,8 @@ export function DynamicFormField({
                         sx={{
                             display: "grid",
                             gridTemplateColumns: {
-                                xs: "repeat(2, 1fr)",
+                                xs: "1fr",
+                                sm: "repeat(2, 1fr)",
                                 md: `repeat(${qCols}, 1fr)`,
                             },
                             gap: 1,
@@ -1084,7 +1086,8 @@ export function DynamicFormField({
                         sx={{
                             display: "grid",
                             gridTemplateColumns: {
-                                xs: "repeat(2, 1fr)",
+                                xs: "1fr",
+                                sm: "repeat(2, 1fr)",
                                 md: `repeat(${msCols}, 1fr)`,
                             },
                             gap: 1,

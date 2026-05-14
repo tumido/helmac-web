@@ -42,7 +42,7 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                 const mainQty = parseQty(props.mainValues[field.name]);
                 if (props.visibleMainFields.has(field.id)) {
                     for (const opt of def.options) {
-                        const qty = Number(mainQty[opt.name]) || 0;
+                        const qty = Number(mainQty[opt.id]) || 0;
                         if (qty <= 0) continue;
                         const unitPrice = opt.prices[tierIdx] ?? 0;
                         total += unitPrice * qty;
@@ -59,7 +59,7 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                         )
                             return;
                         for (const opt of def.options) {
-                            const qty = Number(personQty[opt.name]) || 0;
+                            const qty = Number(personQty[opt.id]) || 0;
                             if (qty <= 0) continue;
                             const unitPrice = opt.prices[tierIdx] ?? 0;
                             total += unitPrice * qty;
@@ -88,7 +88,7 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                 if (sel.length > 0 && props.visibleMainFields.has(field.id)) {
                     for (const n of sel) {
                         const opt = def.options.find(
-                            (o) => o.name === n
+                            (o) => o.id === n
                         );
                         if (opt) total += opt.prices[tierIdx] ?? 0;
                     }
@@ -108,7 +108,7 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                             return;
                         for (const n of pSel) {
                             const opt = def.options.find(
-                                (o) => o.name === n
+                                (o) => o.id === n
                             );
                             if (opt)
                                 total += opt.prices[tierIdx] ?? 0;
@@ -121,7 +121,7 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                 );
                 if (val && props.visibleMainFields.has(field.id)) {
                     const opt = def.options.find(
-                        (o) => o.name === val
+                        (o) => o.id === val
                     );
                     if (opt) total += opt.prices[tierIdx] ?? 0;
                 }
@@ -139,7 +139,7 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                         )
                             return;
                         const opt = def.options.find(
-                            (o) => o.name === pVal
+                            (o) => o.id === pVal
                         );
                         if (opt) total += opt.prices[tierIdx] ?? 0;
                     });
@@ -149,7 +149,50 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
         return Math.max(0, total);
     }, [props]);
 
-    if (grandTotal === 0 && !expanded) return null;
+    const hasSelections = useMemo(() => {
+        const pricingFields = props.allInputFields.filter(
+            (f) =>
+                (f.type === "pricing_select" ||
+                    f.type === "pricing_quantity" ||
+                    f.type === "pricing_multi_select") &&
+                f.pricingId &&
+                props.visibleMainFields.has(f.id)
+        );
+        for (const field of pricingFields) {
+            const val = props.mainValues[field.name];
+            if (field.type === "pricing_quantity") {
+                try {
+                    const parsed =
+                        typeof val === "string"
+                            ? JSON.parse(val || "{}")
+                            : val;
+                    if (
+                        parsed &&
+                        typeof parsed === "object" &&
+                        Object.values(parsed).some(
+                            (v) => Number(v) > 0
+                        )
+                    )
+                        return true;
+                } catch {
+                    /* empty */
+                }
+            } else if (field.type === "pricing_multi_select") {
+                try {
+                    const arr = JSON.parse(String(val ?? "[]"));
+                    if (Array.isArray(arr) && arr.length > 0)
+                        return true;
+                } catch {
+                    /* empty */
+                }
+            } else {
+                if (val) return true;
+            }
+        }
+        return false;
+    }, [props]);
+
+    if (!hasSelections && !expanded) return null;
 
     return (
         <Box
@@ -190,7 +233,15 @@ export function StickyPriceSummary(props: PriceSummaryProps) {
                     }}
                 />
             </Box>
-            <Collapse in={expanded}>
+            <Collapse
+                in={expanded}
+                sx={{
+                    maxHeight: "60dvh",
+                    "&.MuiCollapse-entered": {
+                        overflowY: "auto",
+                    },
+                }}
+            >
                 <Box sx={{ px: 3, pb: 2 }}>
                     <PriceSummary {...props} compact />
                 </Box>
