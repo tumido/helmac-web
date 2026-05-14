@@ -375,9 +375,12 @@ export async function sendConfirmationEmail(opts: {
             .replace(/\n{3,}/g, "\n\n")
             .trim();
 
-        // HTML body: replace {qrPlatba} with embedded image if buffer provided
+        const shouldEmbedQR =
+            !!opts.qrImageBuffer && opts.body.includes("{qrPlatba}");
+
+        // HTML body: embed QR image only when it will actually be attached
         let htmlBodyContent = opts.body;
-        if (opts.qrImageBuffer) {
+        if (shouldEmbedQR) {
             htmlBodyContent = htmlBodyContent.replace(
                 /\{qrPlatba\}/g,
                 '<img src="cid:qr-payment" width="200" height="200" alt="QR platba" style="display:block;">',
@@ -401,10 +404,10 @@ ${htmlBodyContent}
             | { filename: string; href: string }
             | { filename: string; content: Buffer }
         > = [];
-        if (opts.qrImageBuffer) {
+        if (shouldEmbedQR) {
             attachments.push({
                 filename: "qr-payment.png",
-                content: opts.qrImageBuffer,
+                content: opts.qrImageBuffer!,
                 cid: "qr-payment",
             });
         }
