@@ -24,6 +24,7 @@ import { Save, ExpandMore, Delete } from "@mui/icons-material";
 import type { FormField, InputField, PricingDefinition, AdditionalPersonData } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import { updateSubmissionData } from "@/lib/actions/registration-submissions";
+import { parseQuantities, parseSelected } from "@/lib/utils/pricing-field-values";
 
 interface SubmissionEditFormProps {
     submissionId: string;
@@ -147,18 +148,24 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
 
                     case "pricing_select": {
                         const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
-                        const options = def ? def.options.map((o) => o.name) : [];
+                        const options = def?.options ?? [];
+                        // Legacy submissions may hold the option name; map it to the id.
+                        const currentRaw = String(value ?? "");
+                        const currentId =
+                            options.find((o) => o.id === currentRaw)?.id
+                            ?? options.find((o) => o.name === currentRaw)?.id
+                            ?? "";
                         return (
                             <FormControl key={field.id} fullWidth size="small">
                                 <InputLabel>{field.label}</InputLabel>
                                 <Select
-                                    value={String(value ?? "")}
+                                    value={currentId}
                                     onChange={(e) => handleChange(field.name, e.target.value)}
                                     label={field.label}
                                 >
                                     {options.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
+                                        <MenuItem key={opt.id} value={opt.id}>
+                                            {opt.name}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -168,47 +175,72 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
 
                     case "pricing_quantity": {
                         const def = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                        const options = def?.options ?? [];
+                        const qMap = parseQuantities(value);
                         return (
-                            <TextField
-                                key={field.id}
-                                label={`${field.label}${def?.unitName ? ` (${def.unitName})` : ""}`}
-                                type="number"
-                                value={String(value ?? 0)}
-                                onChange={(e) => handleChange(field.name, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-                                fullWidth
-                                size="small"
-                                inputProps={{ min: 0, step: 1 }}
-                            />
+                            <Box key={field.id}>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                    {field.label}{def?.unitName ? ` (${def.unitName})` : ""}
+                                </Typography>
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                    {options.map((opt) => (
+                                        <TextField
+                                            key={opt.id}
+                                            label={opt.name}
+                                            type="number"
+                                            value={String(Number(qMap[opt.id] ?? qMap[opt.name] ?? 0))}
+                                            onChange={(e) => {
+                                                const qty = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                                                const next: Record<string, number> = { ...qMap };
+                                                if (qty > 0) {
+                                                    next[opt.id] = qty;
+                                                } else {
+                                                    delete next[opt.id];
+                                                }
+                                                // Drop any legacy name-keyed entry for this option.
+                                                if (opt.name !== opt.id) delete next[opt.name];
+                                                handleChange(field.name, JSON.stringify(next));
+                                            }}
+                                            fullWidth
+                                            size="small"
+                                            inputProps={{ min: 0, step: 1 }}
+                                        />
+                                    ))}
+                                </Box>
+                            </Box>
                         );
                     }
 
                     case "pricing_multi_select": {
                         const msDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
-                        const msOptions = msDef ? msDef.options.map((o) => o.name) : [];
-                        let msSelected: string[] = [];
-                        try {
-                            const parsed = JSON.parse(String(value ?? "[]"));
-                            if (Array.isArray(parsed)) msSelected = parsed;
-                        } catch { /* empty */ }
+                        const msOptions = msDef?.options ?? [];
+                        const rawSelected = parseSelected(value);
+                        // Legacy submissions may hold option names; normalise to ids for comparison.
+                        const msSelectedIds = rawSelected
+                            .map((v) =>
+                                msOptions.find((o) => o.id === v)?.id
+                                ?? msOptions.find((o) => o.name === v)?.id
+                                ?? v,
+                            );
                         return (
                             <Box key={field.id}>
                                 <Typography variant="body2" sx={{ mb: 0.5 }}>{field.label}</Typography>
                                 {msOptions.map((opt) => (
                                     <FormControlLabel
-                                        key={opt}
+                                        key={opt.id}
                                         control={
                                             <Checkbox
                                                 size="small"
-                                                checked={msSelected.includes(opt)}
+                                                checked={msSelectedIds.includes(opt.id)}
                                                 onChange={(e) => {
                                                     const newSelected = e.target.checked
-                                                        ? [...msSelected, opt]
-                                                        : msSelected.filter((s) => s !== opt);
+                                                        ? [...msSelectedIds, opt.id]
+                                                        : msSelectedIds.filter((s) => s !== opt.id);
                                                     handleChange(field.name, JSON.stringify(newSelected));
                                                 }}
                                             />
                                         }
-                                        label={opt}
+                                        label={opt.name}
                                     />
                                 ))}
                             </Box>
@@ -286,11 +318,8 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                                                         label={field.label}
                                                     />
                                                 );
-                                            case "select":
-                                            case "pricing_select": {
-                                                const options = field.type === "pricing_select"
-                                                    ? (pricingDefinitions?.find((d) => d.id === field.pricingId)?.options.map((o) => o.name) ?? [])
-                                                    : (field.options || []);
+                                            case "select": {
+                                                const options = field.options || [];
                                                 return (
                                                     <FormControl key={field.id} fullWidth size="small">
                                                         <InputLabel>{field.label}</InputLabel>
@@ -306,48 +335,93 @@ export function SubmissionEditForm({ submissionId, fields, data, pricingDefiniti
                                                     </FormControl>
                                                 );
                                             }
+                                            case "pricing_select": {
+                                                const apDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                                                const apOptions = apDef?.options ?? [];
+                                                const apRaw = String(value ?? "");
+                                                const apCurrentId =
+                                                    apOptions.find((o) => o.id === apRaw)?.id
+                                                    ?? apOptions.find((o) => o.name === apRaw)?.id
+                                                    ?? "";
+                                                return (
+                                                    <FormControl key={field.id} fullWidth size="small">
+                                                        <InputLabel>{field.label}</InputLabel>
+                                                        <Select
+                                                            value={apCurrentId}
+                                                            onChange={(e) => handleAPChange(personIndex, field.name, e.target.value)}
+                                                            label={field.label}
+                                                        >
+                                                            {apOptions.map((opt) => (
+                                                                <MenuItem key={opt.id} value={opt.id}>{opt.name}</MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                );
+                                            }
                                             case "pricing_quantity": {
                                                 const qtyDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
+                                                const qtyOptions = qtyDef?.options ?? [];
+                                                const qMap = parseQuantities(value);
                                                 return (
-                                                    <TextField
-                                                        key={field.id}
-                                                        label={`${field.label}${qtyDef?.unitName ? ` (${qtyDef.unitName})` : ""}`}
-                                                        type="number"
-                                                        value={String(value ?? 0)}
-                                                        onChange={(e) => handleAPChange(personIndex, field.name, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-                                                        fullWidth
-                                                        size="small"
-                                                        inputProps={{ min: 0, step: 1 }}
-                                                    />
+                                                    <Box key={field.id}>
+                                                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                            {field.label}{qtyDef?.unitName ? ` (${qtyDef.unitName})` : ""}
+                                                        </Typography>
+                                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                                            {qtyOptions.map((opt) => (
+                                                                <TextField
+                                                                    key={opt.id}
+                                                                    label={opt.name}
+                                                                    type="number"
+                                                                    value={String(Number(qMap[opt.id] ?? qMap[opt.name] ?? 0))}
+                                                                    onChange={(e) => {
+                                                                        const qty = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                                                                        const next: Record<string, number> = { ...qMap };
+                                                                        if (qty > 0) {
+                                                                            next[opt.id] = qty;
+                                                                        } else {
+                                                                            delete next[opt.id];
+                                                                        }
+                                                                        if (opt.name !== opt.id) delete next[opt.name];
+                                                                        handleAPChange(personIndex, field.name, JSON.stringify(next));
+                                                                    }}
+                                                                    fullWidth
+                                                                    size="small"
+                                                                    inputProps={{ min: 0, step: 1 }}
+                                                                />
+                                                            ))}
+                                                        </Box>
+                                                    </Box>
                                                 );
                                             }
                                             case "pricing_multi_select": {
                                                 const apMsDef = pricingDefinitions?.find((d) => d.id === field.pricingId);
-                                                const apMsOptions = apMsDef ? apMsDef.options.map((o) => o.name) : [];
-                                                let apMsSelected: string[] = [];
-                                                try {
-                                                    const parsed = JSON.parse(String(value ?? "[]"));
-                                                    if (Array.isArray(parsed)) apMsSelected = parsed;
-                                                } catch { /* empty */ }
+                                                const apMsOptions = apMsDef?.options ?? [];
+                                                const apRawSelected = parseSelected(value);
+                                                const apMsSelectedIds = apRawSelected.map((v) =>
+                                                    apMsOptions.find((o) => o.id === v)?.id
+                                                    ?? apMsOptions.find((o) => o.name === v)?.id
+                                                    ?? v,
+                                                );
                                                 return (
                                                     <Box key={field.id}>
                                                         <Typography variant="body2" sx={{ mb: 0.5 }}>{field.label}</Typography>
                                                         {apMsOptions.map((opt) => (
                                                             <FormControlLabel
-                                                                key={opt}
+                                                                key={opt.id}
                                                                 control={
                                                                     <Checkbox
                                                                         size="small"
-                                                                        checked={apMsSelected.includes(opt)}
+                                                                        checked={apMsSelectedIds.includes(opt.id)}
                                                                         onChange={(e) => {
                                                                             const newSel = e.target.checked
-                                                                                ? [...apMsSelected, opt]
-                                                                                : apMsSelected.filter((s) => s !== opt);
+                                                                                ? [...apMsSelectedIds, opt.id]
+                                                                                : apMsSelectedIds.filter((s) => s !== opt.id);
                                                                             handleAPChange(personIndex, field.name, JSON.stringify(newSel));
                                                                         }}
                                                                     />
                                                                 }
-                                                                label={opt}
+                                                                label={opt.name}
                                                             />
                                                         ))}
                                                     </Box>

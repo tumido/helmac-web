@@ -21,13 +21,15 @@ import {
 import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
 import { CheckCircle, Cancel, Email, Search } from "@mui/icons-material";
 import { AdminNoteButton } from "@/components/admin/admin-note-button";
-import type { FormField, InputField } from "@/lib/types/registration-form";
+import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { isInputField } from "@/lib/types/registration-form";
 import type { RegistrationStatus } from "@prisma/client";
 import { isMinor } from "@/lib/utils/minor-detection";
 import { formatPrice } from "@/lib/utils/pricing";
 import { getAdditionalPeople } from "@/lib/utils/additional-people";
 import { formatDate } from "@/lib/utils/date";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { parseSelected } from "@/lib/utils/pricing-field-values";
 
 
 interface Submission {
@@ -46,6 +48,8 @@ interface Submission {
 interface SubmissionsTableProps {
     submissions: Submission[];
     fields: FormField[];
+    allInputFields: InputField[];
+    pricingDefinitions: PricingDefinition[];
     yearId: string;
     statusFilter: RegistrationStatus | null;
     paidFilter: boolean | null;
@@ -54,10 +58,21 @@ interface SubmissionsTableProps {
     eventStartDate?: Date | null;
 }
 
+function renderDisplayValue(field: InputField, displayData: Record<string, unknown>): string {
+    const raw = displayData[field.name];
+    if (raw === null || raw === undefined) return "";
+    if (field.type === "pricing_multi_select") {
+        // resolver returns JSON.stringify(names); show as comma-separated
+        const names = parseSelected(raw);
+        return names.length > 0 ? names.join(", ") : "";
+    }
+    return String(raw);
+}
+
 type SortKey = string;
 type SortDirection = "asc" | "desc";
 
-export function SubmissionsTable({ submissions, fields, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate }: SubmissionsTableProps) {
+export function SubmissionsTable({ submissions, fields, allInputFields: allInputFieldsProp, pricingDefinitions, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate }: SubmissionsTableProps) {
     const router = useRouter();
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -78,28 +93,43 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
         .slice(0, 4);
 
     // Find birth_date fields for minor detection
-    const allInputFields = fields.filter((f): f is InputField => isInputField(f));
+    const allInputFields = allInputFieldsProp;
     const birthDateFields = allInputFields.filter((f) => f.type === "birth_date");
     const apBirthDateFields = birthDateFields.filter((f) => f.includeForAdditionalPeople);
     const refDate = eventStartDate ? new Date(eventStartDate) : undefined;
 
+    // Precompute resolved display data (option ids → names) once per submission
+    // and per additional-person record. Reused by filter/search/render.
+    const enriched = submissions.map((s) => {
+        const data = s.data as Record<string, unknown>;
+        const displayData = resolveSubmissionDataForDisplay(data, allInputFields, pricingDefinitions);
+        const apList = getAdditionalPeople(data);
+        const displayAP = apList.map((p) =>
+            resolveSubmissionDataForDisplay(
+                p as Record<string, unknown>,
+                allInputFields,
+                pricingDefinitions,
+            ),
+        );
+        return { submission: s, data, displayData, apList, displayAP };
+    });
+
     const statusFiltered = statusFilter
-        ? submissions.filter((s) => s.status === statusFilter)
-        : submissions;
+        ? enriched.filter((e) => e.submission.status === statusFilter)
+        : enriched;
 
     const paidFiltered = paidFilter !== null
-        ? statusFiltered.filter((s) => s.isPaid === paidFilter)
+        ? statusFiltered.filter((e) => e.submission.isPaid === paidFilter)
         : statusFiltered;
 
     const fieldFiltered = fieldFilter && valueFilter
-        ? paidFiltered.filter((s) => {
-            const data = s.data as Record<string, unknown>;
-            const rawVal = data[fieldFilter];
+        ? paidFiltered.filter((e) => {
+            const rawVal = e.displayData[fieldFilter];
             // Checkbox fields store boolean, but filter uses "Ano"/"Ne"
             if (rawVal === true || rawVal === false) {
                 return (rawVal ? "Ano" : "Ne") === valueFilter;
             }
-            // pricing_multi_select stores JSON array string
+            // pricing_multi_select: resolver returns JSON array string of names
             if (typeof rawVal === "string" && rawVal.startsWith("[")) {
                 try {
                     const arr = JSON.parse(rawVal);
@@ -113,21 +143,18 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
         : paidFiltered;
 
     const filtered = search.trim()
-        ? fieldFiltered.filter((s) => {
+        ? fieldFiltered.filter((e) => {
             const term = search.trim().toLowerCase();
-            const data = s.data as Record<string, unknown>;
 
-            // Search main form data values
-            for (const val of Object.values(data)) {
+            // Search main form data values (resolved)
+            for (const val of Object.values(e.displayData)) {
                 if (val != null && String(val).toLowerCase().includes(term)) {
                     return true;
                 }
             }
 
-            // Search additional people data
-            const ap = getAdditionalPeople(data);
-            for (const person of ap) {
-                const personData = person as Record<string, unknown>;
+            // Search additional people data (resolved)
+            for (const personData of e.displayAP) {
                 for (const val of Object.values(personData)) {
                     if (val != null && String(val).toLowerCase().includes(term)) {
                         return true;
@@ -136,7 +163,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
             }
 
             // Search variable symbol
-            if (s.variableSymbol && s.variableSymbol.toLowerCase().includes(term)) {
+            if (e.submission.variableSymbol && e.submission.variableSymbol.toLowerCase().includes(term)) {
                 return true;
             }
 
@@ -149,29 +176,31 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
 
         if (sortKey.startsWith("field:")) {
             const fieldName = sortKey.slice(6);
-            const aVal = String((a.data as Record<string, unknown>)[fieldName] ?? "");
-            const bVal = String((b.data as Record<string, unknown>)[fieldName] ?? "");
+            const aVal = String(a.displayData[fieldName] ?? "");
+            const bVal = String(b.displayData[fieldName] ?? "");
             return dir * aVal.localeCompare(bVal, "cs");
         }
 
+        const as = a.submission;
+        const bs = b.submission;
         switch (sortKey) {
             case "peopleCount": {
-                const aCount = 1 + getAdditionalPeople(a.data as Record<string, unknown>).length;
-                const bCount = 1 + getAdditionalPeople(b.data as Record<string, unknown>).length;
+                const aCount = 1 + a.apList.length;
+                const bCount = 1 + b.apList.length;
                 return dir * (aCount - bCount);
             }
             case "isPaid":
-                return dir * (Number(a.isPaid) - Number(b.isPaid));
+                return dir * (Number(as.isPaid) - Number(bs.isPaid));
             case "totalPrice":
-                return dir * ((a.totalPrice ?? -Infinity) - (b.totalPrice ?? -Infinity));
+                return dir * ((as.totalPrice ?? -Infinity) - (bs.totalPrice ?? -Infinity));
             case "variableSymbol":
-                return dir * (a.variableSymbol ?? "").localeCompare(b.variableSymbol ?? "", "cs");
+                return dir * (as.variableSymbol ?? "").localeCompare(bs.variableSymbol ?? "", "cs");
             case "emailSent":
-                return dir * (Number(a.emailSent) - Number(b.emailSent));
+                return dir * (Number(as.emailSent) - Number(bs.emailSent));
             case "adminNote":
-                return dir * (Number(!!a.adminNote) - Number(!!b.adminNote));
+                return dir * (Number(!!as.adminNote) - Number(!!bs.adminNote));
             case "createdAt":
-                return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                return dir * (new Date(as.createdAt).getTime() - new Date(bs.createdAt).getTime());
             default:
                 return 0;
         }
@@ -248,9 +277,12 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {sorted.map((submission) => {
-                        const data = submission.data as Record<string, unknown>;
-                        const ap = getAdditionalPeople(data);
+                    {sorted.map((e) => {
+                        const submission = e.submission;
+                        const data = e.data;
+                        const displayData = e.displayData;
+                        const ap = e.apList;
+                        const displayAP = e.displayAP;
                         const hasAP = ap.length > 0;
                         const detailUrl = `/admin/rocniky/${yearId}/registrace/${submission.id}`;
                         const isMainPersonMinor = birthDateFields.some((bf) => {
@@ -286,7 +318,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                                                 </Tooltip>
                                             ) : (
                                                 <Typography variant="body2" noWrap sx={{ maxWidth: 200, display: "inline" }}>
-                                                    {String(data[field.name] ?? "")}
+                                                    {renderDisplayValue(field, displayData)}
                                                 </Typography>
                                             )}
                                         </TableCell>
@@ -372,6 +404,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                                 </TableRow>
                                 {ap.map((person, apIndex) => {
                                     const personData = person as Record<string, unknown>;
+                                    const personDisplay = displayAP[apIndex] ?? personData;
                                     const isLast = apIndex === ap.length - 1;
                                     const isAPMinor = apBirthDateFields.some((bf) => {
                                         const val = personData[bf.name];
@@ -409,7 +442,7 @@ export function SubmissionsTable({ submissions, fields, yearId, statusFilter, pa
                                                             </Tooltip>
                                                         ) : (
                                                             <Typography variant="body2" noWrap sx={{ maxWidth: 200, display: "inline" }}>
-                                                                {String(personData[field.name] ?? "")}
+                                                                {renderDisplayValue(field, personDisplay)}
                                                             </Typography>
                                                         )
                                                     ) : null}

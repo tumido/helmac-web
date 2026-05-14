@@ -218,6 +218,8 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
             <SubmissionsTable
                 submissions={year.registrationSubmissions}
                 fields={fields}
+                allInputFields={allInputFields}
+                pricingDefinitions={formData.pricingDefinitions}
                 yearId={year.id}
                 statusFilter={statusFilter}
                 paidFilter={paidFilter}
