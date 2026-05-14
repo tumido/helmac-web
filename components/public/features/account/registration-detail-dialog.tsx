@@ -51,20 +51,6 @@ import {
 import { DynamicFormField } from "@/components/public/features/registration/DynamicFormField";
 import { updatePublicRegistration } from "@/lib/actions/public/registration-edit";
 
-const statusLabels: Record<
-    string,
-    {
-        label: string;
-        color: "default" | "success" | "warning" | "error" | "info";
-    }
-> = {
-    PENDING: { label: "Čeká na potvrzení", color: "warning" },
-    CONFIRMED: { label: "Potvrzena", color: "success" },
-    WAITLIST: { label: "Čekací listina", color: "info" },
-    CANCELLED: { label: "Zrušena", color: "error" },
-    REJECTED: { label: "Zamítnuta", color: "error" },
-};
-
 interface SerializedRegistration {
     id: string;
     data: unknown;
@@ -434,17 +420,6 @@ function RegistrationViewDialog({
                             >
                                 {registration.year.title}
                             </Typography>
-                            <Chip
-                                label={
-                                    statusLabels[registration.status]?.label ??
-                                    registration.status
-                                }
-                                color={
-                                    statusLabels[registration.status]?.color ??
-                                    "default"
-                                }
-                                size="small"
-                            />
                             {registration.isPaid ? (
                                 <Chip
                                     icon={<GameIcon name="wax-seal" />}
@@ -638,17 +613,6 @@ function RegistrationEditDialog({
                             >
                                 {registration.year.title}
                             </Typography>
-                            <Chip
-                                label={
-                                    statusLabels[registration.status]?.label ??
-                                    registration.status
-                                }
-                                color={
-                                    statusLabels[registration.status]?.color ??
-                                    "default"
-                                }
-                                size="small"
-                            />
                             {registration.isPaid ? (
                                 <Chip
                                     icon={<GameIcon name="wax-seal" />}
@@ -1067,17 +1031,6 @@ export function RegistrationHistoryTable({
                                         >
                                             {reg.year.title}
                                         </Typography>
-                                        <Chip
-                                            label={
-                                                statusLabels[reg.status]
-                                                    ?.label ?? reg.status
-                                            }
-                                            color={
-                                                statusLabels[reg.status]
-                                                    ?.color ?? "default"
-                                            }
-                                            size="small"
-                                        />
                                         {reg.isTest && (
                                             <Chip
                                                 label="TEST"
