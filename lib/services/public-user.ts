@@ -61,7 +61,7 @@ async function refreshStalePrices(
 
 export async function getPublicUserRegistrations(userId: string) {
     const registrations = await db.registrationSubmission.findMany({
-        where: { publicUserId: userId, isTest: false },
+        where: { publicUserId: userId },
         orderBy: { createdAt: "desc" },
         select: {
             id: true,
@@ -70,6 +70,7 @@ export async function getPublicUserRegistrations(userId: string) {
             data: true,
             status: true,
             isPaid: true,
+            isTest: true,
             paidAt: true,
             totalPrice: true,
             pricingSummary: true,

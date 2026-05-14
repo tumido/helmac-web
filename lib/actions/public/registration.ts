@@ -406,21 +406,36 @@ export async function submitDynamicRegistration(
     const variableSymbol = await generateUniqueVariableSymbol();
     const totalPrice = pricingSummary?.totalPrice ?? null;
 
-    // Check for logged-in public user. Test registrations never associate with
-    // a public user — the JWT cookie may point to a deleted row, which would
-    // violate the FK constraint.
-    const publicSession = isTest ? null : await getPublicSession();
-    let publicUserId = publicSession?.sub ?? null;
+    // Resolve which PublicUser (if any) this registration belongs to.
+    // Test registrations link by the submitted email field so editors can
+    // verify the data lands on the corresponding /ucet page. Real
+    // registrations link by the current JWT session.
+    let publicUserId: string | null = null;
+    if (isTest) {
+        const submittedEmail = emailField
+            ? String(submissionData[emailField.name] ?? "").trim()
+            : "";
+        if (submittedEmail) {
+            const matched = await db.publicUser.findUnique({
+                where: { email: submittedEmail },
+                select: { id: true },
+            });
+            publicUserId = matched?.id ?? null;
+        }
+    } else {
+        const publicSession = await getPublicSession();
+        publicUserId = publicSession?.sub ?? null;
 
-    // Verify the public user still exists; a stale JWT cookie would otherwise
-    // trigger a P2003 foreign-key violation on insert.
-    if (publicUserId) {
-        const exists = await db.publicUser.findUnique({
-            where: { id: publicUserId },
-            select: { id: true },
-        });
-        if (!exists) {
-            publicUserId = null;
+        // Verify the public user still exists; a stale JWT cookie would
+        // otherwise trigger a P2003 foreign-key violation on insert.
+        if (publicUserId) {
+            const exists = await db.publicUser.findUnique({
+                where: { id: publicUserId },
+                select: { id: true },
+            });
+            if (!exists) {
+                publicUserId = null;
+            }
         }
     }
 

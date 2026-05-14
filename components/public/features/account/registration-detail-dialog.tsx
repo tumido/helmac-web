@@ -70,6 +70,7 @@ interface SerializedRegistration {
     data: unknown;
     status: string;
     isPaid: boolean;
+    isTest: boolean;
     paidAt: string | null;
     totalPrice: number | null;
     pricingSummary: unknown;
@@ -1077,6 +1078,15 @@ export function RegistrationHistoryTable({
                                             }
                                             size="small"
                                         />
+                                        {reg.isTest && (
+                                            <Chip
+                                                label="TEST"
+                                                color="warning"
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{ fontWeight: 700 }}
+                                            />
+                                        )}
                                         {reg.isPaid ? (
                                             <Chip
                                                 icon={

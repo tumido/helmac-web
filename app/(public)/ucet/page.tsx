@@ -36,8 +36,9 @@ export default async function AccountPage() {
 
     if (!profile) return null;
 
-    const totalRegistrations = registrations.length;
-    const pendingCount = registrations.filter((r) => !r.isPaid).length;
+    const realRegistrations = registrations.filter((r) => !r.isTest);
+    const totalRegistrations = realRegistrations.length;
+    const pendingCount = realRegistrations.filter((r) => !r.isPaid).length;
 
     const hasBankInfo = !!(
         globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
@@ -65,6 +66,7 @@ export default async function AccountPage() {
         );
         if (iban) {
             for (const reg of registrations) {
+                if (reg.isTest) continue;
                 if (
                     !reg.isPaid &&
                     reg.variableSymbol &&
