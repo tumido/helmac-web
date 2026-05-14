@@ -44,6 +44,7 @@ next-env.d.ts
 /prisma/*.db
 /prisma/*.db-journal
 public/uploads/
+public/icons/
 .env.vercel
 .env.local
 .idea/

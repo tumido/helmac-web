@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { put } from "@vercel/blob";
+import { uploadToR2 } from "@/lib/r2";
 import { requireEditor } from "@/lib/auth";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
@@ -64,12 +64,13 @@ export async function POST(request: NextRequest) {
 
         let url: string;
 
-        if (process.env.VERCEL) {
-            // Vercel: upload to Vercel Blob
-            const blob = await put(`uploads/${filename}`, file, {
-                access: "public",
-            });
-            url = blob.url;
+        const key = `uploads/${filename}`;
+
+        if (process.env.R2_BUCKET_NAME) {
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            await uploadToR2(key, buffer, file.type);
+            url = key;
         } else {
             // Local: save to public/uploads/
             if (!existsSync(UPLOAD_DIR)) {

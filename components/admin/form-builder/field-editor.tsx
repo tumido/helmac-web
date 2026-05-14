@@ -27,6 +27,7 @@ import { isInputField, FIELD_TYPE_META } from "@/lib/types/registration-form";
 import { getConditionsUsingOptionValue } from "@/lib/utils/condition-validation";
 import { formatPrice } from "@/lib/utils/pricing";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { storageUrl } from "@/lib/utils/storage";
 
 interface FieldEditorProps {
     open: boolean;
@@ -418,7 +419,7 @@ function OptionImageUploader({
                 >
                     <Box
                         component="img"
-                        src={imageUrl}
+                        src={storageUrl(imageUrl)}
                         alt=""
                         sx={{
                             width: "100%",

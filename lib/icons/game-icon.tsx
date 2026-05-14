@@ -10,16 +10,15 @@ interface GameIconProps extends SvgIconProps {
 const pathsCache = new Map<string, string[]>();
 
 export function GameIcon({ name, ...props }: GameIconProps) {
-    const [paths, setPaths] = useState<string[] | null>(null);
+    const [paths, setPaths] = useState<string[] | null>(
+        () => pathsCache.get(name) ?? null
+    );
 
     useEffect(() => {
-        if (pathsCache.has(name)) {
-            setPaths(pathsCache.get(name)!);
-            return;
-        }
-        import(`./paths/${name}`)
-            .then((mod) => {
-                const p = mod.default as string[];
+        if (pathsCache.has(name)) return;
+        fetch(`/icons/${name}.json`)
+            .then((r) => (r.ok ? r.json() : []))
+            .then((p: string[]) => {
                 pathsCache.set(name, p);
                 setPaths(p);
             })

@@ -2,6 +2,7 @@ import { Box, Typography } from "@mui/material";
 import { HeroSection, Section, SectionTitle } from "@/components/public/ui";
 import { DecorativeDivider } from "@/components/public/ui/Divider";
 import { formatDate, formatEventDateRange } from "@/lib/utils/date";
+import { storageUrl } from "@/lib/utils/storage";
 import { NewsPreview } from "@/components/public/features/news/NewsPreview";
 import { GalleryPreview } from "@/components/public/features/gallery/GalleryPreview";
 import { EventHighlights } from "@/components/public/features/highlights/EventHighlights";
@@ -33,7 +34,7 @@ export default async function HomePage() {
             <HeroSection
                 title={activeYear?.title || "HELMÁČ"}
                 eventDate={eventDate ?? undefined}
-                backgroundImage={activeYear?.heroPhoto || undefined}
+                backgroundImage={storageUrl(activeYear?.heroPhoto) || undefined}
                 subtitle={
                     activeYear?.subtitle ||
                     "Středověká fantasy LARP událost, kde se příběhy středověku mísí s magií a dobrodružstvím"

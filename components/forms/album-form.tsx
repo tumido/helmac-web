@@ -18,6 +18,7 @@ import { Edit, Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
 import { createAlbum, updateAlbum, AlbumActionState } from "@/lib/actions/albums";
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { storageUrl } from "@/lib/utils/storage";
 
 interface AlbumFormProps {
     mode: "create" | "edit";
@@ -169,7 +170,7 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                         ) : coverImage ? (
                             <Box
                                 component="img"
-                                src={coverImage}
+                                src={storageUrl(coverImage)}
                                 alt="Titulní obrázek"
                                 sx={{
                                     maxHeight: 250,

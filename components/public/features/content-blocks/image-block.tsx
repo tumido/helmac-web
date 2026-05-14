@@ -1,5 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { grainyMaskBoth } from "@/lib/utils/grainy-mask";
+import { storageUrl } from "@/lib/utils/storage";
 import type { ImageBlock } from "@/lib/types/content-blocks";
 
 interface ImageBlockRendererProps {
@@ -13,7 +14,7 @@ export function ImageBlockRenderer({ block }: ImageBlockRendererProps) {
         <Box sx={{ my: 2, textAlign: "center" }}>
             <Box
                 component="img"
-                src={block.url}
+                src={storageUrl(block.url)}
                 alt={block.alt}
                 sx={{
                     maxWidth: "100%",

@@ -29,6 +29,7 @@ import { isInputField } from "@/lib/types/registration-form";
 import { getCurrentTierIndex, formatPrice } from "@/lib/utils/pricing";
 import { formatDate } from "@/lib/utils/date";
 import dayjs from "dayjs";
+import { storageUrl } from "@/lib/utils/storage";
 
 interface DynamicFormFieldProps {
     field: FormField;
@@ -211,7 +212,7 @@ export function DynamicFormField({
                                         {meta?.imageUrl && (
                                             <Box
                                                 component="img"
-                                                src={meta.imageUrl}
+                                                src={storageUrl(meta.imageUrl)}
                                                 alt={opt}
                                                 sx={{
                                                     width: "100%",

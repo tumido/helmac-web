@@ -2282,12 +2282,3 @@ export const ICON_TAGS = [
 ] as const;
 
 export type IconTag = (typeof ICON_TAGS)[number];
-
-export async function getIconPaths(name: string): Promise<string[]> {
-    try {
-        const mod = await import("./paths/" + name);
-        return mod.default;
-    } catch {
-        return [];
-    }
-}

@@ -10,6 +10,7 @@ import {
     Alert,
 } from "@mui/material";
 import { CloudUpload, Delete, Image as ImageIcon } from "@mui/icons-material";
+import { storageUrl } from "@/lib/utils/storage";
 
 interface ImageUploaderProps {
     value?: string;
@@ -135,7 +136,7 @@ export function ImageUploader({
         setError(null);
     };
 
-    const displayUrl = value || preview;
+    const displayUrl = storageUrl(value) || preview;
 
     return (
         <Box>
