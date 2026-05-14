@@ -423,13 +423,35 @@ export async function getFilteredRegistrationStats(
     const hasFieldFilter =
         filter.fieldFilters && filter.fieldFilters.length > 0;
 
+    const personMatches = (
+        data: Record<string, unknown>
+    ) => !hasFieldFilter || matchesFilter(data, filter);
+
     const filtered = hasFieldFilter
-        ? submissions.filter((s) =>
-              matchesFilter(
-                  s.data as Record<string, unknown>,
-                  filter
-              )
-          )
+        ? submissions.filter((s) => {
+              const data = s.data as Record<
+                  string,
+                  unknown
+              >;
+              if (matchesFilter(data, filter)) return true;
+              if (Array.isArray(data.additionalPeople)) {
+                  for (const p of data.additionalPeople) {
+                      if (
+                          p &&
+                          typeof p === "object" &&
+                          matchesFilter(
+                              p as Record<
+                                  string,
+                                  unknown
+                              >,
+                              filter
+                          )
+                      )
+                          return true;
+                  }
+              }
+              return false;
+          })
         : submissions;
 
     let people = 0;
@@ -439,10 +461,19 @@ export async function getFilteredRegistrationStats(
 
     for (const sub of filtered) {
         const data = sub.data as Record<string, unknown>;
-        const ap = Array.isArray(data.additionalPeople)
-            ? data.additionalPeople.length
-            : 0;
-        people += 1 + ap;
+        if (personMatches(data)) people++;
+        if (Array.isArray(data.additionalPeople)) {
+            for (const p of data.additionalPeople) {
+                if (
+                    p &&
+                    typeof p === "object" &&
+                    personMatches(
+                        p as Record<string, unknown>
+                    )
+                )
+                    people++;
+            }
+        }
         if (sub.status === "CONFIRMED") confirmed++;
         if (sub.status === "PENDING") pending++;
         if (sub.status === "WAITLIST") waitlist++;
@@ -505,7 +536,7 @@ export async function getFilteredRegistrationStats(
                 string,
                 unknown
             >;
-            collectRow(data);
+            if (personMatches(data)) collectRow(data);
             const ap = data.additionalPeople;
             if (Array.isArray(ap)) {
                 for (const person of ap) {
@@ -513,12 +544,12 @@ export async function getFilteredRegistrationStats(
                         person &&
                         typeof person === "object"
                     ) {
-                        collectRow(
-                            person as Record<
-                                string,
-                                unknown
-                            >
-                        );
+                        const pd = person as Record<
+                            string,
+                            unknown
+                        >;
+                        if (personMatches(pd))
+                            collectRow(pd);
                     }
                 }
             }
