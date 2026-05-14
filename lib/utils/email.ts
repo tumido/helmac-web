@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 import QRCode from "qrcode";
+import path from "path";
+import { readFile } from "fs/promises";
 import { generateSPAYD } from "@/lib/utils/spayd";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/utils/encryption";
@@ -113,6 +115,38 @@ export function appendConditionalSections(opts: {
 
     const extra = matched.map((s) => s.body).join("\n\n");
     return body ? `${body}\n\n${extra}` : extra;
+}
+
+/**
+ * Return the flattened attachments from all sections whose condition matches
+ * the submission data. Order follows section sortOrder.
+ */
+export function collectMatchingSectionAttachments(opts: {
+    sections: EmailConditionalSection[];
+    rawSubmissionData: Record<string, unknown>;
+    allFields: FormField[];
+    pricingDefinitions?: PricingDefinition[];
+}): { filename: string; url: string }[] {
+    const { sections, rawSubmissionData, allFields, pricingDefinitions } = opts;
+    if (!sections || sections.length === 0) return [];
+
+    const result: { filename: string; url: string }[] = [];
+    for (const s of [...sections].sort((a, b) => a.sortOrder - b.sortOrder)) {
+        if (!s.attachments || s.attachments.length === 0) continue;
+        if (
+            evaluateCondition(
+                s.condition,
+                rawSubmissionData,
+                allFields,
+                pricingDefinitions,
+            )
+        ) {
+            for (const a of s.attachments) {
+                result.push({ filename: a.filename, url: a.url });
+            }
+        }
+    }
+    return result;
 }
 
 /**
@@ -297,6 +331,7 @@ export async function sendConfirmationEmail(opts: {
     bcc?: string;
     qrImageBuffer?: Buffer;
     accountId?: string | null;
+    attachments?: { filename: string; url: string }[];
 }): Promise<boolean> {
     try {
         const { transporter, from } = await getTransporterForAccount(opts.accountId);
@@ -336,13 +371,31 @@ ${htmlBodyContent}
 </body>
 </html>`;
 
-        const attachments = opts.qrImageBuffer
-            ? [{
+        const attachments: Array<
+            | { filename: string; content: Buffer; cid: string }
+            | { filename: string; href: string }
+            | { filename: string; content: Buffer }
+        > = [];
+        if (opts.qrImageBuffer) {
+            attachments.push({
                 filename: "qr-payment.png",
                 content: opts.qrImageBuffer,
                 cid: "qr-payment",
-            }]
-            : [];
+            });
+        }
+        for (const a of opts.attachments ?? []) {
+            if (a.url.startsWith("/")) {
+                try {
+                    const localPath = path.join(process.cwd(), "public", a.url.replace(/^\/+/, ""));
+                    const content = await readFile(localPath);
+                    attachments.push({ filename: a.filename, content });
+                } catch (err) {
+                    console.error(`Failed to read local attachment ${a.url}:`, err);
+                }
+            } else {
+                attachments.push({ filename: a.filename, href: a.url });
+            }
+        }
 
         await transporter.sendMail({
             from,

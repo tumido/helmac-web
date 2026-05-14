@@ -8,6 +8,7 @@ import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 
 interface ZmenaCenyPageProps {
     params: Promise<{ id: string }>;
@@ -25,6 +26,7 @@ async function getYearPriceChangeEmailTemplate(yearId: string) {
             priceChangeEmailBcc: true,
             priceChangeEmailAccountId: true,
             priceChangeEmailSections: true,
+            priceChangeEmailAttachments: true,
         },
     });
 }
@@ -87,6 +89,7 @@ export default async function ZmenaCenyPage({ params }: ZmenaCenyPageProps) {
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={year.priceChangeEmailAccountId}
                 initialSections={(year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? []}
+                initialAttachments={(year.priceChangeEmailAttachments as unknown as EmailAttachment[]) ?? []}
                 availableFields={allFormFields}
                 pricingDefinitions={pricingDefinitions}
             />

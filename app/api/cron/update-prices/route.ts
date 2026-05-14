@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
-import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
+import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
                     priceChangeEmailBcc: true,
                     priceChangeEmailAccountId: true,
                     priceChangeEmailSections: true,
+                    priceChangeEmailAttachments: true,
                 },
             },
         },
@@ -186,6 +187,13 @@ export async function GET(request: NextRequest) {
                             });
                         }
 
+                        const sectionAttachments = collectMatchingSectionAttachments({
+                            sections: (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? [],
+                            rawSubmissionData: submissionData,
+                            allFields: allFormFields,
+                            pricingDefinitions,
+                        });
+
                         const sent = await sendConfirmationEmail({
                             to: recipientEmail,
                             subject: emailSubject,
@@ -193,6 +201,10 @@ export async function GET(request: NextRequest) {
                             bcc: year.priceChangeEmailBcc ?? undefined,
                             qrImageBuffer: qrImageBuffer ?? undefined,
                             accountId: year.priceChangeEmailAccountId,
+                            attachments: [
+                                ...((year.priceChangeEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
+                                ...sectionAttachments,
+                            ],
                         });
 
                         if (sent) {

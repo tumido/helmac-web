@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { Box } from "@mui/material";
 import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor";
+import { EmailAttachmentsList } from "@/components/admin/email-attachments-list";
 import { SingleConditionEditor } from "./single-condition-editor";
 import { PanelLabel } from "./panel-label";
 import { PlaceholderStrip } from "./placeholder-strip";
@@ -59,6 +60,15 @@ export function SectionPaneConditional({
                     editorRef={editorRef}
                     onFallbackInsert={(key) =>
                         onChange({ ...section, body: section.body + `{${key}}` })
+                    }
+                />
+            </Box>
+
+            <Box>
+                <EmailAttachmentsList
+                    value={section.attachments ?? []}
+                    onChange={(attachments) =>
+                        onChange({ ...section, attachments })
                     }
                 />
             </Box>

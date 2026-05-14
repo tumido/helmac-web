@@ -25,6 +25,7 @@ import { SectionPaneConditional } from "@/components/admin/email-builder/section
 import { builderPalette as p } from "@/components/admin/email-builder/palette";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 
 type SaveAction = (yearId: string, formData: FormData) => Promise<{ success?: boolean; error?: string | Record<string, string[]> }>;
 
@@ -45,6 +46,7 @@ interface EmailTemplateEditorProps {
     emailAccounts?: EmailAccountOption[];
     selectedEmailAccountId?: string | null;
     initialSections?: EmailConditionalSection[];
+    initialAttachments?: EmailAttachment[];
     availableFields?: FormField[];
     pricingDefinitions?: PricingDefinition[];
 }
@@ -55,6 +57,7 @@ function snapshotKey(input: {
     bcc: string;
     emailAccountId: string;
     sections: EmailConditionalSection[];
+    attachments: EmailAttachment[];
 }): string {
     return JSON.stringify({
         subject: input.subject,
@@ -64,6 +67,9 @@ function snapshotKey(input: {
         sections: [...input.sections]
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((s) => ({ ...s, sortOrder: s.sortOrder })),
+        attachments: [...input.attachments]
+            .map((a) => ({ url: a.url, filename: a.filename, size: a.size, contentType: a.contentType }))
+            .sort((a, b) => a.url.localeCompare(b.url)),
     });
 }
 
@@ -83,6 +89,7 @@ export function EmailTemplateEditor({
     emailAccounts = [],
     selectedEmailAccountId: initialEmailAccountId,
     initialSections = [],
+    initialAttachments = [],
     availableFields = [],
     pricingDefinitions = [],
 }: EmailTemplateEditorProps) {
@@ -93,6 +100,7 @@ export function EmailTemplateEditor({
             bcc: initialBcc ?? "",
             emailAccountId: initialEmailAccountId ?? "",
             sections: reindexSections(initialSections),
+            attachments: initialAttachments,
         }),
         // we intentionally capture the initial values exactly once at mount
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,6 +112,7 @@ export function EmailTemplateEditor({
     const [bcc, setBcc] = useState(initial.bcc);
     const [emailAccountId, setEmailAccountId] = useState(initial.emailAccountId);
     const [sections, setSections] = useState<EmailConditionalSection[]>(initial.sections);
+    const [attachments, setAttachments] = useState<EmailAttachment[]>(initial.attachments);
     const [activeId, setActiveId] = useState<string>(BASE_SECTION_ID);
     const [savedSnapshot, setSavedSnapshot] = useState<string>(() => snapshotKey(initial));
     const [saving, setSaving] = useState(false);
@@ -123,7 +132,7 @@ export function EmailTemplateEditor({
         return items;
     }, [body, sortedSections]);
 
-    const currentKey = snapshotKey({ subject, body, bcc, emailAccountId, sections });
+    const currentKey = snapshotKey({ subject, body, bcc, emailAccountId, sections, attachments });
     const dirty = currentKey !== savedSnapshot;
 
     const usedPlaceholders = useMemo(() => {
@@ -173,6 +182,7 @@ export function EmailTemplateEditor({
             },
             body: "",
             sortOrder: sortedSections.length,
+            attachments: [],
         };
         setSections((prev) => [...prev, newSection]);
         setActiveId(id);
@@ -192,6 +202,7 @@ export function EmailTemplateEditor({
             },
             body: activeSection.body,
             sortOrder: insertAt,
+            attachments: [...(activeSection.attachments ?? [])],
         };
         const updated = sortedSections.slice();
         updated.splice(insertAt, 0, copy);
@@ -232,6 +243,7 @@ export function EmailTemplateEditor({
             formData.set("emailAccountId", emailAccountId);
         }
         formData.set("sectionsJson", JSON.stringify(sections));
+        formData.set("attachmentsJson", JSON.stringify(attachments));
 
         const result = await saveAction(yearId, formData);
 
@@ -248,7 +260,7 @@ export function EmailTemplateEditor({
                 }
             }
         } else {
-            setSavedSnapshot(snapshotKey({ subject, body, bcc, emailAccountId, sections }));
+            setSavedSnapshot(snapshotKey({ subject, body, bcc, emailAccountId, sections, attachments }));
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -353,10 +365,12 @@ export function EmailTemplateEditor({
                                 emailAccounts={emailAccounts}
                                 placeholders={availablePlaceholders}
                                 fieldErrors={fieldErrors}
+                                attachments={attachments}
                                 onSubjectChange={setSubject}
                                 onBodyChange={setBody}
                                 onBccChange={setBcc}
                                 onEmailAccountIdChange={setEmailAccountId}
+                                onAttachmentsChange={setAttachments}
                             />
                         ) : activeSection ? (
                             <SectionPaneConditional
@@ -384,6 +398,7 @@ export function EmailTemplateEditor({
                 usedPlaceholders={usedPlaceholders}
                 sections={sections}
                 availableFields={availableFields}
+                attachments={attachments}
             />
         </Box>
     );

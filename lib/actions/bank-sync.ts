@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireEditor } from "@/lib/auth";
 import { paymentEmailTemplateSchema } from "@/lib/validators/bank-sync";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
+import { parseEmailAttachmentsJson } from "@/lib/validators/email-attachment";
 
 export async function updatePaymentEmailTemplate(yearId: string, formData: FormData) {
     try {
@@ -44,6 +45,13 @@ export async function updatePaymentEmailTemplate(yearId: string, formData: FormD
         return { error: { _form: [err instanceof Error ? err.message : "Neplatné podmíněné sekce"] } };
     }
 
+    let attachments;
+    try {
+        attachments = parseEmailAttachmentsJson(formData.get("attachmentsJson"));
+    } catch (err) {
+        return { error: { _form: [err instanceof Error ? err.message : "Neplatné přílohy"] } };
+    }
+
     try {
         await db.year.update({
             where: { id: yearId },
@@ -53,6 +61,7 @@ export async function updatePaymentEmailTemplate(yearId: string, formData: FormD
                 paymentEmailBcc: validated.data.paymentEmailBcc,
                 paymentEmailAccountId: validated.data.emailAccountId,
                 paymentEmailSections: sections,
+                paymentEmailAttachments: attachments,
             },
         });
 

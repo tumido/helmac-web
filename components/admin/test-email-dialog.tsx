@@ -16,6 +16,7 @@ import {
 import { sendTestEmail } from "@/lib/actions/email-test";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import type { FormField } from "@/lib/types/registration-form";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 
 interface UsedPlaceholder {
     key: string;
@@ -32,6 +33,7 @@ interface TestEmailDialogProps {
     usedPlaceholders: UsedPlaceholder[];
     sections?: EmailConditionalSection[];
     availableFields?: FormField[];
+    attachments?: EmailAttachment[];
 }
 
 export function TestEmailDialog({
@@ -44,6 +46,7 @@ export function TestEmailDialog({
     usedPlaceholders,
     sections,
     availableFields,
+    attachments,
 }: TestEmailDialogProps) {
     const [recipient, setRecipient] = useState("");
     const [values, setValues] = useState<Record<string, string>>({});
@@ -89,6 +92,7 @@ export function TestEmailDialog({
                 placeholderValues: values,
                 sections,
                 allFields: availableFields,
+                attachments,
             });
 
             if (result.error) {

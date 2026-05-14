@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { emailAttachmentsSchema } from "@/lib/validators/email-attachment";
 
 const conditionRuleSchema = z.object({
     type: z.literal("field_value"),
@@ -19,6 +20,7 @@ export const emailConditionalSectionSchema = z.object({
     condition: formConditionSchema,
     body: z.string(),
     sortOrder: z.number().int(),
+    attachments: emailAttachmentsSchema.default([]),
 });
 
 export const emailConditionalSectionsSchema = z.array(emailConditionalSectionSchema);

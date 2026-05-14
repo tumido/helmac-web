@@ -13,7 +13,7 @@ import { parseQuantities } from "@/lib/utils/pricing-field-values";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
-import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
+import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import type { ConditionRule, FormCondition } from "@/lib/types/registration-form";
 import { evaluateCondition } from "@/lib/utils/condition-evaluation";
@@ -128,6 +128,7 @@ export async function submitDynamicRegistration(
             confirmationEmailBcc: true,
             confirmationEmailAccountId: true,
             confirmationEmailSections: true,
+            confirmationEmailAttachments: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },
@@ -524,6 +525,13 @@ export async function submitDynamicRegistration(
                 });
                 const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
+                const sectionAttachments = collectMatchingSectionAttachments({
+                    sections: (activeYear.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
+                    rawSubmissionData: submissionData,
+                    allFields,
+                    pricingDefinitions: formDataStored.pricingDefinitions,
+                });
+
                 const sent = await sendConfirmationEmail({
                     to: recipientEmail,
                     subject: emailSubject,
@@ -531,6 +539,10 @@ export async function submitDynamicRegistration(
                     bcc: activeYear.confirmationEmailBcc ?? undefined,
                     qrImageBuffer: qrImageBuffer ?? undefined,
                     accountId: activeYear.confirmationEmailAccountId,
+                    attachments: [
+                        ...((activeYear.confirmationEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
+                        ...sectionAttachments,
+                    ],
                 });
 
                 if (sent) {
@@ -561,6 +573,7 @@ export async function submitDynamicRegistration(
                         bcc: true,
                         accountId: true,
                         sections: true,
+                        attachments: true,
                     },
                 });
 
@@ -589,6 +602,13 @@ export async function submitDynamicRegistration(
                     });
                     const ceBody = replacePlaceholders(ceBodyWithSections, placeholders);
 
+                    const ceSectionAttachments = collectMatchingSectionAttachments({
+                        sections: (ce.sections as unknown as EmailConditionalSection[]) ?? [],
+                        rawSubmissionData: submissionData,
+                        allFields,
+                        pricingDefinitions: formDataStored.pricingDefinitions,
+                    });
+
                     await sendConfirmationEmail({
                         to: recipientEmail,
                         subject: ceSubject,
@@ -596,6 +616,10 @@ export async function submitDynamicRegistration(
                         bcc: ce.bcc ?? undefined,
                         qrImageBuffer: qrImageBuffer ?? undefined,
                         accountId: ce.accountId,
+                        attachments: [
+                            ...((ce.attachments as unknown as { filename: string; url: string }[]) ?? []),
+                            ...ceSectionAttachments,
+                        ],
                     });
                 }
             } catch (condEmailError) {

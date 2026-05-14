@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import type { RegistrationStatus } from "@prisma/client";
-import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections } from "@/lib/utils/email";
+import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
 import { formatCzechAccount, czechAccountToIBAN } from "@/lib/utils/spayd";
 import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
@@ -108,6 +108,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                         confirmationEmailBcc: true,
                         confirmationEmailAccountId: true,
                         confirmationEmailSections: true,
+                        confirmationEmailAttachments: true,
                     },
                 },
             },
@@ -192,6 +193,13 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             });
         }
 
+        const sectionAttachments = collectMatchingSectionAttachments({
+            sections: (submission.year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
+            rawSubmissionData: submissionData,
+            allFields,
+            pricingDefinitions: formData.pricingDefinitions,
+        });
+
         const sent = await sendConfirmationEmail({
             to: recipientEmail,
             subject,
@@ -199,6 +207,10 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             bcc: submission.year.confirmationEmailBcc ?? undefined,
             qrImageBuffer: qrImageBuffer ?? undefined,
             accountId: submission.year.confirmationEmailAccountId,
+            attachments: [
+                ...((submission.year.confirmationEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
+                ...sectionAttachments,
+            ],
         });
 
         if (sent) {

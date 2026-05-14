@@ -21,6 +21,7 @@ import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import {
     appendConditionalSections,
     buildPlaceholders,
+    collectMatchingSectionAttachments,
     generateQRPaymentImage,
     replacePlaceholders,
     sendConfirmationEmail,
@@ -79,6 +80,7 @@ export async function sendPreviewConfirmation(
             confirmationEmailBcc: true,
             confirmationEmailAccountId: true,
             confirmationEmailSections: true,
+            confirmationEmailAttachments: true,
         },
     });
 
@@ -214,6 +216,14 @@ export async function sendPreviewConfirmation(
     }
 
     try {
+        const confirmationSectionAttachments = collectMatchingSectionAttachments({
+            sections:
+                (year.confirmationEmailSections as unknown as EmailConditionalSection[]) ??
+                [],
+            rawSubmissionData: rawSubmissionForPlaceholders,
+            allFields,
+            pricingDefinitions: formDataStored.pricingDefinitions,
+        });
         const sent = await sendConfirmationEmail({
             to: recipientEmail,
             subject: renderedSubject,
@@ -221,6 +231,10 @@ export async function sendPreviewConfirmation(
             bcc: year.confirmationEmailBcc ?? undefined,
             qrImageBuffer: qrImageBuffer ?? undefined,
             accountId: year.confirmationEmailAccountId,
+            attachments: [
+                ...((year.confirmationEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
+                ...confirmationSectionAttachments,
+            ],
         });
 
         if (!sent) {
@@ -246,6 +260,7 @@ export async function sendPreviewConfirmation(
                 bcc: true,
                 accountId: true,
                 sections: true,
+                attachments: true,
             },
         });
 
@@ -286,6 +301,13 @@ export async function sendPreviewConfirmation(
             });
             const ceBody = replacePlaceholders(ceBodyWithSections, placeholders);
 
+            const ceSectionAttachments = collectMatchingSectionAttachments({
+                sections:
+                    (ce.sections as unknown as EmailConditionalSection[]) ?? [],
+                rawSubmissionData: rawSubmissionForPlaceholders,
+                allFields,
+                pricingDefinitions: formDataStored.pricingDefinitions,
+            });
             const ceSent = await sendConfirmationEmail({
                 to: recipientEmail,
                 subject: ceSubject,
@@ -293,6 +315,10 @@ export async function sendPreviewConfirmation(
                 bcc: ce.bcc ?? undefined,
                 qrImageBuffer: qrImageBuffer ?? undefined,
                 accountId: ce.accountId,
+                attachments: [
+                    ...((ce.attachments as unknown as { filename: string; url: string }[]) ?? []),
+                    ...ceSectionAttachments,
+                ],
             });
             if (ceSent) conditionalSentCount++;
         }

@@ -1,6 +1,6 @@
 import { Prisma, BankTransactionMatchStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
+import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
@@ -115,6 +115,7 @@ export async function processTransactions(
                             paymentEmailBcc: true,
                             paymentEmailAccountId: true,
                             paymentEmailSections: true,
+                            paymentEmailAttachments: true,
                         },
                     },
                 },
@@ -235,12 +236,23 @@ export async function processTransactions(
                         });
                         const emailBody = replacePlaceholders(bodyWithSections, placeholders);
 
+                        const sectionAttachments = collectMatchingSectionAttachments({
+                            sections: (year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? [],
+                            rawSubmissionData: submissionData,
+                            allFields: fields,
+                            pricingDefinitions,
+                        });
+
                         const sent = await sendConfirmationEmail({
                             to: recipientEmail,
                             subject: emailSubject,
                             body: emailBody,
                             bcc: year.paymentEmailBcc ?? undefined,
                             accountId: year.paymentEmailAccountId,
+                            attachments: [
+                                ...((year.paymentEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
+                                ...sectionAttachments,
+                            ],
                         });
 
                         if (sent) {

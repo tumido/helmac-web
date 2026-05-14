@@ -11,9 +11,11 @@ import {
     Typography,
 } from "@mui/material";
 import { RichTextEditor, type Editor } from "@/components/admin/rich-text-editor";
+import { EmailAttachmentsList } from "@/components/admin/email-attachments-list";
 import { PanelLabel } from "./panel-label";
 import { PlaceholderStrip } from "./placeholder-strip";
 import { builderPalette as p } from "./palette";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 
 interface EmailAccountOption {
     id: string;
@@ -30,10 +32,12 @@ interface SectionPaneBaseProps {
     emailAccounts: EmailAccountOption[];
     placeholders: { key: string; label: string }[];
     fieldErrors: Record<string, string[]>;
+    attachments: EmailAttachment[];
     onSubjectChange: (v: string) => void;
     onBodyChange: (v: string) => void;
     onBccChange: (v: string) => void;
     onEmailAccountIdChange: (v: string) => void;
+    onAttachmentsChange: (v: EmailAttachment[]) => void;
 }
 
 const toEditorHtml = (text: string) => {
@@ -49,10 +53,12 @@ export function SectionPaneBase({
     emailAccounts,
     placeholders,
     fieldErrors,
+    attachments,
     onSubjectChange,
     onBodyChange,
     onBccChange,
     onEmailAccountIdChange,
+    onAttachmentsChange,
 }: SectionPaneBaseProps) {
     const editorRef = useRef<Editor | null>(null);
 
@@ -132,6 +138,13 @@ export function SectionPaneBase({
                     </FormControl>
                 </Box>
             )}
+
+            <Box>
+                <EmailAttachmentsList
+                    value={attachments}
+                    onChange={onAttachmentsChange}
+                />
+            </Box>
         </Box>
     );
 }

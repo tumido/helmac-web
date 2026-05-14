@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireAdmin, requireEditor } from "@/lib/auth";
 import { createYearSchema, updateYearSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
+import { parseEmailAttachmentsJson } from "@/lib/validators/email-attachment";
 import { contentBlocksSchema } from "@/lib/validators/content-blocks";
 
 export type YearActionState = {
@@ -345,6 +346,13 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
         return { error: { _form: [err instanceof Error ? err.message : "Neplatné podmíněné sekce"] } };
     }
 
+    let attachments;
+    try {
+        attachments = parseEmailAttachmentsJson(formData.get("attachmentsJson"));
+    } catch (err) {
+        return { error: { _form: [err instanceof Error ? err.message : "Neplatné přílohy"] } };
+    }
+
     try {
         await db.year.update({
             where: { id: yearId },
@@ -354,6 +362,7 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
                 confirmationEmailBcc: validated.data.confirmationEmailBcc,
                 confirmationEmailAccountId: validated.data.emailAccountId,
                 confirmationEmailSections: sections,
+                confirmationEmailAttachments: attachments,
             },
         });
 
@@ -466,6 +475,13 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
         return { error: { _form: [err instanceof Error ? err.message : "Neplatné podmíněné sekce"] } };
     }
 
+    let attachments;
+    try {
+        attachments = parseEmailAttachmentsJson(formData.get("attachmentsJson"));
+    } catch (err) {
+        return { error: { _form: [err instanceof Error ? err.message : "Neplatné přílohy"] } };
+    }
+
     try {
         await db.year.update({
             where: { id: yearId },
@@ -475,6 +491,7 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
                 priceChangeEmailBcc: validated.data.confirmationEmailBcc,
                 priceChangeEmailAccountId: validated.data.emailAccountId,
                 priceChangeEmailSections: sections,
+                priceChangeEmailAttachments: attachments,
             },
         });
 

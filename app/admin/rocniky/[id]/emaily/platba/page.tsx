@@ -8,6 +8,7 @@ import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 
 interface PlatbaPageProps {
     params: Promise<{ id: string }>;
@@ -25,6 +26,7 @@ async function getYearPaymentEmailTemplate(yearId: string) {
             paymentEmailBcc: true,
             paymentEmailAccountId: true,
             paymentEmailSections: true,
+            paymentEmailAttachments: true,
         },
     });
 }
@@ -85,6 +87,7 @@ export default async function PlatbaPage({ params }: PlatbaPageProps) {
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={year.paymentEmailAccountId}
                 initialSections={(year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? []}
+                initialAttachments={(year.paymentEmailAttachments as unknown as EmailAttachment[]) ?? []}
                 availableFields={allFormFields}
                 pricingDefinitions={pricingDefinitions}
             />

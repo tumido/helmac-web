@@ -118,6 +118,7 @@ model Year {
   confirmationEmailAccountId  String?
   confirmationEmailAccount    EmailAccount? @relation("ConfirmationEmail", fields: [confirmationEmailAccountId], references: [id], onDelete: SetNull)
   confirmationEmailSections Json     @default("[]")
+  confirmationEmailAttachments Json    @default("[]")
 
   priceChangeEmailEnabled  Boolean  @default(false)
   priceChangeEmailSubject  String?
@@ -126,6 +127,7 @@ model Year {
   priceChangeEmailAccountId  String?
   priceChangeEmailAccount    EmailAccount? @relation("PriceChangeEmail", fields: [priceChangeEmailAccountId], references: [id], onDelete: SetNull)
   priceChangeEmailSections Json     @default("[]")
+  priceChangeEmailAttachments Json   @default("[]")
 
   paymentEmailEnabled     Boolean   @default(false)
   paymentEmailSubject     String?
@@ -134,6 +136,7 @@ model Year {
   paymentEmailAccountId   String?
   paymentEmailAccount     EmailAccount? @relation("PaymentEmail", fields: [paymentEmailAccountId], references: [id], onDelete: SetNull)
   paymentEmailSections    Json      @default("[]")
+  paymentEmailAttachments Json      @default("[]")
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -177,6 +180,7 @@ model ConditionalEmail {
     account             EmailAccount? @relation("ConditionalEmailAccount", fields: [accountId], references: [id], onDelete: SetNull)
 
     sections            Json     @default("[]")
+    attachments         Json     @default("[]")
 
     sortOrder           Int      @default(0)
 

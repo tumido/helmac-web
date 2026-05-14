@@ -7,6 +7,7 @@ import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 
 interface PotvrzovacíPageProps {
     params: Promise<{ id: string }>;
@@ -24,6 +25,7 @@ async function getYearEmailTemplate(yearId: string) {
             confirmationEmailBcc: true,
             confirmationEmailAccountId: true,
             confirmationEmailSections: true,
+            confirmationEmailAttachments: true,
         },
     });
 }
@@ -83,6 +85,7 @@ export default async function PotvrzovacíPage({ params }: PotvrzovacíPageProps
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={year.confirmationEmailAccountId}
                 initialSections={(year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? []}
+                initialAttachments={(year.confirmationEmailAttachments as unknown as EmailAttachment[]) ?? []}
                 availableFields={allFormFields}
                 pricingDefinitions={pricingDefinitions}
             />

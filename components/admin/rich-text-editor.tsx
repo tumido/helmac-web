@@ -48,6 +48,7 @@ import {
     Link as LinkIcon,
     LinkOff,
     Image as ImageIcon,
+    CloudUpload,
     Undo,
     Redo,
     Title,
@@ -677,6 +678,43 @@ function MenuBar({
             editor.chain().focus().setImage({ src: url }).run();
         }
     }, [editor]);
+
+    const imageFileInputRef = useRef<HTMLInputElement | null>(null);
+    const [imageUploading, setImageUploading] = useState(false);
+
+    const openImageUpload = useCallback(() => {
+        imageFileInputRef.current?.click();
+    }, []);
+
+    const handleImageFileSelected = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file || !editor) return;
+
+            setImageUploading(true);
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+                const response = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.error || "Nahrávání selhalo");
+                }
+                const data = await response.json();
+                if (!data.url) throw new Error("Server nevrátil URL");
+                editor.chain().focus().setImage({ src: data.url }).run();
+            } catch (err) {
+                window.alert(err instanceof Error ? err.message : "Nahrávání selhalo");
+            } finally {
+                setImageUploading(false);
+            }
+        },
+        [editor],
+    );
 
     const addYoutubeVideo = useCallback(() => {
         if (!editor) return;
@@ -1343,6 +1381,20 @@ function MenuBar({
                             </Tooltip>
                         )}
 
+                        {show("media") && (
+                            <Tooltip title="Nahrát obrázek">
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        onClick={openImageUpload}
+                                        disabled={imageUploading}
+                                    >
+                                        <CloudUpload fontSize="small" />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        )}
+
                         <Tooltip title="Vložit tabulku">
                             <IconButton
                                 size="small"
@@ -1814,6 +1866,13 @@ function MenuBar({
                     </DialogActions>
                 </Dialog>
             </Box>
+            <input
+                ref={imageFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                style={{ display: "none" }}
+                onChange={handleImageFileSelected}
+            />
         </Box>
     );
 }

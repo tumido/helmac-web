@@ -2,8 +2,9 @@
 
 import { z } from "zod";
 import { requireEditor } from "@/lib/auth";
-import { replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
+import { replacePlaceholders, sendConfirmationEmail, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
 import { emailConditionalSectionsSchema } from "@/lib/validators/email-section";
+import { emailAttachmentsSchema } from "@/lib/validators/email-attachment";
 import type { FormField } from "@/lib/types/registration-form";
 
 const sendTestEmailSchema = z.object({
@@ -15,6 +16,7 @@ const sendTestEmailSchema = z.object({
     placeholderValues: z.record(z.string(), z.string()),
     sections: emailConditionalSectionsSchema.optional(),
     allFields: z.array(z.unknown()).optional(),
+    attachments: emailAttachmentsSchema.optional(),
 });
 
 export type SendTestEmailInput = z.input<typeof sendTestEmailSchema>;
@@ -31,19 +33,32 @@ export async function sendTestEmail(
         };
     }
 
-    const { subject, body, bcc, emailAccountId, recipient, placeholderValues, sections, allFields } =
+    const { subject, body, bcc, emailAccountId, recipient, placeholderValues, sections, allFields, attachments } =
         parsed.data;
 
     const renderedSubject = replacePlaceholders(subject, placeholderValues);
+    const typedFields = (allFields ?? []) as FormField[];
     const bodyWithSections = sections && sections.length > 0
         ? appendConditionalSections({
             body,
             sections,
             rawSubmissionData: placeholderValues,
-            allFields: (allFields ?? []) as FormField[],
+            allFields: typedFields,
         })
         : body;
     const renderedBody = replacePlaceholders(bodyWithSections, placeholderValues);
+
+    const sectionAttachments = sections && sections.length > 0
+        ? collectMatchingSectionAttachments({
+            sections,
+            rawSubmissionData: placeholderValues,
+            allFields: typedFields,
+        })
+        : [];
+    const finalAttachments = [
+        ...(attachments?.map((a) => ({ filename: a.filename, url: a.url })) ?? []),
+        ...sectionAttachments,
+    ];
 
     try {
         const sent = await sendConfirmationEmail({
@@ -52,6 +67,7 @@ export async function sendTestEmail(
             body: renderedBody,
             bcc: bcc || undefined,
             accountId: emailAccountId || null,
+            attachments: finalAttachments,
         });
 
         if (!sent) {

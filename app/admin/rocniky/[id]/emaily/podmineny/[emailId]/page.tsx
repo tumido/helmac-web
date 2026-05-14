@@ -7,6 +7,7 @@ import { getRegistrationFormForYear } from "@/lib/services";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import type { EmailAttachment } from "@/lib/validators/email-attachment";
 import { updateConditionalEmailTemplate } from "@/lib/actions/conditional-emails";
 
 interface ConditionalEmailPageProps {
@@ -31,6 +32,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                 bcc: true,
                 accountId: true,
                 sections: true,
+                attachments: true,
             },
         }),
         db.emailAccount.findMany({
@@ -121,6 +123,7 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
                 emailAccounts={emailAccounts}
                 selectedEmailAccountId={conditionalEmail.accountId}
                 initialSections={(conditionalEmail.sections as unknown as EmailConditionalSection[]) ?? []}
+                initialAttachments={(conditionalEmail.attachments as unknown as EmailAttachment[]) ?? []}
                 availableFields={allFormFields}
                 pricingDefinitions={pricingDefinitions}
             />
