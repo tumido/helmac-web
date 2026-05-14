@@ -30,7 +30,9 @@ async function getYearOverview(id: string) {
             endDate: true,
             _count: {
                 select: {
-                    registrationSubmissions: true,
+                    registrationSubmissions: {
+                        where: { isTest: false },
+                    },
                 },
             },
         },

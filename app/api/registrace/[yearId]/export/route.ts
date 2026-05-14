@@ -38,10 +38,13 @@ export async function GET(
     const paidParam = request.nextUrl.searchParams.get("paid");
     const fieldParam = request.nextUrl.searchParams.get("field");
     const valueParam = request.nextUrl.searchParams.get("value");
+    const testParam = request.nextUrl.searchParams.get("test");
 
     const validStatuses = ["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"];
     const statusFilter = statusParam && validStatuses.includes(statusParam) ? statusParam : null;
     const paidFilter = paidParam === "true" ? true : paidParam === "false" ? false : null;
+    const testFilter: "real" | "test" | "all" =
+        testParam === "test" || testParam === "all" ? testParam : "real";
 
     const submissionWhere: Record<string, unknown> = { yearId };
     if (statusFilter) {
@@ -49,6 +52,11 @@ export async function GET(
     }
     if (paidFilter !== null) {
         submissionWhere.isPaid = paidFilter;
+    }
+    if (testFilter === "real") {
+        submissionWhere.isTest = false;
+    } else if (testFilter === "test") {
+        submissionWhere.isTest = true;
     }
 
     const year = await db.year.findUnique({

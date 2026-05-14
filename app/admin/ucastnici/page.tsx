@@ -40,9 +40,12 @@ async function getPublicUsers(filters: { q?: string }) {
             emailVerified: true,
             createdAt: true,
             _count: {
-                select: { registrations: true },
+                select: {
+                    registrations: { where: { isTest: false } },
+                },
             },
             registrations: {
+                where: { isTest: false },
                 select: {
                     year: { select: { year: true } },
                 },

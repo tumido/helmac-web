@@ -24,7 +24,11 @@ export const getRegistrationStatus = cache(async () => {
                 select: { id: true, fields: true },
             },
             _count: {
-                select: { registrationSubmissions: true },
+                select: {
+                    registrationSubmissions: {
+                        where: { isTest: false },
+                    },
+                },
             },
         },
     });
@@ -110,7 +114,7 @@ export const getSubmissionById = cache(async (id: string) => {
 
 export const getSubmissionCountForYear = cache(async (yearId: string) => {
     return db.registrationSubmission.count({
-        where: { yearId },
+        where: { yearId, isTest: false },
     });
 });
 
@@ -174,6 +178,7 @@ export const getOptionPeopleForYear = cache(async (yearId: string, personFieldNa
     const submissions = await db.registrationSubmission.findMany({
         where: {
             yearId,
+            isTest: false,
             status: { notIn: ["CANCELLED", "REJECTED"] },
         },
         select: { data: true },
@@ -236,6 +241,7 @@ async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
         db.registrationSubmission.findMany({
             where: {
                 yearId,
+                isTest: false,
                 status: { notIn: ["CANCELLED", "REJECTED"] },
             },
             select: { data: true },

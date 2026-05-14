@@ -12,12 +12,20 @@ import { getAllFields, getAllInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getFieldOptionValues } from "@/lib/utils/pricing";
 
+type TestFilter = "real" | "test" | "all";
+
 interface PrihlaskyPageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ status?: string; paid?: string; field?: string; value?: string }>;
+    searchParams: Promise<{ status?: string; paid?: string; field?: string; value?: string; test?: string }>;
 }
 
-async function getYearWithSubmissions(yearId: string) {
+async function getYearWithSubmissions(yearId: string, testFilter: TestFilter) {
+    const isTestWhere =
+        testFilter === "real"
+            ? { isTest: false }
+            : testFilter === "test"
+              ? { isTest: true }
+              : {};
     return db.year.findUnique({
         where: { id: yearId },
         select: {
@@ -27,6 +35,7 @@ async function getYearWithSubmissions(yearId: string) {
             startDate: true,
             registrationForm: { select: { fields: true } },
             registrationSubmissions: {
+                where: isTestWhere,
                 orderBy: { createdAt: "desc" },
                 select: {
                     id: true,
@@ -38,6 +47,7 @@ async function getYearWithSubmissions(yearId: string) {
                     variableSymbol: true,
                     emailSent: true,
                     adminNote: true,
+                    isTest: true,
                     createdAt: true,
                 },
             },
@@ -48,8 +58,10 @@ async function getYearWithSubmissions(yearId: string) {
 export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyPageProps) {
     await requireAdmin();
     const { id } = await params;
-    const { status, paid, field: fieldParam, value: valueParam } = await searchParams;
-    const year = await getYearWithSubmissions(id);
+    const { status, paid, field: fieldParam, value: valueParam, test } = await searchParams;
+    const testFilter: TestFilter =
+        test === "test" || test === "all" ? test : "real";
+    const year = await getYearWithSubmissions(id, testFilter);
 
     if (!year) {
         notFound();
@@ -112,8 +124,9 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
     const paidParam = paid === "true" || paid === "false" ? `paid=${paid}` : "";
     const fieldFilterParam = fieldFilter && valueFilter ? `field=${encodeURIComponent(fieldFilter)}` : "";
     const valueFilterParam = fieldFilter && valueFilter ? `value=${encodeURIComponent(valueFilter)}` : "";
-    const hasActiveFilter = statusFilter !== null || paidFilter !== null || (fieldFilter !== null && valueFilter !== null);
-    const filterQueryString = [statusParam, paidParam, fieldFilterParam, valueFilterParam].filter(Boolean).join("&");
+    const testParam = testFilter !== "real" ? `test=${testFilter}` : "";
+    const hasActiveFilter = statusFilter !== null || paidFilter !== null || (fieldFilter !== null && valueFilter !== null) || testFilter !== "real";
+    const filterQueryString = [statusParam, paidParam, fieldFilterParam, valueFilterParam, testParam].filter(Boolean).join("&");
 
     return (
         <Container maxWidth="xl">
@@ -154,7 +167,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
                 <LinkButton
-                    href={`${basePath}${paidParam ? `?${paidParam}` : ""}`}
+                    href={`${basePath}?${[paidParam, testParam].filter(Boolean).join("&") || ""}`}
                     variant={!statusFilter ? "contained" : "outlined"}
                     size="small"
                 >
@@ -164,6 +177,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                     const params = [
                         `status=${s}`,
                         ...(paidParam ? [paidParam] : []),
+                        ...(testParam ? [testParam] : []),
                     ].join("&");
                     return (
                         <LinkButton
@@ -185,25 +199,48 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
             </Box>
             <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
                 <LinkButton
-                    href={`${basePath}${statusParam ? `?${statusParam}` : ""}`}
+                    href={`${basePath}?${[statusParam, testParam].filter(Boolean).join("&") || ""}`}
                     variant={paidFilter === null ? "contained" : "outlined"}
                     size="small"
                 >
                     Vše
                 </LinkButton>
                 <LinkButton
-                    href={`${basePath}?${[statusParam, "paid=true"].filter(Boolean).join("&")}`}
+                    href={`${basePath}?${[statusParam, "paid=true", testParam].filter(Boolean).join("&")}`}
                     variant={paidFilter === true ? "contained" : "outlined"}
                     size="small"
                 >
                     Zaplaceno
                 </LinkButton>
                 <LinkButton
-                    href={`${basePath}?${[statusParam, "paid=false"].filter(Boolean).join("&")}`}
+                    href={`${basePath}?${[statusParam, "paid=false", testParam].filter(Boolean).join("&")}`}
                     variant={paidFilter === false ? "contained" : "outlined"}
                     size="small"
                 >
                     Nezaplaceno
+                </LinkButton>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                <LinkButton
+                    href={`${basePath}?${[statusParam, paidParam].filter(Boolean).join("&") || ""}`}
+                    variant={testFilter === "real" ? "contained" : "outlined"}
+                    size="small"
+                >
+                    Reálné
+                </LinkButton>
+                <LinkButton
+                    href={`${basePath}?${[statusParam, paidParam, "test=test"].filter(Boolean).join("&")}`}
+                    variant={testFilter === "test" ? "contained" : "outlined"}
+                    size="small"
+                >
+                    Testovací
+                </LinkButton>
+                <LinkButton
+                    href={`${basePath}?${[statusParam, paidParam, "test=all"].filter(Boolean).join("&")}`}
+                    variant={testFilter === "all" ? "contained" : "outlined"}
+                    size="small"
+                >
+                    Vše (vč. test)
                 </LinkButton>
             </Box>
             {filterableFields.length > 0 && (
@@ -212,7 +249,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                     fields={filterableFields}
                     activeField={fieldFilter}
                     activeValue={valueFilter}
-                    otherParams={[statusParam, paidParam].filter(Boolean).join("&")}
+                    otherParams={[statusParam, paidParam, testParam].filter(Boolean).join("&")}
                 />
             )}
             <SubmissionsTable

@@ -114,6 +114,8 @@ export async function submitDynamicRegistration(
     prevState: RegistrationState | null,
     formData: FormData
 ): Promise<RegistrationState> {
+    const isTest = formData.get("__test") === "true";
+
     // Get active year with form
     const activeYear = await db.year.findFirst({
         where: { isActive: true, isArchived: false, registrationOpen: true },
@@ -329,8 +331,8 @@ export async function submitDynamicRegistration(
         submissionData.additionalPeople = parsedAP;
     }
 
-    // Validate capacity limits
-    if (hasCapacityLimits && optionCounts) {
+    // Validate capacity limits (test registrations bypass capacity checks)
+    if (!isTest && hasCapacityLimits && optionCounts) {
         const capacityError = validateCapacityLimits(
             formDataStored.capacityLimits,
             submissionData,
@@ -355,7 +357,7 @@ export async function submitDynamicRegistration(
         (f): f is InputField => f.type === "email"
     );
 
-    if (emailField) {
+    if (!isTest && emailField) {
         const emailValue = String(submissionData[emailField.name] || "").toLowerCase();
         if (emailValue) {
             const existing = await db.registrationSubmission.findFirst({
@@ -399,13 +401,27 @@ export async function submitDynamicRegistration(
     const variableSymbol = await generateUniqueVariableSymbol();
     const totalPrice = pricingSummary?.totalPrice ?? null;
 
-    // Check for logged-in public user
-    const publicSession = await getPublicSession();
-    const publicUserId = publicSession?.sub ?? null;
+    // Check for logged-in public user. Test registrations never associate with
+    // a public user — the JWT cookie may point to a deleted row, which would
+    // violate the FK constraint.
+    const publicSession = isTest ? null : await getPublicSession();
+    let publicUserId = publicSession?.sub ?? null;
 
-    // GDPR consent check for anonymous users
+    // Verify the public user still exists; a stale JWT cookie would otherwise
+    // trigger a P2003 foreign-key violation on insert.
+    if (publicUserId) {
+        const exists = await db.publicUser.findUnique({
+            where: { id: publicUserId },
+            select: { id: true },
+        });
+        if (!exists) {
+            publicUserId = null;
+        }
+    }
+
+    // GDPR consent check for anonymous users (skipped for test registrations)
     const gdprConsent = formData.get("gdprConsent") === "on";
-    if (!publicUserId && !gdprConsent) {
+    if (!isTest && !publicUserId && !gdprConsent) {
         return {
             success: false,
             message: "Musíte souhlasit se zpracováním osobních údajů",
@@ -426,6 +442,7 @@ export async function submitDynamicRegistration(
                 totalPrice,
                 publicUserId,
                 gdprConsentAt: !publicUserId ? new Date() : undefined,
+                isTest,
             },
         });
 
@@ -507,8 +524,10 @@ export async function submitDynamicRegistration(
             });
         }
 
-        // Send confirmation email if enabled (non-blocking)
+        // Send confirmation email if enabled (non-blocking).
+        // Test registrations never send emails.
         if (
+            !isTest &&
             activeYear.confirmationEmailEnabled &&
             activeYear.confirmationEmailSubject &&
             activeYear.confirmationEmailBody &&
@@ -557,8 +576,9 @@ export async function submitDynamicRegistration(
             }
         }
 
-        // Send conditional emails (non-blocking)
-        if (recipientEmail) {
+        // Send conditional emails (non-blocking).
+        // Test registrations never send emails.
+        if (!isTest && recipientEmail) {
             try {
                 const conditionalEmails = await db.conditionalEmail.findMany({
                     where: { yearId: activeYear.id, enabled: true },
@@ -630,7 +650,9 @@ export async function submitDynamicRegistration(
 
         return {
             success: true,
-            message: `Děkujeme za registraci na ${activeYear.title}!`,
+            message: isTest
+                ? `Testovací registrace na ${activeYear.title} byla uložena. Emaily nebyly odeslány.`
+                : `Děkujeme za registraci na ${activeYear.title}!`,
             registrationId: submission.id,
             variableSymbol,
             totalPrice: totalPrice ?? undefined,

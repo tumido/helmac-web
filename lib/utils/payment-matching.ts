@@ -90,10 +90,12 @@ export async function processTransactions(
                 continue;
             }
 
-            // 3. Lookup submission by VS (cross-year, VS is @unique)
+            // 3. Lookup submission by VS (cross-year, VS is @unique).
+            // Test submissions are never matched against real bank transactions.
             const submission = await db.registrationSubmission.findFirst({
                 where: {
                     variableSymbol: tx.variableSymbol,
+                    isTest: false,
                 },
                 select: {
                     id: true,

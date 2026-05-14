@@ -42,6 +42,7 @@ interface Submission {
     variableSymbol: string | null;
     emailSent: boolean;
     adminNote: string | null;
+    isTest: boolean;
     createdAt: Date;
 }
 
@@ -306,8 +307,17 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
                                     }}
                                     onClick={() => router.push(detailUrl)}
                                 >
-                                    {displayFields.map((field) => (
+                                    {displayFields.map((field, idx) => (
                                         <TableCell key={field.id}>
+                                            {idx === 0 && submission.isTest && (
+                                                <Chip
+                                                    label="TEST"
+                                                    color="warning"
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ mr: 1, fontWeight: 700 }}
+                                                />
+                                            )}
                                             {field.type === "birth_date" && !!data[field.name] && isMinor(String(data[field.name]), refDate) ? (
                                                 <Tooltip title="Nezletilý">
                                                     <Chip

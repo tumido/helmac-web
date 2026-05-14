@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const submissions = await db.registrationSubmission.findMany({
         where: {
             isPaid: false,
+            isTest: false,
             pricingSummary: { not: Prisma.DbNull },
             status: { notIn: ["CANCELLED", "REJECTED"] },
         },

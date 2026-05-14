@@ -491,6 +491,7 @@ model RegistrationSubmission {
     emailSentAt     DateTime?
     adminNote       String?   @db.Text
     gdprConsentAt   DateTime?
+    isTest          Boolean  @default(false)
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 

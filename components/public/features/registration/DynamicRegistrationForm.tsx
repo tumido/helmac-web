@@ -6,7 +6,6 @@ import {
     useMemo,
     useEffect,
     useActionState,
-    type FormEvent,
 } from "react";
 import {
     Box,
@@ -146,15 +145,6 @@ export function DynamicRegistrationForm({
         },
         [state?.errors]
     );
-
-    const handlePreviewSubmit = useCallback((e: FormEvent) => {
-        e.preventDefault();
-        setPreviewSnackbar({
-            open: true,
-            severity: "info",
-            message: "Toto je pouze náhled. Registrace nebyla odeslána.",
-        });
-    }, []);
 
     const handleSendPreviewEmail = useCallback(async () => {
         if (!previewYearId) return;
@@ -376,7 +366,7 @@ export function DynamicRegistrationForm({
         );
     }
 
-    if (!previewMode && state?.success) {
+    if (state?.success) {
         return (
             <RegistrationSuccess
                 message={state.message}
@@ -408,9 +398,15 @@ export function DynamicRegistrationForm({
                     <Box
                         id="registration-form"
                         component="form"
-                        action={previewMode ? undefined : formAction}
-                        onSubmit={previewMode ? handlePreviewSubmit : undefined}
+                        action={formAction}
                     >
+                        {previewMode && (
+                            <input
+                                type="hidden"
+                                name="__test"
+                                value="true"
+                            />
+                        )}
                         {/* Include checkbox values as hidden inputs for FormData */}
                         {allInputFields.map((field) => {
                             if (field.type === "checkbox") {
@@ -607,10 +603,7 @@ export function DynamicRegistrationForm({
                                 variant="contained"
                                 color="primary"
                                 size="large"
-                                disabled={
-                                    !previewMode &&
-                                    (isPending || !allRequiredFilled)
-                                }
+                                disabled={isPending || !allRequiredFilled}
                                 sx={{
                                     px: 6,
                                     py: 1.5,
@@ -623,10 +616,10 @@ export function DynamicRegistrationForm({
                                     },
                                 }}
                             >
-                                {!previewMode && isPending
+                                {isPending
                                     ? "Odesílám..."
                                     : previewMode
-                                      ? "Odeslat registraci (náhled)"
+                                      ? "Odeslat registraci (test)"
                                       : "Odeslat registraci"}
                             </Button>
                             {previewMode && previewYearId && (

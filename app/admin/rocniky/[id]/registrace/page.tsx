@@ -26,7 +26,11 @@ async function getYearRegistration(yearId: string) {
             registrationOpen: true,
             registrationStartDate: true,
             _count: {
-                select: { registrationSubmissions: true },
+                select: {
+                    registrationSubmissions: {
+                        where: { isTest: false },
+                    },
+                },
             },
         },
     });
@@ -43,7 +47,7 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
 
     // Count total registered people (main registrants + additional people)
     const submissions = await db.registrationSubmission.findMany({
-        where: { yearId: year.id, status: { notIn: ["CANCELLED", "REJECTED"] } },
+        where: { yearId: year.id, isTest: false, status: { notIn: ["CANCELLED", "REJECTED"] } },
         select: { data: true },
     });
     const totalPeopleCount = submissions.reduce((sum, sub) => {
@@ -54,11 +58,11 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
 
     const [paidAgg, unpaidAgg] = await Promise.all([
         db.registrationSubmission.aggregate({
-            where: { yearId: year.id, isPaid: true, status: { notIn: ["CANCELLED", "REJECTED"] } },
+            where: { yearId: year.id, isTest: false, isPaid: true, status: { notIn: ["CANCELLED", "REJECTED"] } },
             _sum: { totalPrice: true },
         }),
         db.registrationSubmission.aggregate({
-            where: { yearId: year.id, isPaid: false, status: { notIn: ["CANCELLED", "REJECTED"] } },
+            where: { yearId: year.id, isTest: false, isPaid: false, status: { notIn: ["CANCELLED", "REJECTED"] } },
             _sum: { totalPrice: true },
         }),
     ]);
