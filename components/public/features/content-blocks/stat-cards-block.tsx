@@ -16,10 +16,17 @@ interface StatCardsBlockRendererProps {
     stats?: RegistrationStats;
 }
 
+interface SuffixInfo {
+    prefix?: string;
+    displayOverride?: string;
+    text: string;
+}
+
 interface CardData {
     display: string;
     label: string;
     icon?: string;
+    prefix?: string | null;
     suffix?: string | null;
 }
 
@@ -27,17 +34,28 @@ function resolveSuffix(
     suffix: StatSuffix | undefined,
     metric: string,
     optionValue: string | undefined,
+    currentValue: number,
     stats?: RegistrationStats
-): string | null {
+): SuffixInfo | null {
     if (!suffix) return null;
-    if (suffix.source === "manual") return suffix.text ?? null;
+    if (suffix.source === "manual") {
+        return suffix.text ? { text: suffix.text } : null;
+    }
     if (suffix.source === "capacity" && stats) {
-        const cap = stats.capacityLimits?.[metric]?.[optionValue ?? ""];
-        return cap !== undefined ? `/ ${cap}` : null;
+        const cap =
+            stats.capacityLimits?.[metric]?.[optionValue ?? ""];
+        return cap !== undefined ? { text: `/ ${cap}` } : null;
     }
     if (suffix.source === "total" && stats) {
-        const fs = stats.fields?.[metric];
-        return fs ? `/ ${fs.total}` : null;
+        const cap =
+            stats.capacityLimits?.[metric]?.[optionValue ?? ""];
+        if (cap === undefined) return null;
+        const remaining = Math.max(0, cap - currentValue);
+        return {
+            prefix: "Zbývá",
+            displayOverride: remaining.toLocaleString("cs-CZ"),
+            text: `z ${cap.toLocaleString("cs-CZ")}`,
+        };
     }
     return null;
 }
@@ -70,12 +88,20 @@ function resolveCards(
     const counts = fieldStats.counts;
 
     if (options && options.length > 0) {
-        return options.map((option) => ({
-            display: (counts[option] ?? 0).toLocaleString("cs-CZ"),
-            label: option,
-            icon: block.iconMap?.[option] ?? block.icon,
-            suffix: resolveSuffix(block.suffix, block.metric, option, stats),
-        }));
+        return options.map((option) => {
+            const count = counts[option] ?? 0;
+            const suffixInfo = resolveSuffix(
+                block.suffix, block.metric, option, count, stats
+            );
+            return {
+                display: suffixInfo?.displayOverride
+                    ?? count.toLocaleString("cs-CZ"),
+                label: option,
+                icon: block.iconMap?.[option] ?? block.icon,
+                prefix: suffixInfo?.prefix,
+                suffix: suffixInfo?.text ?? null,
+            };
+        });
     }
 
     const entries = Object.entries(counts);
@@ -83,12 +109,19 @@ function resolveCards(
 
     return entries
         .sort((a, b) => b[1] - a[1])
-        .map(([option, count]) => ({
-            display: count.toLocaleString("cs-CZ"),
-            label: option,
-            icon: block.iconMap?.[option] ?? block.icon,
-            suffix: resolveSuffix(block.suffix, block.metric, option, stats),
-        }));
+        .map(([option, count]) => {
+            const suffixInfo = resolveSuffix(
+                block.suffix, block.metric, option, count, stats
+            );
+            return {
+                display: suffixInfo?.displayOverride
+                    ?? count.toLocaleString("cs-CZ"),
+                label: option,
+                icon: block.iconMap?.[option] ?? block.icon,
+                prefix: suffixInfo?.prefix,
+                suffix: suffixInfo?.text ?? null,
+            };
+        });
 }
 
 export function StatCardsBlockRenderer({
@@ -161,6 +194,19 @@ export function StatCardsBlockRenderer({
                             color: "text.primary",
                         }}
                     >
+                        {card.prefix && (
+                            <Typography
+                                component="span"
+                                variant="h5"
+                                sx={{
+                                    mr: 0.5,
+                                    color: "text.secondary",
+                                    fontWeight: 400,
+                                }}
+                            >
+                                {card.prefix}
+                            </Typography>
+                        )}
                         {card.display}
                         {card.suffix && (
                             <Typography

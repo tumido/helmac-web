@@ -118,7 +118,7 @@ export function StatCardsBlockEditor({
                                 { v: undefined, l: "Žádný" },
                                 { v: "manual", l: "Ruční" },
                                 { v: "capacity", l: "Limit" },
-                                { v: "total", l: "Celkem" },
+                                { v: "total", l: "Zbývá" },
                             ] as const
                         ).map((opt) => (
                             <Chip
@@ -303,6 +303,19 @@ export function StatCardsBlockEditor({
                                     color: "primary.main",
                                 }}
                             >
+                                {card.prefix && (
+                                    <Typography
+                                        component="span"
+                                        variant="body2"
+                                        sx={{
+                                            mr: 0.5,
+                                            color: "text.secondary",
+                                            fontWeight: 400,
+                                        }}
+                                    >
+                                        {card.prefix}
+                                    </Typography>
+                                )}
                                 {card.value}
                                 {card.suffix && (
                                     <Typography
@@ -339,16 +352,45 @@ export function StatCardsBlockEditor({
         </Box>
     );
 
-    function resolveSuffixPreview(optionValue?: string): string | null {
+    function resolveSuffixPreview(
+        optionValue: string | undefined,
+        currentValue: number
+    ): {
+        prefix?: string;
+        displayOverride?: string;
+        text: string;
+    } | null {
         if (!block.suffix || !stats) return null;
-        if (block.suffix.source === "manual") return block.suffix.text ?? null;
+        if (block.suffix.source === "manual") {
+            return block.suffix.text
+                ? { text: block.suffix.text }
+                : null;
+        }
         if (block.suffix.source === "capacity") {
-            const cap = stats.capacityLimits?.[block.metric]?.[optionValue ?? ""];
-            return cap !== undefined ? `/ ${cap}` : null;
+            const cap =
+                stats.capacityLimits?.[block.metric]?.[
+                    optionValue ?? ""
+                ];
+            return cap !== undefined
+                ? { text: `/ ${cap}` }
+                : null;
         }
         if (block.suffix.source === "total") {
-            const fs = stats.fields?.[block.metric];
-            return fs ? `/ ${fs.total}` : null;
+            const cap =
+                stats.capacityLimits?.[block.metric]?.[
+                    optionValue ?? ""
+                ];
+            if (cap === undefined) return null;
+            const remaining = Math.max(
+                0,
+                cap - currentValue
+            );
+            return {
+                prefix: "Zbývá",
+                displayOverride:
+                    remaining.toLocaleString("cs-CZ"),
+                text: `z ${cap.toLocaleString("cs-CZ")}`,
+            };
         }
         return null;
     }
@@ -356,6 +398,7 @@ export function StatCardsBlockEditor({
     function resolvePreviewCards(): {
         value: string;
         label: string;
+        prefix: string | null;
         suffix: string | null;
     }[] {
         if (!stats) return [];
@@ -369,16 +412,19 @@ export function StatCardsBlockEditor({
                 BUILTIN_CURRENCY_METRICS.includes(
                     block.metric as BuiltinMetric
                 );
+            const si = resolveSuffixPreview(undefined, raw);
             return [
                 {
-                    value: isCurrency
-                        ? formatPrice(raw)
-                        : raw.toLocaleString("cs-CZ"),
+                    value: si?.displayOverride
+                        ?? (isCurrency
+                            ? formatPrice(raw)
+                            : raw.toLocaleString("cs-CZ")),
                     label:
                         BUILTIN_METRIC_LABELS[
                             block.metric as BuiltinMetric
                         ],
-                    suffix: resolveSuffixPreview(),
+                    prefix: si?.prefix ?? null,
+                    suffix: si?.text ?? null,
                 },
             ];
         }
@@ -388,19 +434,36 @@ export function StatCardsBlockEditor({
         const counts = fs.counts;
 
         if (options && options.length > 0) {
-            return options.map((option) => ({
-                value: (counts[option] ?? 0).toLocaleString("cs-CZ"),
-                label: option,
-                suffix: resolveSuffixPreview(option),
-            }));
+            return options.map((option) => {
+                const count = counts[option] ?? 0;
+                const si = resolveSuffixPreview(
+                    option,
+                    count
+                );
+                return {
+                    value: si?.displayOverride
+                        ?? count.toLocaleString("cs-CZ"),
+                    label: option,
+                    prefix: si?.prefix ?? null,
+                    suffix: si?.text ?? null,
+                };
+            });
         }
 
         return Object.entries(counts)
             .sort((a, b) => b[1] - a[1])
-            .map(([option, count]) => ({
-                value: count.toLocaleString("cs-CZ"),
-                label: option,
-                suffix: resolveSuffixPreview(option),
-            }));
+            .map(([option, count]) => {
+                const si = resolveSuffixPreview(
+                    option,
+                    count
+                );
+                return {
+                    value: si?.displayOverride
+                        ?? count.toLocaleString("cs-CZ"),
+                    label: option,
+                    prefix: si?.prefix ?? null,
+                    suffix: si?.text ?? null,
+                };
+            });
     }
 }

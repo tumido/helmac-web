@@ -119,7 +119,7 @@ export function StatSingleBlockEditor({
                                 { v: undefined, l: "Žádný" },
                                 { v: "manual", l: "Ruční" },
                                 { v: "capacity", l: "Limit" },
-                                { v: "total", l: "Celkem" },
+                                { v: "total", l: "Zbývá" },
                             ] as const
                         ).map((opt) => (
                             <Chip
@@ -254,8 +254,21 @@ export function StatSingleBlockEditor({
                         color: "primary.main",
                     }}
                 >
-                    {resolvePreviewValue()}
-                    {resolvePreviewSuffix() && (
+                    {resolvePreviewPrefix() && (
+                        <Typography
+                            component="span"
+                            variant="body2"
+                            sx={{
+                                mr: 0.5,
+                                color: "text.secondary",
+                                fontWeight: 400,
+                            }}
+                        >
+                            {resolvePreviewPrefix()}
+                        </Typography>
+                    )}
+                    {resolvePreviewDisplay()}
+                    {resolvePreviewSuffixText() && (
                         <Typography
                             component="span"
                             variant="body2"
@@ -265,7 +278,7 @@ export function StatSingleBlockEditor({
                                 fontWeight: 400,
                             }}
                         >
-                            {resolvePreviewSuffix()}
+                            {resolvePreviewSuffixText()}
                         </Typography>
                     )}
                 </Typography>
@@ -279,14 +292,103 @@ export function StatSingleBlockEditor({
         </Box>
     );
 
-    function resolvePreviewValue(): string {
-        if (!stats) return "–";
+    function resolvePreviewRaw(): number {
+        if (!stats) return 0;
         if (
             source === "builtin" &&
             isBuiltinMetric(block.metric)
         ) {
-            const raw =
-                stats[block.metric as BuiltinMetric] ?? 0;
+            return stats[block.metric as BuiltinMetric] ?? 0;
+        }
+        const fs = stats.fields?.[block.metric];
+        if (!fs) return 0;
+        const agg = block.aggregation ?? "count";
+        const filteredOption =
+            block.filter?.fieldFilters?.find(
+                (ff) => ff.fieldName === block.metric
+            )?.value;
+        if (filteredOption !== undefined && agg === "count") {
+            return fs.counts?.[filteredOption] ?? 0;
+        }
+        switch (agg) {
+            case "sum":
+                return fs.sum;
+            case "average":
+                return fs.average;
+            default:
+                return fs.total;
+        }
+    }
+
+    function resolvePreviewSuffixInfo(): {
+        prefix?: string;
+        displayOverride?: string;
+        text: string;
+    } | null {
+        if (!block.suffix || !stats) return null;
+        if (block.suffix.source === "manual") {
+            return block.suffix.text
+                ? { text: block.suffix.text }
+                : null;
+        }
+        const filteredOption =
+            block.filter?.fieldFilters?.find(
+                (ff) => ff.fieldName === block.metric
+            )?.value;
+        const limits =
+            stats.capacityLimits?.[block.metric];
+        if (block.suffix.source === "capacity") {
+            if (!limits) return null;
+            if (filteredOption !== undefined) {
+                const cap = limits[filteredOption];
+                return cap !== undefined
+                    ? { text: `/ ${cap}` }
+                    : null;
+            }
+            const values = Object.values(limits);
+            if (values.length === 0) return null;
+            const total = values.reduce(
+                (a, b) => a + b,
+                0
+            );
+            return { text: `/ ${total}` };
+        }
+        if (block.suffix.source === "total") {
+            if (!limits) return null;
+            let cap: number;
+            if (filteredOption !== undefined) {
+                const optCap = limits[filteredOption];
+                if (optCap === undefined) return null;
+                cap = optCap;
+            } else {
+                const values = Object.values(limits);
+                if (values.length === 0) return null;
+                cap = values.reduce(
+                    (a, b) => a + b,
+                    0
+                );
+            }
+            const raw = resolvePreviewRaw();
+            const remaining = Math.max(0, cap - raw);
+            return {
+                prefix: "Zbývá",
+                displayOverride:
+                    remaining.toLocaleString("cs-CZ"),
+                text: `z ${cap.toLocaleString("cs-CZ")}`,
+            };
+        }
+        return null;
+    }
+
+    function resolvePreviewDisplay(): string {
+        if (!stats) return "–";
+        const si = resolvePreviewSuffixInfo();
+        if (si?.displayOverride) return si.displayOverride;
+        const raw = resolvePreviewRaw();
+        if (
+            source === "builtin" &&
+            isBuiltinMetric(block.metric)
+        ) {
             return BUILTIN_CURRENCY_METRICS.includes(
                 block.metric as BuiltinMetric
             )
@@ -296,59 +398,16 @@ export function StatSingleBlockEditor({
         const fs = stats.fields?.[block.metric];
         if (!fs) return "0";
         const agg = block.aggregation ?? "count";
-        const filteredOption =
-            block.filter?.fieldFilters?.find(
-                (ff) => ff.fieldName === block.metric
-            )?.value;
-        if (filteredOption !== undefined && agg === "count") {
-            return (
-                fs.counts?.[filteredOption] ?? 0
-            ).toLocaleString("cs-CZ");
-        }
-        const fmt = (n: number) =>
-            fs.isCurrency
-                ? formatPrice(n)
-                : n.toLocaleString("cs-CZ");
-        switch (agg) {
-            case "sum":
-                return fmt(fs.sum);
-            case "average":
-                return fmt(fs.average);
-            default:
-                return fs.total.toLocaleString("cs-CZ");
-        }
+        return fs.isCurrency && agg === "sum"
+            ? formatPrice(raw)
+            : raw.toLocaleString("cs-CZ");
     }
 
-    function resolvePreviewSuffix(): string | null {
-        if (!block.suffix || !stats) return null;
-        if (block.suffix.source === "manual")
-            return block.suffix.text ?? null;
-        if (block.suffix.source === "capacity") {
-            const limits =
-                stats.capacityLimits?.[block.metric];
-            if (!limits) return null;
-            const filteredOption =
-                block.filter?.fieldFilters?.find(
-                    (ff) => ff.fieldName === block.metric
-                )?.value;
-            if (filteredOption !== undefined) {
-                const cap = limits[filteredOption];
-                return cap !== undefined
-                    ? `/ ${cap}`
-                    : null;
-            }
-            const values = Object.values(limits);
-            if (values.length === 0) return null;
-            const total = values.reduce(
-                (a, b) => a + b,
-                0
-            );
-            return `/ ${total}`;
-        }
-        if (block.suffix.source === "total") {
-            const fs = stats.fields?.[block.metric];
-            return fs ? `/ ${fs.total}` : null;
-        }
-        return null;
+    function resolvePreviewPrefix(): string | null {
+        return resolvePreviewSuffixInfo()?.prefix ?? null;
+    }
+
+    function resolvePreviewSuffixText(): string | null {
+        return resolvePreviewSuffixInfo()?.text ?? null;
     }
 }

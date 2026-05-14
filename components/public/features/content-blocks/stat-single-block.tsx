@@ -16,29 +16,56 @@ interface StatSingleBlockRendererProps {
     stats?: RegistrationStats;
 }
 
+interface SuffixInfo {
+    prefix?: string;
+    displayOverride?: string;
+    text: string;
+}
+
 function resolveSuffix(
     suffix: StatSuffix | undefined,
     metric: string,
     optionValue: string | undefined,
+    currentValue: number,
     stats?: RegistrationStats
-): string | null {
+): SuffixInfo | null {
     if (!suffix) return null;
-    if (suffix.source === "manual") return suffix.text ?? null;
+    if (suffix.source === "manual") {
+        return suffix.text ? { text: suffix.text } : null;
+    }
     if (suffix.source === "capacity" && stats) {
         const limits = stats.capacityLimits?.[metric];
         if (!limits) return null;
         if (optionValue !== undefined) {
             const cap = limits[optionValue];
-            return cap !== undefined ? `/ ${cap}` : null;
+            return cap !== undefined
+                ? { text: `/ ${cap}` }
+                : null;
         }
         const values = Object.values(limits);
         if (values.length === 0) return null;
         const total = values.reduce((a, b) => a + b, 0);
-        return `/ ${total}`;
+        return { text: `/ ${total}` };
     }
     if (suffix.source === "total" && stats) {
-        const fs = stats.fields?.[metric];
-        return fs ? `/ ${fs.total}` : null;
+        const limits = stats.capacityLimits?.[metric];
+        if (!limits) return null;
+        let cap: number;
+        if (optionValue !== undefined) {
+            const optCap = limits[optionValue];
+            if (optCap === undefined) return null;
+            cap = optCap;
+        } else {
+            const values = Object.values(limits);
+            if (values.length === 0) return null;
+            cap = values.reduce((a, b) => a + b, 0);
+        }
+        const remaining = Math.max(0, cap - currentValue);
+        return {
+            prefix: "Zbývá",
+            displayOverride: remaining.toLocaleString("cs-CZ"),
+            text: `z ${cap.toLocaleString("cs-CZ")}`,
+        };
     }
     return null;
 }
@@ -46,7 +73,12 @@ function resolveSuffix(
 function resolveValue(
     block: StatSingleBlock,
     stats?: RegistrationStats
-): { display: string; label: string; suffix: string | null } {
+): {
+    display: string;
+    label: string;
+    prefix: string | null;
+    suffix: string | null;
+} {
     const source = block.source ?? "builtin";
 
     if (source === "builtin" && isBuiltinMetric(block.metric)) {
@@ -54,14 +86,19 @@ function resolveValue(
         const isCurrency = BUILTIN_CURRENCY_METRICS.includes(
             block.metric as BuiltinMetric
         );
+        const suffixInfo = resolveSuffix(
+            block.suffix, block.metric, undefined, raw, stats
+        );
         return {
-            display: isCurrency
-                ? formatPrice(raw)
-                : raw.toLocaleString("cs-CZ"),
+            display: suffixInfo?.displayOverride
+                ?? (isCurrency
+                    ? formatPrice(raw)
+                    : raw.toLocaleString("cs-CZ")),
             label:
                 block.label ??
                 BUILTIN_METRIC_LABELS[block.metric],
-            suffix: resolveSuffix(block.suffix, block.metric, undefined, stats),
+            prefix: suffixInfo?.prefix ?? null,
+            suffix: suffixInfo?.text ?? null,
         };
     }
 
@@ -76,7 +113,12 @@ function resolveValue(
         block.metric;
 
     if (!fieldStats) {
-        return { display: "0", label: fieldLabel, suffix: null };
+        return {
+            display: "0",
+            label: fieldLabel,
+            prefix: null,
+            suffix: null,
+        };
     }
 
     const agg = block.aggregation ?? "count";
@@ -99,14 +141,21 @@ function resolveValue(
         }
     }
 
+    const suffixInfo = resolveSuffix(
+        block.suffix, block.metric, filteredOption, raw, stats
+    );
+
+    const showAsCurrency =
+        fieldStats.isCurrency && agg === "sum";
+
     return {
-        display: fieldStats.isCurrency
-            ? formatPrice(raw)
-            : raw.toLocaleString("cs-CZ"),
+        display: suffixInfo?.displayOverride
+            ?? (showAsCurrency
+                ? formatPrice(raw)
+                : raw.toLocaleString("cs-CZ")),
         label: fieldLabel,
-        suffix: resolveSuffix(
-            block.suffix, block.metric, filteredOption, stats
-        ),
+        prefix: suffixInfo?.prefix ?? null,
+        suffix: suffixInfo?.text ?? null,
     };
 }
 
@@ -114,7 +163,7 @@ export function StatSingleBlockRenderer({
     block,
     stats,
 }: StatSingleBlockRendererProps) {
-    const { display, label, suffix } = resolveValue(block, stats);
+    const { display, label, prefix, suffix } = resolveValue(block, stats);
 
     return (
         <Box
@@ -165,6 +214,19 @@ export function StatSingleBlockRenderer({
                     color: "text.primary",
                 }}
             >
+                {prefix && (
+                    <Typography
+                        component="span"
+                        variant="h5"
+                        sx={{
+                            mr: 0.5,
+                            color: "text.secondary",
+                            fontWeight: 400,
+                        }}
+                    >
+                        {prefix}
+                    </Typography>
+                )}
                 {display}
                 {suffix && (
                     <Typography
