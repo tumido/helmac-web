@@ -1,5 +1,6 @@
 import { Typography, Box, Grid, Chip, Paper } from "@mui/material";
-import { requirePublicAuth } from "@/lib/public-auth";
+import { redirect } from "next/navigation";
+import { getPublicSession } from "@/lib/public-auth";
 import {
     getPublicUserProfile,
     getPublicUserRegistrations,
@@ -17,7 +18,13 @@ import { RegistrationHistoryTable } from "@/components/public/features/account/r
 import { ChangePasswordForm } from "@/components/forms/change-password-form";
 
 export default async function AccountPage() {
-    const session = await requirePublicAuth();
+    const session = await getPublicSession();
+    if (!session) {
+        redirect(
+            "/api/public/signout?redirect="
+            + encodeURIComponent("/vytvorit-ucet?deleted=1"),
+        );
+    }
 
     await runPaymentSync();
 
