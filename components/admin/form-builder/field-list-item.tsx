@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
 import { Edit, Delete, AddCircleOutline, People, EditNote } from "@mui/icons-material";
 import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
@@ -9,8 +10,8 @@ import type { FieldExternalUsage } from "@/lib/utils/condition-validation";
 
 interface FieldListItemProps {
     field: FormField;
-    onEdit: () => void;
-    onDelete: () => void;
+    onEdit: (field: FormField) => void;
+    onDelete: (fieldId: string) => void;
     onToggleField?: (fieldId: string, updates: Partial<InputField>) => void;
     usedInCondition?: boolean;
     pricingDefinitions?: PricingDefinition[];
@@ -18,7 +19,7 @@ interface FieldListItemProps {
     externalUsages?: FieldExternalUsage[];
 }
 
-export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCondition, pricingDefinitions, onCreateCondition, externalUsages }: FieldListItemProps) {
+function FieldListItemImpl({ field, onEdit, onDelete, onToggleField, usedInCondition, pricingDefinitions, onCreateCondition, externalUsages }: FieldListItemProps) {
     const meta = FIELD_TYPE_META[field.type];
     const isInput = isInputField(field);
 
@@ -199,12 +200,12 @@ export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCo
                     </>
                 )}
                 <Tooltip title="Upravit">
-                    <IconButton size="small" onClick={onEdit}>
+                    <IconButton size="small" onClick={() => onEdit(field)}>
                         <Edit fontSize="small" />
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Smazat">
-                    <IconButton size="small" onClick={onDelete} color="error">
+                    <IconButton size="small" onClick={() => onDelete(field.id)} color="error">
                         <Delete fontSize="small" />
                     </IconButton>
                 </Tooltip>
@@ -212,3 +213,5 @@ export function FieldListItem({ field, onEdit, onDelete, onToggleField, usedInCo
         </Box>
     );
 }
+
+export const FieldListItem = memo(FieldListItemImpl);
