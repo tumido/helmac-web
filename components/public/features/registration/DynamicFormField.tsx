@@ -71,7 +71,7 @@ export function DynamicFormField({
                 </Box>
             );
         }
-        return <MarkdownContent content={field.text} />;
+        return <MarkdownContent content={field.text} targetBlank />;
     }
 
     const label = `${field.label}${field.required ? " *" : ""}`;

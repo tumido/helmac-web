@@ -14,7 +14,7 @@ export default function PrihlaseniPage() {
             <PageHeader
                 title="Přihlášení"
                 subtitle="Přihlaste se ke svému účtu"
-                icon="quill"
+                icon="skeleton-key"
             />
             <Container maxWidth="sm" sx={{ pb: 8 }}>
                 <Card

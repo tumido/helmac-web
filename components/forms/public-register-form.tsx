@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
     Box,
@@ -15,6 +15,7 @@ import {
 import NextLink from "next/link";
 import MuiLink from "@mui/material/Link";
 import { publicRegister } from "@/lib/actions/public/auth";
+import { publicRegisterSchema } from "@/lib/validators/public-user";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -38,12 +39,55 @@ function SubmitButton() {
 
 export function PublicRegisterForm() {
     const [state, formAction] = useActionState(publicRegister, null);
+    const [gdprConsent, setGdprConsent] = useState(false);
+    const [clientErrors, setClientErrors] = useState<Record<
+        string,
+        string[]
+    > | null>(null);
+
+    const handleSubmit = (
+        event: React.FormEvent<HTMLFormElement>,
+    ) => {
+        const formData = new FormData(event.currentTarget);
+        const rawData = {
+            email: formData.get("email") as string,
+            password: formData.get("password") as string,
+            confirmPassword: formData.get(
+                "confirmPassword",
+            ) as string,
+            gdprConsent,
+        };
+
+        const validated =
+            publicRegisterSchema.safeParse(rawData);
+        if (!validated.success) {
+            event.preventDefault();
+            setClientErrors(
+                validated.error.flatten()
+                    .fieldErrors as Record<string, string[]>,
+            );
+            return;
+        }
+        setClientErrors(null);
+    };
+
+    const errors = clientErrors ?? state?.errors;
+    const errorMessage = clientErrors
+        ? "Opravte chyby ve formuláři"
+        : state?.message && !state.success
+          ? state.message
+          : undefined;
 
     return (
-        <Box component="form" action={formAction} sx={{ mt: 1 }}>
-            {state?.message && !state.success && (
+        <Box
+            component="form"
+            action={formAction}
+            onSubmit={handleSubmit}
+            sx={{ mt: 1 }}
+        >
+            {errorMessage && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                    {state.message}
+                    {errorMessage}
                 </Alert>
             )}
 
@@ -58,8 +102,8 @@ export function PublicRegisterForm() {
                 autoComplete="email"
                 autoFocus
                 defaultValue={state?.email ?? ""}
-                error={!!state?.errors?.email}
-                helperText={state?.errors?.email?.[0]}
+                error={!!errors?.email}
+                helperText={errors?.email?.[0]}
             />
 
             <TextField
@@ -71,8 +115,10 @@ export function PublicRegisterForm() {
                 type="password"
                 id="password"
                 autoComplete="new-password"
-                error={!!state?.errors?.password}
-                helperText={state?.errors?.password?.[0] || "Minimálně 8 znaků"}
+                error={!!errors?.password}
+                helperText={
+                    errors?.password?.[0] || "Minimálně 8 znaků"
+                }
             />
 
             <TextField
@@ -84,25 +130,39 @@ export function PublicRegisterForm() {
                 type="password"
                 id="confirmPassword"
                 autoComplete="new-password"
-                error={!!state?.errors?.confirmPassword}
-                helperText={state?.errors?.confirmPassword?.[0]}
+                error={!!errors?.confirmPassword}
+                helperText={errors?.confirmPassword?.[0]}
             />
 
             <Box sx={{ mt: 1 }}>
                 <FormControlLabel
-                    control={<Checkbox name="gdprConsent" />}
+                    control={
+                        <Checkbox
+                            name="gdprConsent"
+                            checked={gdprConsent}
+                            onChange={(e) =>
+                                setGdprConsent(
+                                    e.target.checked,
+                                )
+                            }
+                        />
+                    }
                     label={
                         <>
                             Souhlasím se{" "}
-                            <MuiLink component={NextLink} href="/gdpr" target="_blank">
+                            <MuiLink
+                                component={NextLink}
+                                href="/gdpr"
+                                target="_blank"
+                            >
                                 zpracováním osobních údajů
                             </MuiLink>
                         </>
                     }
                 />
-                {state?.errors?.gdprConsent && (
+                {errors?.gdprConsent && (
                     <FormHelperText error>
-                        {state.errors.gdprConsent[0]}
+                        {errors.gdprConsent[0]}
                     </FormHelperText>
                 )}
             </Box>

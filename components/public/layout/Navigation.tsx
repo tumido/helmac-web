@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Box, Fade } from "@mui/material";
+import { Box } from "@mui/material";
 import { LinkButton } from "@/components/ui/link-button";
 import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
-import { GameIcon } from "@/lib/icons";
+import { NavDropdown } from "./NavDropdown";
 
 export interface NavSubItem {
     id: string;
@@ -90,106 +90,17 @@ export function Navigation({ items }: NavigationProps) {
                         </LinkButton>
 
                         {hasDropdown && (
-                            <Fade in={isOpen} timeout={150}>
-                                <Box
-                                    sx={{
-                                        position: "absolute",
-                                        top: "calc(100% - 4px)",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                        minWidth: 180,
-                                        zIndex: 1200,
-                                        display: isOpen ? "block" : "none",
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            position: "relative",
-                                            backgroundColor: "background.paper",
-                                            pt: 1.5,
-                                            pb: 1.5,
-                                        }}
-                                    >
-                                        <OrnamentalUnderline
-                                            sx={{
-                                                position: "absolute",
-                                                top: 1,
-                                                left: -1,
-                                                right: -1,
-                                                mt: 0,
-                                                mx: 0,
-                                            }}
-                                        />
-                                        {item.subItems!.map((sub) => (
-                                            <LinkButton
-                                                key={sub.id}
-                                                href={sub.href}
-                                                onClick={() =>
-                                                    setOpenDropdown(null)
-                                                }
-                                                sx={{
-                                                    display: "flex",
-                                                    width: "100%",
-                                                    textAlign: "left",
-                                                    px: 1.5,
-                                                    py: 0.75,
-                                                    gap: 1,
-                                                    color: "text.primary",
-                                                    fontWeight: 400,
-                                                    fontSize: "0.875rem",
-                                                    borderRadius: 0,
-                                                    justifyContent:
-                                                        "flex-start",
-                                                    textTransform: "none",
-                                                    whiteSpace: "nowrap",
-                                                    borderBottom:
-                                                        "1.5px solid transparent",
-                                                    "&:hover": {
-                                                        backgroundColor:
-                                                            "transparent",
-                                                        color: "primary.main",
-                                                        borderColor:
-                                                            "primary.main",
-                                                    },
-                                                }}
-                                            >
-                                                <Box
-                                                    component="span"
-                                                    sx={{
-                                                        width: "1.5em",
-                                                        flexShrink: 0,
-                                                        mr: 1,
-                                                        display: "inline-flex",
-                                                        justifyContent:
-                                                            "center",
-                                                    }}
-                                                >
-                                                    <GameIcon
-                                                        name={sub.icon || "polar-star"}
-                                                        sx={{
-                                                            fontSize:
-                                                                "1.5em",
-                                                            color: "primary.main",
-                                                        }}
-                                                    />
-                                                </Box>
-                                                {sub.label}
-                                            </LinkButton>
-                                        ))}
-                                        <OrnamentalUnderline
-                                            sx={{
-                                                position: "absolute",
-                                                bottom: 0,
-                                                left: -1,
-                                                right: -1,
-                                                mt: 0,
-                                                mx: 0,
-                                                transform: "scaleY(-1)",
-                                            }}
-                                        />
-                                    </Box>
-                                </Box>
-                            </Fade>
+                            <NavDropdown
+                                open={isOpen}
+                                items={item.subItems!.map((sub) => ({
+                                    label: sub.label,
+                                    icon: sub.icon,
+                                    href: sub.href,
+                                }))}
+                                onClose={() =>
+                                    setOpenDropdown(null)
+                                }
+                            />
                         )}
                     </Box>
                 );

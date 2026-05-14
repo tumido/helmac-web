@@ -3,7 +3,6 @@ import { Box, Container, Typography, Button } from "@mui/material";
 import { getRegistrationStatus } from "@/lib/services";
 import { formatDate } from "@/lib/utils/date";
 import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
-import { GameIcon } from "@/lib/icons";
 import { paperGrainSx } from "@/lib/utils/texture-overlay";
 
 export async function RegistrationCTA() {
@@ -135,30 +134,6 @@ export async function RegistrationCTA() {
                             Zaregistrovat se
                         </Button>
                     </Link>
-                    {status.registrationCount > 0 && (
-                        <Box
-                            sx={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 1,
-                                mt: 3,
-                                backgroundColor: "rgba(13, 13, 13, 0.15)",
-                                borderRadius: 20,
-                                px: 2.5,
-                                py: 0.75,
-                                color: "primary.contrastText",
-                            }}
-                        >
-                            <GameIcon
-                                name="knight-banner"
-                                sx={{ fontSize: "1.2rem" }}
-                            />
-                            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                                Již {status.registrationCount} registrovaných
-                                účastníků
-                            </Typography>
-                        </Box>
-                    )}
                 </Box>
             </Container>
         </Box>

@@ -18,6 +18,7 @@ import { Menu as MenuIcon } from "@mui/icons-material";
 import { GameIcon } from "@/lib/icons";
 import { Navigation, NavItem } from "./Navigation";
 import { MobileMenu } from "./MobileMenu";
+import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/public/ui";
 import type { NavigationData } from "@/lib/services/navigation";
 import { STATIC_NAV_BEFORE, STATIC_NAV_AFTER } from "@/lib/navigation";
@@ -219,17 +220,7 @@ export function Header({
                                 </LinkButton>
                             )}
                             {publicUser ? (
-                                <Tooltip title="Můj účet">
-                                    <IconButton
-                                        component={Link}
-                                        href="/ucet"
-                                        sx={{
-                                            color: "primary.main",
-                                        }}
-                                    >
-                                        <GameIcon name="visored-helm" sx={{ fontSize: "1.5rem" }} />
-                                    </IconButton>
-                                </Tooltip>
+                                <UserMenu />
                             ) : (
                                 <Tooltip title="Přihlásit se">
                                     <IconButton

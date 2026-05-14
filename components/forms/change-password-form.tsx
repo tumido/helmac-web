@@ -8,7 +8,10 @@ import {
     TextField,
     Alert,
     CircularProgress,
+    Paper,
+    Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { changePassword } from "@/lib/actions/public/profile";
 
 function SubmitButton() {
@@ -18,8 +21,20 @@ function SubmitButton() {
         <Button
             type="submit"
             variant="contained"
+            color="primary"
+            size="large"
             disabled={pending}
-            sx={{ mt: 2 }}
+            sx={{
+                px: 6,
+                py: 1.5,
+                fontSize: "1.1rem",
+                boxShadow: (theme) =>
+                    `0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                "&:hover": {
+                    boxShadow: (theme) =>
+                        `0 0 30px ${alpha(theme.palette.primary.main, 0.5)}`,
+                },
+            }}
         >
             {pending ? (
                 <CircularProgress size={24} color="inherit" />
@@ -36,48 +51,70 @@ export function ChangePasswordForm() {
     return (
         <Box component="form" action={formAction}>
             {state?.message && (
-                <Alert severity={state.success ? "success" : "error"} sx={{ mb: 2 }}>
+                <Alert
+                    severity={state.success ? "success" : "error"}
+                    sx={{ mb: 3 }}
+                >
                     {state.message}
                 </Alert>
             )}
 
-            <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="currentPassword"
-                label="Současné heslo"
-                type="password"
-                autoComplete="current-password"
-                error={!!state?.errors?.currentPassword}
-                helperText={state?.errors?.currentPassword?.[0]}
-            />
+            <Paper
+                variant="outlined"
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2.5,
+                    p: { xs: 2, md: 3 },
+                    borderRadius: 2,
+                }}
+            >
+                <TextField
+                    id="currentPassword"
+                    required
+                    fullWidth
+                    name="currentPassword"
+                    label="Současné heslo"
+                    type="password"
+                    autoComplete="current-password"
+                    error={!!state?.errors?.currentPassword}
+                    helperText={state?.errors?.currentPassword?.[0]}
+                />
 
-            <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="newPassword"
-                label="Nové heslo"
-                type="password"
-                autoComplete="new-password"
-                error={!!state?.errors?.newPassword}
-                helperText={state?.errors?.newPassword?.[0] || "Minimálně 8 znaků"}
-            />
+                <TextField
+                    id="newPassword"
+                    required
+                    fullWidth
+                    name="newPassword"
+                    label="Nové heslo"
+                    type="password"
+                    autoComplete="new-password"
+                    error={!!state?.errors?.newPassword}
+                    helperText={
+                        state?.errors?.newPassword?.[0] || "Minimálně 8 znaků"
+                    }
+                />
 
-            <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="confirmNewPassword"
-                label="Potvrzení nového hesla"
-                type="password"
-                autoComplete="new-password"
-                error={!!state?.errors?.confirmNewPassword}
-                helperText={state?.errors?.confirmNewPassword?.[0]}
-            />
-
-            <SubmitButton />
+                <TextField
+                    id="confirmNewPassword"
+                    required
+                    fullWidth
+                    name="confirmNewPassword"
+                    label="Potvrzení nového hesla"
+                    type="password"
+                    autoComplete="new-password"
+                    error={!!state?.errors?.confirmNewPassword}
+                    helperText={state?.errors?.confirmNewPassword?.[0]}
+                />
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                >
+                    Po změně hesla zůstanete přihlášeni.
+                </Typography>
+                <SubmitButton />
+            </Paper>
         </Box>
     );
 }

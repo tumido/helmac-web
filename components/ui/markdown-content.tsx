@@ -93,9 +93,14 @@ function groupConsecutiveButtons(md: string): string {
 interface MarkdownContentProps {
     content: string;
     tocIds?: Map<string, string>;
+    targetBlank?: boolean;
 }
 
-export function MarkdownContent({ content, tocIds }: MarkdownContentProps) {
+export function MarkdownContent({
+    content,
+    tocIds,
+    targetBlank,
+}: MarkdownContentProps) {
     const processed = useMemo(
         () => groupConsecutiveButtons(content),
         [content]
@@ -174,6 +179,9 @@ export function MarkdownContent({ content, tocIds }: MarkdownContentProps) {
                 const dataButton = node?.properties?.dataButton as
                     | string
                     | undefined;
+                const linkTargetProps = targetBlank
+                    ? { target: "_blank" as const, rel: "noopener noreferrer" }
+                    : {};
                 if (dataButton) {
                     const variant = (
                         ["contained", "outlined", "text"] as const
@@ -185,6 +193,7 @@ export function MarkdownContent({ content, tocIds }: MarkdownContentProps) {
                             variant={variant}
                             href={href}
                             size="small"
+                            {...linkTargetProps}
                             sx={{ mx: 0.5, my: 0.5 }}
                         >
                             {children}
@@ -195,6 +204,7 @@ export function MarkdownContent({ content, tocIds }: MarkdownContentProps) {
                     <Box
                         component="a"
                         href={href}
+                        {...linkTargetProps}
                         sx={{
                             color: "primary.main",
                             textDecoration: "underline",
@@ -457,7 +467,7 @@ export function MarkdownContent({ content, tocIds }: MarkdownContentProps) {
                 />
             ),
         }),
-        [tocIds]
+        [tocIds, targetBlank]
     );
 
     return (
