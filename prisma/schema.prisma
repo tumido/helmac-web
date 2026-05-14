@@ -380,6 +380,7 @@ model Album {
   slug        String
   description String?
   coverImage  String?
+  ogImageUrl  String?
   externalUrl String
 
   sortOrder   Int         @default(0)

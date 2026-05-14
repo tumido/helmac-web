@@ -9,6 +9,7 @@ import {
     updateAlbumSchema,
 } from "@/lib/validators/album";
 import { generateSlug } from "@/lib/utils/slugify";
+import { fetchOgImage } from "@/lib/utils/og-image";
 
 export type AlbumActionState = {
     error?: {
@@ -74,6 +75,10 @@ export async function createAlbum(
             _max: { sortOrder: true },
         });
 
+        const ogImageUrl = await fetchOgImage(
+            validated.data.externalUrl
+        );
+
         await db.album.create({
             data: {
                 yearId,
@@ -81,6 +86,7 @@ export async function createAlbum(
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
+                ogImageUrl,
                 externalUrl: validated.data.externalUrl,
                 isPublished: true,
                 sortOrder: validated.data.sortOrder ?? (maxOrder._max.sortOrder ?? 0) + 1,
@@ -131,12 +137,19 @@ export async function updateAlbum(
             return { error: { _form: ["Album nenalezeno"] } };
         }
 
+        const newUrl = validated.data.externalUrl;
+        const urlChanged = newUrl && newUrl !== album.externalUrl;
+        const ogImageUrl = urlChanged
+            ? await fetchOgImage(newUrl)
+            : undefined;
+
         await db.album.update({
             where: { id: albumId },
             data: {
                 title: validated.data.title,
                 description: validated.data.description,
                 coverImage: validated.data.coverImage || null,
+                ...(ogImageUrl !== undefined && { ogImageUrl }),
                 externalUrl: validated.data.externalUrl,
                 isPublished: true,
             },
@@ -151,6 +164,19 @@ export async function updateAlbum(
     }
 
     return { success: true };
+}
+
+export async function fetchAlbumOgImage(
+    url: string
+): Promise<{ ogImageUrl: string | null }> {
+    try {
+        await requireEditor();
+    } catch {
+        return { ogImageUrl: null };
+    }
+
+    const ogImageUrl = await fetchOgImage(url);
+    return { ogImageUrl };
 }
 
 export async function deleteAlbum(albumId: string) {

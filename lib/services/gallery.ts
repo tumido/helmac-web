@@ -7,6 +7,7 @@ const albumPreviewSelect = {
     title: true,
     description: true,
     coverImage: true,
+    ogImageUrl: true,
     externalUrl: true,
     year: {
         select: { year: true },

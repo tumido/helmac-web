@@ -16,7 +16,12 @@ import {
 } from "@mui/material";
 import { Edit, Save } from "@mui/icons-material";
 import { LinkButton } from "@/components/ui/link-button";
-import { createAlbum, updateAlbum, AlbumActionState } from "@/lib/actions/albums";
+import {
+    createAlbum,
+    updateAlbum,
+    fetchAlbumOgImage,
+    AlbumActionState,
+} from "@/lib/actions/albums";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { storageUrl } from "@/lib/utils/storage";
 
@@ -29,6 +34,7 @@ interface AlbumFormProps {
         title?: string;
         description?: string | null;
         coverImage?: string | null;
+        ogImageUrl?: string | null;
         externalUrl?: string;
     };
     cancelHref?: string;
@@ -60,6 +66,8 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/admin/galerie", redirectTo, hideYearSelect }: AlbumFormProps) {
     const selectedYearId = defaultValues?.yearId || years[0]?.id || "";
     const [coverImage, setCoverImage] = useState(defaultValues?.coverImage || "");
+    const [ogImageUrl, setOgImageUrl] = useState(defaultValues?.ogImageUrl || "");
+    const [ogLoading, setOgLoading] = useState(false);
     const [editing, setEditing] = useState(mode === "create");
 
     const action =
@@ -156,11 +164,64 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                         error={!!state?.error?.externalUrl}
                         helperText={state?.error?.externalUrl?.[0] || "Odkaz na externí galerii (např. Google Photos, Rajče apod.)"}
                         disabled={!editing}
+                        onBlur={async (e) => {
+                            const url = e.target.value.trim();
+                            if (!url || !editing) return;
+                            try {
+                                new URL(url);
+                            } catch {
+                                return;
+                            }
+                            setOgLoading(true);
+                            const result =
+                                await fetchAlbumOgImage(url);
+                            setOgImageUrl(result.ogImageUrl || "");
+                            setOgLoading(false);
+                        }}
                     />
+
+                    {ogImageUrl && !coverImage && (
+                        <Box>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{ mb: 1 }}
+                            >
+                                Náhled z odkazu
+                            </Typography>
+                            <Box
+                                component="img"
+                                src={ogImageUrl}
+                                alt="Náhled z odkazu"
+                                sx={{
+                                    maxHeight: 250,
+                                    maxWidth: "100%",
+                                    objectFit: "contain",
+                                    borderRadius: 1,
+                                }}
+                            />
+                        </Box>
+                    )}
+                    {ogLoading && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+                            <CircularProgress size={16} />
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Načítám náhled z odkazu...
+                            </Typography>
+                        </Box>
+                    )}
 
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Titulní obrázek (volitelné)
+                            Vlastní obrázek (volitelné)
                         </Typography>
                         {editing ? (
                             <ImageUploader
@@ -181,7 +242,9 @@ export function AlbumForm({ mode, years, albumId, defaultValues, cancelHref = "/
                             />
                         ) : (
                             <Typography color="text.secondary">
-                                Bez obrázku
+                                {ogImageUrl
+                                    ? "Použije se náhled z odkazu"
+                                    : "Bez obrázku"}
                             </Typography>
                         )}
                         <input type="hidden" name="coverImage" value={coverImage} />
