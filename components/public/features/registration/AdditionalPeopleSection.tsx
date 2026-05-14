@@ -12,18 +12,14 @@ import type {
     OptionCounts,
     AdditionalPersonData,
 } from "@/lib/types/registration-form";
-import {
-    MAX_ADDITIONAL_PEOPLE,
-    getDisabledOptionsForField,
-    getRemainingCapacityForField,
-} from "@/lib/types/registration-form";
+import { MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { evaluateAPVisibleFields } from "./useConditionalFields";
 import {
     buildMergedDataForAP,
     getAPFieldNames,
 } from "@/lib/utils/additional-people";
-import { getQuantityRemainingForField } from "@/lib/utils/quantity-remaining";
+import { getFieldRemainingInfo } from "@/lib/utils/quantity-remaining";
 
 interface AdditionalPeopleSectionProps {
     formData: RegistrationFormData;
@@ -51,7 +47,7 @@ export function AdditionalPeopleSection({
         if (people.length === 0) return;
 
         let hasUpdates = false;
-        const updatedPeople = people.map((person) => {
+        const updatedPeople = people.map((person, personIdx) => {
             const mergedData = buildMergedDataForAP(
                 mainValues,
                 person,
@@ -64,6 +60,12 @@ export function AdditionalPeopleSection({
             let personUpdated = false;
             const newPerson = { ...person };
 
+            // "others" for this AP's auto-select = main + every other AP
+            const others: Array<Record<string, unknown>> = [
+                mainValues,
+                ...people.filter((_, i) => i !== personIdx),
+            ];
+
             for (const field of apFields) {
                 if (!visibleFieldIds.has(field.id)) continue;
                 const currentValue = person[field.name];
@@ -74,14 +76,15 @@ export function AdditionalPeopleSection({
                         (d) => d.id === field.pricingId
                     );
                     if (!def) continue;
-                    const disabledOpts = getDisabledOptionsForField(
-                        field.id,
-                        field.name,
+                    const { disabled } = getFieldRemainingInfo(
+                        field,
+                        formData.pricingDefinitions,
                         formData.capacityLimits,
-                        optionCounts
+                        optionCounts,
+                        others,
                     );
                     const enabledOptions = def.options.filter(
-                        (o) => !disabledOpts.has(o.name)
+                        (o) => !disabled.has(o.name)
                     );
                     if (enabledOptions.length === 1) {
                         newPerson[field.name] = enabledOptions[0].id;
@@ -89,14 +92,15 @@ export function AdditionalPeopleSection({
                     }
                 } else if (field.type === "select" || field.type === "radio") {
                     if (!field.options || field.options.length === 0) continue;
-                    const disabledOpts = getDisabledOptionsForField(
-                        field.id,
-                        field.name,
+                    const { disabled } = getFieldRemainingInfo(
+                        field,
+                        formData.pricingDefinitions,
                         formData.capacityLimits,
-                        optionCounts
+                        optionCounts,
+                        others,
                     );
                     const enabledOptions = field.options.filter(
-                        (o) => !disabledOpts.has(o)
+                        (o) => !disabled.has(o)
                     );
                     if (enabledOptions.length === 1) {
                         newPerson[field.name] = enabledOptions[0];
@@ -277,12 +281,6 @@ export function AdditionalPeopleSection({
                                 const value =
                                     person[field.name] ??
                                     (field.type === "checkbox" ? false : "");
-                                const disabledOpts = getDisabledOptionsForField(
-                                    field.id,
-                                    field.name,
-                                    formData.capacityLimits,
-                                    optionCounts
-                                );
                                 // "Others" = main person + all other AP except this one
                                 const others: Array<Record<string, unknown>> = [
                                     mainValues,
@@ -290,27 +288,15 @@ export function AdditionalPeopleSection({
                                         (_, i) => i !== personIndex
                                     ),
                                 ];
-                                const remainingCap = (() => {
-                                    const qtyRemaining =
-                                        getQuantityRemainingForField(
-                                            field,
-                                            formData.pricingDefinitions,
-                                            formData.capacityLimits,
-                                            optionCounts,
-                                            others,
-                                        );
-                                    if (qtyRemaining) return qtyRemaining;
-                                    const cap =
-                                        getRemainingCapacityForField(
-                                            field.id,
-                                            field.name,
-                                            formData.capacityLimits,
-                                            optionCounts,
-                                        );
-                                    return Object.keys(cap).length > 0
-                                        ? cap
-                                        : undefined;
-                                })();
+                                const remainingInfo = getFieldRemainingInfo(
+                                    field,
+                                    formData.pricingDefinitions,
+                                    formData.capacityLimits,
+                                    optionCounts,
+                                    others,
+                                );
+                                const disabledOpts = remainingInfo.disabled;
+                                const remainingCap = remainingInfo.remaining;
 
                                 return (
                                     <DynamicFormField

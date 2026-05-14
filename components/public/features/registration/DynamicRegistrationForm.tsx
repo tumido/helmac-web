@@ -38,10 +38,8 @@ import {
     getAllInputFields,
     getAPInputFields,
     hasAdditionalPeopleFields,
-    getDisabledOptionsForField,
-    getRemainingCapacityForField,
 } from "@/lib/types/registration-form";
-import { getQuantityRemainingForField } from "@/lib/utils/quantity-remaining";
+import { getFieldRemainingInfo } from "@/lib/utils/quantity-remaining";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
 import {
@@ -135,6 +133,17 @@ export function DynamicRegistrationForm({
         RegistrationState | null,
         FormData
     >(submitDynamicRegistration, null);
+
+    const [capacitySnackbar, setCapacitySnackbar] = useState<{
+        open: boolean;
+        message: string;
+    }>({ open: false, message: "" });
+
+    useEffect(() => {
+        if (state?.capacityError) {
+            setCapacitySnackbar({ open: true, message: state.capacityError });
+        }
+    }, [state]);
 
     const handleChange = useCallback(
         (name: string, value: string | number | boolean) => {
@@ -231,28 +240,30 @@ export function DynamicRegistrationForm({
                     (d) => d.id === field.pricingId
                 );
                 if (!def) continue;
-                const disabledOpts = getDisabledOptionsForField(
-                    field.id,
-                    field.name,
+                const { disabled } = getFieldRemainingInfo(
+                    field,
+                    formData.pricingDefinitions,
                     formData.capacityLimits,
-                    optionCounts
+                    optionCounts,
+                    additionalPeople,
                 );
                 const enabledOptions = def.options.filter(
-                    (o) => !disabledOpts.has(o.name)
+                    (o) => !disabled.has(o.name)
                 );
                 if (enabledOptions.length === 1) {
                     updates[field.name] = enabledOptions[0].id;
                 }
             } else if (field.type === "select" || field.type === "radio") {
                 if (!field.options || field.options.length === 0) continue;
-                const disabledOpts = getDisabledOptionsForField(
-                    field.id,
-                    field.name,
+                const { disabled } = getFieldRemainingInfo(
+                    field,
+                    formData.pricingDefinitions,
                     formData.capacityLimits,
-                    optionCounts
+                    optionCounts,
+                    additionalPeople,
                 );
                 const enabledOptions = field.options.filter(
-                    (o) => !disabledOpts.has(o)
+                    (o) => !disabled.has(o)
                 );
                 if (enabledOptions.length === 1) {
                     updates[field.name] = enabledOptions[0];
@@ -273,7 +284,7 @@ export function DynamicRegistrationForm({
                 return changed ? next : prev;
             });
         }
-    }, [visibleFields, formData, optionCounts]);
+    }, [visibleFields, formData, optionCounts, additionalPeople]);
 
     // Flatten all fields for rendering (preserving order from elements)
     const allFields = getAllFields(formData.fields);
@@ -472,40 +483,20 @@ export function DynamicRegistrationForm({
                                                 )
                                                     ? (values[field.name] ?? "")
                                                     : "";
-                                                const disabledOpts =
+                                                const remainingInfo =
                                                     isInputField(field)
-                                                        ? getDisabledOptionsForField(
-                                                              field.id,
-                                                              field.name,
+                                                        ? getFieldRemainingInfo(
+                                                              field,
+                                                              formData.pricingDefinitions,
                                                               formData.capacityLimits,
-                                                              optionCounts
+                                                              optionCounts,
+                                                              additionalPeople,
                                                           )
                                                         : undefined;
-                                                const remainingCap = (() => {
-                                                    if (!isInputField(field))
-                                                        return undefined;
-                                                    const qtyRemaining =
-                                                        getQuantityRemainingForField(
-                                                            field,
-                                                            formData.pricingDefinitions,
-                                                            formData.capacityLimits,
-                                                            optionCounts,
-                                                            additionalPeople,
-                                                        );
-                                                    if (qtyRemaining)
-                                                        return qtyRemaining;
-                                                    const cap =
-                                                        getRemainingCapacityForField(
-                                                            field.id,
-                                                            field.name,
-                                                            formData.capacityLimits,
-                                                            optionCounts,
-                                                        );
-                                                    return Object.keys(cap)
-                                                        .length > 0
-                                                        ? cap
-                                                        : undefined;
-                                                })();
+                                                const disabledOpts =
+                                                    remainingInfo?.disabled;
+                                                const remainingCap =
+                                                    remainingInfo?.remaining;
 
                                                 return (
                                                     <Fade
@@ -719,6 +710,31 @@ export function DynamicRegistrationForm({
                             </Alert>
                         </Snackbar>
                     )}
+
+                    <Snackbar
+                        open={capacitySnackbar.open}
+                        autoHideDuration={6000}
+                        onClose={() =>
+                            setCapacitySnackbar((s) => ({ ...s, open: false }))
+                        }
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "center",
+                        }}
+                    >
+                        <Alert
+                            severity="error"
+                            variant="filled"
+                            onClose={() =>
+                                setCapacitySnackbar((s) => ({
+                                    ...s,
+                                    open: false,
+                                }))
+                            }
+                        >
+                            {capacitySnackbar.message}
+                        </Alert>
+                    </Snackbar>
                 </Box>
             </Box>
 

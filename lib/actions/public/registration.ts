@@ -35,6 +35,9 @@ export interface RegistrationState {
     message: string;
     errors?: Record<string, string[]>;
     apErrors?: Record<number, Record<string, string[]>>;
+    /** Set when the submission failed because a pricing option's capacity was exceeded.
+     *  Clients use this flag to surface a toast instead of/in addition to a field error. */
+    capacityError?: string;
     registrationId?: string;
     variableSymbol?: string;
     totalPrice?: number;
@@ -78,25 +81,33 @@ function validateCapacityLimits(
                 submittedCount += sumQty(person[field.name]);
             }
         } else {
-            const mainVal = String(submissionData[field.name] ?? "");
-            if (field.type === "pricing_multi_select" && mainVal.startsWith("[")) {
-                try {
-                    const arr = JSON.parse(mainVal);
-                    if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
-                } catch { /* ignore */ }
-            } else if (mainVal === limit.value) {
-                submittedCount++;
-            }
-            for (const person of additionalPeople) {
-                const personVal = String(person[field.name] ?? "");
-                if (field.type === "pricing_multi_select" && personVal.startsWith("[")) {
+            // Form sends option IDs for pricing_select / pricing_multi_select, but
+            // limit.value is stored as the option name. Accept either via a lookup.
+            const def = pricingDefinitions.find((d) => d.id === field.pricingId);
+            const opt = def?.options.find((o) => o.name === limit.value);
+            const matchesLimit = (val: string): boolean =>
+                val === limit.value || (opt !== undefined && val === opt.id);
+
+            const countIn = (raw: unknown): number => {
+                const val = String(raw ?? "");
+                if (field.type === "pricing_multi_select" && val.startsWith("[")) {
                     try {
-                        const arr = JSON.parse(personVal);
-                        if (Array.isArray(arr) && arr.includes(limit.value)) submittedCount++;
+                        const arr = JSON.parse(val);
+                        if (Array.isArray(arr)) {
+                            return arr.filter(
+                                (v): v is string =>
+                                    typeof v === "string" && matchesLimit(v),
+                            ).length;
+                        }
                     } catch { /* ignore */ }
-                } else if (personVal === limit.value) {
-                    submittedCount++;
+                    return 0;
                 }
+                return matchesLimit(val) ? 1 : 0;
+            };
+
+            submittedCount += countIn(submissionData[field.name]);
+            for (const person of additionalPeople) {
+                submittedCount += countIn(person[field.name]);
             }
         }
 
@@ -353,6 +364,7 @@ export async function submitDynamicRegistration(
                 errors: {
                     [capacityError.fieldName]: [capacityError.error],
                 },
+                capacityError: capacityError.error,
             };
         }
     }
