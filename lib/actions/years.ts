@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireEditor } from "@/lib/auth";
 import { createYearSchema, updateYearSchema, updateEmailTemplateSchema } from "@/lib/validators/year";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 import { contentBlocksSchema } from "@/lib/validators/content-blocks";
@@ -321,7 +321,7 @@ export async function updateRegistrationStartDate(yearId: string, date: string |
 
 export async function updateEmailTemplate(yearId: string, formData: FormData) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -407,7 +407,7 @@ export async function updateRegistrationSuccessContent(
 
 export async function toggleConfirmationEmail(yearId: string, enabled: boolean) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -442,7 +442,7 @@ export async function toggleConfirmationEmail(yearId: string, enabled: boolean) 
 
 export async function updatePriceChangeEmailTemplate(yearId: string, formData: FormData) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -488,7 +488,7 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
 
 export async function togglePriceChangeEmail(yearId: string, enabled: boolean) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import {
@@ -54,7 +54,7 @@ export async function sendPreviewConfirmation(
     input: SendPreviewConfirmationInput,
 ): Promise<{ success?: true; conditionalSentCount?: number; error?: string }> {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

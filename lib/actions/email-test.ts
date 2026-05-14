@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { replacePlaceholders, sendConfirmationEmail, appendConditionalSections } from "@/lib/utils/email";
 import { emailConditionalSectionsSchema } from "@/lib/validators/email-section";
 import type { FormField } from "@/lib/types/registration-form";
@@ -22,7 +22,7 @@ export type SendTestEmailInput = z.input<typeof sendTestEmailSchema>;
 export async function sendTestEmail(
     input: SendTestEmailInput,
 ): Promise<{ success?: true; error?: string }> {
-    await requireAdmin();
+    await requireEditor();
 
     const parsed = sendTestEmailSchema.safeParse(input);
     if (!parsed.success) {

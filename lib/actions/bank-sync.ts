@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import { paymentEmailTemplateSchema } from "@/lib/validators/bank-sync";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 
 export async function updatePaymentEmailTemplate(yearId: string, formData: FormData) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -66,7 +66,7 @@ export async function updatePaymentEmailTemplate(yearId: string, formData: FormD
 
 export async function togglePaymentEmail(yearId: string, enabled: boolean) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }

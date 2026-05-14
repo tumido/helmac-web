@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireEditor } from "@/lib/auth";
 import {
     createConditionalEmailSchema,
     updateConditionalEmailTemplateSchema,
@@ -20,7 +20,7 @@ export async function createConditionalEmail(
     },
 ) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -57,7 +57,7 @@ export async function createConditionalEmail(
 
 export async function updateConditionalEmailTemplate(emailId: string, formData: FormData) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -103,7 +103,7 @@ export async function updateConditionalEmailTemplate(emailId: string, formData: 
 
 export async function toggleConditionalEmail(emailId: string, enabled: boolean) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
@@ -135,7 +135,7 @@ export async function toggleConditionalEmail(emailId: string, enabled: boolean) 
 
 export async function deleteConditionalEmail(emailId: string) {
     try {
-        await requireAdmin();
+        await requireEditor();
     } catch {
         return { error: "Nemáte oprávnění" };
     }
