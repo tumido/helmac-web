@@ -4,15 +4,18 @@ import { useSearchParams } from "next/navigation";
 import { Box, Typography } from "@mui/material";
 import { SectionItem } from "./section.types";
 import { ContentWithToc } from "@/components/public/features/toc";
+import type { RegistrationStats } from "@/lib/services/registration";
 
 interface SectionContentProps {
     sections: SectionItem[];
     emptyMessage?: string;
+    stats?: Record<string, RegistrationStats>;
 }
 
 export function SectionContent({
     sections,
     emptyMessage = "Zatím nebyly přidány žádné sekce.",
+    stats,
 }: SectionContentProps) {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
@@ -43,6 +46,7 @@ export function SectionContent({
             <ContentWithToc
                 content={selectedSection.content}
                 showToc={selectedSection.showToc}
+                stats={stats}
             />
         </Box>
     );

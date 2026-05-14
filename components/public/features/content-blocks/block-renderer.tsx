@@ -3,14 +3,19 @@
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type { ContentBlock } from "@/lib/types/content-blocks";
 import { normalizeBlocks } from "@/lib/types/content-blocks";
+import type { RegistrationStats } from "@/lib/services/registration";
 import { RichTextBlockRenderer } from "./richtext-block";
 import { ImageBlockRenderer } from "./image-block";
 import { DividerBlockRenderer } from "./divider-block";
 import { CardBlockRenderer } from "./card-block";
+import { StatSingleBlockRenderer } from "./stat-single-block";
+import { StatTableBlockRenderer } from "./stat-table-block";
+import { StatCardsBlockRenderer } from "./stat-cards-block";
 
 function renderBlock(
     block: ContentBlock,
-    tocIds?: Map<string, string>
+    tocIds?: Map<string, string>,
+    stats?: Record<string, RegistrationStats>
 ) {
     switch (block.type) {
         case "richtext":
@@ -23,15 +28,22 @@ function renderBlock(
             return <DividerBlockRenderer block={block} />;
         case "card":
             return <CardBlockRenderer block={block} />;
+        case "stat_single":
+            return <StatSingleBlockRenderer block={block} stats={stats?.[block.id]} />;
+        case "stat_table":
+            return <StatTableBlockRenderer block={block} stats={stats?.[block.id]} />;
+        case "stat_cards":
+            return <StatCardsBlockRenderer block={block} stats={stats?.[block.id]} />;
     }
 }
 
 interface BlockRendererProps {
     blocks: ContentBlock[];
     tocIds?: Map<string, string>;
+    stats?: Record<string, RegistrationStats>;
 }
 
-export function BlockRenderer({ blocks, tocIds }: BlockRendererProps) {
+export function BlockRenderer({ blocks, tocIds, stats }: BlockRendererProps) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -46,7 +58,7 @@ export function BlockRenderer({ blocks, tocIds }: BlockRendererProps) {
             <>
                 {sorted.map((block) => (
                     <Box key={block.id} sx={{ mb: 4 }}>
-                        {renderBlock(block, tocIds)}
+                        {renderBlock(block, tocIds, stats)}
                     </Box>
                 ))}
             </>
@@ -68,12 +80,15 @@ export function BlockRenderer({ blocks, tocIds }: BlockRendererProps) {
                     sx={{
                         gridColumn: `${block.layout.x + 1} / span ${block.layout.w}`,
                         alignSelf:
-                            block.type === "card"
+                            block.type === "card" ||
+                            block.type === "stat_single" ||
+                            block.type === "stat_table" ||
+                            block.type === "stat_cards"
                                 ? "stretch"
                                 : "center",
                     }}
                 >
-                    {renderBlock(block, tocIds)}
+                    {renderBlock(block, tocIds, stats)}
                 </Box>
             ))}
         </Box>

@@ -47,11 +47,78 @@ const cardBlockSchema = z.object({
     buttons: z.array(cardButtonSchema),
 });
 
+const statSuffixSchema = z.object({
+    source: z.enum(["manual", "capacity", "total"]),
+    text: z.string().optional(),
+}).optional();
+
+const statFieldFilterSchema = z.object({
+    fieldName: z.string(),
+    value: z.string(),
+});
+
+const statFilterSchema = z.object({
+    statuses: z.array(z.string()).optional(),
+    isPaid: z.boolean().optional(),
+    fieldFilters: z.array(statFieldFilterSchema).optional(),
+}).optional();
+
+const statMetricConfigSchema = z.object({
+    id: z.string().min(1),
+    source: z.enum(["builtin", "field"]).optional(),
+    metric: z.string(),
+    aggregation: z.enum(["count", "sum", "average", "enumerate"]).optional(),
+    label: z.string().optional(),
+    icon: z.string().optional(),
+    filter: statFilterSchema,
+});
+
+const statSingleBlockSchema = z.object({
+    type: z.literal("stat_single"),
+    id: z.string().min(1),
+    layout: layoutSchema,
+    source: z.enum(["builtin", "field"]).optional(),
+    metric: z.string(),
+    aggregation: z.enum(["count", "sum", "average", "enumerate"]).optional(),
+    label: z.string().optional(),
+    icon: z.string().optional(),
+    suffix: statSuffixSchema,
+    filter: statFilterSchema,
+});
+
+const statTableBlockSchema = z.object({
+    type: z.literal("stat_table"),
+    id: z.string().min(1),
+    layout: layoutSchema,
+    source: z.enum(["builtin", "field"]).optional(),
+    title: z.string().optional(),
+    align: z.enum(["left", "center", "right"]).optional(),
+    metrics: z.array(statMetricConfigSchema),
+    filter: statFilterSchema,
+});
+
+const statCardsBlockSchema = z.object({
+    type: z.literal("stat_cards"),
+    id: z.string().min(1),
+    layout: layoutSchema,
+    source: z.enum(["builtin", "field"]).optional(),
+    metric: z.string(),
+    aggregation: z.enum(["count", "sum", "average", "enumerate"]).optional(),
+    label: z.string().optional(),
+    icon: z.string().optional(),
+    iconMap: z.record(z.string(), z.string()).optional(),
+    suffix: statSuffixSchema,
+    filter: statFilterSchema,
+});
+
 const contentBlockSchema = z.union([
     richTextBlockSchema,
     imageBlockSchema,
     dividerBlockSchema,
     cardBlockSchema,
+    statSingleBlockSchema,
+    statTableBlockSchema,
+    statCardsBlockSchema,
 ]);
 
 export const contentBlocksSchema = z.array(contentBlockSchema);

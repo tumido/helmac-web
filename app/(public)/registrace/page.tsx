@@ -2,10 +2,13 @@ import { Container, Typography, Box } from "@mui/material";
 import { PageHeader } from "@/components/public/ui";
 import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
 import { getRegistrationStatus, getOptionCountsForYear } from "@/lib/services";
+import { getFilteredRegistrationStats } from "@/lib/services/registration";
+import type { RegistrationStats } from "@/lib/services/registration";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatDate } from "@/lib/utils/date";
 import { getPublicSession } from "@/lib/public-auth";
 import type { ContentBlock } from "@/lib/types/content-blocks";
+import { extractStatBlocks } from "@/lib/types/content-blocks";
 
 export const metadata = {
     title: "Registrace | Helmáč",
@@ -83,13 +86,35 @@ export default async function RegistracePage() {
 
     const formData = migrateFormData(status.formFields);
 
-    // Fetch counts if there are capacity limits and session for GDPR
+    const successContent =
+        (status.year?.registrationSuccessContent as unknown as ContentBlock[] | null) ?? null;
+    const statBlocks =
+        successContent && Array.isArray(successContent)
+            ? extractStatBlocks(successContent)
+            : [];
+
     const [optionCounts, publicSession] = await Promise.all([
         formData.capacityLimits.length > 0
             ? getOptionCountsForYear(status.year!.id)
             : Promise.resolve(undefined),
         getPublicSession(),
     ]);
+
+    let stats: Record<string, RegistrationStats> | undefined;
+    if (statBlocks.length > 0) {
+        const entries = await Promise.all(
+            statBlocks.map(async (b) =>
+                [
+                    b.id,
+                    await getFilteredRegistrationStats(
+                        status.year!.id,
+                        b.filter
+                    ),
+                ] as const
+            )
+        );
+        stats = Object.fromEntries(entries);
+    }
 
     return (
         <>
@@ -104,9 +129,8 @@ export default async function RegistracePage() {
                     optionCounts={optionCounts}
                     isLoggedIn={!!publicSession}
                     publicEmail={publicSession?.email}
-                    successContent={
-                        (status.year?.registrationSuccessContent as unknown as ContentBlock[] | null) ?? null
-                    }
+                    successContent={successContent}
+                    stats={stats}
                 />
             </Container>
         </>

@@ -8,6 +8,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { DecorativeDivider } from "@/components/public/ui";
 import { BlockRenderer } from "@/components/public/features/content-blocks";
 import type { ContentBlock } from "@/lib/types/content-blocks";
+import type { RegistrationStats } from "@/lib/services/registration";
 import type { PaymentData } from "@/lib/actions/public/registration";
 
 interface RegistrationSuccessProps {
@@ -16,6 +17,7 @@ interface RegistrationSuccessProps {
     totalPrice?: number;
     paymentData?: PaymentData;
     successContent?: ContentBlock[] | null;
+    stats?: Record<string, RegistrationStats>;
 }
 
 export function RegistrationSuccess({
@@ -24,6 +26,7 @@ export function RegistrationSuccess({
     totalPrice,
     paymentData,
     successContent,
+    stats,
 }: RegistrationSuccessProps) {
     const detailsRef = useRef<HTMLDivElement>(null);
     const [detailsHeight, setDetailsHeight] = useState<number>(0);
@@ -70,7 +73,7 @@ export function RegistrationSuccess({
                     }}
                 >
                     {successContent && successContent.length > 0 ? (
-                        <BlockRenderer blocks={successContent} />
+                        <BlockRenderer blocks={successContent} stats={stats} />
                     ) : (
                         <>
                             <Check
