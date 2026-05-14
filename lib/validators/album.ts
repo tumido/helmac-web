@@ -8,10 +8,6 @@ export const createAlbumSchema = z.object({
     description: z.string().max(1000, "Popis je příliš dlouhý").optional(),
     coverImage: z
         .string()
-        .refine(
-            (val) => val === "" || val.startsWith("/") || val.startsWith("http"),
-            "Neplatná URL obrázku"
-        )
         .optional(),
     externalUrl: z
         .string()

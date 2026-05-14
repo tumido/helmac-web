@@ -56,13 +56,6 @@ export const createProgramEventSchema = z
             .max(200, "Místo je příliš dlouhé"),
         imageUrl: z
             .string()
-            .refine(
-                (val) =>
-                    val === "" ||
-                    val.startsWith("/") ||
-                    val.startsWith("http"),
-                "Neplatná URL obrázku"
-            )
             .optional(),
         tags: z.array(z.string()).default([]),
         storyContent: z.any().optional(),
@@ -110,13 +103,6 @@ export const updateProgramEventSchema = z
             .optional(),
         imageUrl: z
             .string()
-            .refine(
-                (val) =>
-                    val === "" ||
-                    val.startsWith("/") ||
-                    val.startsWith("http"),
-                "Neplatná URL obrázku"
-            )
             .optional(),
         tags: z.array(z.string()).default([]),
         storyContent: z.any().optional(),
