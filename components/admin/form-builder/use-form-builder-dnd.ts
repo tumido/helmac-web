@@ -166,9 +166,10 @@ function isBlockId(elements: FlatElement[], id: string): boolean {
 }
 
 /**
- * True when `activeId` is already positioned at (`parent`, `index`).
- * `index` is 1-based "after" position from `resolveDropTarget` — an item's
- * own slot in that coordinate system is the index *immediately after* itself.
+ * True when `activeId` is already at the 0-based slot (`parent`, `index`).
+ * `index` matches the value `resolveDropTarget` returns — i.e. the slot the
+ * item will land at after the move. An item already at its own slot is a
+ * no-op (matches `arrayMove(items, idx, idx)` semantics).
  */
 function isAlreadyAtSlot(
     elements: FlatElement[],
@@ -185,16 +186,16 @@ function isAlreadyAtSlot(
             if (!isRootRow) continue;
             const id =
                 el.kind === "block" ? el.data.id : el.data.field.id;
-            n++;
             if (id === activeId) return n === index;
+            n++;
         }
         return false;
     }
     let n = 0;
     for (const el of elements) {
         if (el.kind !== "field" || el.data.parentBlockId !== parent) continue;
-        n++;
         if (el.data.field.id === activeId) return n === index;
+        n++;
     }
     return false;
 }
@@ -218,7 +219,7 @@ function resolveDropTarget(
     const idx = indexOfFlatId(elements, overId);
     if (idx === -1) return null;
     const parent = parentOfFlatId(elements, overId) ?? null;
-    return { parent, index: indexAfter(elements, overId, parent) };
+    return { parent, index: indexAt(elements, overId, parent) };
 }
 
 function countRootRows(elements: FlatElement[]): number {
@@ -236,7 +237,12 @@ function countChildren(elements: FlatElement[], blockId: string): number {
     ).length;
 }
 
-function indexAfter(
+/**
+ * 0-based slot of `overId` in its parent's child list. Returned as the drop
+ * target's `index` so the active item lands AT this slot — matching
+ * `arrayMove(items, fromIdx, indexOf(over))` semantics from `@dnd-kit/sortable`.
+ */
+function indexAt(
     elements: FlatElement[],
     overId: string,
     parent: string | null
@@ -245,12 +251,12 @@ function indexAfter(
         let n = 0;
         for (const el of elements) {
             if (el.kind === "block") {
-                if (el.data.id === overId) return n + 1;
+                if (el.data.id === overId) return n;
                 n++;
                 continue;
             }
             if (el.data.parentBlockId === null) {
-                if (el.data.field.id === overId) return n + 1;
+                if (el.data.field.id === overId) return n;
                 n++;
             }
         }
@@ -259,7 +265,7 @@ function indexAfter(
     let n = 0;
     for (const el of elements) {
         if (el.kind !== "field" || el.data.parentBlockId !== parent) continue;
-        if (el.data.field.id === overId) return n + 1;
+        if (el.data.field.id === overId) return n;
         n++;
     }
     return n;

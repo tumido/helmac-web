@@ -1,10 +1,12 @@
 "use client";
 
 import { Box, Paper, Typography } from "@mui/material";
+import { AccountTree } from "@mui/icons-material";
 import {
     FIELD_TYPE_META,
     type FieldType,
     type FormCondition,
+    type FormField,
     type PricingDefinition,
 } from "@/lib/types/registration-form";
 import { FIELD_TYPE_ICONS } from "./field-type-icons";
@@ -77,18 +79,68 @@ export function DragOverlayContent({
     );
     if (block && block.kind === "block") {
         const cond = conditions.find((c) => c.id === block.data.conditionId);
+        const children = elements
+            .filter(
+                (el) =>
+                    el.kind === "field" &&
+                    el.data.parentBlockId === block.data.id
+            )
+            .map((el) =>
+                el.kind === "field" ? el.data.field : null
+            )
+            .filter((f): f is FormField => f !== null);
         return (
             <Paper
                 elevation={4}
                 sx={{
-                    p: 1.5,
                     borderLeft: "4px solid",
                     borderLeftColor: "info.main",
+                    backgroundColor: "action.hover",
+                    borderRadius: 1,
+                    overflow: "hidden",
+                    minWidth: 360,
                 }}
             >
-                <Typography variant="body2" fontWeight={500}>
-                    Podmínka: {cond?.name ?? "(nepojmenovaná)"}
-                </Typography>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 2,
+                        py: 1,
+                    }}
+                >
+                    <AccountTree fontSize="small" color="info" />
+                    <Typography variant="body2" fontWeight={600}>
+                        Podmínka: {cond?.name ?? "(nepojmenovaná)"}
+                    </Typography>
+                </Box>
+                {children.map((f) => {
+                    const meta = FIELD_TYPE_META[f.type];
+                    return (
+                        <Paper
+                            key={f.id}
+                            variant="outlined"
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mx: 1,
+                                mb: 0.5,
+                                px: 1.5,
+                                py: 1,
+                                backgroundColor: "background.paper",
+                            }}
+                        >
+                            <Box sx={{ color: "text.secondary", display: "flex" }}>
+                                {FIELD_TYPE_ICONS[meta.icon]}
+                            </Box>
+                            <Typography variant="body2" sx={{ flex: 1 }}>
+                                {"label" in f ? f.label : f.text}
+                            </Typography>
+                        </Paper>
+                    );
+                })}
             </Paper>
         );
     }

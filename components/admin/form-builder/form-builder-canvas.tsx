@@ -17,7 +17,9 @@ import { isInputField } from "@/lib/types/registration-form";
 import { FieldListItem } from "./field-list-item";
 import { SortableFieldItem } from "./sortable-field-item";
 import { BlockHeaderRow } from "./block-header-row";
+import { EmptyBlockDropZone } from "./empty-block-drop-zone";
 import { DragOverlayContent } from "./drag-overlay";
+import { Fragment } from "react";
 import { useFormBuilderDnd, type DndCallbacks } from "./use-form-builder-dnd";
 import { flatElementId, type FlatElement } from "./form-data-adapter";
 
@@ -94,21 +96,26 @@ export function FormBuilderCanvas({
                                 next?.kind === "field" &&
                                 next.data.parentBlockId === el.data.id;
                             return (
-                                <SortableFieldItem
-                                    key={el.data.id}
-                                    id={el.data.id}
-                                    blockPosition={
-                                        hasChildBelow ? "block-head" : "block-solo"
-                                    }
-                                >
-                                    <BlockHeaderRow
-                                        blockId={el.data.id}
-                                        condition={conditions.find(
-                                            (c) => c.id === el.data.conditionId
-                                        )}
-                                        onDeleteBlock={onDeleteBlock}
-                                    />
-                                </SortableFieldItem>
+                                <Fragment key={el.data.id}>
+                                    <SortableFieldItem
+                                        id={el.data.id}
+                                        blockPosition="block-head"
+                                    >
+                                        <BlockHeaderRow
+                                            blockId={el.data.id}
+                                            condition={conditions.find(
+                                                (c) =>
+                                                    c.id === el.data.conditionId
+                                            )}
+                                            onDeleteBlock={onDeleteBlock}
+                                        />
+                                    </SortableFieldItem>
+                                    {!hasChildBelow && (
+                                        <EmptyBlockDropZone
+                                            blockId={el.data.id}
+                                        />
+                                    )}
+                                </Fragment>
                             );
                         }
                         const parentId = el.data.parentBlockId;
@@ -129,6 +136,9 @@ export function FormBuilderCanvas({
                                 key={el.data.field.id}
                                 id={el.data.field.id}
                                 blockPosition={blockPosition}
+                                parentBeingDragged={
+                                    isInsideBlock && activeId === parentId
+                                }
                             >
                                 <FieldListItem
                                     field={el.data.field}

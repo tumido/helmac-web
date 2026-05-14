@@ -23,12 +23,14 @@ export type BlockPosition =
 interface SortableFieldItemProps {
     id: string;
     blockPosition?: BlockPosition;
+    parentBeingDragged?: boolean;
     children: React.ReactNode;
 }
 
 export function SortableFieldItem({
     id,
     blockPosition = "standalone",
+    parentBeingDragged = false,
     children,
 }: SortableFieldItemProps) {
     const {
@@ -43,7 +45,7 @@ export function SortableFieldItem({
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging || parentBeingDragged ? 0.4 : 1,
     };
 
     const isBlockMember = blockPosition !== "standalone";
