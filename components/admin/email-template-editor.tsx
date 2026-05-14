@@ -217,7 +217,7 @@ export function EmailTemplateEditor({
         if (target < 0 || target >= sortedSections.length) return;
         const updated = sortedSections.slice();
         [updated[idx], updated[target]] = [updated[target], updated[idx]];
-        setSections(reindexSections(updated));
+        setSections(updated.map((s, i) => ({ ...s, sortOrder: i })));
     };
 
     const deleteActive = () => {
