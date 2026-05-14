@@ -15,6 +15,29 @@ const globalForMailer = globalThis as unknown as {
     mailerCache: Map<string, { transporter: Transporter; from: string }> | undefined;
 };
 
+// Apply inline <p> margins matching the editor (rich-text-editor.tsx: 0.5em 0)
+// so mail clients (Gmail/Outlook) don't strip default paragraph spacing.
+function normalizeEmailHtml(html: string): string {
+    let out = html;
+
+    out = out.replace(/<p([^>]*)>\s*<\/p>/gi, "<p$1><br></p>");
+
+    out = out.replace(/<p\b([^>]*)>/gi, (_match, attrs: string) => {
+        const styleMatch = attrs.match(/\sstyle\s*=\s*"([^"]*)"/i);
+        if (styleMatch) {
+            const merged = `margin: 0.5em 0; ${styleMatch[1].trim()}`;
+            const newAttrs = attrs.replace(
+                /\sstyle\s*=\s*"([^"]*)"/i,
+                ` style="${merged}"`,
+            );
+            return `<p${newAttrs}>`;
+        }
+        return `<p${attrs} style="margin: 0.5em 0;">`;
+    });
+
+    return out;
+}
+
 function getMailerCache(): Map<string, { transporter: Transporter; from: string }> {
     if (!globalForMailer.mailerCache) {
         globalForMailer.mailerCache = new Map();
@@ -362,6 +385,8 @@ export async function sendConfirmationEmail(opts: {
         } else {
             htmlBodyContent = htmlBodyContent.replace(/\{qrPlatba\}/g, "");
         }
+
+        htmlBodyContent = normalizeEmailHtml(htmlBodyContent);
 
         const htmlBody = `<!DOCTYPE html>
 <html>
