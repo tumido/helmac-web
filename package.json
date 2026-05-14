@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma migrate deploy && node lib/icons/build-registry.mjs && next build",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node lib/icons/build-registry.mjs",
     "start": "next start",
     "lint": "eslint .",
     "db:generate": "prisma generate",
