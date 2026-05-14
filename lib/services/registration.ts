@@ -77,6 +77,7 @@ export interface RegistrationStats {
     fieldLabels: Record<string, string>;
     fieldOptions: Record<string, string[]>;
     capacityLimits: Record<string, Record<string, number>>;
+    valueRows: Record<string, string>[];
 }
 
 const PRICING_FIELD_TYPES = new Set([
@@ -84,6 +85,69 @@ const PRICING_FIELD_TYPES = new Set([
     "pricing_multi_select",
     "pricing_quantity",
 ]);
+
+function collectFieldStats(
+    counts: Record<string, number>,
+    val: unknown
+): { numericSum: number; numericCount: number } {
+    let numericSum = 0;
+    let numericCount = 0;
+    if (val === undefined || val === null || val === "")
+        return { numericSum, numericCount };
+    const str = String(val);
+    if (str === "false")
+        return { numericSum, numericCount };
+
+    if (str.startsWith("[")) {
+        try {
+            const arr = JSON.parse(str);
+            if (Array.isArray(arr)) {
+                for (const item of arr) {
+                    const s = String(item);
+                    if (!s) continue;
+                    counts[s] = (counts[s] || 0) + 1;
+                }
+                return { numericSum, numericCount };
+            }
+        } catch {
+            /* not JSON */
+        }
+    }
+
+    if (str.startsWith("{")) {
+        try {
+            const obj = JSON.parse(str);
+            if (
+                obj &&
+                typeof obj === "object" &&
+                !Array.isArray(obj)
+            ) {
+                for (const [k, qty] of Object.entries(
+                    obj
+                )) {
+                    const n = Number(qty) || 0;
+                    if (n > 0) {
+                        counts[k] =
+                            (counts[k] || 0) + n;
+                        numericSum += n;
+                        numericCount++;
+                    }
+                }
+                return { numericSum, numericCount };
+            }
+        } catch {
+            /* not JSON */
+        }
+    }
+
+    counts[str] = (counts[str] || 0) + 1;
+    const num = Number(str);
+    if (!isNaN(num)) {
+        numericSum += num;
+        numericCount++;
+    }
+    return { numericSum, numericCount };
+}
 
 export const getRegistrationStatsForYear = cache(
     async (yearId: string): Promise<RegistrationStats> => {
@@ -146,6 +210,7 @@ export const getRegistrationStatsForYear = cache(
         }, 0);
 
         const fields: Record<string, FieldStatsData> = {};
+        const valueRows: Record<string, string>[] = [];
         if (form) {
             const formData = migrateFormData(form.fields);
             const inputFields = getAllInputFields(formData.fields);
@@ -153,114 +218,89 @@ export const getRegistrationStatsForYear = cache(
                 inputFields.map((f) => [f.name, f.type])
             );
 
-            for (const field of inputFields) {
-                const counts: Record<string, number> = {};
-                const allValues: string[] = [];
-                let numericSum = 0;
-                let numericCount = 0;
+            const fieldAccumulators = new Map(
+                inputFields.map((f) => [
+                    f.name,
+                    {
+                        counts: {} as Record<string, number>,
+                        total: 0,
+                        numericSum: 0,
+                        numericCount: 0,
+                    },
+                ])
+            );
 
-                const collectField = (
-                    data: Record<string, unknown>
-                ) => {
+            const collectRow = (
+                data: Record<string, unknown>
+            ) => {
+                const row: Record<string, string> = {};
+                for (const field of inputFields) {
                     const val = data[field.name];
-                    if (
-                        val === undefined ||
-                        val === null ||
-                        val === ""
-                    )
-                        return;
-                    const str = String(val);
-                    if (str === "false") return;
+                    const str =
+                        val !== undefined &&
+                        val !== null &&
+                        val !== "" &&
+                        String(val) !== "false"
+                            ? String(val)
+                            : "";
+                    row[field.name] = str;
 
-                    if (str.startsWith("[")) {
-                        try {
-                            const arr = JSON.parse(str);
-                            if (Array.isArray(arr)) {
-                                for (const item of arr) {
-                                    const s = String(item);
-                                    if (!s) continue;
-                                    counts[s] =
-                                        (counts[s] || 0) + 1;
-                                    allValues.push(s);
-                                }
-                                return;
-                            }
-                        } catch {
-                            /* not JSON */
-                        }
-                    }
+                    const acc = fieldAccumulators.get(
+                        field.name
+                    )!;
+                    if (str) acc.total++;
+                    const result = collectFieldStats(
+                        acc.counts,
+                        val
+                    );
+                    acc.numericSum += result.numericSum;
+                    acc.numericCount += result.numericCount;
+                }
+                valueRows.push(row);
+            };
 
-                    if (str.startsWith("{")) {
-                        try {
-                            const obj = JSON.parse(str);
-                            if (
-                                obj &&
-                                typeof obj === "object" &&
-                                !Array.isArray(obj)
-                            ) {
-                                for (const [k, qty] of Object.entries(
-                                    obj
-                                )) {
-                                    const n = Number(qty) || 0;
-                                    if (n > 0) {
-                                        counts[k] =
-                                            (counts[k] || 0) + n;
-                                        numericSum += n;
-                                        numericCount++;
-                                    }
-                                }
-                                return;
-                            }
-                        } catch {
-                            /* not JSON */
-                        }
-                    }
-
-                    counts[str] = (counts[str] || 0) + 1;
-                    allValues.push(str);
-                    const num = Number(str);
-                    if (!isNaN(num)) {
-                        numericSum += num;
-                        numericCount++;
-                    }
-                };
-
-                for (const sub of submissions) {
-                    const data = sub.data as Record<
-                        string,
-                        unknown
-                    >;
-                    collectField(data);
-                    const ap = data.additionalPeople;
-                    if (Array.isArray(ap)) {
-                        for (const person of ap) {
-                            if (
-                                person &&
-                                typeof person === "object"
-                            ) {
-                                collectField(
-                                    person as Record<
-                                        string,
-                                        unknown
-                                    >
-                                );
-                            }
+            for (const sub of submissions) {
+                const data = sub.data as Record<
+                    string,
+                    unknown
+                >;
+                collectRow(data);
+                const ap = data.additionalPeople;
+                if (Array.isArray(ap)) {
+                    for (const person of ap) {
+                        if (
+                            person &&
+                            typeof person === "object"
+                        ) {
+                            collectRow(
+                                person as Record<
+                                    string,
+                                    unknown
+                                >
+                            );
                         }
                     }
                 }
+            }
 
-                const total = allValues.length;
+            for (const field of inputFields) {
+                const acc = fieldAccumulators.get(
+                    field.name
+                )!;
                 fields[field.name] = {
-                    total,
-                    counts,
-                    sum: numericSum,
+                    total: acc.total,
+                    counts: acc.counts,
+                    sum: acc.numericSum,
                     average:
-                        numericCount > 0
+                        acc.numericCount > 0
                             ? Math.round(
-                                  numericSum / numericCount
+                                  acc.numericSum /
+                                      acc.numericCount
                               )
                             : 0,
-                    values: allValues,
+                    values: valueRows.map(
+                        (r) => r[field.name] ?? ""
+                    ),
                     isCurrency: PRICING_FIELD_TYPES.has(
                         fieldTypeMap.get(field.name) ?? ""
                     ),
@@ -306,6 +346,7 @@ export const getRegistrationStatsForYear = cache(
             fieldLabels,
             fieldOptions,
             capacityLimits,
+            valueRows,
         };
     }
 );
@@ -408,6 +449,7 @@ export async function getFilteredRegistrationStats(
     }
 
     const fields: Record<string, FieldStatsData> = {};
+    const valueRows: Record<string, string>[] = [];
     if (form) {
         const formData = migrateFormData(form.fields);
         const inputFields = getAllInputFields(
@@ -417,116 +459,89 @@ export async function getFilteredRegistrationStats(
             inputFields.map((f) => [f.name, f.type])
         );
 
-        for (const field of inputFields) {
-            const counts: Record<string, number> = {};
-            const allValues: string[] = [];
-            let numericSum = 0;
-            let numericCount = 0;
+        const fieldAccumulators = new Map(
+            inputFields.map((f) => [
+                f.name,
+                {
+                    counts: {} as Record<string, number>,
+                    total: 0,
+                    numericSum: 0,
+                    numericCount: 0,
+                },
+            ])
+        );
 
-            const collectField = (
-                data: Record<string, unknown>
-            ) => {
+        const collectRow = (
+            data: Record<string, unknown>
+        ) => {
+            const row: Record<string, string> = {};
+            for (const field of inputFields) {
                 const val = data[field.name];
-                if (
-                    val === undefined ||
-                    val === null ||
-                    val === ""
-                )
-                    return;
-                const str = String(val);
-                if (str === "false") return;
+                const str =
+                    val !== undefined &&
+                    val !== null &&
+                    val !== "" &&
+                    String(val) !== "false"
+                        ? String(val)
+                        : "";
+                row[field.name] = str;
 
-                if (str.startsWith("[")) {
-                    try {
-                        const arr = JSON.parse(str);
-                        if (Array.isArray(arr)) {
-                            for (const item of arr) {
-                                const s = String(item);
-                                if (!s) continue;
-                                counts[s] =
-                                    (counts[s] || 0) + 1;
-                                allValues.push(s);
-                            }
-                            return;
-                        }
-                    } catch {
-                        /* not JSON */
-                    }
-                }
+                const acc = fieldAccumulators.get(
+                    field.name
+                )!;
+                if (str) acc.total++;
+                const result = collectFieldStats(
+                    acc.counts,
+                    val
+                );
+                acc.numericSum += result.numericSum;
+                acc.numericCount += result.numericCount;
+            }
+            valueRows.push(row);
+        };
 
-                if (str.startsWith("{")) {
-                    try {
-                        const obj = JSON.parse(str);
-                        if (
-                            obj &&
-                            typeof obj === "object" &&
-                            !Array.isArray(obj)
-                        ) {
-                            for (const [
-                                k,
-                                qty,
-                            ] of Object.entries(obj)) {
-                                const n =
-                                    Number(qty) || 0;
-                                if (n > 0) {
-                                    counts[k] =
-                                        (counts[k] ||
-                                            0) + n;
-                                    numericSum += n;
-                                    numericCount++;
-                                }
-                            }
-                            return;
-                        }
-                    } catch {
-                        /* not JSON */
-                    }
-                }
-
-                counts[str] = (counts[str] || 0) + 1;
-                allValues.push(str);
-                const num = Number(str);
-                if (!isNaN(num)) {
-                    numericSum += num;
-                    numericCount++;
-                }
-            };
-
-            for (const sub of filtered) {
-                const data = sub.data as Record<
-                    string,
-                    unknown
-                >;
-                collectField(data);
-                const ap = data.additionalPeople;
-                if (Array.isArray(ap)) {
-                    for (const person of ap) {
-                        if (
-                            person &&
-                            typeof person === "object"
-                        ) {
-                            collectField(
-                                person as Record<
-                                    string,
-                                    unknown
-                                >
-                            );
-                        }
+        for (const sub of filtered) {
+            const data = sub.data as Record<
+                string,
+                unknown
+            >;
+            collectRow(data);
+            const ap = data.additionalPeople;
+            if (Array.isArray(ap)) {
+                for (const person of ap) {
+                    if (
+                        person &&
+                        typeof person === "object"
+                    ) {
+                        collectRow(
+                            person as Record<
+                                string,
+                                unknown
+                            >
+                        );
                     }
                 }
             }
+        }
 
+        for (const field of inputFields) {
+            const acc = fieldAccumulators.get(
+                field.name
+            )!;
             fields[field.name] = {
-                total: allValues.length,
-                counts,
-                sum: numericSum,
+                total: acc.total,
+                counts: acc.counts,
+                sum: acc.numericSum,
                 average:
-                    numericCount > 0
+                    acc.numericCount > 0
                         ? Math.round(
-                              numericSum / numericCount
+                              acc.numericSum /
+                                  acc.numericCount
                           )
                         : 0,
-                values: allValues,
+                values: valueRows.map(
+                    (r) => r[field.name] ?? ""
+                ),
                 isCurrency: PRICING_FIELD_TYPES.has(
                     fieldTypeMap.get(field.name) ?? ""
                 ),
@@ -582,6 +597,7 @@ export async function getFilteredRegistrationStats(
         fieldLabels,
         fieldOptions,
         capacityLimits,
+        valueRows,
     };
 }
 
