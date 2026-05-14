@@ -106,8 +106,9 @@ lib/
 prisma/
 ├── schema.prisma       # Database schema
 ├── migrations/         # Migration files
-├── scripts/            # One-off migration scripts (e.g. HTML→Markdown)
-└── seed.ts             # Seed script
+├── scripts/            # One-off migration/dump scripts
+├── seed.ts             # Seed script (reads from seed-data.json)
+└── seed-data.json      # Anonymized data dump (committed to git)
 
 styles/theme/           # MUI theme files (admin, public, publicLight, colors)
 tests/                  # Playwright E2E tests
@@ -153,7 +154,9 @@ npm run dev                # Start dev server (Turbopack)
 
 # Database
 npm run db:migrate         # Create migration (prisma migrate dev)
-npm run db:seed            # Run seed script
+npm run db:seed            # Seed from prisma/seed-data.json
+npm run db:dump            # Dump local DB → prisma/seed-data.json (anonymized)
+npm run db:dump -- --production  # Dump from SOURCE_DATABASE_URL instead
 npm run db:push            # Push schema without migration
 npm run db:generate        # Generate Prisma client
 npm run db:studio          # Open Prisma Studio

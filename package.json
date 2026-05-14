@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:dump": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/dump-seed-data.ts",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "migrate:html-to-md": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-html-to-markdown.ts",
