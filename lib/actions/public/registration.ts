@@ -116,9 +116,14 @@ export async function submitDynamicRegistration(
 ): Promise<RegistrationState> {
     const isTest = formData.get("__test") === "true";
 
-    // Get active year with form
+    // Get active year with form. Test submissions bypass the `registrationOpen`
+    // check so editors can validate the flow before opening registration.
     const activeYear = await db.year.findFirst({
-        where: { isActive: true, isArchived: false, registrationOpen: true },
+        where: {
+            isActive: true,
+            isArchived: false,
+            ...(isTest ? {} : { registrationOpen: true }),
+        },
         select: {
             id: true,
             title: true,
