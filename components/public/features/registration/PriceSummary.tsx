@@ -392,7 +392,10 @@ export function PriceSummary({
     }
 
     return (
-        <Paper variant="outlined" sx={{ p: 3, mt: 3 }}>
+        <Paper
+            variant="outlined"
+            sx={{ p: 3, mt: 3, flex: 1, minHeight: 0, overflowY: "auto" }}
+        >
             {content}
         </Paper>
     );

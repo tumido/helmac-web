@@ -25,8 +25,16 @@ function resolveSuffix(
     if (!suffix) return null;
     if (suffix.source === "manual") return suffix.text ?? null;
     if (suffix.source === "capacity" && stats) {
-        const cap = stats.capacityLimits?.[metric]?.[optionValue ?? ""];
-        return cap !== undefined ? `/ ${cap}` : null;
+        const limits = stats.capacityLimits?.[metric];
+        if (!limits) return null;
+        if (optionValue !== undefined) {
+            const cap = limits[optionValue];
+            return cap !== undefined ? `/ ${cap}` : null;
+        }
+        const values = Object.values(limits);
+        if (values.length === 0) return null;
+        const total = values.reduce((a, b) => a + b, 0);
+        return `/ ${total}`;
     }
     if (suffix.source === "total" && stats) {
         const fs = stats.fields?.[metric];
@@ -57,6 +65,10 @@ function resolveValue(
         };
     }
 
+    const filteredOption = block.filter?.fieldFilters?.find(
+        (ff) => ff.fieldName === block.metric
+    )?.value;
+
     const fieldStats = stats?.fields?.[block.metric];
     const fieldLabel =
         block.label ??
@@ -69,18 +81,22 @@ function resolveValue(
 
     const agg = block.aggregation ?? "count";
     let raw: number;
-    switch (agg) {
-        case "sum":
-            raw = fieldStats.sum;
-            break;
-        case "average":
-            raw = fieldStats.average;
-            break;
-        case "enumerate":
-        case "count":
-        default:
-            raw = fieldStats.total;
-            break;
+    if (filteredOption !== undefined && agg === "count") {
+        raw = fieldStats.counts?.[filteredOption] ?? 0;
+    } else {
+        switch (agg) {
+            case "sum":
+                raw = fieldStats.sum;
+                break;
+            case "average":
+                raw = fieldStats.average;
+                break;
+            case "enumerate":
+            case "count":
+            default:
+                raw = fieldStats.total;
+                break;
+        }
     }
 
     return {
@@ -88,7 +104,9 @@ function resolveValue(
             ? formatPrice(raw)
             : raw.toLocaleString("cs-CZ"),
         label: fieldLabel,
-        suffix: resolveSuffix(block.suffix, block.metric, undefined, stats),
+        suffix: resolveSuffix(
+            block.suffix, block.metric, filteredOption, stats
+        ),
     };
 }
 

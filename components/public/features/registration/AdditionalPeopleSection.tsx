@@ -15,6 +15,7 @@ import type {
 import {
     MAX_ADDITIONAL_PEOPLE,
     getDisabledOptionsForField,
+    getRemainingCapacityForField,
 } from "@/lib/types/registration-form";
 import { DynamicFormField } from "./DynamicFormField";
 import { evaluateAPVisibleFields } from "./useConditionalFields";
@@ -289,14 +290,27 @@ export function AdditionalPeopleSection({
                                         (_, i) => i !== personIndex
                                     ),
                                 ];
-                                const remainingCap =
-                                    getQuantityRemainingForField(
-                                        field,
-                                        formData.pricingDefinitions,
-                                        formData.capacityLimits,
-                                        optionCounts,
-                                        others,
-                                    );
+                                const remainingCap = (() => {
+                                    const qtyRemaining =
+                                        getQuantityRemainingForField(
+                                            field,
+                                            formData.pricingDefinitions,
+                                            formData.capacityLimits,
+                                            optionCounts,
+                                            others,
+                                        );
+                                    if (qtyRemaining) return qtyRemaining;
+                                    const cap =
+                                        getRemainingCapacityForField(
+                                            field.id,
+                                            field.name,
+                                            formData.capacityLimits,
+                                            optionCounts,
+                                        );
+                                    return Object.keys(cap).length > 0
+                                        ? cap
+                                        : undefined;
+                                })();
 
                                 return (
                                     <DynamicFormField

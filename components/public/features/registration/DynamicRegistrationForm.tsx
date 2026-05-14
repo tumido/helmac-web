@@ -39,6 +39,7 @@ import {
     getAPInputFields,
     hasAdditionalPeopleFields,
     getDisabledOptionsForField,
+    getRemainingCapacityForField,
 } from "@/lib/types/registration-form";
 import { getQuantityRemainingForField } from "@/lib/utils/quantity-remaining";
 import { DynamicFormField } from "./DynamicFormField";
@@ -480,16 +481,31 @@ export function DynamicRegistrationForm({
                                                               optionCounts
                                                           )
                                                         : undefined;
-                                                const remainingCap =
-                                                    isInputField(field)
-                                                        ? getQuantityRemainingForField(
-                                                              field,
-                                                              formData.pricingDefinitions,
-                                                              formData.capacityLimits,
-                                                              optionCounts,
-                                                              additionalPeople,
-                                                          )
+                                                const remainingCap = (() => {
+                                                    if (!isInputField(field))
+                                                        return undefined;
+                                                    const qtyRemaining =
+                                                        getQuantityRemainingForField(
+                                                            field,
+                                                            formData.pricingDefinitions,
+                                                            formData.capacityLimits,
+                                                            optionCounts,
+                                                            additionalPeople,
+                                                        );
+                                                    if (qtyRemaining)
+                                                        return qtyRemaining;
+                                                    const cap =
+                                                        getRemainingCapacityForField(
+                                                            field.id,
+                                                            field.name,
+                                                            formData.capacityLimits,
+                                                            optionCounts,
+                                                        );
+                                                    return Object.keys(cap)
+                                                        .length > 0
+                                                        ? cap
                                                         : undefined;
+                                                })();
 
                                                 return (
                                                     <Fade
@@ -713,7 +729,15 @@ export function DynamicRegistrationForm({
                     flexShrink: 0,
                 }}
             >
-                <Box sx={{ position: "sticky", top: 140 }}>
+                <Box
+                    sx={{
+                        position: "sticky",
+                        top: 140,
+                        maxHeight: "calc(100vh - 156px)",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
                     <PriceSummary {...priceSummaryProps} />
                     <Button
                         type="submit"
