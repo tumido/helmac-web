@@ -6,6 +6,7 @@ import { readFile } from "fs/promises";
 import { generateSPAYD } from "@/lib/utils/spayd";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/utils/encryption";
+import { getBaseUrl } from "@/lib/utils/url";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import type { FormField, PricingDefinition } from "@/lib/types/registration-form";
 import { evaluateCondition } from "@/lib/utils/condition-evaluation";
@@ -15,10 +16,21 @@ const globalForMailer = globalThis as unknown as {
     mailerCache: Map<string, { transporter: Transporter; from: string }> | undefined;
 };
 
+// Rewrite root-relative href values (`/foo`, `/foo?bar=1`) to absolute URLs
+// so links work when opened from an email client (different origin).
+// Leaves alone: protocol-absolute (`//`), full URLs, `mailto:`, `tel:`,
+// in-page anchors (`#...`).
+function absolutizeRelativeHrefs(html: string, baseUrl: string): string {
+    return html.replace(
+        /\bhref\s*=\s*(["'])(\/(?!\/)[^"']*)\1/gi,
+        (_m, quote: string, path: string) => `href=${quote}${baseUrl}${path}${quote}`,
+    );
+}
+
 // Apply inline <p> margins matching the editor (rich-text-editor.tsx: 0.5em 0)
 // so mail clients (Gmail/Outlook) don't strip default paragraph spacing.
 function normalizeEmailHtml(html: string): string {
-    let out = html;
+    let out = absolutizeRelativeHrefs(html, getBaseUrl());
 
     out = out.replace(/<p([^>]*)>\s*<\/p>/gi, "<p$1><br></p>");
 
