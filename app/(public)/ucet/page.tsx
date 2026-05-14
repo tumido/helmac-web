@@ -219,7 +219,10 @@ export default async function AccountPage() {
                             <Typography
                                 variant="h4"
                                 component="p"
-                                sx={{ mb: 0.5 }}
+                                sx={{
+                                    mb: 0.5,
+                                    color: "text.primary",
+                                }}
                             >
                                 {totalRegistrations}
                             </Typography>
@@ -228,6 +231,7 @@ export default async function AccountPage() {
                                 sx={{
                                     lineHeight: 1.7,
                                     opacity: 0.7,
+                                    color: "text.secondary",
                                 }}
                             >
                                 {totalRegistrations === 1
