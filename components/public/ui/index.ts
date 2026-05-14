@@ -1,3 +1,4 @@
+export { AccountStatTile } from "./AccountStatTile";
 export { AnimatedSection } from "./AnimatedSection";
 export { Section } from "./Section";
 export { SectionTitle } from "./SectionTitle";
