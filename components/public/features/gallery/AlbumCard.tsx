@@ -28,7 +28,7 @@ export function AlbumCard({ album }: AlbumCardProps) {
                 style={{ textDecoration: "none", color: "inherit" }}
             >
                 <Card
-                    image={storageUrl(album.coverImage) || undefined}
+                    image={storageUrl(album.coverImage) || album.ogImageUrl || undefined}
                     imageAlt={album.title}
                     imageHeight={180}
                     sx={{ cursor: "pointer" }}

@@ -57,6 +57,7 @@ export default async function YearEditAlbumPage({ params }: YearEditAlbumPagePro
                     title: album.title,
                     description: album.description,
                     coverImage: album.coverImage,
+                    ogImageUrl: album.ogImageUrl,
                     externalUrl: album.externalUrl,
                 }}
                 cancelHref={`/admin/rocniky/${id}/galerie`}

@@ -63,6 +63,7 @@ export default async function EditAlbumPage({ params }: EditAlbumPageProps) {
                     title: album.title,
                     description: album.description,
                     coverImage: album.coverImage,
+                    ogImageUrl: album.ogImageUrl,
                     externalUrl: album.externalUrl,
                 }}
             />
