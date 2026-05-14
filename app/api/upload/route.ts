@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             const buffer = Buffer.from(bytes);
             await writeFile(filepath, buffer);
 
-            url = `/uploads/${filename}`;
+            url = key;
         }
 
         return NextResponse.json({ url, filename });
