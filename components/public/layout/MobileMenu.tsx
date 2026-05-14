@@ -8,8 +8,10 @@ import {
     List,
     ListItem,
     ListItemText,
+    Button,
 } from "@mui/material";
 import { LinkButton, ListItemLinkButton } from "@/components/ui/link-button";
+import { publicLogout } from "@/lib/actions/public/auth";
 import { OrnamentalUnderline } from "@/components/public/ui/OrnamentalUnderline";
 import { GameIcon } from "@/lib/icons";
 import { NavItem } from "./Navigation";
@@ -242,20 +244,47 @@ export function MobileMenu({
                     )}
 
                     {publicUser ? (
-                    <LinkButton
-                        href="/ucet"
-                        variant="outlined"
-                        fullWidth
-                        onClick={onClose}
-                        startIcon={<GameIcon name="visored-helm" sx={{ fontSize: "1.5rem" }} />}
-                        sx={{
-                            color: "primary.main",
-                            borderColor: "primary.main",
-                        }}
-                    >
-                        Můj účet
-                    </LinkButton>
-                ) : (
+                        <>
+                            <LinkButton
+                                href="/ucet"
+                                variant="outlined"
+                                fullWidth
+                                onClick={onClose}
+                                startIcon={
+                                    <GameIcon
+                                        name="visored-helm"
+                                        sx={{ fontSize: "1.5rem" }}
+                                    />
+                                }
+                                sx={{
+                                    color: "primary.main",
+                                    borderColor: "primary.main",
+                                }}
+                            >
+                                Můj účet
+                            </LinkButton>
+                            <form action={publicLogout}>
+                                <Button
+                                    type="submit"
+                                    variant="outlined"
+                                    fullWidth
+                                    onClick={onClose}
+                                    startIcon={
+                                        <GameIcon
+                                            name="boot-prints"
+                                            sx={{ fontSize: "1.5rem" }}
+                                        />
+                                    }
+                                    sx={{
+                                        color: "text.secondary",
+                                        borderColor: "divider",
+                                    }}
+                                >
+                                    Odhlásit se
+                                </Button>
+                            </form>
+                        </>
+                    ) : (
                     <LinkButton
                         href="/prihlaseni"
                         variant="outlined"
