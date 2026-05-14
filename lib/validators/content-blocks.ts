@@ -71,6 +71,7 @@ const statMetricConfigSchema = z.object({
     label: z.string().optional(),
     icon: z.string().optional(),
     filter: statFilterSchema,
+    fallback: z.string().optional(),
 });
 
 const statSingleBlockSchema = z.object({

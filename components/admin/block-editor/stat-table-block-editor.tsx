@@ -213,34 +213,22 @@ export function StatTableBlockEditor({
             };
         }
 
-        const maxRows = Math.max(
-            ...block.metrics.map(
-                (m) =>
-                    stats.fields?.[m.metric]?.values
-                        ?.length ?? 0
-            ),
-            0
-        );
+        const rows = stats.valueRows ?? [];
         return {
-            columns: block.metrics.map((m) => {
-                const vals =
-                    stats.fields?.[m.metric]?.values ??
-                    [];
-                return {
-                    label:
-                        m.label ??
-                        stats.fieldLabels?.[m.metric] ??
-                        m.metric,
-                    values: Array.from(
-                        { length: maxRows },
-                        (_, i) => vals[i] ?? ""
-                    ),
-                };
-            }),
-            rows: Array.from(
-                { length: maxRows },
-                (_, i) => String(i)
-            ),
+            columns: block.metrics.map((m) => ({
+                label:
+                    m.label ??
+                    stats.fieldLabels?.[m.metric] ??
+                    m.metric,
+                values: rows.map(
+                    (row) =>
+                        row[m.metric] ||
+                        (m.fallback
+                            ? row[m.fallback] ?? ""
+                            : "")
+                ),
+            })),
+            rows: rows.map((_, i) => String(i)),
             showRowLabels: false,
         };
     }

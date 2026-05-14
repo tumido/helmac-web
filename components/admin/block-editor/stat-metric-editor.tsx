@@ -263,17 +263,115 @@ export function StatMetricEditor({
             </Box>
             )}
 
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 0.5,
+                    ...(inline
+                        ? { mt: 0.5 }
+                        : { px: 1, pt: 0.5 }),
+                }}
+            >
+                <TextField
+                    select
+                    value={value.metric}
+                    onChange={(e) =>
+                        onChange({
+                            ...value,
+                            metric: e.target.value,
+                        })
+                    }
+                    size="small"
+                    fullWidth
+                    sx={{
+                        "& .MuiInputBase-root": {
+                            fontSize: "0.8rem",
+                        },
+                    }}
+                >
+                    {source === "builtin"
+                        ? BUILTIN_METRICS.map(
+                              ([v, label]) => (
+                                  <MenuItem
+                                      key={v}
+                                      value={v}
+                                  >
+                                      {label}
+                                  </MenuItem>
+                              )
+                          )
+                        : (fields?.map((f) => (
+                              <MenuItem
+                                  key={f.name}
+                                  value={f.name}
+                              >
+                                  {f.label}
+                              </MenuItem>
+                          )) ?? (
+                              <MenuItem value="" disabled>
+                                  Načítání...
+                              </MenuItem>
+                          ))}
+                </TextField>
+
+                {source === "field" && (
+                    <TextField
+                        select
+                        label="Výchozí hodnota z"
+                        value={value.fallback ?? ""}
+                        onChange={(e) =>
+                            onChange({
+                                ...value,
+                                fallback:
+                                    e.target.value ||
+                                    undefined,
+                            })
+                        }
+                        size="small"
+                        fullWidth
+                        sx={{
+                            "& .MuiInputBase-root": {
+                                fontSize: "0.8rem",
+                            },
+                        }}
+                    >
+                        <MenuItem value="">
+                            <em>Žádný</em>
+                        </MenuItem>
+                        {fields
+                            ?.filter(
+                                (f) =>
+                                    f.name !==
+                                    value.metric
+                            )
+                            .map((f) => (
+                                <MenuItem
+                                    key={f.name}
+                                    value={f.name}
+                                >
+                                    {f.label}
+                                </MenuItem>
+                            )) ?? (
+                            <MenuItem value="" disabled>
+                                Načítání...
+                            </MenuItem>
+                        )}
+                    </TextField>
+                )}
+            </Box>
+
             <TextField
-                select
-                value={value.metric}
+                value={value.label ?? ""}
                 onChange={(e) =>
                     onChange({
                         ...value,
-                        metric: e.target.value,
+                        label:
+                            e.target.value || undefined,
                     })
                 }
                 size="small"
                 fullWidth
+                placeholder="Vlastní popisek"
                 sx={{
                     ...(inline
                         ? { mt: 0.5 }
@@ -282,31 +380,7 @@ export function StatMetricEditor({
                         fontSize: "0.8rem",
                     },
                 }}
-            >
-                {source === "builtin"
-                    ? BUILTIN_METRICS.map(
-                          ([v, label]) => (
-                              <MenuItem
-                                  key={v}
-                                  value={v}
-                              >
-                                  {label}
-                              </MenuItem>
-                          )
-                      )
-                    : (fields?.map((f) => (
-                          <MenuItem
-                              key={f.name}
-                              value={f.name}
-                          >
-                              {f.label}
-                          </MenuItem>
-                      )) ?? (
-                          <MenuItem value="" disabled>
-                              Načítání...
-                          </MenuItem>
-                      ))}
-            </TextField>
+            />
 
         </Box>
     );

@@ -72,6 +72,7 @@ export interface StatMetricConfig {
     label?: string;
     icon?: string;
     filter?: StatFilter;
+    fallback?: string;
 }
 
 export type StatSuffixSource = "manual" | "capacity" | "total";
