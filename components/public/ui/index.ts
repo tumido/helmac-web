@@ -10,4 +10,5 @@ export { PageHeader } from "./PageHeader";
 export { ThemeToggle } from "./ThemeToggle";
 export { ScrollToTop } from "./ScrollToTop";
 export { FilterChips } from "./FilterChips";
+export { ParchmentCallout } from "./ParchmentCallout";
 export type { FilterChipItem } from "./FilterChips";

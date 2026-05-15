@@ -42,27 +42,19 @@ import {
 import { getFieldRemainingInfo } from "@/lib/utils/quantity-remaining";
 import { DynamicFormField } from "./DynamicFormField";
 import { RegistrationSuccess } from "./RegistrationSuccess";
-import {
-    useConditionalFields,
-    evaluateAPVisibleFields,
-} from "./useConditionalFields";
+import { useConditionalFields } from "./useConditionalFields";
 import { AdditionalPeopleSection } from "./AdditionalPeopleSection";
 import { PriceSummary } from "./PriceSummary";
 import { FormProgress } from "./FormProgress";
 import { StickyPriceSummary } from "./StickyPriceSummary";
-import {
-    buildMergedDataForAP,
-    getAPFieldNames,
-} from "@/lib/utils/additional-people";
+import { ValidationSummary } from "./ValidationSummary";
 import {
     submitDynamicRegistration,
     type RegistrationState,
 } from "@/lib/actions/public/registration";
-import { sendPreviewConfirmation } from "@/lib/actions/preview-send-confirmation";
-import {
-    getPreviewSuccessData,
-    type PreviewSuccessResult,
-} from "@/lib/actions/preview-success-data";
+import { useFormValidation } from "./useFormValidation";
+import { useAutoSelect } from "./useAutoSelect";
+import { usePreviewActions } from "./usePreviewActions";
 
 interface DynamicRegistrationFormProps {
     formData: RegistrationFormData;
@@ -115,19 +107,6 @@ export function DynamicRegistrationForm({
     >([]);
     const { visibleFields } = useConditionalFields(formData, values);
     const [gdprConsent, setGdprConsent] = useState(false);
-    const [previewSnackbar, setPreviewSnackbar] = useState<{
-        open: boolean;
-        severity: "info" | "success" | "error";
-        message: string;
-    }>({
-        open: false,
-        severity: "info",
-        message: "",
-    });
-    const [previewSending, setPreviewSending] = useState(false);
-    const [successPreview, setSuccessPreview] =
-        useState<Extract<PreviewSuccessResult, { success: true }> | null>(null);
-    const [loadingSuccessPreview, setLoadingSuccessPreview] = useState(false);
 
     const [state, formAction, isPending] = useActionState<
         RegistrationState | null,
@@ -141,156 +120,68 @@ export function DynamicRegistrationForm({
 
     useEffect(() => {
         if (state?.capacityError) {
-            setCapacitySnackbar({ open: true, message: state.capacityError });
+            setCapacitySnackbar({
+                open: true,
+                message: state.capacityError,
+            });
         }
     }, [state]);
+
+    // Derived field lists
+    const allFields = getAllFields(formData.fields);
+    const allInputFields = getAllInputFields(formData.fields);
+    const showAPSection = hasAdditionalPeopleFields(formData.fields);
+    const apFields = showAPSection
+        ? getAPInputFields(formData.fields)
+        : [];
+
+    // Hooks
+    const {
+        canSubmit,
+        validationSummary,
+        getFieldError,
+        markTouched,
+        visibleAPFieldsPerPerson,
+    } = useFormValidation({
+        allInputFields,
+        apFields,
+        visibleFields,
+        values,
+        additionalPeople,
+        formData,
+        showAPSection,
+        isLoggedIn,
+        previewMode,
+        gdprConsent,
+        serverErrors: state?.errors,
+    });
+
+    useAutoSelect(
+        formData,
+        visibleFields,
+        optionCounts,
+        additionalPeople,
+        setValues
+    );
+
+    const {
+        previewSnackbar,
+        closePreviewSnackbar,
+        previewSending,
+        handleSendPreviewEmail,
+        successPreview,
+        clearSuccessPreview,
+        loadingSuccessPreview,
+        handleShowSuccessPreview,
+    } = usePreviewActions(previewYearId, values, additionalPeople);
 
     const handleChange = useCallback(
         (name: string, value: string | number | boolean) => {
             setValues((prev) => ({ ...prev, [name]: value }));
+            markTouched(name);
         },
-        []
+        [markTouched]
     );
-
-    const getFieldError = useCallback(
-        (name: string): string | undefined => {
-            return state?.errors?.[name]?.[0];
-        },
-        [state?.errors]
-    );
-
-    const handleSendPreviewEmail = useCallback(async () => {
-        if (!previewYearId) return;
-        setPreviewSending(true);
-        try {
-            const result = await sendPreviewConfirmation({
-                yearId: previewYearId,
-                submissionData: values,
-                additionalPeople,
-            });
-            if (result.success) {
-                const condCount = result.conditionalSentCount ?? 0;
-                setPreviewSnackbar({
-                    open: true,
-                    severity: "success",
-                    message:
-                        condCount > 0
-                            ? `Testovací email byl odeslán (včetně ${condCount} podmíněných).`
-                            : "Testovací email byl odeslán.",
-                });
-            } else {
-                setPreviewSnackbar({
-                    open: true,
-                    severity: "error",
-                    message: result.error ?? "Nepodařilo se odeslat email",
-                });
-            }
-        } catch {
-            setPreviewSnackbar({
-                open: true,
-                severity: "error",
-                message: "Nepodařilo se odeslat email",
-            });
-        } finally {
-            setPreviewSending(false);
-        }
-    }, [previewYearId, values, additionalPeople]);
-
-    const handleShowSuccessPreview = useCallback(async () => {
-        if (!previewYearId) return;
-        setLoadingSuccessPreview(true);
-        try {
-            const result = await getPreviewSuccessData({
-                yearId: previewYearId,
-                submissionData: values,
-                additionalPeople,
-            });
-            if ("success" in result && result.success) {
-                setSuccessPreview(result);
-            } else {
-                setPreviewSnackbar({
-                    open: true,
-                    severity: "error",
-                    message:
-                        ("error" in result && result.error) ||
-                        "Nepodařilo se načíst náhled",
-                });
-            }
-        } catch {
-            setPreviewSnackbar({
-                open: true,
-                severity: "error",
-                message: "Nepodařilo se načíst náhled",
-            });
-        } finally {
-            setLoadingSuccessPreview(false);
-        }
-    }, [previewYearId, values, additionalPeople]);
-
-    // Auto-select single enabled option for pricing_select, select, and radio fields
-    useEffect(() => {
-        const inputFields = getAllInputFields(formData.fields);
-        const updates: Record<string, string> = {};
-
-        for (const field of inputFields) {
-            if (!visibleFields.has(field.id)) continue;
-
-            if (field.type === "pricing_select" && field.pricingId) {
-                const def = formData.pricingDefinitions.find(
-                    (d) => d.id === field.pricingId
-                );
-                if (!def) continue;
-                const { disabled } = getFieldRemainingInfo(
-                    field,
-                    formData.pricingDefinitions,
-                    formData.capacityLimits,
-                    optionCounts,
-                    additionalPeople,
-                );
-                const enabledOptions = def.options.filter(
-                    (o) => !disabled.has(o.name)
-                );
-                if (enabledOptions.length === 1) {
-                    updates[field.name] = enabledOptions[0].id;
-                }
-            } else if (field.type === "select" || field.type === "radio") {
-                if (!field.options || field.options.length === 0) continue;
-                const { disabled } = getFieldRemainingInfo(
-                    field,
-                    formData.pricingDefinitions,
-                    formData.capacityLimits,
-                    optionCounts,
-                    additionalPeople,
-                );
-                const enabledOptions = field.options.filter(
-                    (o) => !disabled.has(o)
-                );
-                if (enabledOptions.length === 1) {
-                    updates[field.name] = enabledOptions[0];
-                }
-            }
-        }
-
-        if (Object.keys(updates).length > 0) {
-            setValues((prev) => {
-                const next = { ...prev };
-                let changed = false;
-                for (const [name, value] of Object.entries(updates)) {
-                    if (prev[name] === "" || prev[name] === undefined) {
-                        next[name] = value;
-                        changed = true;
-                    }
-                }
-                return changed ? next : prev;
-            });
-        }
-    }, [visibleFields, formData, optionCounts, additionalPeople]);
-
-    // Flatten all fields for rendering (preserving order from elements)
-    const allFields = getAllFields(formData.fields);
-    const allInputFields = getAllInputFields(formData.fields);
-    const showAPSection = hasAdditionalPeopleFields(formData.fields);
-    const apFields = showAPSection ? getAPInputFields(formData.fields) : [];
 
     // Group fields into sections based on heading fields
     const sections = useMemo(() => {
@@ -298,7 +189,10 @@ export function DynamicRegistrationForm({
             heading: FormField | null;
             fields: FormField[];
         }[] = [];
-        let current: { heading: FormField | null; fields: FormField[] } = {
+        let current: {
+            heading: FormField | null;
+            fields: FormField[];
+        } = {
             heading: null,
             fields: [],
         };
@@ -319,53 +213,30 @@ export function DynamicRegistrationForm({
         return result;
     }, [allFields, visibleFields]);
 
-    // Extract progress sections from headings
     const progressSections = useMemo(() => {
         return sections
             .filter(
                 (s) =>
-                    s.heading && !isInputField(s.heading) && s.fields.length > 0
+                    s.heading &&
+                    !isInputField(s.heading) &&
+                    s.fields.length > 0
             )
             .map((s) => ({
                 id: `section-${s.heading!.id}`,
-                label: (s.heading as { type: "heading"; text: string }).text,
+                label: (
+                    s.heading as { type: "heading"; text: string }
+                ).text,
             }));
     }, [sections]);
 
-    const allRequiredFilled = useMemo(() => {
-        for (const field of allInputFields) {
-            if (!field.required || !visibleFields.has(field.id)) continue;
-            const val = values[field.name];
-            if (val === undefined || val === "" || val === false) return false;
-        }
-        if (!isLoggedIn && !previewMode && !gdprConsent) return false;
-        return true;
-    }, [
-        allInputFields,
-        visibleFields,
-        values,
-        isLoggedIn,
-        previewMode,
-        gdprConsent,
-    ]);
-
-    // Compute visible AP fields per person for price summary
-    const visibleAPFieldsPerPerson = useMemo(() => {
-        if (!showAPSection) return [];
-        const apNames = getAPFieldNames(formData.fields);
-        return additionalPeople.map((person) => {
-            const merged = buildMergedDataForAP(values, person, apNames);
-            return evaluateAPVisibleFields(formData, merged);
-        });
-    }, [showAPSection, additionalPeople, values, formData]);
-
+    // Early returns for success states
     if (previewMode && successPreview) {
         return (
             <Box>
                 <Box sx={{ mb: 2, textAlign: "center" }}>
                     <Button
                         variant="outlined"
-                        onClick={() => setSuccessPreview(null)}
+                        onClick={clearSuccessPreview}
                     >
                         Zpět na náhled formuláře
                     </Button>
@@ -373,8 +244,12 @@ export function DynamicRegistrationForm({
                 <RegistrationSuccess
                     message={successPreview.message}
                     variableSymbol={successPreview.variableSymbol}
-                    totalPrice={successPreview.totalPrice ?? undefined}
-                    paymentData={successPreview.paymentData ?? undefined}
+                    totalPrice={
+                        successPreview.totalPrice ?? undefined
+                    }
+                    paymentData={
+                        successPreview.paymentData ?? undefined
+                    }
                     successContent={successContent}
                 />
             </Box>
@@ -423,7 +298,6 @@ export function DynamicRegistrationForm({
                                 value="true"
                             />
                         )}
-                        {/* Include checkbox values as hidden inputs for FormData */}
                         {allInputFields.map((field) => {
                             if (field.type === "checkbox") {
                                 return (
@@ -432,7 +306,8 @@ export function DynamicRegistrationForm({
                                         type="hidden"
                                         name={field.name}
                                         value={String(
-                                            values[field.name] ?? false
+                                            values[field.name] ??
+                                                false
                                         )}
                                     />
                                 );
@@ -447,100 +322,126 @@ export function DynamicRegistrationForm({
                                 gap: 3,
                             }}
                         >
-                            {sections.map((section, sectionIdx) => (
-                                <AnimatedSection
-                                    key={
-                                        section.heading?.id ??
-                                        `section-${sectionIdx}`
-                                    }
-                                    delay={sectionIdx * 100}
-                                >
-                                    {section.heading && (
-                                        <DynamicFormField
-                                            field={section.heading}
-                                            value=""
-                                            onChange={handleChange}
-                                            pricingDefinitions={
-                                                formData.pricingDefinitions
-                                            }
-                                            priceTiers={formData.priceTiers}
-                                        />
-                                    )}
-                                    {section.fields.length > 0 && (
-                                        <Paper
-                                            variant="outlined"
-                                            sx={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: 2.5,
-                                                p: { xs: 2, md: 3 },
-                                                borderRadius: 2,
-                                            }}
-                                        >
-                                            {section.fields.map((field) => {
-                                                const value = isInputField(
-                                                    field
-                                                )
-                                                    ? (values[field.name] ?? "")
-                                                    : "";
-                                                const remainingInfo =
-                                                    isInputField(field)
-                                                        ? getFieldRemainingInfo(
-                                                              field,
-                                                              formData.pricingDefinitions,
-                                                              formData.capacityLimits,
-                                                              optionCounts,
-                                                              additionalPeople,
-                                                          )
-                                                        : undefined;
-                                                const disabledOpts =
-                                                    remainingInfo?.disabled;
-                                                const remainingCap =
-                                                    remainingInfo?.remaining;
+                            {sections.map(
+                                (section, sectionIdx) => (
+                                    <AnimatedSection
+                                        key={
+                                            section.heading?.id ??
+                                            `section-${sectionIdx}`
+                                        }
+                                        delay={sectionIdx * 100}
+                                    >
+                                        {section.heading && (
+                                            <DynamicFormField
+                                                field={
+                                                    section.heading
+                                                }
+                                                value=""
+                                                onChange={
+                                                    handleChange
+                                                }
+                                                pricingDefinitions={
+                                                    formData.pricingDefinitions
+                                                }
+                                                priceTiers={
+                                                    formData.priceTiers
+                                                }
+                                            />
+                                        )}
+                                        {section.fields.length >
+                                            0 && (
+                                            <Paper
+                                                variant="outlined"
+                                                sx={{
+                                                    display: "flex",
+                                                    flexDirection:
+                                                        "column",
+                                                    gap: 2.5,
+                                                    p: {
+                                                        xs: 2,
+                                                        md: 3,
+                                                    },
+                                                    borderRadius: 2,
+                                                }}
+                                            >
+                                                {section.fields.map(
+                                                    (field) => {
+                                                        const value =
+                                                            isInputField(
+                                                                field
+                                                            )
+                                                                ? (values[
+                                                                      field
+                                                                          .name
+                                                                  ] ??
+                                                                  "")
+                                                                : "";
+                                                        const remainingInfo =
+                                                            isInputField(
+                                                                field
+                                                            )
+                                                                ? getFieldRemainingInfo(
+                                                                      field,
+                                                                      formData.pricingDefinitions,
+                                                                      formData.capacityLimits,
+                                                                      optionCounts,
+                                                                      additionalPeople
+                                                                  )
+                                                                : undefined;
 
-                                                return (
-                                                    <Fade
-                                                        key={field.id}
-                                                        in
-                                                        timeout={300}
-                                                    >
-                                                        <Box>
-                                                            <DynamicFormField
-                                                                field={field}
-                                                                value={value}
-                                                                error={
-                                                                    isInputField(
-                                                                        field
-                                                                    )
-                                                                        ? getFieldError(
-                                                                              field.name
-                                                                          )
-                                                                        : undefined
+                                                        return (
+                                                            <Fade
+                                                                key={
+                                                                    field.id
                                                                 }
-                                                                onChange={
-                                                                    handleChange
+                                                                in
+                                                                timeout={
+                                                                    300
                                                                 }
-                                                                pricingDefinitions={
-                                                                    formData.pricingDefinitions
-                                                                }
-                                                                priceTiers={
-                                                                    formData.priceTiers
-                                                                }
-                                                                disabledOptions={
-                                                                    disabledOpts
-                                                                }
-                                                                remainingCapacity={
-                                                                    remainingCap
-                                                                }
-                                                            />
-                                                        </Box>
-                                                    </Fade>
-                                                );
-                                            })}
-                                        </Paper>
-                                    )}
-                                </AnimatedSection>
-                            ))}
+                                                            >
+                                                                <Box>
+                                                                    <DynamicFormField
+                                                                        field={
+                                                                            field
+                                                                        }
+                                                                        value={
+                                                                            value
+                                                                        }
+                                                                        error={
+                                                                            isInputField(
+                                                                                field
+                                                                            )
+                                                                                ? getFieldError(
+                                                                                      field.name
+                                                                                  )
+                                                                                : undefined
+                                                                        }
+                                                                        onChange={
+                                                                            handleChange
+                                                                        }
+                                                                        pricingDefinitions={
+                                                                            formData.pricingDefinitions
+                                                                        }
+                                                                        priceTiers={
+                                                                            formData.priceTiers
+                                                                        }
+                                                                        disabledOptions={
+                                                                            remainingInfo?.disabled
+                                                                        }
+                                                                        remainingCapacity={
+                                                                            remainingInfo?.remaining
+                                                                        }
+                                                                    />
+                                                                </Box>
+                                                            </Fade>
+                                                        );
+                                                    }
+                                                )}
+                                            </Paper>
+                                        )}
+                                    </AnimatedSection>
+                                )
+                            )}
                         </Box>
 
                         {showAPSection && (
@@ -550,7 +451,9 @@ export function DynamicRegistrationForm({
                                 mainValues={values}
                                 optionCounts={optionCounts}
                                 people={additionalPeople}
-                                onPeopleChange={setAdditionalPeople}
+                                onPeopleChange={
+                                    setAdditionalPeople
+                                }
                                 errors={state?.apErrors}
                             />
                         )}
@@ -569,7 +472,9 @@ export function DynamicRegistrationForm({
                                         <Checkbox
                                             checked={gdprConsent}
                                             onChange={(e) =>
-                                                setGdprConsent(e.target.checked)
+                                                setGdprConsent(
+                                                    e.target.checked
+                                                )
                                             }
                                         />
                                     }
@@ -581,20 +486,27 @@ export function DynamicRegistrationForm({
                                                 href="/gdpr"
                                                 target="_blank"
                                             >
-                                                zpracováním osobních údajů
+                                                zpracováním osobních
+                                                údajů
                                             </MuiLink>
                                         </>
                                     }
                                 />
                                 {state?.errors?.gdprConsent && (
                                     <FormHelperText error>
-                                        {state.errors.gdprConsent[0]}
+                                        {
+                                            state.errors
+                                                .gdprConsent[0]
+                                        }
                                     </FormHelperText>
                                 )}
                             </Box>
                         )}
 
-                        <DecorativeDivider variant="ornate" sx={{ my: 3 }} />
+                        <DecorativeDivider
+                            variant="ornate"
+                            sx={{ my: 3 }}
+                        />
 
                         <Box
                             sx={{
@@ -607,14 +519,17 @@ export function DynamicRegistrationForm({
                                 color="text.secondary"
                                 sx={{ mb: 2 }}
                             >
-                                Po odeslání obdržíte potvrzení na email.
+                                Po odeslání obdržíte potvrzení na
+                                email.
                             </Typography>
                             <Button
                                 type="submit"
                                 variant="contained"
                                 color="primary"
                                 size="large"
-                                disabled={isPending || !allRequiredFilled}
+                                disabled={
+                                    isPending || !canSubmit
+                                }
                                 sx={{
                                     px: 6,
                                     py: 1.5,
@@ -648,10 +563,12 @@ export function DynamicRegistrationForm({
                                         variant="outlined"
                                         color="primary"
                                         size="large"
-                                        onClick={handleSendPreviewEmail}
+                                        onClick={
+                                            handleSendPreviewEmail
+                                        }
                                         disabled={
                                             previewSending ||
-                                            !allRequiredFilled
+                                            !canSubmit
                                         }
                                         sx={{ px: 4, py: 1.25 }}
                                     >
@@ -664,8 +581,12 @@ export function DynamicRegistrationForm({
                                         variant="outlined"
                                         color="primary"
                                         size="large"
-                                        onClick={handleShowSuccessPreview}
-                                        disabled={loadingSuccessPreview}
+                                        onClick={
+                                            handleShowSuccessPreview
+                                        }
+                                        disabled={
+                                            loadingSuccessPreview
+                                        }
                                         sx={{ px: 4, py: 1.25 }}
                                     >
                                         {loadingSuccessPreview
@@ -674,11 +595,20 @@ export function DynamicRegistrationForm({
                                     </Button>
                                 </Box>
                             )}
-                            {state?.message && !state.success && (
-                                <Alert severity="error" sx={{ mt: 2 }}>
-                                    {state.message}
-                                </Alert>
+                            {!isPending && (
+                                <ValidationSummary
+                                    summary={validationSummary}
+                                />
                             )}
+                            {state?.message &&
+                                !state.success && (
+                                    <Alert
+                                        severity="error"
+                                        sx={{ mt: 2 }}
+                                    >
+                                        {state.message}
+                                    </Alert>
+                                )}
                         </Box>
                     </Box>
 
@@ -686,25 +616,17 @@ export function DynamicRegistrationForm({
                         <Snackbar
                             open={previewSnackbar.open}
                             autoHideDuration={4000}
-                            onClose={() =>
-                                setPreviewSnackbar((s) => ({
-                                    ...s,
-                                    open: false,
-                                }))
-                            }
+                            onClose={closePreviewSnackbar}
                             anchorOrigin={{
                                 vertical: "bottom",
                                 horizontal: "center",
                             }}
                         >
                             <Alert
-                                severity={previewSnackbar.severity}
-                                onClose={() =>
-                                    setPreviewSnackbar((s) => ({
-                                        ...s,
-                                        open: false,
-                                    }))
+                                severity={
+                                    previewSnackbar.severity
                                 }
+                                onClose={closePreviewSnackbar}
                             >
                                 {previewSnackbar.message}
                             </Alert>
@@ -715,7 +637,10 @@ export function DynamicRegistrationForm({
                         open={capacitySnackbar.open}
                         autoHideDuration={6000}
                         onClose={() =>
-                            setCapacitySnackbar((s) => ({ ...s, open: false }))
+                            setCapacitySnackbar((s) => ({
+                                ...s,
+                                open: false,
+                            }))
                         }
                         anchorOrigin={{
                             vertical: "bottom",
@@ -763,7 +688,8 @@ export function DynamicRegistrationForm({
                         size="large"
                         fullWidth
                         disabled={
-                            !previewMode && (isPending || !allRequiredFilled)
+                            !previewMode &&
+                            (isPending || !canSubmit)
                         }
                         sx={{
                             mt: 2,
@@ -784,7 +710,9 @@ export function DynamicRegistrationForm({
                 </Box>
             </Box>
 
-            {hasPricing && <StickyPriceSummary {...priceSummaryProps} />}
+            {hasPricing && (
+                <StickyPriceSummary {...priceSummaryProps} />
+            )}
         </Box>
     );
 }
