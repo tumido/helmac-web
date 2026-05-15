@@ -41,18 +41,14 @@ function resolveColumns(
         const columns = block.metrics
             .filter((m) => isBuiltinMetric(m.metric))
             .map((m) => {
-                const raw =
-                    stats[m.metric as BuiltinMetric] ?? 0;
-                const isCurrency =
-                    BUILTIN_CURRENCY_METRICS.includes(
-                        m.metric as BuiltinMetric
-                    );
+                const raw = stats[m.metric as BuiltinMetric] ?? 0;
+                const isCurrency = BUILTIN_CURRENCY_METRICS.includes(
+                    m.metric as BuiltinMetric
+                );
                 return {
                     label:
                         m.label ??
-                        BUILTIN_METRIC_LABELS[
-                            m.metric as BuiltinMetric
-                        ],
+                        BUILTIN_METRIC_LABELS[m.metric as BuiltinMetric],
                     values: [
                         isCurrency
                             ? formatPrice(raw)
@@ -68,18 +64,14 @@ function resolveColumns(
     }
 
     const hasOptions = block.metrics.some(
-        (m) =>
-            (stats.fieldOptions?.[m.metric]?.length ??
-                0) > 0
+        (m) => (stats.fieldOptions?.[m.metric]?.length ?? 0) > 0
     );
 
     if (hasOptions) {
         const allOpts: string[] = [];
         const seen = new Set<string>();
         for (const m of block.metrics) {
-            for (const o of stats.fieldOptions?.[
-                m.metric
-            ] ?? []) {
+            for (const o of stats.fieldOptions?.[m.metric] ?? []) {
                 if (!seen.has(o)) {
                     seen.add(o);
                     allOpts.push(o);
@@ -98,14 +90,9 @@ function resolveColumns(
         const columns = block.metrics.map((m) => {
             const fs = stats.fields?.[m.metric];
             return {
-                label:
-                    m.label ??
-                    stats.fieldLabels?.[m.metric] ??
-                    m.metric,
+                label: m.label ?? stats.fieldLabels?.[m.metric] ?? m.metric,
                 values: allOpts.map((opt) =>
-                    (
-                        fs?.counts?.[opt] ?? 0
-                    ).toLocaleString("cs-CZ")
+                    (fs?.counts?.[opt] ?? 0).toLocaleString("cs-CZ")
                 ),
             };
         });
@@ -118,16 +105,10 @@ function resolveColumns(
 
     const rows = stats.valueRows ?? [];
     const columns = block.metrics.map((m) => ({
-        label:
-            m.label ??
-            stats.fieldLabels?.[m.metric] ??
-            m.metric,
+        label: m.label ?? stats.fieldLabels?.[m.metric] ?? m.metric,
         values: rows.map(
             (row) =>
-                row[m.metric] ||
-                (m.fallback
-                    ? row[m.fallback] ?? ""
-                    : "")
+                row[m.metric] || (m.fallback ? (row[m.fallback] ?? "") : "")
         ),
     }));
 
@@ -142,8 +123,7 @@ export function StatTableBlockRenderer({
     block,
     stats,
 }: StatTableBlockRendererProps) {
-    const { columns, rows, showRowLabels } =
-        resolveColumns(block, stats);
+    const { columns, rows, showRowLabels } = resolveColumns(block, stats);
 
     if (columns.length === 0) return null;
 
@@ -161,126 +141,113 @@ export function StatTableBlockRenderer({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: justifyContent,
+                maxWidth: "100%",
+                mx: 1,
+                minWidth: 0,
             }}
         >
-        {block.title && !showRowLabels && (
-            <Typography
-                variant="h2"
-                component="h2"
-                sx={{ mb: 2 }}
-            >
-                {block.title}
-            </Typography>
-        )}
-        <Box
-            component="table"
-            sx={{
-                borderCollapse: "collapse",
-                my: 2,
-                "& tbody tr:not(:last-child)": {
-                    borderBottom: "1px solid",
-                    borderColor: "primary.main",
-                },
-                "& tbody td:first-of-type": {
-                    whiteSpace: "nowrap",
-                },
-                "& td:not(:last-of-type), & th:not(:last-of-type)":
-                    {
+            {block.title && !showRowLabels && (
+                <Typography variant="h3" component="h3" sx={{ mb: 2 }}>
+                    {block.title}
+                </Typography>
+            )}
+            <Box
+                component="table"
+                sx={{
+                    borderCollapse: "collapse",
+                    tableLayout: "fixed",
+                    width: "100%",
+                    my: 2,
+                    "& tbody tr:not(:last-child)": {
+                        borderBottom: "1px solid",
+                        borderColor: "primary.main",
+                    },
+                    "& th, & tbody td": {
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    },
+                    "& td:not(:last-of-type), & th:not(:last-of-type)": {
                         borderRight: "1px solid",
                         borderColor: (theme: Theme) =>
-                            alpha(
-                                theme.palette.primary
-                                    .main,
-                                0.25
-                            ),
+                            alpha(theme.palette.primary.main, 0.25),
                     },
-            }}
-        >
-            <Box component="thead">
-                <tr>
-                    {showRowLabels && (
-                        <Box
-                            component="th"
-                            sx={{
-                                p: 1,
-                                color: "primary.main",
-                                fontWeight: 700,
-                                textAlign: "left",
-                                textTransform:
-                                    "uppercase",
-                                letterSpacing: "0.05em",
-                            }}
-                        >
-                            {block.title ?? ""}
-                        </Box>
-                    )}
-                    {columns.map((col, i) => (
-                        <Box
-                            component="th"
-                            key={i}
-                            sx={{
-                                p: 1,
-                                color: "primary.main",
-                                fontWeight: 700,
-                                textAlign: showRowLabels
-                                    ? "right"
-                                    : "left",
-                                textTransform:
-                                    "uppercase",
-                                letterSpacing: "0.05em",
-                            }}
-                        >
-                            {col.label}
-                        </Box>
-                    ))}
-                </tr>
-                <tr>
-                    <td
-                        colSpan={
-                            columns.length +
-                            (showRowLabels ? 1 : 0)
-                        }
-                        style={{ padding: 0 }}
-                    >
-                        <OrnamentalUnderline
-                            sx={{ mx: 0, mt: 0.5 }}
-                        />
-                    </td>
-                </tr>
-            </Box>
-            <tbody>
-                {rows.map((row, ri) => (
-                    <tr key={ri}>
+                }}
+            >
+                <Box component="thead">
+                    <tr>
                         {showRowLabels && (
                             <Box
-                                component="td"
+                                component="th"
                                 sx={{
                                     p: 1,
-                                    fontWeight: 600,
+                                    color: "primary.main",
+                                    fontWeight: 700,
+                                    textAlign: "left",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
                                 }}
                             >
-                                {row}
+                                {block.title ?? ""}
                             </Box>
                         )}
-                        {columns.map((col, ci) => (
+                        {columns.map((col, i) => (
                             <Box
-                                component="td"
-                                key={ci}
+                                component="th"
+                                key={i}
                                 sx={{
                                     p: 1,
-                                    textAlign:
-                                        showRowLabels
-                                            ? "right"
-                                            : "left",
+                                    color: "primary.main",
+                                    fontWeight: 700,
+                                    textAlign: showRowLabels ? "right" : "left",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
                                 }}
                             >
-                                {col.values[ri]}
+                                {col.label}
                             </Box>
                         ))}
                     </tr>
-                ))}
-            </tbody>
-        </Box>
+                    <tr>
+                        <td
+                            colSpan={columns.length + (showRowLabels ? 1 : 0)}
+                            style={{ padding: 0 }}
+                        >
+                            <OrnamentalUnderline sx={{ mx: 0, mt: 0.5 }} />
+                        </td>
+                    </tr>
+                </Box>
+                <tbody>
+                    {rows.map((row, ri) => (
+                        <tr key={ri}>
+                            {showRowLabels && (
+                                <Box
+                                    component="td"
+                                    sx={{
+                                        p: 1,
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    {row}
+                                </Box>
+                            )}
+                            {columns.map((col, ci) => (
+                                <Box
+                                    component="td"
+                                    key={ci}
+                                    sx={{
+                                        p: 1,
+                                        textAlign: showRowLabels
+                                            ? "right"
+                                            : "left",
+                                    }}
+                                >
+                                    {col.values[ri]}
+                                </Box>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </Box>
         </Box>
     );
 }
