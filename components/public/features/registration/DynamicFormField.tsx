@@ -41,6 +41,7 @@ interface DynamicFormFieldProps {
     namePrefix?: string; // Prefix for HTML name attributes (used by AP fields to avoid DOM conflicts)
     disabledOptions?: Set<string>; // Option values that are at capacity
     remainingCapacity?: Record<string, number>; // For pricing_quantity: optionName -> remaining units
+    readOnlyEmail?: boolean;
 }
 
 export function DynamicFormField({
@@ -53,6 +54,7 @@ export function DynamicFormField({
     namePrefix,
     disabledOptions,
     remainingCapacity,
+    readOnlyEmail,
 }: DynamicFormFieldProps) {
     const [showAllTiers, setShowAllTiers] = useState(false);
 
@@ -503,8 +505,18 @@ export function DynamicFormField({
                     value={String(value)}
                     onChange={(e) => onChange(field.name, e.target.value)}
                     error={!!error}
-                    helperText={error}
+                    helperText={
+                        error ||
+                        (readOnlyEmail
+                            ? "Email je vyplněn z vašeho účtu"
+                            : undefined)
+                    }
                     fullWidth
+                    InputProps={
+                        readOnlyEmail
+                            ? { readOnly: true }
+                            : undefined
+                    }
                 />
             );
 

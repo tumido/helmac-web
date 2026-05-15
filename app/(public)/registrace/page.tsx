@@ -1,9 +1,13 @@
-import { Container, Typography, Box } from "@mui/material";
-import { PageHeader } from "@/components/public/ui";
+import { Container, Typography, Box, Button } from "@mui/material";
+import { PageHeader, ParchmentCallout } from "@/components/public/ui";
+import { LinkButton } from "@/components/ui/link-button";
+import { GameIcon } from "@/lib/icons";
+import { publicLogout } from "@/lib/actions/public/auth";
 import { DynamicRegistrationForm } from "@/components/public/features/registration/DynamicRegistrationForm";
 import { getRegistrationStatus, getOptionCountsForYear } from "@/lib/services";
 import { getFilteredRegistrationStats } from "@/lib/services/registration";
 import type { RegistrationStats } from "@/lib/services/registration";
+import { hasRegistrationForYear } from "@/lib/services/public-user";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { formatDate } from "@/lib/utils/date";
 import { getPublicSession } from "@/lib/public-auth";
@@ -99,6 +103,99 @@ export default async function RegistracePage() {
             : Promise.resolve(undefined),
         getPublicSession(),
     ]);
+
+    if (publicSession) {
+        const alreadyRegistered = await hasRegistrationForYear(
+            publicSession.sub,
+            status.year!.id
+        );
+        if (alreadyRegistered) {
+            return (
+                <>
+                    <PageHeader
+                        title="Registrace"
+                        subtitle={`Registrace na ${status.year?.title}`}
+                        icon="tied-scroll"
+                    />
+                    <Container maxWidth="md" sx={{ pb: 8 }}>
+                        <Box sx={{ py: 4 }}>
+                            <ParchmentCallout>
+                                <Typography
+                                    variant="h6"
+                                    gutterBottom
+                                >
+                                    Již máte registraci na tento
+                                    ročník
+                                </Typography>
+                                <Typography
+                                    color="text.secondary"
+                                    sx={{ mb: 1 }}
+                                >
+                                    Pokud chcete upravit svou
+                                    stávající registraci, přejděte
+                                    do svého profilu.
+                                </Typography>
+                                <Typography color="text.secondary">
+                                    Pro odeslání nové nezávislé
+                                    registrace se nejprve odhlaste.
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        gap: 1.5,
+                                        mt: 2,
+                                        flexDirection: {
+                                            xs: "column",
+                                            sm: "row",
+                                        },
+                                    }}
+                                >
+                                    <LinkButton
+                                        href="/ucet"
+                                        variant="contained"
+                                        startIcon={
+                                            <GameIcon
+                                                name="visored-helm"
+                                                sx={{
+                                                    fontSize:
+                                                        "1.25rem",
+                                                }}
+                                            />
+                                        }
+                                    >
+                                        Můj účet
+                                    </LinkButton>
+                                    <form action={publicLogout}>
+                                        <Button
+                                            type="submit"
+                                            variant="outlined"
+                                            fullWidth
+                                            startIcon={
+                                                <GameIcon
+                                                    name="boot-prints"
+                                                    sx={{
+                                                        fontSize:
+                                                            "1.25rem",
+                                                    }}
+                                                />
+                                            }
+                                            sx={{
+                                                color: "text.secondary",
+                                                borderColor:
+                                                    "divider",
+                                            }}
+                                        >
+                                            Odhlásit se
+                                        </Button>
+                                    </form>
+                                </Box>
+                            </ParchmentCallout>
+                        </Box>
+                    </Container>
+                </>
+            );
+        }
+    }
 
     let stats: Record<string, RegistrationStats> | undefined;
     if (statBlocks.length > 0) {

@@ -4,7 +4,6 @@ import {
     useState,
     useCallback,
     useMemo,
-    useEffect,
     useActionState,
 } from "react";
 import {
@@ -113,19 +112,14 @@ export function DynamicRegistrationForm({
         FormData
     >(submitDynamicRegistration, null);
 
-    const [capacitySnackbar, setCapacitySnackbar] = useState<{
-        open: boolean;
-        message: string;
-    }>({ open: false, message: "" });
-
-    useEffect(() => {
-        if (state?.capacityError) {
-            setCapacitySnackbar({
-                open: true,
-                message: state.capacityError,
-            });
-        }
-    }, [state]);
+    const [dismissedCapacityError, setDismissedCapacityError] =
+        useState<string | null>(null);
+    const capacitySnackbar = {
+        open:
+            !!state?.capacityError &&
+            state.capacityError !== dismissedCapacityError,
+        message: state?.capacityError ?? "",
+    };
 
     // Derived field lists
     const allFields = getAllFields(formData.fields);
@@ -431,6 +425,15 @@ export function DynamicRegistrationForm({
                                                                         remainingCapacity={
                                                                             remainingInfo?.remaining
                                                                         }
+                                                                        readOnlyEmail={
+                                                                            isLoggedIn &&
+                                                                            isInputField(
+                                                                                field
+                                                                            ) &&
+                                                                            field.type ===
+                                                                                "email" &&
+                                                                            !!publicEmail
+                                                                        }
                                                                     />
                                                                 </Box>
                                                             </Fade>
@@ -637,10 +640,9 @@ export function DynamicRegistrationForm({
                         open={capacitySnackbar.open}
                         autoHideDuration={6000}
                         onClose={() =>
-                            setCapacitySnackbar((s) => ({
-                                ...s,
-                                open: false,
-                            }))
+                            setDismissedCapacityError(
+                                state?.capacityError ?? null
+                            )
                         }
                         anchorOrigin={{
                             vertical: "bottom",
@@ -651,10 +653,9 @@ export function DynamicRegistrationForm({
                             severity="error"
                             variant="filled"
                             onClose={() =>
-                                setCapacitySnackbar((s) => ({
-                                    ...s,
-                                    open: false,
-                                }))
+                                setDismissedCapacityError(
+                                    state?.capacityError ?? null
+                                )
                             }
                         >
                             {capacitySnackbar.message}
