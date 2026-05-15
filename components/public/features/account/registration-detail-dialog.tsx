@@ -21,6 +21,8 @@ import {
     TableRow,
     Tabs,
     Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
 import { QRCodeSVG } from "qrcode.react";
@@ -44,6 +46,7 @@ import {
 import { formatDate } from "@/lib/utils/date";
 import { GameIcon } from "@/lib/icons";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { parseSelected } from "@/lib/utils/pricing-field-values";
 import {
     useConditionalFields,
     evaluateAPVisibleFields,
@@ -94,7 +97,7 @@ function formatDateValue(value: string | number | boolean): string {
 function getDisplayValue(
     field: FormField,
     data: Record<string, unknown>
-): string | null {
+): React.ReactNode | null {
     if (!isInputField(field)) return null;
 
     const value = data[field.name];
@@ -106,6 +109,20 @@ function getDisplayValue(
         case "date":
         case "birth_date":
             return formatDateValue(value as string | number | boolean);
+        case "pricing_multi_select": {
+            const names = parseSelected(value);
+            if (names.length === 0) return null;
+            return (
+                <Box
+                    component="ul"
+                    sx={{ m: 0, pl: 2, listStyle: "disc" }}
+                >
+                    {names.map((name, i) => (
+                        <li key={i}>{name}</li>
+                    ))}
+                </Box>
+            );
+        }
         default:
             return String(value);
     }
@@ -205,8 +222,14 @@ function FieldTableRows({
                                 <TableCell
                                     sx={{
                                         color: "text.secondary",
-                                        whiteSpace: "nowrap",
-                                        width: "1%",
+                                        whiteSpace: {
+                                            xs: "normal",
+                                            sm: "nowrap",
+                                        },
+                                        width: {
+                                            xs: "auto",
+                                            sm: "1%",
+                                        },
                                         px: { xs: 2, md: 3 },
                                         py: 1,
                                         borderBottom: "1px solid",
@@ -235,7 +258,7 @@ function FieldTableRows({
     );
 }
 
-function EditableFieldTableRows({
+function EditableFieldList({
     fields,
     data,
     formData,
@@ -256,7 +279,15 @@ function EditableFieldTableRows({
 }) {
     const sections = splitIntoSections(fields);
     return (
-        <>
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2.5,
+                px: { xs: 2, md: 3 },
+                py: 2,
+            }}
+        >
             {sections.map((section) => {
                 const editableFields = section.fields
                     .filter(isFieldEditable)
@@ -273,7 +304,18 @@ function EditableFieldTableRows({
                         key={section.heading?.id ?? editableFields[0].id}
                     >
                         {section.heading && (
-                            <SectionHeadingRow text={section.heading.text} />
+                            <Typography
+                                variant="subtitle2"
+                                fontWeight={700}
+                                sx={{
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                    color: "primary.main",
+                                    mt: 1,
+                                }}
+                            >
+                                {section.heading.text}
+                            </Typography>
                         )}
                         {editableFields.map((field) => {
                             const value = data[field.name];
@@ -287,55 +329,24 @@ function EditableFieldTableRows({
                                       : String(value);
                             const fieldError = errors?.[field.name]?.[0];
                             return (
-                                <TableRow key={field.id}>
-                                    <TableCell
-                                        sx={{
-                                            color: "text.secondary",
-                                            whiteSpace: "nowrap",
-                                            width: "1%",
-                                            px: {
-                                                xs: 2,
-                                                md: 3,
-                                            },
-                                            py: 1,
-                                            borderBottom: "1px solid",
-                                            borderColor: "divider",
-                                            verticalAlign: "top",
-                                            pt: 2.5,
-                                        }}
-                                    >
-                                        {field.label}
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{
-                                            px: {
-                                                xs: 2,
-                                                md: 3,
-                                            },
-                                            py: 1,
-                                            borderBottom: "1px solid",
-                                            borderColor: "divider",
-                                        }}
-                                    >
-                                        <DynamicFormField
-                                            field={field}
-                                            value={normalized}
-                                            error={fieldError}
-                                            onChange={onChange}
-                                            pricingDefinitions={
-                                                formData.pricingDefinitions
-                                            }
-                                            priceTiers={formData.priceTiers}
-                                            namePrefix={namePrefix}
-                                        />
-                                    </TableCell>
-                                </TableRow>
+                                <DynamicFormField
+                                    key={field.id}
+                                    field={field}
+                                    value={normalized}
+                                    error={fieldError}
+                                    onChange={onChange}
+                                    pricingDefinitions={
+                                        formData.pricingDefinitions
+                                    }
+                                    priceTiers={formData.priceTiers}
+                                    namePrefix={namePrefix}
+                                />
                             );
                         })}
                     </React.Fragment>
                 );
             })}
-        </>
+        </Box>
     );
 }
 
@@ -348,6 +359,8 @@ function RegistrationViewDialog({
     open: boolean;
     onClose: () => void;
 }) {
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
     const formData = migrateFormData(registration.form?.fields);
     const allFields = getAllFields(formData.fields as FormElement[]);
     const originalData = (
@@ -386,13 +399,16 @@ function RegistrationViewDialog({
             onClose={onClose}
             maxWidth="md"
             fullWidth
+            fullScreen={fullScreen}
             PaperProps={{
-                variant: "outlined",
+                variant: fullScreen ? undefined : "outlined",
                 elevation: 0,
                 sx: {
-                    borderRadius: 2,
-                    height: "calc(100% - 64px)",
-                    maxHeight: "calc(100% - 64px)",
+                    ...(!fullScreen && {
+                        borderRadius: 2,
+                        height: "calc(100% - 64px)",
+                        maxHeight: "calc(100% - 64px)",
+                    }),
                 },
             }}
         >
@@ -487,6 +503,8 @@ function RegistrationEditDialog({
     open: boolean;
     onClose: () => void;
 }) {
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
     const router = useRouter();
     const formData = migrateFormData(registration.form?.fields);
     const allFields = getAllFields(formData.fields as FormElement[]);
@@ -579,13 +597,16 @@ function RegistrationEditDialog({
             onClose={isPending ? undefined : onClose}
             maxWidth="md"
             fullWidth
+            fullScreen={fullScreen}
             PaperProps={{
-                variant: "outlined",
+                variant: fullScreen ? undefined : "outlined",
                 elevation: 0,
                 sx: {
-                    borderRadius: 2,
-                    height: "calc(100% - 64px)",
-                    maxHeight: "calc(100% - 64px)",
+                    ...(!fullScreen && {
+                        borderRadius: 2,
+                        height: "calc(100% - 64px)",
+                        maxHeight: "calc(100% - 64px)",
+                    }),
                 },
             }}
         >
@@ -664,41 +685,37 @@ function RegistrationEditDialog({
                     </Tabs>
                 )}
 
-                <Table size="small">
-                    <TableBody>
-                        {editTab === 0 ? (
-                            <EditableFieldTableRows
-                                fields={allFields}
-                                data={editedData}
-                                formData={formData}
-                                errors={errors}
-                                onChange={handlePrimaryChange}
-                                visibleFields={mainVisibleFields}
-                            />
-                        ) : (
-                            <EditableFieldTableRows
-                                fields={allFields}
-                                data={
-                                    (editedAP[editTab - 1] ??
-                                        {}) as Record<
-                                        string,
-                                        unknown
-                                    >
-                                }
-                                formData={formData}
-                                errors={apErrors[editTab - 1]}
-                                namePrefix={`ap_${editTab - 1}_`}
-                                onChange={handleAPChange(
-                                    editTab - 1,
-                                )}
-                                visibleFields={
-                                    apVisibleFields[editTab - 1]
-                                }
-                                apOnly
-                            />
+                {editTab === 0 ? (
+                    <EditableFieldList
+                        fields={allFields}
+                        data={editedData}
+                        formData={formData}
+                        errors={errors}
+                        onChange={handlePrimaryChange}
+                        visibleFields={mainVisibleFields}
+                    />
+                ) : (
+                    <EditableFieldList
+                        fields={allFields}
+                        data={
+                            (editedAP[editTab - 1] ??
+                                {}) as Record<
+                                string,
+                                unknown
+                            >
+                        }
+                        formData={formData}
+                        errors={apErrors[editTab - 1]}
+                        namePrefix={`ap_${editTab - 1}_`}
+                        onChange={handleAPChange(
+                            editTab - 1,
                         )}
-                    </TableBody>
-                </Table>
+                        visibleFields={
+                            apVisibleFields[editTab - 1]
+                        }
+                        apOnly
+                    />
+                )}
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} disabled={isPending}>
