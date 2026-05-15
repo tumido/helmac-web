@@ -8,6 +8,7 @@ import {
     Pin,
     TableChart,
     Dashboard,
+    GridView,
 } from "@mui/icons-material";
 import type { ContentBlockType } from "@/lib/types/content-blocks";
 
@@ -33,6 +34,7 @@ export const BLOCK_TYPES: BlockMeta[] = [
         label: "Karty statistik",
         icon: <Dashboard />,
     },
+    { type: "group", label: "Skupina", icon: <GridView /> },
 ];
 
 export const BLOCK_META: Record<ContentBlockType, BlockMeta> =

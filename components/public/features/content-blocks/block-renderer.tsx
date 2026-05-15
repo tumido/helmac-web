@@ -11,6 +11,7 @@ import { CardBlockRenderer } from "./card-block";
 import { StatSingleBlockRenderer } from "./stat-single-block";
 import { StatTableBlockRenderer } from "./stat-table-block";
 import { StatCardsBlockRenderer } from "./stat-cards-block";
+import { GroupBlockRenderer } from "./group-block";
 
 function renderBlock(
     block: ContentBlock,
@@ -34,6 +35,8 @@ function renderBlock(
             return <StatTableBlockRenderer block={block} stats={stats?.[block.id]} />;
         case "stat_cards":
             return <StatCardsBlockRenderer block={block} stats={stats?.[block.id]} />;
+        case "group":
+            return <GroupBlockRenderer block={block} tocIds={tocIds} stats={stats} />;
     }
 }
 

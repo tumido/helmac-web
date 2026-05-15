@@ -71,12 +71,14 @@ function resolveCards(
         const isCurrency = BUILTIN_CURRENCY_METRICS.includes(
             block.metric as BuiltinMetric
         );
+        const label = BUILTIN_METRIC_LABELS[block.metric];
         return [
             {
                 display: isCurrency
                     ? formatPrice(raw)
                     : raw.toLocaleString("cs-CZ"),
-                label: BUILTIN_METRIC_LABELS[block.metric],
+                label,
+                icon: block.iconMap?.[label] ?? block.icon,
             },
         ];
     }

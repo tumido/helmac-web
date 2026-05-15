@@ -164,6 +164,13 @@ export function isBuiltinMetric(
     return key in BUILTIN_METRIC_LABELS;
 }
 
+export interface GroupBlock {
+    type: "group";
+    id: string;
+    layout: BlockLayout;
+    children: ContentBlock[];
+}
+
 export type ContentBlock =
     | RichTextBlock
     | ImageBlock
@@ -171,14 +178,24 @@ export type ContentBlock =
     | CardBlock
     | StatSingleBlock
     | StatTableBlock
-    | StatCardsBlock;
+    | StatCardsBlock
+    | GroupBlock;
 
 export type ContentBlockType = ContentBlock["type"];
 
-export function createBlock(type: ContentBlockType): ContentBlock {
+export function createBlock(
+    type: ContentBlockType
+): ContentBlock {
     const id = crypto.randomUUID();
 
     switch (type) {
+        case "group":
+            return {
+                type: "group",
+                id,
+                layout: { x: 0, y: Infinity, w: 12, h: 8 },
+                children: [],
+            };
         case "richtext":
             return {
                 type: "richtext",
@@ -257,6 +274,12 @@ export function normalizeBlocks(blocks: unknown[] | unknown): ContentBlock[] {
     if (!Array.isArray(blocks)) return [];
     return blocks.map((block) => {
         const b = block as Record<string, unknown>;
+        if (b.type === "group" && Array.isArray(b.children)) {
+            return {
+                ...b,
+                children: normalizeBlocks(b.children),
+            } as GroupBlock;
+        }
         if (b.type === "card" && !Array.isArray(b.buttons)) {
             const legacy = b as unknown as LegacyCardBlock;
             const buttons: CardButton[] = [];
@@ -285,14 +308,23 @@ export function normalizeBlocks(blocks: unknown[] | unknown): ContentBlock[] {
 export function extractStatBlocks(
     blocks: unknown[]
 ): (StatSingleBlock | StatTableBlock | StatCardsBlock)[] {
-    return blocks.filter((b) => {
+    const result: (StatSingleBlock | StatTableBlock | StatCardsBlock)[] = [];
+    for (const b of blocks) {
         const block = b as Record<string, unknown>;
-        return (
+        if (
             block.type === "stat_single" ||
             block.type === "stat_table" ||
             block.type === "stat_cards"
-        );
-    }) as (StatSingleBlock | StatTableBlock | StatCardsBlock)[];
+        ) {
+            result.push(b as StatSingleBlock | StatTableBlock | StatCardsBlock);
+        } else if (
+            block.type === "group" &&
+            Array.isArray(block.children)
+        ) {
+            result.push(...extractStatBlocks(block.children));
+        }
+    }
+    return result;
 }
 
 export function blocksToMarkdown(blocks: ContentBlock[]): string {
@@ -308,6 +340,9 @@ export function blocksToMarkdown(blocks: ContentBlock[]): string {
     for (const block of sorted) {
         if (block.type === "richtext") {
             parts.push(block.content);
+        } else if (block.type === "group") {
+            const nested = blocksToMarkdown(block.children);
+            if (nested) parts.push(nested);
         }
     }
 

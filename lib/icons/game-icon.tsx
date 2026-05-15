@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { SvgIcon, type SvgIconProps } from "@mui/material";
 
 interface GameIconProps extends SvgIconProps {
@@ -8,14 +8,23 @@ interface GameIconProps extends SvgIconProps {
 }
 
 const pathsCache = new Map<string, string[]>();
+const listeners = new Set<() => void>();
+
+function notifyListeners() {
+    for (const fn of listeners) fn();
+}
+
+function subscribe(fn: () => void) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+}
 
 export function GameIcon({ name, ...props }: GameIconProps) {
-    const cached = pathsCache.get(name) ?? null;
-    const [fetchedPaths, setFetchedPaths] = useState<{
-        name: string;
-        paths: string[];
-    } | null>(null);
-    const paths = cached ?? (fetchedPaths?.name === name ? fetchedPaths.paths : null);
+    const paths = useSyncExternalStore(
+        subscribe,
+        () => pathsCache.get(name) ?? null,
+        () => null
+    );
 
     useEffect(() => {
         if (pathsCache.has(name)) return;
@@ -23,9 +32,12 @@ export function GameIcon({ name, ...props }: GameIconProps) {
             .then((r) => (r.ok ? r.json() : []))
             .then((p: string[]) => {
                 pathsCache.set(name, p);
-                setFetchedPaths({ name, paths: p });
+                notifyListeners();
             })
-            .catch(() => pathsCache.set(name, []));
+            .catch(() => {
+                pathsCache.set(name, []);
+                notifyListeners();
+            });
     }, [name]);
 
     return (

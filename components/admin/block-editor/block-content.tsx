@@ -1,10 +1,12 @@
 "use client";
 
 import type { ContentBlock } from "@/lib/types/content-blocks";
+import { groupZoneId } from "./constants";
 import { RichTextBlockEditor } from "./blocks/richtext-editor";
 import { ImageBlockEditor } from "./blocks/image-editor";
 import { DividerBlockEditor } from "./blocks/divider-editor";
 import { CardBlockEditor } from "./blocks/card-editor";
+import { GroupBlockEditor } from "./blocks/group-editor";
 import { StatSingleBlockEditor } from "./stats/single-editor";
 import { StatTableBlockEditor } from "./stats/table-editor";
 import { StatCardsBlockEditor } from "./stats/cards-editor";
@@ -49,6 +51,15 @@ export function BlockContent({
                     block={block}
                     onChange={onChange}
                     yearId={yearId}
+                />
+            );
+        case "group":
+            return (
+                <GroupBlockEditor
+                    block={block}
+                    onChange={onChange}
+                    yearId={yearId}
+                    groupZoneId={groupZoneId}
                 />
             );
         case "stat_single":

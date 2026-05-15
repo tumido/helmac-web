@@ -112,7 +112,7 @@ const statCardsBlockSchema = z.object({
     filter: statFilterSchema,
 });
 
-const contentBlockSchema = z.union([
+const baseContentBlockSchema = z.union([
     richTextBlockSchema,
     imageBlockSchema,
     dividerBlockSchema,
@@ -122,6 +122,45 @@ const contentBlockSchema = z.union([
     statCardsBlockSchema,
 ]);
 
-export const contentBlocksSchema = z.array(contentBlockSchema);
+type BaseContentBlock = z.infer<typeof baseContentBlockSchema>;
 
-export type ContentBlocksInput = z.infer<typeof contentBlocksSchema>;
+type ContentBlockInput = BaseContentBlock | {
+    type: "group";
+    id: string;
+    layout: z.infer<typeof layoutSchema>;
+    children: ContentBlockInput[];
+};
+
+const contentBlockSchema: z.ZodType<ContentBlockInput> = z.union([
+    baseContentBlockSchema,
+    z.object({
+        type: z.literal("group"),
+        id: z.string().min(1),
+        layout: layoutSchema,
+        children: z.lazy(() => z.array(contentBlockSchema)),
+    }),
+]);
+
+export const contentBlocksSchema = z
+    .array(contentBlockSchema)
+    .superRefine((blocks, ctx) => {
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (block.type === "group") {
+                for (const child of block.children) {
+                    if (child.type === "group") {
+                        ctx.addIssue({
+                            code: "custom",
+                            message:
+                                "Groups cannot be nested more than one level deep",
+                            path: [i, "children"],
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+export type ContentBlocksInput = z.infer<
+    typeof contentBlocksSchema
+>;
