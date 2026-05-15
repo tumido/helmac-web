@@ -15,7 +15,7 @@ import {
 import { formatDate } from "@/lib/utils/date";
 import { GameIcon } from "@/lib/icons";
 import { AccountStatTile } from "@/components/public/ui/AccountStatTile";
-import { RegistrationHistoryTable } from "@/components/public/features/account/registration-detail-dialog";
+import { RegistrationHistoryTable } from "@/components/public/features/account";
 import { ChangePasswordForm } from "@/components/forms/change-password-form";
 
 export default async function AccountPage() {
