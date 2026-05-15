@@ -451,6 +451,24 @@ export async function submitDynamicRegistration(
         }
     }
 
+    // Reject duplicate registration for logged-in users
+    if (!isTest && publicUserId) {
+        const existing = await db.registrationSubmission.findFirst({
+            where: {
+                publicUserId,
+                yearId: activeYear.id,
+                isTest: false,
+            },
+            select: { id: true },
+        });
+        if (existing) {
+            return {
+                success: false,
+                message: "Pro tento ročník již máte registraci",
+            };
+        }
+    }
+
     // GDPR consent check for anonymous users (skipped for test registrations)
     const gdprConsent = formData.get("gdprConsent") === "on";
     if (!isTest && !publicUserId && !gdprConsent) {

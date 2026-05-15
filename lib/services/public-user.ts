@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db";
 import type { PricingSummaryData } from "@/lib/types/registration-form";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
@@ -95,6 +96,20 @@ export async function getPublicUserRegistrations(userId: string) {
 
     return registrations;
 }
+
+export const hasRegistrationForYear = cache(
+    async (userId: string, yearId: string) => {
+        const reg = await db.registrationSubmission.findFirst({
+            where: {
+                publicUserId: userId,
+                yearId,
+                isTest: false,
+            },
+            select: { id: true },
+        });
+        return !!reg;
+    }
+);
 
 export async function getPublicUserPayments(userId: string) {
     const registrations = await db.registrationSubmission.findMany({
