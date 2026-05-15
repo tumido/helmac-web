@@ -25,12 +25,12 @@ import {
     type BuiltinMetric,
 } from "@/lib/types/content-blocks";
 import { formatPrice } from "@/lib/utils/pricing";
+import { StatMetricEditor } from "./metric-editor";
+import { StatFilterEditor } from "./filter-editor";
 import {
-    StatMetricEditor,
     useRegistrationFields,
     useRegistrationStats,
-} from "./stat-metric-editor";
-import { StatFilterEditor } from "./stat-filter-editor";
+} from "./hooks";
 
 interface StatTableBlockEditorProps {
     block: StatTableBlock;
@@ -244,7 +244,6 @@ export function StatTableBlockEditor({
                 height: "100%",
             }}
         >
-            {/* Toolbar */}
             <Box
                 sx={{
                     display: "flex",
@@ -319,7 +318,6 @@ export function StatTableBlockEditor({
                 </ToggleButtonGroup>
             </Box>
 
-            {/* Column editors */}
             <Box
                 sx={{
                     display: "flex",
@@ -422,7 +420,6 @@ export function StatTableBlockEditor({
                 />
             </Box>
 
-            {/* Table preview */}
             <Box
                 sx={{
                     flex: 1,

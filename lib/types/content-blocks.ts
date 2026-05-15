@@ -175,18 +175,6 @@ export type ContentBlock =
 
 export type ContentBlockType = ContentBlock["type"];
 
-export function isRichTextBlock(block: ContentBlock): block is RichTextBlock {
-    return block.type === "richtext";
-}
-
-export function isImageBlock(block: ContentBlock): block is ImageBlock {
-    return block.type === "image";
-}
-
-export function isDividerBlock(block: ContentBlock): block is DividerBlock {
-    return block.type === "divider";
-}
-
 export function createBlock(type: ContentBlockType): ContentBlock {
     const id = crypto.randomUUID();
 
@@ -291,17 +279,6 @@ export function normalizeBlocks(blocks: unknown[] | unknown): ContentBlock[] {
             } satisfies CardBlock;
         }
         return block as ContentBlock;
-    });
-}
-
-export function hasStatBlocks(blocks: unknown[]): boolean {
-    return blocks.some((b) => {
-        const block = b as Record<string, unknown>;
-        return (
-            block.type === "stat_single" ||
-            block.type === "stat_table" ||
-            block.type === "stat_cards"
-        );
     });
 }
 

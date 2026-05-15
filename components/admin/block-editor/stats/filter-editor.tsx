@@ -11,7 +11,7 @@ import {
 import { Add, Close, FilterList } from "@mui/icons-material";
 import { useState } from "react";
 import type { StatFilter } from "@/lib/types/content-blocks";
-import { useRegistrationFields } from "./stat-metric-editor";
+import { useRegistrationFields } from "./hooks";
 
 const STATUS_OPTIONS = [
     { value: "PENDING", label: "Čeká" },
@@ -192,7 +192,6 @@ export function StatFilterEditor({
                 </Box>
             </Box>
 
-            {/* Status filter */}
             <Box>
                 <Typography
                     variant="caption"
@@ -240,7 +239,6 @@ export function StatFilterEditor({
                 </Box>
             </Box>
 
-            {/* Payment filter */}
             <Box
                 sx={{
                     display: "flex",
@@ -291,7 +289,6 @@ export function StatFilterEditor({
                 ))}
             </Box>
 
-            {/* Field value filters */}
             {fields && fields.length > 0 && (
                 <Box>
                     <Typography
