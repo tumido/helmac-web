@@ -20,7 +20,7 @@ export function AccountStatTile({
     highlighted,
 }: AccountStatTileProps) {
     return (
-        <Grid item xs={2}>
+        <Grid item md={2} xs={4}>
             <Box
                 {...(href && !disabled ? { component: "a", href } : {})}
                 sx={{
@@ -36,8 +36,7 @@ export function AccountStatTile({
                         : {
                               transition: "all 0.3s ease",
                               "&:hover": {
-                                  backgroundColor:
-                                      "rgba(201, 162, 39, 0.04)",
+                                  backgroundColor: "rgba(201, 162, 39, 0.04)",
                                   "& .stat-icon": {
                                       backgroundColor:
                                           "rgba(201, 162, 39, 0.12)",
@@ -59,9 +58,7 @@ export function AccountStatTile({
                         justifyContent: "center",
                         borderRadius: "50%",
                         border: "2px solid",
-                        borderColor: highlighted
-                            ? "primary.dark"
-                            : "divider",
+                        borderColor: highlighted ? "primary.dark" : "divider",
                         backgroundColor: highlighted
                             ? "rgba(201, 162, 39, 0.06)"
                             : "rgba(201, 162, 39, 0.03)",
