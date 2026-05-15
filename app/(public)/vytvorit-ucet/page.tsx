@@ -1,7 +1,10 @@
 import { Container, Box, Typography } from "@mui/material";
 import Link from "next/link";
-import { PageHeader, Card } from "@/components/public/ui";
-import { GameIcon } from "@/lib/icons";
+import {
+    PageHeader,
+    Card,
+    ParchmentCallout,
+} from "@/components/public/ui";
 import { PublicRegisterForm } from "@/components/forms/public-register-form";
 
 export const metadata = {
@@ -27,30 +30,7 @@ export default async function VytvoritUcetPage({
             />
             <Container maxWidth="sm" sx={{ pb: 8 }}>
                 {deleted && (
-                    <Box
-                        sx={{
-                            mt: 4,
-                            backgroundColor:
-                                "rgba(201, 162, 39, 0.04)",
-                            border: "1px solid",
-                            borderColor:
-                                "rgba(201, 162, 39, 0.15)",
-                            borderRadius: 2,
-                            p: { xs: 2.5, md: 3 },
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 1.5,
-                        }}
-                    >
-                        <GameIcon
-                            name="scroll-unfurled"
-                            sx={{
-                                color: "primary.main",
-                                fontSize: "1.6rem",
-                                mt: 0.25,
-                                flexShrink: 0,
-                            }}
-                        />
+                    <ParchmentCallout sx={{ mt: 4 }}>
                         <Typography
                             variant="body1"
                             color="text.secondary"
@@ -60,7 +40,7 @@ export default async function VytvoritUcetPage({
                             Pokud chcete pokračovat,
                             vytvořte si prosím nový účet.
                         </Typography>
-                    </Box>
+                    </ParchmentCallout>
                 )}
                 <Card
                     sx={{
