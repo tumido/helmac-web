@@ -2113,10 +2113,22 @@ export function RichTextEditor({
                 />
             )}
             <Box
+                onClick={(e) => {
+                    if (
+                        !editable ||
+                        !editor ||
+                        e.target !== e.currentTarget
+                    )
+                        return;
+                    editor.commands.focus("end");
+                }}
                 sx={{
                     px: 1,
                     py: 0,
                     backgroundColor: "background.paper",
+                    cursor: editable
+                        ? "text"
+                        : undefined,
                     ...(editable
                         ? {
                               flex: 1,

@@ -1,24 +1,24 @@
 "use client";
 
-import { Box, Chip, TextField, Typography } from "@mui/material";
+import { Box, TextField, Typography } from "@mui/material";
 import {
     BUILTIN_METRIC_LABELS,
     BUILTIN_CURRENCY_METRICS,
     FIELD_AGGREGATION_LABELS,
     isBuiltinMetric,
     type StatSingleBlock,
-    type StatSuffixSource,
     type BuiltinMetric,
 } from "@/lib/types/content-blocks";
 import { GameIcon } from "@/lib/icons";
 import { IconPicker } from "@/components/admin/icon-picker";
 import { formatPrice } from "@/lib/utils/pricing";
+import { StatMetricEditor } from "./metric-editor";
+import { StatFilterEditor } from "./filter-editor";
+import { StatSuffixEditor } from "./suffix-editor";
 import {
-    StatMetricEditor,
     useRegistrationFields,
     useRegistrationStats,
-} from "./stat-metric-editor";
-import { StatFilterEditor } from "./stat-filter-editor";
+} from "./hooks";
 
 interface StatSingleBlockEditorProps {
     block: StatSingleBlock;
@@ -105,68 +105,12 @@ export function StatSingleBlockEditor({
                     fullWidth
                     placeholder={placeholder}
                 />
-                <Box>
-                    <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontSize: "0.7rem", mb: 0.5, display: "block" }}
-                    >
-                        Doplněk hodnoty
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-                        {(
-                            [
-                                { v: undefined, l: "Žádný" },
-                                { v: "manual", l: "Ruční" },
-                                { v: "capacity", l: "Limit" },
-                                { v: "total", l: "Zbývá" },
-                            ] as const
-                        ).map((opt) => (
-                            <Chip
-                                key={String(opt.v)}
-                                label={opt.l}
-                                size="small"
-                                variant={
-                                    (block.suffix?.source ?? undefined) === opt.v
-                                        ? "filled"
-                                        : "outlined"
-                                }
-                                color={
-                                    (block.suffix?.source ?? undefined) === opt.v
-                                        ? "primary"
-                                        : "default"
-                                }
-                                onClick={() =>
-                                    onChange({
-                                        ...block,
-                                        suffix: opt.v
-                                            ? { source: opt.v as StatSuffixSource, text: block.suffix?.text }
-                                            : undefined,
-                                    })
-                                }
-                                sx={{ fontSize: "0.65rem", height: 22 }}
-                            />
-                        ))}
-                    </Box>
-                    {block.suffix?.source === "manual" && (
-                        <TextField
-                            value={block.suffix.text ?? ""}
-                            onChange={(e) =>
-                                onChange({
-                                    ...block,
-                                    suffix: {
-                                        ...block.suffix!,
-                                        text: e.target.value || undefined,
-                                    },
-                                })
-                            }
-                            size="small"
-                            fullWidth
-                            placeholder="/ 20"
-                            sx={{ mt: 0.5 }}
-                        />
-                    )}
-                </Box>
+                <StatSuffixEditor
+                    value={block.suffix}
+                    onChange={(suffix) =>
+                        onChange({ ...block, suffix })
+                    }
+                />
                 <StatFilterEditor
                     filter={block.filter}
                     onChange={(f) =>
@@ -176,7 +120,6 @@ export function StatSingleBlockEditor({
                 />
             </Box>
 
-            {/* Visual preview */}
             <Box
                 sx={{
                     display: "flex",
