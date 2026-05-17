@@ -88,7 +88,9 @@ export function BlockRenderer({ blocks, tocIds, stats }: BlockRendererProps) {
                             block.type === "stat_table" ||
                             block.type === "stat_cards"
                                 ? "stretch"
-                                : "center",
+                                : block.type === "group"
+                                  ? "start"
+                                  : "center",
                     }}
                 >
                     {renderBlock(block, tocIds, stats)}
