@@ -11,6 +11,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
 import type { ConditionalEmailInfo, FieldExternalUsage } from "@/lib/utils/condition-validation";
 import { getFieldExternalUsages, getFieldIdsUsedInConditions } from "@/lib/utils/condition-validation";
 import {
@@ -33,12 +34,14 @@ import { ConditionEditor } from "./condition-editor";
 import { PricingEditor } from "./pricing-editor";
 import { FormBuilderCanvas } from "./form-builder-canvas";
 import { FormBuilderToolbar } from "./form-builder-toolbar";
+import { DragOverlayContent } from "./drag-overlay";
 import {
     DeleteFormDialog,
     DeletionBlockDialog,
     type DeletionBlockInfo,
 } from "./form-builder-dialogs";
 import { useFormBuilderState } from "./use-form-builder-state";
+import { useFormBuilderDnd } from "./use-form-builder-dnd";
 import { useFormValidation } from "./use-form-validation";
 import { makeBlankField } from "./form-builder-helpers";
 
@@ -208,6 +211,16 @@ export function FormBuilder({
         [dispatch, state.pricingDefinitions]
     );
 
+    const {
+        activeId,
+        sensors,
+        collisionDetection,
+        onDragStart,
+        onDragOver,
+        onDragEnd,
+        onDragCancel,
+    } = useFormBuilderDnd(state.elements, dndCallbacks);
+
     const validationCtx = useMemo(
         () => ({
             conditions: state.conditions,
@@ -369,93 +382,121 @@ export function FormBuilder({
             </Tabs>
 
             {tab === 0 && (
-                <Box sx={{ display: "flex", gap: 3 }}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <FormBuilderCanvas
-                            elements={state.elements}
-                            conditions={state.conditions}
-                            pricingDefinitions={state.pricingDefinitions}
-                            usedFieldIds={usedFieldIds}
-                            fieldExternalUsages={fieldExternalUsages}
-                            readOnly={readOnly}
-                            onEditField={setEditingField}
-                            onDeleteField={handleDeleteField}
-                            onDeleteBlock={handleDeleteBlock}
-                            onPatchField={handlePatchField}
-                            onCreateCondition={handleCreateConditionFromOption}
-                            dndCallbacks={dndCallbacks}
-                        />
-                        {!readOnly && (
+                <DndContext
+                    id="form-builder-dnd"
+                    sensors={sensors}
+                    collisionDetection={collisionDetection}
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDragEnd={onDragEnd}
+                    onDragCancel={onDragCancel}
+                >
+                    <Box sx={{ display: "flex", gap: 3 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <FormBuilderCanvas
+                                elements={state.elements}
+                                conditions={state.conditions}
+                                pricingDefinitions={state.pricingDefinitions}
+                                usedFieldIds={usedFieldIds}
+                                fieldExternalUsages={fieldExternalUsages}
+                                readOnly={readOnly}
+                                activeId={activeId}
+                                onEditField={setEditingField}
+                                onDeleteField={handleDeleteField}
+                                onDeleteBlock={handleDeleteBlock}
+                                onPatchField={handlePatchField}
+                                onCreateCondition={
+                                    handleCreateConditionFromOption
+                                }
+                            />
+                            {!readOnly && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        gap: 1,
+                                        mt: 2,
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    {isMobile && (
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<Add />}
+                                            onClick={() =>
+                                                setTypeSelectorOpen(true)
+                                            }
+                                        >
+                                            Přidat pole
+                                        </Button>
+                                    )}
+                                    <Box sx={{ flex: 1 }} />
+                                    {hasElements && (
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            startIcon={<Delete />}
+                                            onClick={() =>
+                                                setDeleteConfirmOpen(true)
+                                            }
+                                            disabled={deleting}
+                                        >
+                                            Smazat formulář
+                                        </Button>
+                                    )}
+                                </Box>
+                            )}
+                        </Box>
+
+                        {!isMobile && !readOnly && (
                             <Box
                                 sx={{
-                                    display: "flex",
-                                    gap: 1,
-                                    mt: 2,
-                                    flexWrap: "wrap",
+                                    width: 220,
+                                    flexShrink: 0,
+                                    position: "sticky",
+                                    top: 80,
+                                    alignSelf: "flex-start",
+                                    maxHeight: "calc(100vh - 96px)",
+                                    overflow: "auto",
                                 }}
                             >
-                                {isMobile && (
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<Add />}
-                                        onClick={() =>
-                                            setTypeSelectorOpen(true)
-                                        }
-                                    >
-                                        Přidat pole
-                                    </Button>
-                                )}
-                                <Box sx={{ flex: 1 }} />
-                                {hasElements && (
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        startIcon={<Delete />}
-                                        onClick={() =>
-                                            setDeleteConfirmOpen(true)
-                                        }
-                                        disabled={deleting}
-                                    >
-                                        Smazat formulář
-                                    </Button>
-                                )}
+                                <FieldPalette
+                                    conditions={state.conditions}
+                                    pricingDefinitions={
+                                        state.pricingDefinitions
+                                    }
+                                    onAddField={(type) => addBlankField(type)}
+                                    onAddConditionBlock={addBlock}
+                                    onAddPricingField={(definitionId) => {
+                                        const def =
+                                            state.pricingDefinitions.find(
+                                                (d) => d.id === definitionId
+                                            );
+                                        const t: FieldType =
+                                            def?.type === "quantity"
+                                                ? "pricing_quantity"
+                                                : def?.multiSelect
+                                                  ? "pricing_multi_select"
+                                                  : "pricing_select";
+                                        addBlankField(
+                                            t,
+                                            definitionId,
+                                            def?.name
+                                        );
+                                    }}
+                                />
                             </Box>
                         )}
                     </Box>
 
-                    {!isMobile && !readOnly && (
-                        <Box
-                            sx={{
-                                width: 220,
-                                flexShrink: 0,
-                                position: "sticky",
-                                top: 80,
-                                alignSelf: "flex-start",
-                                maxHeight: "calc(100vh - 96px)",
-                                overflow: "auto",
-                            }}
-                        >
-                            <FieldPalette
-                                conditions={state.conditions}
-                                pricingDefinitions={state.pricingDefinitions}
-                                onAddField={(type) => addBlankField(type)}
-                                onAddConditionBlock={addBlock}
-                                onAddPricingField={(definitionId) => {
-                                    const def = state.pricingDefinitions.find(
-                                        (d) => d.id === definitionId
-                                    );
-                                    const t: FieldType =
-                                        def?.type === "quantity"
-                                            ? "pricing_quantity"
-                                            : def?.multiSelect
-                                              ? "pricing_multi_select"
-                                              : "pricing_select";
-                                    addBlankField(t, definitionId, def?.name);
-                                }}
-                            />
-                        </Box>
-                    )}
-                </Box>
+                    <DragOverlay dropAnimation={null}>
+                        <DragOverlayContent
+                            activeId={activeId}
+                            elements={state.elements}
+                            conditions={state.conditions}
+                            pricingDefinitions={state.pricingDefinitions}
+                        />
+                    </DragOverlay>
+                </DndContext>
             )}
 
             {tab === 1 && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import { DndContext, DragOverlay, useDroppable } from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
 import {
     SortableContext,
     verticalListSortingStrategy,
@@ -18,9 +18,7 @@ import { FieldListItem } from "./field-list-item";
 import { SortableFieldItem } from "./sortable-field-item";
 import { BlockHeaderRow } from "./block-header-row";
 import { EmptyBlockDropZone } from "./empty-block-drop-zone";
-import { DragOverlayContent } from "./drag-overlay";
 import { Fragment } from "react";
-import { useFormBuilderDnd, type DndCallbacks } from "./use-form-builder-dnd";
 import { flatElementId, type FlatElement } from "./form-data-adapter";
 
 interface Props {
@@ -30,6 +28,7 @@ interface Props {
     usedFieldIds: Set<string>;
     fieldExternalUsages: Map<string, FieldExternalUsage[]>;
     readOnly?: boolean;
+    activeId: string | null;
     onEditField: (field: FormField) => void;
     onDeleteField: (fieldId: string) => void;
     onDeleteBlock: (blockId: string) => void;
@@ -39,7 +38,6 @@ interface Props {
         fieldLabel: string,
         optionValue: string
     ) => void;
-    dndCallbacks: DndCallbacks;
 }
 
 export function FormBuilderCanvas({
@@ -49,23 +47,13 @@ export function FormBuilderCanvas({
     usedFieldIds,
     fieldExternalUsages,
     readOnly = false,
+    activeId,
     onEditField,
     onDeleteField,
     onDeleteBlock,
     onPatchField,
     onCreateCondition,
-    dndCallbacks,
 }: Props) {
-    const {
-        activeId,
-        sensors,
-        collisionDetection,
-        onDragStart,
-        onDragOver,
-        onDragEnd,
-        onDragCancel,
-    } = useFormBuilderDnd(elements, dndCallbacks);
-
     const sortableIds = elements.map(flatElementId);
 
     return (
@@ -74,15 +62,6 @@ export function FormBuilderCanvas({
                 pointerEvents: readOnly ? "none" : undefined,
                 userSelect: readOnly ? "text" : undefined,
             }}
-        >
-        <DndContext
-            id="form-builder-dnd"
-            sensors={sensors}
-            collisionDetection={collisionDetection}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDragEnd={onDragEnd}
-            onDragCancel={onDragCancel}
         >
             <SortableContext
                 items={sortableIds}
@@ -163,16 +142,6 @@ export function FormBuilderCanvas({
                     })}
                 </RootDropZone>
             </SortableContext>
-
-            <DragOverlay dropAnimation={null}>
-                <DragOverlayContent
-                    activeId={activeId}
-                    elements={elements}
-                    conditions={conditions}
-                    pricingDefinitions={pricingDefinitions}
-                />
-            </DragOverlay>
-        </DndContext>
         </Box>
     );
 }

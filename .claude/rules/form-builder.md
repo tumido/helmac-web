@@ -25,8 +25,12 @@ In `FlatElement[]`, a block's children always appear directly after the block ro
 ## File map
 
 ```
-form-builder.tsx            shell: orchestration, dialogs, save/preview/delete
-form-builder-canvas.tsx     DndContext (stable id="form-builder-dnd") + single SortableContext;
+form-builder.tsx            shell: orchestration, dialogs, save/preview/delete;
+                            owns the DndContext (stable id="form-builder-dnd") wrapping
+                            BOTH the canvas and the FieldPalette so palette items are
+                            draggable into the canvas; also renders the DragOverlay.
+                            Calls useFormBuilderDnd and passes activeId down to the canvas.
+form-builder-canvas.tsx     single SortableContext; receives activeId as a prop;
                             computes BlockPosition (head/middle/tail/solo/standalone) per row
 form-builder-toolbar.tsx    Save / Preview / "Kopírovat odkaz"
 form-builder-dialogs.tsx    DeleteFormDialog + DeletionBlockDialog
@@ -62,6 +66,7 @@ field-list-item.tsx         memoized; onEdit/onDelete receive the field/id (stab
 - **DnD model: commit on drop, not on dragOver.** `onDragOver` is intentionally a no-op. The visual sibling shift during dragging is handled by dnd-kit via CSS transforms; the data move is dispatched once in `onDragEnd`. Reason: per-frame `setElements` during drag was thrashing the canvas and combined with MUI Tooltip's `useState`-backed refs and React 19 StrictMode's synthetic unmount pass it hit "Maximum update depth exceeded" when the pointer oscillated between drop targets.
 - **Drop target index is 0-based "land at slot K"** — `indexAt` in `use-form-builder-dnd.ts` returns over's 0-based position in its parent, matching `arrayMove(items, fromIdx, indexOf(over))` semantics from `@dnd-kit/sortable`. After applying the move, the active item sits at that slot and other rows shift to accommodate. If you change this convention, also update `isAlreadyAtSlot` (which compares against active's current 0-based slot) and `computeInsertIndex` in `use-form-builder-state.ts` (which walks `rest` to convert a parent+slot back to an absolute index). Returning `n+1` here is an off-by-one that makes drags "snap one slot past the target".
 - **Two no-op guards exist defensively:** `isAlreadyAtSlot` in `use-form-builder-dnd.ts` short-circuits dispatch when the move would land on active's own slot, and `isAlreadyAtTarget` in `use-form-builder-state.ts` returns the same `elements` reference if `applyMove` would be a no-op. Both use 0-based semantics; the `onDragEnd` `activeId === overId` short-circuit already handles the most common no-op case.
+- **DndContext lives in `form-builder.tsx`, not the canvas.** It wraps the canvas AND the `FieldPalette` so palette drags land in the same context as the sortable items. Putting the context inside the canvas was a regression — palette items registered with `useDraggable` ended up outside the context and silently stopped firing `onDragEnd`.
 - **DndContext id must be stable** (`id="form-builder-dnd"`) — `@dnd-kit` uses a module-level counter inside `useUniqueId` for `aria-describedby` IDs, which de-syncs between server and client on SSR. An explicit `id` short-circuits the counter.
 - **Block-group visual tiling** is driven by `BlockPosition` ("standalone" / "block-solo" / "block-head" / "block-middle" / "block-tail") computed in `form-builder-canvas.tsx` from `parentBlockId` and the *next* element's parent. `sortable-field-item.tsx` consumes it. The block-head ↔ block-tail computation is what gives the continuous rail and shared bg the look of a single block container even though every row is a separate React component (which is what enables the drag-without-remount property).
 - **Empty blocks must show a drop target.** When a block has no children the canvas emits the block row as `block-head` (top-rounded only) and follows it with `EmptyBlockDropZone` — a pseudo-row registered as `useDroppable({id: "container-<blockId>"})`. Without it there is no droppable target for the empty block's children area (the block row itself resolves to root) and the user gets no visual cue that the empty space accepts drops. This matches the master `ConditionBlockItem` "Přetáhněte pole sem" affordance.
