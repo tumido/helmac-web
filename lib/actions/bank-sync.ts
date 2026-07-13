@@ -6,6 +6,7 @@ import { requireEditor } from "@/lib/auth";
 import { paymentEmailTemplateSchema } from "@/lib/validators/bank-sync";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 import { parseEmailAttachmentsJson } from "@/lib/validators/email-attachment";
+import { syncYearEmailToV2, toggleYearEmailInV2 } from "@/lib/utils/v2-dual-write";
 
 export async function updatePaymentEmailTemplate(yearId: string, formData: FormData) {
     try {
@@ -53,16 +54,26 @@ export async function updatePaymentEmailTemplate(yearId: string, formData: FormD
     }
 
     try {
-        await db.year.update({
-            where: { id: yearId },
-            data: {
-                paymentEmailSubject: validated.data.paymentEmailSubject,
-                paymentEmailBody: validated.data.paymentEmailBody,
-                paymentEmailBcc: validated.data.paymentEmailBcc,
-                paymentEmailAccountId: validated.data.emailAccountId,
-                paymentEmailSections: sections,
-                paymentEmailAttachments: attachments,
-            },
+        await db.$transaction(async (tx) => {
+            await tx.year.update({
+                where: { id: yearId },
+                data: {
+                    paymentEmailSubject: validated.data.paymentEmailSubject,
+                    paymentEmailBody: validated.data.paymentEmailBody,
+                    paymentEmailBcc: validated.data.paymentEmailBcc,
+                    paymentEmailAccountId: validated.data.emailAccountId,
+                    paymentEmailSections: sections,
+                    paymentEmailAttachments: attachments,
+                },
+            });
+            await syncYearEmailToV2(tx, yearId, "payment", {
+                subject: validated.data.paymentEmailSubject,
+                body: validated.data.paymentEmailBody,
+                bcc: validated.data.paymentEmailBcc,
+                accountId: validated.data.emailAccountId,
+                sections,
+                attachments,
+            });
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);
@@ -95,9 +106,12 @@ export async function togglePaymentEmail(yearId: string, enabled: boolean) {
             }
         }
 
-        await db.year.update({
-            where: { id: yearId },
-            data: { paymentEmailEnabled: enabled },
+        await db.$transaction(async (tx) => {
+            await tx.year.update({
+                where: { id: yearId },
+                data: { paymentEmailEnabled: enabled },
+            });
+            await toggleYearEmailInV2(tx, yearId, "payment", enabled);
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);

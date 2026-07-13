@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { saveRegistrationFormSchema } from "@/lib/validators/registration-form";
 import type { RegistrationFormData } from "@/lib/types/registration-form";
+import { syncFormCatalogToV2 } from "@/lib/utils/v2-dual-write";
 
 interface SaveFormResult {
     success?: boolean;
@@ -35,15 +36,25 @@ export async function saveRegistrationForm(yearId: string, formData: Registratio
             fields: validated.data.fields,
         };
 
-        await db.registrationForm.upsert({
-            where: { yearId },
-            create: {
+        await db.$transaction(async (tx) => {
+            const form = await tx.registrationForm.upsert({
+                where: { yearId },
+                create: {
+                    yearId,
+                    fields: dataToStore as unknown as object,
+                },
+                update: {
+                    fields: dataToStore as unknown as object,
+                },
+                select: { id: true },
+            });
+
+            await syncFormCatalogToV2(
+                tx,
+                form.id,
                 yearId,
-                fields: dataToStore as unknown as object,
-            },
-            update: {
-                fields: dataToStore as unknown as object,
-            },
+                dataToStore as unknown as RegistrationFormData,
+            );
         });
 
         revalidatePath(`/admin/rocniky/${yearId}`);

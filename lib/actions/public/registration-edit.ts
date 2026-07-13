@@ -7,6 +7,7 @@ import { migrateFormData } from "@/lib/utils/form-migration";
 import { getAllInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import type { AdditionalPersonData, InputField } from "@/lib/types/registration-form";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
+import { syncOrderLineItemsToV2 } from "@/lib/utils/v2-dual-write";
 
 export interface UpdateRegistrationState {
     success: boolean;
@@ -48,7 +49,7 @@ export async function updatePublicRegistration(
             data: true,
             isTest: true,
             year: { select: { registrationOpen: true } },
-            form: { select: { fields: true } },
+            form: { select: { id: true, fields: true } },
         },
     });
 
@@ -168,9 +169,20 @@ export async function updatePublicRegistration(
         mergedData.additionalPeople = mergedAP;
     }
 
-    await db.registrationSubmission.update({
-        where: { id: registration.id },
-        data: { data: mergedData as object },
+    await db.$transaction(async (tx) => {
+        await tx.registrationSubmission.update({
+            where: { id: registration.id },
+            data: { data: mergedData as object },
+        });
+        const formId = registration.form?.id;
+        if (formId) {
+            await syncOrderLineItemsToV2(
+                tx,
+                registration.id,
+                mergedData,
+                formId,
+            );
+        }
     });
 
     revalidatePath("/ucet");
