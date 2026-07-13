@@ -375,7 +375,7 @@ SELECT jsonb_build_object(
         FROM "v2_price_tiers" pt WHERE pt.year_id = p_year_id
     )
 )
-FROM "registration_forms" rf WHERE rf.year_id = p_year_id;
+FROM "registration_forms" rf WHERE rf."yearId" = p_year_id;
 $$ LANGUAGE sql STABLE;
 
 CREATE FUNCTION v2_get_registration_summary(p_year_id TEXT) RETURNS JSONB AS $$
