@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck — Prisma-generated v2 model delegates are not visible to tsc outside the Next.js build scope
 import { PrismaClient } from "@prisma/client";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import { join } from "path";
 import { randomUUID } from "crypto";
 import { migrateFormData } from "../../lib/utils/form-migration";
@@ -259,12 +259,9 @@ class DryRunCollector {
     }
 }
 
-interface LegacyMaps {
+interface CatalogMaps {
     pricingDefinitions: Record<string, string>;
-    pricingOptions: Record<string, string>;
     formFields: Record<string, string>;
-    formConditions: Record<string, string>;
-    capacityLimits: Record<string, string>;
 }
 
 interface MergedOption {
@@ -458,13 +455,10 @@ async function backfillCatalog(
     formId: string,
     yearId: string,
     merged: MergedData,
-): Promise<LegacyMaps> {
-    const maps: LegacyMaps = {
+): Promise<CatalogMaps> {
+    const maps: CatalogMaps = {
         pricingDefinitions: {},
-        pricingOptions: {},
         formFields: {},
-        formConditions: {},
-        capacityLimits: {},
     };
 
     // 1. Price tiers (dated + fallback)
@@ -520,7 +514,6 @@ async function backfillCatalog(
         for (let oi = 0; oi < options.length; oi++) {
             const { option, isActive: optActive } = options[oi];
             const optId = randomUUID();
-            maps.pricingOptions[option.id] = optId;
 
             await tx.v2PricingOption.create({
                 data: {
@@ -594,7 +587,6 @@ async function backfillCatalog(
     for (let ci = 0; ci < merged.conditions.length; ci++) {
         const cond = merged.conditions[ci];
         const condId = randomUUID();
-        maps.formConditions[cond.id] = condId;
 
         await tx.v2FormCondition.create({
             data: {
@@ -643,12 +635,9 @@ async function backfillCatalog(
             continue;
         }
 
-        const limitId = randomUUID();
-        maps.capacityLimits[limit.id] = limitId;
-
         await tx.v2CapacityLimit.create({
             data: {
-                id: limitId,
+                id: randomUUID(),
                 legacyId: limit.id,
                 formId,
                 yearId,
@@ -1082,7 +1071,6 @@ async function main() {
         },
     });
 
-    const allMaps: Record<string, LegacyMaps> = {};
     const collector = DRY_RUN ? new DryRunCollector() : null;
 
     // 2. Per-form backfill (catalog + emails in one transaction)
@@ -1140,9 +1128,8 @@ async function main() {
                     fieldLabelMap,
                 );
             }
-            allMaps[form.id] = m;
         } else {
-            const maps = await prisma.$transaction(
+            await prisma.$transaction(
                 async (tx) => {
                     await cleanCatalog(tx, form.id, form.yearId);
                     const m = await backfillCatalog(
@@ -1166,12 +1153,9 @@ async function main() {
                             fieldLabelMap,
                         );
                     }
-
-                    return m;
                 },
                 { timeout: 60_000 },
             );
-            allMaps[form.id] = maps;
         }
     }
 
@@ -1181,17 +1165,7 @@ async function main() {
         return;
     }
 
-    // 3. Persist legacy maps
-    const mapsPath = join(
-        process.cwd(),
-        "prisma",
-        "scripts",
-        "v2-legacy-maps.json",
-    );
-    writeFileSync(mapsPath, JSON.stringify(allMaps, null, 4));
-    console.log(`\nLegacy maps written to ${mapsPath}`);
-
-    // 4. Verify
+    // 3. Verify
     await verify();
 
     console.log("\nDone!");
