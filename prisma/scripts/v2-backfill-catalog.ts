@@ -15,12 +15,249 @@ import type {
     CapacityLimit,
 } from "../../lib/types/registration-form";
 
+const DRY_RUN = process.argv.includes("--dry-run");
 const prisma = new PrismaClient();
 
 // ---- Types ----
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TxClient = any;
+
+// ---- Dry-run collector ----
+
+class DryRunCollector {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tables: Record<string, any[]> = {};
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private model(name: string): any {
+        if (!this.tables[name]) this.tables[name] = [];
+        const rows = this.tables[name];
+        return {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            create: ({ data }: { data: any }) => {
+                rows.push(data);
+                return data;
+            },
+            deleteMany: () => {},
+        };
+    }
+
+    get v2PriceTier() {
+        return this.model("v2_price_tiers");
+    }
+    get v2PricingDefinition() {
+        return this.model("v2_pricing_definitions");
+    }
+    get v2PricingOption() {
+        return this.model("v2_pricing_options");
+    }
+    get v2PricingOptionPrice() {
+        return this.model("v2_pricing_option_prices");
+    }
+    get v2FormField() {
+        return this.model("v2_form_fields");
+    }
+    get v2FormCondition() {
+        return this.model("v2_form_conditions");
+    }
+    get v2FormConditionRule() {
+        return this.model("v2_form_condition_rules");
+    }
+    get v2CapacityLimit() {
+        return this.model("v2_capacity_limits");
+    }
+    get v2EmailTemplate() {
+        return this.model("v2_email_templates");
+    }
+    get v2EmailSection() {
+        return this.model("v2_email_sections");
+    }
+
+    print(): void {
+        console.log("\n========== DRY RUN — would insert ==========\n");
+
+        this.printTiers();
+        this.printDefinitions();
+        this.printOptions();
+        this.printPrices();
+        this.printFields();
+        this.printConditions();
+        this.printRules();
+        this.printCapacity();
+        this.printEmailTemplates();
+        this.printEmailSections();
+    }
+
+    private printTiers(): void {
+        const rows = this.tables["v2_price_tiers"] ?? [];
+        console.log(`v2_price_tiers (${rows.length}):`);
+        for (const r of rows) {
+            const d = r.deadline
+                ? r.deadline.toISOString().slice(0, 10)
+                : "NULL (fallback)";
+            console.log(`  [${r.sortOrder}] deadline: ${d}`);
+        }
+        console.log();
+    }
+
+    private printDefinitions(): void {
+        const rows = this.tables["v2_pricing_definitions"] ?? [];
+        console.log(`v2_pricing_definitions (${rows.length}):`);
+        for (const r of rows) {
+            const tag = r.isActive ? "" : " [INACTIVE]";
+            console.log(
+                `  "${r.name}" type=${r.type} tiers=${r.usePriceTiers}${tag}`,
+            );
+        }
+        console.log();
+    }
+
+    private printOptions(): void {
+        const defs = this.tables["v2_pricing_definitions"] ?? [];
+        const opts = this.tables["v2_pricing_options"] ?? [];
+        const defName = new Map(defs.map((d) => [d.id, d.name]));
+        console.log(`v2_pricing_options (${opts.length}):`);
+        for (const r of opts) {
+            const parent = defName.get(r.definitionId) ?? "?";
+            const tag = r.isActive ? "" : " [INACTIVE]";
+            console.log(`  "${parent}" → "${r.name}"${tag}`);
+        }
+        console.log();
+    }
+
+    private printPrices(): void {
+        const opts = this.tables["v2_pricing_options"] ?? [];
+        const prices = this.tables["v2_pricing_option_prices"] ?? [];
+        const tiers = this.tables["v2_price_tiers"] ?? [];
+        const optName = new Map(opts.map((o) => [o.id, o.name]));
+        const tierOrder = new Map(
+            tiers.map((t) => [t.id, t.sortOrder]),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const grouped = new Map<string, any[]>();
+        for (const p of prices) {
+            const arr = grouped.get(p.optionId) ?? [];
+            arr.push(p);
+            grouped.set(p.optionId, arr);
+        }
+        console.log(`v2_pricing_option_prices (${prices.length}):`);
+        for (const [optId, prs] of grouped) {
+            prs.sort(
+                (a, b) =>
+                    (tierOrder.get(a.tierId) ?? 0) -
+                    (tierOrder.get(b.tierId) ?? 0),
+            );
+            const vals = prs.map((p) => p.price).join(", ");
+            console.log(
+                `  "${optName.get(optId) ?? "?"}" → [${vals}] CZK`,
+            );
+        }
+        console.log();
+    }
+
+    private printFields(): void {
+        const rows = this.tables["v2_form_fields"] ?? [];
+        console.log(`v2_form_fields (${rows.length}):`);
+        for (const r of rows) {
+            const tag = r.isActive ? "" : " [INACTIVE]";
+            const pricing = r.pricingDefinitionId ? " $" : "";
+            console.log(
+                `  [${r.sortOrder}] "${r.label}" name=${r.name} type=${r.type}${pricing}${tag}`,
+            );
+        }
+        console.log();
+    }
+
+    private printConditions(): void {
+        const rows = this.tables["v2_form_conditions"] ?? [];
+        console.log(`v2_form_conditions (${rows.length}):`);
+        for (const r of rows) {
+            const legacy = r.legacyId
+                ? ` legacy=${r.legacyId.slice(0, 8)}...`
+                : "";
+            console.log(
+                `  "${r.name || "(unnamed)"}"${legacy}`,
+            );
+        }
+        console.log();
+    }
+
+    private printRules(): void {
+        const conds = this.tables["v2_form_conditions"] ?? [];
+        const rules = this.tables["v2_form_condition_rules"] ?? [];
+        const fields = this.tables["v2_form_fields"] ?? [];
+        const condName = new Map(
+            conds.map((c) => [c.id, c.name || "(unnamed)"]),
+        );
+        const fieldLabel = new Map(
+            fields.map((f) => [f.id, f.label]),
+        );
+        console.log(`v2_form_condition_rules (${rules.length}):`);
+        for (const r of rules) {
+            const cond = condName.get(r.conditionId) ?? "?";
+            const field = r.fieldId
+                ? (fieldLabel.get(r.fieldId) ?? r.fieldId.slice(0, 8) + "...")
+                : "NULL";
+            const op = r.operator ?? "?";
+            const needsValue = !["is_set", "is_not_set", "quantity_gt_zero", "quantity_any_gt_zero"].includes(op);
+            const val = needsValue ? ` "${r.value ?? ""}"` : "";
+            console.log(
+                `  "${cond}" → ${r.connector} [${field}] ${op}${val}`,
+            );
+        }
+        console.log();
+    }
+
+    private printCapacity(): void {
+        const rows = this.tables["v2_capacity_limits"] ?? [];
+        const fields = this.tables["v2_form_fields"] ?? [];
+        const fieldLabel = new Map(
+            fields.map((f) => [f.id, f.label]),
+        );
+        console.log(`v2_capacity_limits (${rows.length}):`);
+        for (const r of rows) {
+            const field =
+                fieldLabel.get(r.fieldId) ?? r.fieldId?.slice(0, 8);
+            console.log(
+                `  "${field}" value="${r.optionValue}" max=${r.maxCount}`,
+            );
+        }
+        console.log();
+    }
+
+    private printEmailTemplates(): void {
+        const rows = this.tables["v2_email_templates"] ?? [];
+        console.log(`v2_email_templates (${rows.length}):`);
+        for (const r of rows) {
+            const en = r.enabled ? "enabled" : "disabled";
+            const name = r.name ? ` "${r.name}"` : "";
+            const subj = r.subject
+                ? ` subj="${r.subject.slice(0, 40)}..."`
+                : "";
+            console.log(
+                `  type=${r.type}${name} ${en}${subj}`,
+            );
+        }
+        console.log();
+    }
+
+    private printEmailSections(): void {
+        const rows = this.tables["v2_email_sections"] ?? [];
+        console.log(`v2_email_sections (${rows.length}):`);
+        for (const r of rows) {
+            const body = (r.body || "").slice(0, 60).replace(
+                /\n/g,
+                " ",
+            );
+            const cond = r.conditionId ? " (conditional)" : "";
+            console.log(
+                `  [${r.sortOrder}]${cond} "${body}..."`,
+            );
+        }
+        console.log();
+    }
+}
 
 interface LegacyMaps {
     pricingDefinitions: Record<string, string>;
@@ -427,14 +664,57 @@ async function backfillCatalog(
 
 // ---- Email helpers ----
 
+function inferConditionName(
+    condition: FormCondition,
+    fieldLabelMap: Record<string, string>,
+): string {
+    if (condition.name) return condition.name;
+    const parts: string[] = [];
+    for (const rule of condition.rules) {
+        const label = rule.fieldId
+            ? (fieldLabelMap[rule.fieldId] ?? "?")
+            : "?";
+        let expr: string;
+        switch (rule.operator) {
+            case "equals":
+                expr = `${label} = ${rule.value ?? ""}`;
+                break;
+            case "not_equals":
+                expr = `${label} ≠ ${rule.value ?? ""}`;
+                break;
+            case "is_set":
+                expr = `${label} is set`;
+                break;
+            case "is_not_set":
+                expr = `${label} is not set`;
+                break;
+            case "quantity_gt_zero":
+                expr = `${label} > 0`;
+                break;
+            case "quantity_any_gt_zero":
+                expr = `${label} any > 0`;
+                break;
+            default:
+                expr = `${label} ${rule.operator ?? "?"} ${rule.value ?? ""}`;
+        }
+        if (parts.length > 0) {
+            parts.push(rule.connector === "OR" ? "OR" : "AND");
+        }
+        parts.push(expr);
+    }
+    return parts.join(" ");
+}
+
 async function createInlineCondition(
     tx: TxClient,
     formId: string,
     yearId: string,
     condition: FormCondition,
     fieldMap: Record<string, string>,
+    fieldLabelMap: Record<string, string>,
 ): Promise<string> {
     const condId = randomUUID();
+    const name = inferConditionName(condition, fieldLabelMap);
 
     await tx.v2FormCondition.create({
         data: {
@@ -442,7 +722,7 @@ async function createInlineCondition(
             legacyId: condition.id,
             formId,
             yearId,
-            name: condition.name || "",
+            name,
             sortOrder: 0,
         },
     });
@@ -490,6 +770,7 @@ async function backfillEmailSections(
     yearId: string,
     sections: unknown[],
     fieldMap: Record<string, string>,
+    fieldLabelMap: Record<string, string>,
 ): Promise<void> {
     for (const raw of sections) {
         const section = raw as RawEmailSection;
@@ -502,6 +783,7 @@ async function backfillEmailSections(
                 yearId,
                 section.condition,
                 fieldMap,
+                fieldLabelMap,
             );
         }
 
@@ -565,6 +847,7 @@ async function backfillEmails(
     year: YearEmailData,
     formId: string,
     fieldMap: Record<string, string>,
+    fieldLabelMap: Record<string, string>,
 ): Promise<void> {
     const yearId = year.id;
 
@@ -632,6 +915,7 @@ async function backfillEmails(
                 yearId,
                 sectionArr,
                 fieldMap,
+                fieldLabelMap,
             );
         }
     }
@@ -697,6 +981,7 @@ async function backfillEmails(
                 yearId,
                 sectionArr,
                 fieldMap,
+                fieldLabelMap,
             );
         }
     }
@@ -770,7 +1055,9 @@ async function verify(): Promise<void> {
 
 async function main() {
     console.log("V2 Catalog Backfill");
-    console.log("===================\n");
+    console.log("===================");
+    if (DRY_RUN) console.log(">>> DRY RUN — no data will be written <<<");
+    console.log();
 
     // 1. Load sources
     const seedPath = join(
@@ -796,6 +1083,7 @@ async function main() {
     });
 
     const allMaps: Record<string, LegacyMaps> = {};
+    const collector = DRY_RUN ? new DryRunCollector() : null;
 
     // 2. Per-form backfill (catalog + emails in one transaction)
     for (const form of forms) {
@@ -827,35 +1115,70 @@ async function main() {
             `  Price tiers: ${merged.priceTiers.length} + 1 fallback`,
         );
 
-        const maps = await prisma.$transaction(
-            async (tx) => {
-                await cleanCatalog(tx, form.id, form.yearId);
-                const m = await backfillCatalog(
-                    tx,
-                    form.id,
-                    form.yearId,
-                    merged,
+        const fieldLabelMap: Record<string, string> = {};
+        for (const { field } of merged.fields) {
+            fieldLabelMap[field.id] = field.label;
+        }
+
+        if (collector) {
+            const m = await backfillCatalog(
+                collector,
+                form.id,
+                form.yearId,
+                merged,
+            );
+            if (year) {
+                const ceCount = year.conditionalEmails.length;
+                console.log(
+                    `  Email templates: 3 year-level + ${ceCount} conditional`,
                 );
-
-                if (year) {
-                    const ceCount = year.conditionalEmails.length;
-                    console.log(
-                        `  Email templates: 3 year-level + ${ceCount} conditional`,
-                    );
-                    await backfillEmails(
+                await backfillEmails(
+                    collector,
+                    year as unknown as YearEmailData,
+                    form.id,
+                    m.formFields,
+                    fieldLabelMap,
+                );
+            }
+            allMaps[form.id] = m;
+        } else {
+            const maps = await prisma.$transaction(
+                async (tx) => {
+                    await cleanCatalog(tx, form.id, form.yearId);
+                    const m = await backfillCatalog(
                         tx,
-                        year as unknown as YearEmailData,
                         form.id,
-                        m.formFields,
+                        form.yearId,
+                        merged,
                     );
-                }
 
-                return m;
-            },
-            { timeout: 60_000 },
-        );
+                    if (year) {
+                        const ceCount =
+                            year.conditionalEmails.length;
+                        console.log(
+                            `  Email templates: 3 year-level + ${ceCount} conditional`,
+                        );
+                        await backfillEmails(
+                            tx,
+                            year as unknown as YearEmailData,
+                            form.id,
+                            m.formFields,
+                            fieldLabelMap,
+                        );
+                    }
 
-        allMaps[form.id] = maps;
+                    return m;
+                },
+                { timeout: 60_000 },
+            );
+            allMaps[form.id] = maps;
+        }
+    }
+
+    if (collector) {
+        collector.print();
+        console.log("Dry run complete — no changes made.\n");
+        return;
     }
 
     // 3. Persist legacy maps
