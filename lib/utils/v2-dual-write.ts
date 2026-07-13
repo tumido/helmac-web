@@ -1002,7 +1002,6 @@ export async function createV2Order(
         publicUserId: string | null;
         isTest: boolean;
         gdprConsentAt: Date | null;
-        pricingDefinitions: PricingDefinition[];
         allInputFields: InputField[];
         visibleFieldIds: Set<string>;
         apVisibleFieldIdsPerPerson: Set<string>[];
@@ -1112,7 +1111,6 @@ export async function createV2Order(
             personData,
             visibleIds,
             params.allInputFields,
-            params.pricingDefinitions,
             fieldNameToV2,
             optionLegacyToV2,
             optionNameToV2,
@@ -1173,7 +1171,6 @@ async function createLineItemsForPerson(
     personData: Record<string, unknown>,
     visibleFieldIds: Set<string>,
     allInputFields: InputField[],
-    pricingDefinitions: PricingDefinition[],
     fieldNameToV2: Map<
         string,
         { id: string; legacyId: string | null }
@@ -1200,122 +1197,132 @@ async function createLineItemsForPerson(
         if (rawValue === undefined || rawValue === null)
             continue;
 
-        const lineItem = resolveLineItem(
+        const lineItems = resolveLineItems(
             field,
             rawValue,
-            pricingDefinitions,
             optionLegacyToV2,
             optionNameToV2,
             currentTierPrice,
         );
 
-        await tx.v2OrderLineItem.create({
-            data: {
-                personId,
-                orderId,
-                yearId,
-                fieldId: v2Field.id,
-                pricingOptionId: lineItem.pricingOptionId,
-                value: lineItem.value,
-                quantity: lineItem.quantity,
-                unitPriceAtSubmission:
-                    lineItem.unitPriceAtSubmission,
-            },
-        });
+        for (const li of lineItems) {
+            await tx.v2OrderLineItem.create({
+                data: {
+                    personId,
+                    orderId,
+                    yearId,
+                    fieldId: v2Field.id,
+                    pricingOptionId: li.pricingOptionId,
+                    value: li.value,
+                    quantity: li.quantity,
+                    unitPriceAtSubmission:
+                        li.unitPriceAtSubmission,
+                },
+            });
+        }
     }
 }
 
-function resolveLineItem(
+interface LineItemData {
+    pricingOptionId: string | null;
+    value: string | null;
+    quantity: number;
+    unitPriceAtSubmission: number;
+}
+
+function resolveLineItems(
     field: InputField,
     rawValue: unknown,
-    _pricingDefinitions: PricingDefinition[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     optionLegacyToV2: Map<string, any>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     optionNameToV2: Map<string, any>,
     currentTierPrice: Map<string, number>,
-): {
-    pricingOptionId: string | null;
-    value: string | null;
-    quantity: number;
-    unitPriceAtSubmission: number;
-} {
+): LineItemData[] {
     if (field.type === "pricing_select") {
         const optionId = String(rawValue);
         const v2Opt =
             optionLegacyToV2.get(optionId) ??
             optionNameToV2.get(optionId);
         if (v2Opt) {
-            return {
+            return [{
                 pricingOptionId: v2Opt.id,
                 value: v2Opt.name,
                 quantity: 1,
                 unitPriceAtSubmission:
                     currentTierPrice.get(v2Opt.id) ?? 0,
-            };
+            }];
         }
-        return {
+        return [{
             pricingOptionId: null,
             value: optionId,
             quantity: 1,
             unitPriceAtSubmission: 0,
-        };
+        }];
     }
 
     if (field.type === "pricing_multi_select") {
         const selected = parseSelected(rawValue);
-        // Store as JSON, one line item per field (constraint)
-        let totalPrice = 0;
+        const items: LineItemData[] = [];
         for (const optId of selected) {
             const v2Opt =
                 optionLegacyToV2.get(optId) ??
                 optionNameToV2.get(optId);
             if (v2Opt) {
-                totalPrice +=
-                    currentTierPrice.get(v2Opt.id) ?? 0;
+                items.push({
+                    pricingOptionId: v2Opt.id,
+                    value: v2Opt.name,
+                    quantity: 1,
+                    unitPriceAtSubmission:
+                        currentTierPrice.get(v2Opt.id) ?? 0,
+                });
             }
         }
-        return {
-            pricingOptionId: null,
-            value: String(rawValue),
-            quantity: 1,
-            unitPriceAtSubmission: totalPrice,
-        };
+        return items.length > 0
+            ? items
+            : [{
+                  pricingOptionId: null,
+                  value: String(rawValue),
+                  quantity: 1,
+                  unitPriceAtSubmission: 0,
+              }];
     }
 
     if (field.type === "pricing_quantity") {
         const quantities = parseQuantities(rawValue);
-        let totalPrice = 0;
-        let totalQty = 0;
-        for (const [optId, qty] of Object.entries(
-            quantities,
-        )) {
+        const items: LineItemData[] = [];
+        for (const [optId, qty] of Object.entries(quantities)) {
             if (qty <= 0) continue;
             const v2Opt =
                 optionLegacyToV2.get(optId) ??
                 optionNameToV2.get(optId);
             if (v2Opt) {
-                totalPrice +=
-                    (currentTierPrice.get(v2Opt.id) ?? 0) *
-                    qty;
+                items.push({
+                    pricingOptionId: v2Opt.id,
+                    value: v2Opt.name,
+                    quantity: qty,
+                    unitPriceAtSubmission:
+                        currentTierPrice.get(v2Opt.id) ?? 0,
+                });
             }
-            totalQty += qty;
         }
-        return {
-            pricingOptionId: null,
-            value: String(rawValue),
-            quantity: totalQty || 1,
-            unitPriceAtSubmission: totalPrice,
-        };
+        return items.length > 0
+            ? items
+            : [{
+                  pricingOptionId: null,
+                  value: String(rawValue),
+                  quantity: 1,
+                  unitPriceAtSubmission: 0,
+              }];
     }
 
     // Non-priced field
-    return {
+    return [{
         pricingOptionId: null,
         value: String(rawValue),
         quantity: 1,
         unitPriceAtSubmission: 0,
-    };
+    }];
 }
 
 // ============================================================
@@ -1425,6 +1432,28 @@ export async function syncOrderLineItemsToV2(
         formData.fields,
     );
 
+    // Helper: delete existing line items for a field, then create new ones
+    async function syncFieldLineItems(
+        personId: string,
+        fieldId: string,
+        items: LineItemData[],
+    ): Promise<void> {
+        await tx.v2OrderLineItem.deleteMany({
+            where: { personId, fieldId },
+        });
+        for (const li of items) {
+            await tx.v2OrderLineItem.create({
+                data: {
+                    personId,
+                    orderId: order.id,
+                    yearId: order.yearId,
+                    fieldId,
+                    ...li,
+                },
+            });
+        }
+    }
+
     // Main person (personIndex 0)
     const mainPerson = order.people.find(
         (p: { personIndex: number }) => p.personIndex === 0,
@@ -1437,31 +1466,18 @@ export async function syncOrderLineItemsToV2(
             const rawValue = newData[field.name];
             if (rawValue === undefined) continue;
 
-            const lineItem = resolveLineItem(
+            const items = resolveLineItems(
                 field,
                 rawValue,
-                formData.pricingDefinitions,
                 optionLegacyToV2,
                 optionNameToV2,
                 currentTierPrice,
             );
-
-            await tx.v2OrderLineItem.upsert({
-                where: {
-                    personId_fieldId: {
-                        personId: mainPerson.id,
-                        fieldId: v2Field.id,
-                    },
-                },
-                create: {
-                    personId: mainPerson.id,
-                    orderId: order.id,
-                    yearId: order.yearId,
-                    fieldId: v2Field.id,
-                    ...lineItem,
-                },
-                update: lineItem,
-            });
+            await syncFieldLineItems(
+                mainPerson.id,
+                v2Field.id,
+                items,
+            );
         }
     }
 
@@ -1490,31 +1506,18 @@ export async function syncOrderLineItemsToV2(
                 const rawValue = personData[field.name];
                 if (rawValue === undefined) continue;
 
-                const lineItem = resolveLineItem(
+                const items = resolveLineItems(
                     field,
                     rawValue,
-                    formData.pricingDefinitions,
                     optionLegacyToV2,
                     optionNameToV2,
                     currentTierPrice,
                 );
-
-                await tx.v2OrderLineItem.upsert({
-                    where: {
-                        personId_fieldId: {
-                            personId: apPerson.id,
-                            fieldId: v2Field.id,
-                        },
-                    },
-                    create: {
-                        personId: apPerson.id,
-                        orderId: order.id,
-                        yearId: order.yearId,
-                        fieldId: v2Field.id,
-                        ...lineItem,
-                    },
-                    update: lineItem,
-                });
+                await syncFieldLineItems(
+                    apPerson.id,
+                    v2Field.id,
+                    items,
+                );
             }
         }
     }

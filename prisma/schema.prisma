@@ -826,7 +826,9 @@ model V2OrderLineItem {
   unitPriceAtSubmission Int              @default(0) @map("unit_price_at_submission")
   createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@unique([personId, fieldId])
+  // Unique constraints are partial indexes in raw SQL:
+  // UNIQUE(person_id, field_id) WHERE pricing_option_id IS NULL
+  // UNIQUE(person_id, field_id, pricing_option_id) WHERE pricing_option_id IS NOT NULL
   @@index([yearId, fieldId, value], map: "idx_v2_oli_year_field_value")
   @@index([orderId], map: "idx_v2_oli_order")
   @@map("v2_order_line_items")

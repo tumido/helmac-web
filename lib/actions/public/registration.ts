@@ -514,7 +514,6 @@ export async function submitDynamicRegistration(
                 publicUserId,
                 isTest,
                 gdprConsentAt,
-                pricingDefinitions: formDataStored.pricingDefinitions,
                 allInputFields,
                 visibleFieldIds,
                 apVisibleFieldIdsPerPerson,
