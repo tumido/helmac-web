@@ -16,17 +16,17 @@ datasource db {
 // ============================================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  passwordHash  String
-  role          Role      @default(EDITOR)
+  id           String @id @default(cuid())
+  email        String @unique
+  name         String
+  passwordHash String
+  role         Role   @default(EDITOR)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sessions      Session[]
-  createdNews   News[]    @relation("NewsAuthor")
+  sessions    Session[]
+  createdNews News[]    @relation("NewsAuthor")
 
   @@map("users")
 }
@@ -52,21 +52,22 @@ enum Role {
 // ============================================
 
 model EmailAccount {
-    id                String   @id @default(cuid())
-    email             String   @unique
-    encryptedPassword String
-    isMain            Boolean  @default(false)
-    label             String?
+  id                String  @id @default(cuid())
+  email             String  @unique
+  encryptedPassword String
+  isMain            Boolean @default(false)
+  label             String?
 
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    confirmationYears   Year[] @relation("ConfirmationEmail")
-    priceChangeYears    Year[] @relation("PriceChangeEmail")
-    paymentYears        Year[] @relation("PaymentEmail")
-    conditionalEmails   ConditionalEmail[] @relation("ConditionalEmailAccount")
+  confirmationYears Year[]             @relation("ConfirmationEmail")
+  priceChangeYears  Year[]             @relation("PriceChangeEmail")
+  paymentYears      Year[]             @relation("PaymentEmail")
+  conditionalEmails ConditionalEmail[] @relation("ConditionalEmailAccount")
+  v2EmailTemplates  V2EmailTemplate[]
 
-    @@map("email_accounts")
+  @@map("email_accounts")
 }
 
 // ============================================
@@ -74,18 +75,18 @@ model EmailAccount {
 // ============================================
 
 model BankAccount {
-    id                  String    @id @default(cuid())
-    bankAccountPrefix   String?
-    bankAccountNumber   String?
-    bankAccountBankCode String?
-    bankSwift           String?
-    encryptedFioToken   String?
-    fioSyncEnabled      Boolean   @default(false)
-    lastFioSyncAt       DateTime?
-    createdAt           DateTime  @default(now())
-    updatedAt           DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  bankAccountPrefix   String?
+  bankAccountNumber   String?
+  bankAccountBankCode String?
+  bankSwift           String?
+  encryptedFioToken   String?
+  fioSyncEnabled      Boolean   @default(false)
+  lastFioSyncAt       DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-    @@map("bank_accounts")
+  @@map("bank_accounts")
 }
 
 // ============================================
@@ -93,15 +94,15 @@ model BankAccount {
 // ============================================
 
 model Year {
-  id          String      @id @default(cuid())
-  year        Int         @unique
-  title       String
-  subtitle    String?
-  isActive    Boolean     @default(false)
-  isArchived  Boolean     @default(false)
+  id         String  @id @default(cuid())
+  year       Int     @unique
+  title      String
+  subtitle   String?
+  isActive   Boolean @default(false)
+  isArchived Boolean @default(false)
 
-  startDate   DateTime?
-  endDate     DateTime?
+  startDate DateTime?
+  endDate   DateTime?
 
   headerPhoto String?
   heroPhoto   String?
@@ -111,47 +112,56 @@ model Year {
 
   registrationSuccessContent Json @default("[]")
 
-  confirmationEmailEnabled  Boolean  @default(false)
-  confirmationEmailSubject  String?
-  confirmationEmailBody     String?  @db.Text
-  confirmationEmailBcc      String?
-  confirmationEmailAccountId  String?
-  confirmationEmailAccount    EmailAccount? @relation("ConfirmationEmail", fields: [confirmationEmailAccountId], references: [id], onDelete: SetNull)
-  confirmationEmailSections Json     @default("[]")
-  confirmationEmailAttachments Json    @default("[]")
+  confirmationEmailEnabled     Boolean       @default(false)
+  confirmationEmailSubject     String?
+  confirmationEmailBody        String?       @db.Text
+  confirmationEmailBcc         String?
+  confirmationEmailAccountId   String?
+  confirmationEmailAccount     EmailAccount? @relation("ConfirmationEmail", fields: [confirmationEmailAccountId], references: [id], onDelete: SetNull)
+  confirmationEmailSections    Json          @default("[]")
+  confirmationEmailAttachments Json          @default("[]")
 
-  priceChangeEmailEnabled  Boolean  @default(false)
-  priceChangeEmailSubject  String?
-  priceChangeEmailBody     String?  @db.Text
-  priceChangeEmailBcc      String?
-  priceChangeEmailAccountId  String?
-  priceChangeEmailAccount    EmailAccount? @relation("PriceChangeEmail", fields: [priceChangeEmailAccountId], references: [id], onDelete: SetNull)
-  priceChangeEmailSections Json     @default("[]")
-  priceChangeEmailAttachments Json   @default("[]")
+  priceChangeEmailEnabled     Boolean       @default(false)
+  priceChangeEmailSubject     String?
+  priceChangeEmailBody        String?       @db.Text
+  priceChangeEmailBcc         String?
+  priceChangeEmailAccountId   String?
+  priceChangeEmailAccount     EmailAccount? @relation("PriceChangeEmail", fields: [priceChangeEmailAccountId], references: [id], onDelete: SetNull)
+  priceChangeEmailSections    Json          @default("[]")
+  priceChangeEmailAttachments Json          @default("[]")
 
-  paymentEmailEnabled     Boolean   @default(false)
+  paymentEmailEnabled     Boolean       @default(false)
   paymentEmailSubject     String?
-  paymentEmailBody        String?   @db.Text
+  paymentEmailBody        String?       @db.Text
   paymentEmailBcc         String?
   paymentEmailAccountId   String?
   paymentEmailAccount     EmailAccount? @relation("PaymentEmail", fields: [paymentEmailAccountId], references: [id], onDelete: SetNull)
-  paymentEmailSections    Json      @default("[]")
-  paymentEmailAttachments Json      @default("[]")
+  paymentEmailSections    Json          @default("[]")
+  paymentEmailAttachments Json          @default("[]")
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  pages              Page[]
-  news               News[]
-  albums             Album[]
+  pages                   Page[]
+  news                    News[]
+  albums                  Album[]
   registrationForm        RegistrationForm?
   registrationSubmissions RegistrationSubmission[]
   formPreview             FormPreview?
-  programDays        ProgramDay[]
-  sectionTypes       SectionType[]
-  bankTransactions   BankTransaction[]
-  conditionalEmails  ConditionalEmail[]
-  homepageSteps      HomepageStep[]
+  programDays             ProgramDay[]
+  sectionTypes            SectionType[]
+  bankTransactions        BankTransaction[]
+  conditionalEmails       ConditionalEmail[]
+  homepageSteps           HomepageStep[]
+
+  v2PriceTiers         V2PriceTier[]
+  v2PricingDefinitions V2PricingDefinition[]
+  v2FormFields         V2FormField[]
+  v2FormConditions     V2FormCondition[]
+  v2CapacityLimits     V2CapacityLimit[]
+  v2Orders             V2Order[]
+  v2OrderLineItems     V2OrderLineItem[]
+  v2EmailTemplates     V2EmailTemplate[]
 
   @@map("years")
 }
@@ -161,33 +171,33 @@ model Year {
 // ============================================
 
 model ConditionalEmail {
-    id                  String   @id @default(cuid())
-    yearId              String
-    year                Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
-    name                String
-    enabled             Boolean  @default(false)
+  name    String
+  enabled Boolean @default(false)
 
-    conditionFieldId    String
-    conditionFieldName  String
-    conditionOperator   String   @default("equals")
-    conditionValue      String?
+  conditionFieldId   String
+  conditionFieldName String
+  conditionOperator  String  @default("equals")
+  conditionValue     String?
 
-    subject             String?
-    body                String?  @db.Text
-    bcc                 String?
-    accountId           String?
-    account             EmailAccount? @relation("ConditionalEmailAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  subject   String?
+  body      String?       @db.Text
+  bcc       String?
+  accountId String?
+  account   EmailAccount? @relation("ConditionalEmailAccount", fields: [accountId], references: [id], onDelete: SetNull)
 
-    sections            Json     @default("[]")
-    attachments         Json     @default("[]")
+  sections    Json @default("[]")
+  attachments Json @default("[]")
 
-    sortOrder           Int      @default(0)
+  sortOrder Int @default(0)
 
-    createdAt           DateTime @default(now())
-    updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("conditional_emails")
+  @@map("conditional_emails")
 }
 
 // ============================================
@@ -195,43 +205,43 @@ model ConditionalEmail {
 // ============================================
 
 model ProgramDay {
-  id        String   @id @default(cuid())
-  yearId    String
-  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
   date      DateTime
-  label     String   // "Den 1", "Patek", etc.
+  label     String // "Den 1", "Patek", etc.
   sortOrder Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  events    ProgramEvent[]
+  events ProgramEvent[]
 
   @@unique([yearId, date])
   @@map("program_days")
 }
 
 model ProgramEvent {
-  id           String     @id @default(cuid())
-  dayId        String
-  day          ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  id    String     @id @default(cuid())
+  dayId String
+  day   ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
 
-  startTime    String     // "13:00" format
-  endTime      String?    // "14:30" format, optional
-  title        String
-  description  String     @db.Text
-  location     String
-  imageUrl     String?
-  tags         String[]   // Array of tag strings
-  storyContent Json?      // Rich content for detail modal
-  actionButtons Json      @default("[]")
+  startTime     String // "13:00" format
+  endTime       String? // "14:30" format, optional
+  title         String
+  description   String   @db.Text
+  location      String
+  imageUrl      String?
+  tags          String[] // Array of tag strings
+  storyContent  Json? // Rich content for detail modal
+  actionButtons Json     @default("[]")
 
-  isPublished  Boolean    @default(false)
-  sortOrder    Int        @default(0)
+  isPublished Boolean @default(false)
+  sortOrder   Int     @default(0)
 
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("program_events")
 }
@@ -241,29 +251,29 @@ model ProgramEvent {
 // ============================================
 
 model SectionType {
-    id              String   @id @default(cuid())
-    yearId          String
-    year            Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
-    label           String
-    slug            String
-    icon            String?
-    sortOrder       Int      @default(0)
+  label     String
+  slug      String
+  icon      String?
+  sortOrder Int     @default(0)
 
-    pageTitle       String?
-    pageSubtitle    String?
-    metaTitle       String?
-    metaDescription String?
-    featuredOnIndex Boolean  @default(false)
-    description     String?
+  pageTitle       String?
+  pageSubtitle    String?
+  metaTitle       String?
+  metaDescription String?
+  featuredOnIndex Boolean @default(false)
+  description     String?
 
-    sections        Section[]
+  sections Section[]
 
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@unique([yearId, slug])
-    @@map("section_types")
+  @@unique([yearId, slug])
+  @@map("section_types")
 }
 
 // ============================================
@@ -271,22 +281,22 @@ model SectionType {
 // ============================================
 
 model Section {
-    id            String      @id @default(cuid())
-    sectionTypeId String
-    sectionType   SectionType @relation(fields: [sectionTypeId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  sectionTypeId String
+  sectionType   SectionType @relation(fields: [sectionTypeId], references: [id], onDelete: Cascade)
 
-    title         String
-    subtitle      String?
-    description   String?
-    icon          String?
-    content       Json        @default("[]")
-    showToc       Boolean     @default(false)
-    sortOrder     Int         @default(0)
+  title       String
+  subtitle    String?
+  description String?
+  icon        String?
+  content     Json    @default("[]")
+  showToc     Boolean @default(false)
+  sortOrder   Int     @default(0)
 
-    createdAt     DateTime    @default(now())
-    updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("sections")
+  @@map("sections")
 }
 
 // ============================================
@@ -294,19 +304,19 @@ model Section {
 // ============================================
 
 model HomepageStep {
-    id          String   @id @default(cuid())
-    yearId      String
-    year        Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
-    title       String
-    description String
-    icon        String
-    sortOrder   Int      @default(0)
+  title       String
+  description String
+  icon        String
+  sortOrder   Int    @default(0)
 
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("homepage_steps")
+  @@map("homepage_steps")
 }
 
 // ============================================
@@ -314,23 +324,23 @@ model HomepageStep {
 // ============================================
 
 model Page {
-  id          String      @id @default(cuid())
-  yearId      String
-  year        Year        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
-  slug        String
-  title       String
+  slug  String
+  title String
 
-  content     Json        @default("{}")
+  content Json @default("{}")
 
-  seoTitle    String?
-  seoDesc     String?
+  seoTitle String?
+  seoDesc  String?
 
-  isPublished Boolean     @default(false)
-  sortOrder   Int         @default(0)
+  isPublished Boolean @default(false)
+  sortOrder   Int     @default(0)
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([yearId, slug])
   @@map("pages")
@@ -341,27 +351,27 @@ model Page {
 // ============================================
 
 model News {
-  id          String      @id @default(cuid())
-  yearId      String
-  year        Year        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
-  authorId    String
-  author      User        @relation("NewsAuthor", fields: [authorId], references: [id])
+  authorId String
+  author   User   @relation("NewsAuthor", fields: [authorId], references: [id])
 
-  slug        String
-  title       String
-  excerpt     String?
-  content     String      @db.Text
-  coverImage  String?
-  showToc     Boolean     @default(false)
+  slug       String
+  title      String
+  excerpt    String?
+  content    String  @db.Text
+  coverImage String?
+  showToc    Boolean @default(false)
 
-  actionButtons Json      @default("[]")
+  actionButtons Json @default("[]")
 
-  isPublished Boolean     @default(false)
+  isPublished Boolean   @default(false)
   publishedAt DateTime?
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([yearId, slug])
   @@map("news")
@@ -372,9 +382,9 @@ model News {
 // ============================================
 
 model Album {
-  id          String      @id @default(cuid())
-  yearId      String
-  year        Year        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
 
   title       String
   slug        String
@@ -383,11 +393,11 @@ model Album {
   ogImageUrl  String?
   externalUrl String
 
-  sortOrder   Int         @default(0)
-  isPublished Boolean     @default(false)
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(false)
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([yearId, slug])
   @@map("albums")
@@ -398,14 +408,14 @@ model Album {
 // ============================================
 
 model AuditLog {
-  id          String      @id @default(cuid())
-  userId      String?
-  action      String
-  entity      String
-  entityId    String
-  changes     Json?
+  id       String  @id @default(cuid())
+  userId   String?
+  action   String
+  entity   String
+  entityId String
+  changes  Json?
 
-  createdAt   DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@map("audit_logs")
 }
@@ -415,44 +425,45 @@ model AuditLog {
 // ============================================
 
 model PublicUser {
-    id              String    @id @default(cuid())
-    email           String    @unique
-    passwordHash    String
-    emailVerified   Boolean   @default(false)
-    emailVerifiedAt DateTime?
-    gdprConsentAt   DateTime?
-    createdAt       DateTime  @default(now())
-    updatedAt       DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  gdprConsentAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-    verificationTokens  EmailVerificationToken[]
-    passwordResetTokens PasswordResetToken[]
-    registrations       RegistrationSubmission[]
+  verificationTokens  EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  registrations       RegistrationSubmission[]
+  v2Orders            V2Order[]
 
-    @@map("public_users")
+  @@map("public_users")
 }
 
 model EmailVerificationToken {
-    id        String     @id @default(cuid())
-    token     String     @unique
-    userId    String
-    user      PublicUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-    expiresAt DateTime
-    usedAt    DateTime?
-    createdAt DateTime   @default(now())
+  id        String     @id @default(cuid())
+  token     String     @unique
+  userId    String
+  user      PublicUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime   @default(now())
 
-    @@map("email_verification_tokens")
+  @@map("email_verification_tokens")
 }
 
 model PasswordResetToken {
-    id        String     @id @default(cuid())
-    token     String     @unique
-    userId    String
-    user      PublicUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-    expiresAt DateTime
-    usedAt    DateTime?
-    createdAt DateTime   @default(now())
+  id        String     @id @default(cuid())
+  token     String     @unique
+  userId    String
+  user      PublicUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime   @default(now())
 
-    @@map("password_reset_tokens")
+  @@map("password_reset_tokens")
 }
 
 // ============================================
@@ -460,44 +471,51 @@ model PasswordResetToken {
 // ============================================
 
 model RegistrationForm {
-    id        String   @id @default(cuid())
-    yearId    String   @unique
-    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
-    fields    Json     // Array of FormField definitions
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  yearId    String   @unique
+  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  fields    Json // Array of FormField definitions
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    submissions RegistrationSubmission[]
+  submissions RegistrationSubmission[]
 
-    @@map("registration_forms")
+  v2PriceTiers         V2PriceTier[]
+  v2PricingDefinitions V2PricingDefinition[]
+  v2FormFields         V2FormField[]
+  v2FormConditions     V2FormCondition[]
+  v2CapacityLimits     V2CapacityLimit[]
+  v2Orders             V2Order[]
+
+  @@map("registration_forms")
 }
 
 model RegistrationSubmission {
-    id              String   @id @default(cuid())
-    yearId          String
-    year            Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
-    formId          String
-    form            RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
-    publicUserId    String?
-    publicUser      PublicUser? @relation(fields: [publicUserId], references: [id], onDelete: SetNull)
-    data            Json     // { [fieldName]: value }
-    status          RegistrationStatus @default(PENDING)
-    isPaid          Boolean  @default(false)
-    paidAt          DateTime?
-    pricingSummary  Json?    // { tiers: [{tierDate, totalPrice}], applicableTierIndex, totalPrice }
-    variableSymbol  String?  @unique // 10-digit random numeric string
-    totalPrice      Int?     // applicable total at submission time (CZK)
-    emailSent       Boolean  @default(false)
-    emailSentAt     DateTime?
-    adminNote       String?   @db.Text
-    gdprConsentAt   DateTime?
-    isTest          Boolean  @default(false)
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+  id             String             @id @default(cuid())
+  yearId         String
+  year           Year               @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  formId         String
+  form           RegistrationForm   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  publicUserId   String?
+  publicUser     PublicUser?        @relation(fields: [publicUserId], references: [id], onDelete: SetNull)
+  data           Json // { [fieldName]: value }
+  status         RegistrationStatus @default(PENDING)
+  isPaid         Boolean            @default(false)
+  paidAt         DateTime?
+  pricingSummary Json? // { tiers: [{tierDate, totalPrice}], applicableTierIndex, totalPrice }
+  variableSymbol String?            @unique // 10-digit random numeric string
+  totalPrice     Int? // applicable total at submission time (CZK)
+  emailSent      Boolean            @default(false)
+  emailSentAt    DateTime?
+  adminNote      String?            @db.Text
+  gdprConsentAt  DateTime?
+  isTest         Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
-    bankTransactions BankTransaction[]
+  bankTransactions BankTransaction[]
 
-    @@map("registration_submissions")
+  @@map("registration_submissions")
 }
 
 // ============================================
@@ -505,37 +523,39 @@ model RegistrationSubmission {
 // ============================================
 
 model BankTransaction {
-    id                 String   @id @default(cuid())
-    yearId             String?
-    year               Year?    @relation(fields: [yearId], references: [id], onDelete: SetNull)
-    fioTransactionId   String   @unique
-    date               DateTime
-    amount             Float
-    currency           String   @default("CZK")
-    variableSymbol     String?
-    counterpartAccount String?
-    counterpartName    String?
-    userMessage        String?
-    matchStatus        BankTransactionMatchStatus @default(UNPROCESSED)
-    submissionId       String?
-    submission         RegistrationSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
-    processedAt        DateTime?
-    createdAt          DateTime @default(now())
+  id                 String                     @id @default(cuid())
+  yearId             String?
+  year               Year?                      @relation(fields: [yearId], references: [id], onDelete: SetNull)
+  fioTransactionId   String                     @unique
+  date               DateTime
+  amount             Float
+  currency           String                     @default("CZK")
+  variableSymbol     String?
+  counterpartAccount String?
+  counterpartName    String?
+  userMessage        String?
+  matchStatus        BankTransactionMatchStatus @default(UNPROCESSED)
+  submissionId       String?
+  submission         RegistrationSubmission?    @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  orderId            String?
+  order              V2Order?                   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  processedAt        DateTime?
+  createdAt          DateTime                   @default(now())
 
-    @@index([yearId])
-    @@index([variableSymbol])
-    @@map("bank_transactions")
+  @@index([yearId])
+  @@index([variableSymbol])
+  @@map("bank_transactions")
 }
 
 enum BankTransactionMatchStatus {
-    UNPROCESSED
-    MATCHED
-    PARTIAL_PAYMENT
-    OVERPAYMENT
-    NO_VARIABLE_SYMBOL
-    UNKNOWN_VS
-    ALREADY_PAID
-    OUTGOING
+  UNPROCESSED
+  MATCHED
+  PARTIAL_PAYMENT
+  OVERPAYMENT
+  NO_VARIABLE_SYMBOL
+  UNKNOWN_VS
+  ALREADY_PAID
+  OUTGOING
 }
 
 // ============================================
@@ -543,21 +563,21 @@ enum BankTransactionMatchStatus {
 // ============================================
 
 model SiteSetting {
-    id        String   @id @default(cuid())
-    key       String   @unique
-    value     String   @db.Text
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("site_settings")
+  @@map("site_settings")
 }
 
 enum RegistrationStatus {
-    PENDING
-    CONFIRMED
-    WAITLIST
-    CANCELLED
-    REJECTED
+  PENDING
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+  REJECTED
 }
 
 // ============================================
@@ -565,13 +585,290 @@ enum RegistrationStatus {
 // ============================================
 
 model FormPreview {
-    id        String   @id @default(cuid())
-    yearId    String   @unique
-    year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
-    token     String   @unique @default(cuid())
-    data      Json
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  yearId    String   @unique
+  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  token     String   @unique @default(cuid())
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@map("form_previews")
+  @@map("form_previews")
+}
+
+// ============================================
+// V2 REGISTRATION - Normalized shopping-cart / stock-keeping model (#82)
+// ============================================
+// NOTE: These models are backed by a hand-written raw SQL migration
+// (add_v2_tables) that also creates views, functions and a capacity trigger
+// that Prisma cannot express. Partial unique indexes on `legacyId`
+// (WHERE legacy_id IS NOT NULL) live only in the raw SQL migration.
+
+// --- Catalog ---
+
+model V2PriceTier {
+  id        String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  formId    String           @map("form_id")
+  form      RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  yearId    String           @map("year_id")
+  year      Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  deadline  DateTime?        @db.Timestamptz(6) // NULL = fallback tier (after all deadlines)
+  sortOrder Int              @default(0) @map("sort_order")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  optionPrices V2PricingOptionPrice[]
+
+  @@unique([formId, sortOrder])
+  @@map("v2_price_tiers")
+}
+
+model V2PricingDefinition {
+  id            String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  legacyId      String?          @map("legacy_id")
+  formId        String           @map("form_id")
+  form          RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  yearId        String           @map("year_id")
+  year          Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  name          String
+  type          String           @default("options")
+  multiSelect   Boolean          @default(false) @map("multi_select")
+  unitName      String?          @map("unit_name")
+  usePriceTiers Boolean          @default(false) @map("use_price_tiers")
+  isActive      Boolean          @default(true) @map("is_active")
+  sortOrder     Int              @default(0) @map("sort_order")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  options    V2PricingOption[]
+  formFields V2FormField[]
+
+  @@map("v2_pricing_definitions")
+}
+
+model V2PricingOption {
+  id           String              @id @default(dbgenerated("gen_random_uuid()::text"))
+  legacyId     String?             @map("legacy_id")
+  definitionId String              @map("definition_id")
+  definition   V2PricingDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  name         String
+  description  String              @default("")
+  isActive     Boolean             @default(true) @map("is_active")
+  sortOrder    Int                 @default(0) @map("sort_order")
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  prices    V2PricingOptionPrice[]
+  lineItems V2OrderLineItem[]
+
+  @@map("v2_pricing_options")
+}
+
+model V2PricingOptionPrice {
+  id        String          @id @default(dbgenerated("gen_random_uuid()::text"))
+  optionId  String          @map("option_id")
+  option    V2PricingOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  tierId    String          @map("tier_id")
+  tier      V2PriceTier     @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  price     Int             @default(0)
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([optionId, tierId])
+  @@map("v2_pricing_option_prices")
+}
+
+model V2FormField {
+  id                         String               @id @default(dbgenerated("gen_random_uuid()::text"))
+  legacyId                   String?              @map("legacy_id")
+  formId                     String               @map("form_id")
+  form                       RegistrationForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  yearId                     String               @map("year_id")
+  year                       Year                 @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  name                       String
+  label                      String
+  type                       String
+  required                   Boolean              @default(false)
+  editable                   Boolean              @default(false)
+  pricingDefinitionId        String?              @map("pricing_definition_id")
+  pricingDefinition          V2PricingDefinition? @relation(fields: [pricingDefinitionId], references: [id], onDelete: SetNull)
+  includeForAdditionalPeople Boolean              @default(false) @map("include_for_additional_people")
+  options                    String[]
+  isActive                   Boolean              @default(true) @map("is_active")
+  sortOrder                  Int                  @default(0) @map("sort_order")
+  createdAt                  DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  conditionRules V2FormConditionRule[]
+  capacityLimits V2CapacityLimit[]
+  lineItems      V2OrderLineItem[]
+
+  @@unique([formId, name])
+  @@map("v2_form_fields")
+}
+
+model V2FormCondition {
+  id        String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  legacyId  String?          @map("legacy_id")
+  formId    String           @map("form_id")
+  form      RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  yearId    String           @map("year_id")
+  year      Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  name      String
+  sortOrder Int              @default(0) @map("sort_order")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rules          V2FormConditionRule[]
+  emailTemplates V2EmailTemplate[]
+  emailSections  V2EmailSection[]
+
+  @@map("v2_form_conditions")
+}
+
+model V2FormConditionRule {
+  id          String          @id @default(dbgenerated("gen_random_uuid()::text"))
+  conditionId String          @map("condition_id")
+  condition   V2FormCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  fieldId     String?         @map("field_id")
+  field       V2FormField?    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  operator    String
+  value       String?
+  connector   String          @default("AND")
+  sortOrder   Int             @default(0) @map("sort_order")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("v2_form_condition_rules")
+}
+
+model V2CapacityLimit {
+  id          String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  legacyId    String?          @map("legacy_id")
+  formId      String           @map("form_id")
+  form        RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  yearId      String           @map("year_id")
+  year        Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  fieldId     String           @map("field_id")
+  field       V2FormField      @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  optionValue String           @map("option_value")
+  maxCount    Int              @map("max_count")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([formId, fieldId, optionValue])
+  @@map("v2_capacity_limits")
+}
+
+// --- Orders ---
+
+model V2Order {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  yearId             String           @map("year_id")
+  year               Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  formId             String           @map("form_id")
+  form               RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  publicUserId       String?          @map("public_user_id")
+  publicUser         PublicUser?      @relation(fields: [publicUserId], references: [id], onDelete: SetNull)
+  orderType          String           @default("registration") @map("order_type")
+  parentOrderId      String?          @map("parent_order_id")
+  parentOrder        V2Order?         @relation("V2OrderChildren", fields: [parentOrderId], references: [id], onDelete: Cascade)
+  childOrders        V2Order[]        @relation("V2OrderChildren")
+  status             String           @default("PENDING")
+  isPaid             Boolean          @default(false) @map("is_paid")
+  paidAt             DateTime?        @map("paid_at") @db.Timestamptz(6)
+  totalPrice         Int?             @map("total_price")
+  variableSymbol     String?          @unique @map("variable_symbol")
+  emailSent          Boolean          @default(false) @map("email_sent")
+  emailSentAt        DateTime?        @map("email_sent_at") @db.Timestamptz(6)
+  adminNote          String?          @map("admin_note")
+  gdprConsentAt      DateTime?        @map("gdpr_consent_at") @db.Timestamptz(6)
+  isTest             Boolean          @default(false) @map("is_test")
+  legacySubmissionId String?          @map("legacy_submission_id")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  people           V2OrderPerson[]
+  lineItems        V2OrderLineItem[]
+  bankTransactions BankTransaction[]
+
+  @@index([yearId], map: "idx_v2_orders_year")
+  @@index([parentOrderId], map: "idx_v2_orders_parent")
+  @@index([variableSymbol], map: "idx_v2_orders_vs")
+  @@map("v2_orders")
+}
+
+model V2OrderPerson {
+  id          String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  orderId     String   @map("order_id")
+  order       V2Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  personIndex Int      @default(0) @map("person_index")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  lineItems V2OrderLineItem[]
+
+  @@unique([orderId, personIndex])
+  @@map("v2_order_people")
+}
+
+model V2OrderLineItem {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  personId              String           @map("person_id")
+  person                V2OrderPerson    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  orderId               String           @map("order_id")
+  order                 V2Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  yearId                String           @map("year_id")
+  year                  Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  fieldId               String           @map("field_id")
+  field                 V2FormField      @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  pricingOptionId       String?          @map("pricing_option_id")
+  pricingOption         V2PricingOption? @relation(fields: [pricingOptionId], references: [id])
+  value                 String?
+  quantity              Int              @default(1)
+  unitPriceAtSubmission Int              @default(0) @map("unit_price_at_submission")
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([personId, fieldId])
+  @@index([yearId, fieldId, value], map: "idx_v2_oli_year_field_value")
+  @@index([orderId], map: "idx_v2_oli_order")
+  @@map("v2_order_line_items")
+}
+
+// --- Emails ---
+
+model V2EmailTemplate {
+  id          String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  yearId      String           @map("year_id")
+  year        Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  type        String
+  conditionId String?          @map("condition_id")
+  condition   V2FormCondition? @relation(fields: [conditionId], references: [id], onDelete: SetNull)
+  name        String           @default("")
+  enabled     Boolean          @default(false)
+  subject     String?
+  body        String?
+  bcc         String?
+  accountId   String?          @map("account_id")
+  account     EmailAccount?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  attachments Json             @default("[]")
+  sortOrder   Int              @default(0) @map("sort_order")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sections V2EmailSection[]
+
+  @@map("v2_email_templates")
+}
+
+model V2EmailSection {
+  id          String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  templateId  String           @map("template_id")
+  template    V2EmailTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  conditionId String?          @map("condition_id")
+  condition   V2FormCondition? @relation(fields: [conditionId], references: [id], onDelete: SetNull)
+  body        String           @default("")
+  attachments Json             @default("[]")
+  sortOrder   Int              @default(0) @map("sort_order")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("v2_email_sections")
 }
