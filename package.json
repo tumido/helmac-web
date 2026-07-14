@@ -17,7 +17,8 @@
     "migrate:html-to-md": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-html-to-markdown.ts",
     "migrate:content-to-blocks": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-content-to-blocks.ts",
     "migrate:blob-to-r2": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' prisma/scripts/migrate-blob-urls.ts",
-    "icons:build": "node lib/icons/build-registry.mjs"
+    "icons:build": "node lib/icons/build-registry.mjs",
+    "db:v2-backfill-catalog": "tsx prisma/scripts/v2-backfill-catalog.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -88,6 +89,7 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }
