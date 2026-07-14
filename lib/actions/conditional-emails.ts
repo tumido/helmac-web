@@ -184,7 +184,14 @@ export async function toggleConditionalEmail(emailId: string, enabled: boolean) 
                 where: { id: emailId },
                 data: { enabled },
             });
-            await toggleConditionalEmailInV2(tx, ce.name, ce.yearId, enabled);
+            const year = await tx.year.findUnique({
+                where: { id: ce.yearId },
+                select: { registrationForm: { select: { id: true } } },
+            });
+            const formId = year?.registrationForm?.id;
+            if (formId) {
+                await toggleConditionalEmailInV2(tx, emailId, ce.yearId, formId, enabled);
+            }
             return ce;
         });
 
@@ -208,7 +215,14 @@ export async function deleteConditionalEmail(emailId: string) {
             const ce = await tx.conditionalEmail.delete({
                 where: { id: emailId },
             });
-            await deleteConditionalEmailFromV2(tx, ce.name, ce.yearId);
+            const year = await tx.year.findUnique({
+                where: { id: ce.yearId },
+                select: { registrationForm: { select: { id: true } } },
+            });
+            const formId = year?.registrationForm?.id;
+            if (formId) {
+                await deleteConditionalEmailFromV2(tx, emailId, ce.yearId, formId);
+            }
             return ce;
         });
 

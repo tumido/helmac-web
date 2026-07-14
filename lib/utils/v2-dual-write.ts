@@ -1,4 +1,5 @@
 import { getAllInputFields } from "@/lib/types/registration-form";
+import { migrateFormData } from "@/lib/utils/form-migration";
 import type {
     RegistrationFormData,
     InputField,
@@ -806,7 +807,7 @@ async function resolveFieldId(
 
 export async function syncConditionalEmailToV2(
     tx: TxClient,
-    _conditionalEmailId: string,
+    conditionalEmailId: string,
     yearId: string,
     formId: string,
     data: {
@@ -830,27 +831,21 @@ export async function syncConditionalEmailToV2(
         data.conditionFieldId,
     );
 
-    // Upsert the condition
-    let condId: string;
-    const existingTemplate = await tx.v2EmailTemplate.findFirst({
-        where: {
-            yearId,
-            type: "conditional",
-            name: data.name,
-        },
-        select: { id: true, conditionId: true },
+    // Find existing v2 condition by legacyId (= old conditionalEmail.id)
+    const existingCond = await tx.v2FormCondition.findFirst({
+        where: { formId, legacyId: conditionalEmailId },
     });
 
-    if (existingTemplate?.conditionId) {
+    let condId: string;
+    if (existingCond) {
         await tx.v2FormCondition.update({
-            where: { id: existingTemplate.conditionId },
+            where: { id: existingCond.id },
             data: {
                 name: `conditional-email:${data.name}`,
             },
         });
-        condId = existingTemplate.conditionId;
+        condId = existingCond.id;
 
-        // Upsert the single rule
         const existingRules =
             await tx.v2FormConditionRule.findMany({
                 where: { conditionId: condId },
@@ -876,6 +871,7 @@ export async function syncConditionalEmailToV2(
     } else {
         const created = await tx.v2FormCondition.create({
             data: {
+                legacyId: conditionalEmailId,
                 formId,
                 yearId,
                 name: `conditional-email:${data.name}`,
@@ -896,7 +892,14 @@ export async function syncConditionalEmailToV2(
         });
     }
 
-    // Upsert the template
+    // Find existing template by its condition (stable link)
+    const existingTemplate = existingCond
+        ? await tx.v2EmailTemplate.findFirst({
+              where: { conditionId: condId },
+              select: { id: true },
+          })
+        : null;
+
     const templateData = {
         name: data.name,
         enabled: data.enabled ?? false,
@@ -928,7 +931,6 @@ export async function syncConditionalEmailToV2(
         templateId = created.id;
     }
 
-    // Sync sections if provided
     if (data.sections !== undefined) {
         const existingSections =
             await tx.v2EmailSection.findMany({
@@ -947,41 +949,54 @@ export async function syncConditionalEmailToV2(
 
 export async function toggleConditionalEmailInV2(
     tx: TxClient,
-    conditionalEmailName: string,
-    yearId: string,
+    conditionalEmailId: string,
+    _yearId: string,
+    formId: string,
     enabled: boolean,
 ): Promise<void> {
+    const cond = await tx.v2FormCondition.findFirst({
+        where: { formId, legacyId: conditionalEmailId },
+        select: { id: true },
+    });
+    if (!cond) return;
     await tx.v2EmailTemplate.updateMany({
-        where: { yearId, type: "conditional", name: conditionalEmailName },
+        where: { conditionId: cond.id },
         data: { enabled },
     });
 }
 
 export async function deleteConditionalEmailFromV2(
     tx: TxClient,
-    conditionalEmailName: string,
-    yearId: string,
+    conditionalEmailId: string,
+    _yearId: string,
+    formId: string,
 ): Promise<void> {
-    const template = await tx.v2EmailTemplate.findFirst({
-        where: { yearId, type: "conditional", name: conditionalEmailName },
-        select: { id: true, conditionId: true },
+    const cond = await tx.v2FormCondition.findFirst({
+        where: { formId, legacyId: conditionalEmailId },
+        select: { id: true },
     });
-    if (!template) return;
+    if (!cond) return;
 
-    await tx.v2EmailSection.deleteMany({
-        where: { templateId: template.id },
+    const template = await tx.v2EmailTemplate.findFirst({
+        where: { conditionId: cond.id },
+        select: { id: true },
     });
-    await tx.v2EmailTemplate.delete({
-        where: { id: template.id },
-    });
-    if (template.conditionId) {
-        await tx.v2FormConditionRule.deleteMany({
-            where: { conditionId: template.conditionId },
+
+    if (template) {
+        await tx.v2EmailSection.deleteMany({
+            where: { templateId: template.id },
         });
-        await tx.v2FormCondition.delete({
-            where: { id: template.conditionId },
+        await tx.v2EmailTemplate.delete({
+            where: { id: template.id },
         });
     }
+
+    await tx.v2FormConditionRule.deleteMany({
+        where: { conditionId: cond.id },
+    });
+    await tx.v2FormCondition.delete({
+        where: { id: cond.id },
+    });
 }
 
 // ============================================================
@@ -1424,9 +1439,6 @@ export async function syncOrderLineItemsToV2(
         select: { fields: true },
     });
     if (!form) return;
-    const { migrateFormData } = await import(
-        "@/lib/utils/form-migration"
-    );
     const formData = migrateFormData(form.fields);
     const allInputFields = getAllInputFields(
         formData.fields,
