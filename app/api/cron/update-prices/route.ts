@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import {
+    getUnpaidOrders,
+    computeCurrentTotal,
+    updateOrderTotalPrice,
+} from "@/lib/services/v2";
 import {
     buildPlaceholders,
     replacePlaceholders,
@@ -27,14 +31,6 @@ import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 
 export const dynamic = "force-dynamic";
 
-interface V2OrderForPriceUpdate {
-    id: string;
-    yearId: string;
-    totalPrice: number | null;
-    variableSymbol: string | null;
-    legacySubmissionId: string | null;
-}
-
 export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -44,24 +40,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Query unpaid v2 orders with priced line items
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orders: V2OrderForPriceUpdate[] = await (db as any).v2Order.findMany({
-        where: {
-            isPaid: false,
-            isTest: false,
-            status: { notIn: ["CANCELLED", "REJECTED"] },
-            parentOrderId: null,
-            orderType: "registration",
-        },
-        select: {
-            id: true,
-            yearId: true,
-            totalPrice: true,
-            variableSymbol: true,
-            legacySubmissionId: true,
-        },
-    });
+    const orders = await getUnpaidOrders();
 
     const globalBank = await getGlobalBankAccount();
 
@@ -73,13 +52,7 @@ export async function GET(request: NextRequest) {
 
     for (const order of orders) {
         try {
-            // Compute current total via v2 DB function
-            const totalRows = await db.$queryRaw<
-                { v2_compute_current_total: number }[]
-            >(
-                Prisma.sql`SELECT v2_compute_current_total(${order.id}) AS v2_compute_current_total`,
-            );
-            const newTotal = totalRows[0]?.v2_compute_current_total ?? 0;
+            const newTotal = await computeCurrentTotal(order.id);
 
             if (newTotal === order.totalPrice) {
                 skipped++;
@@ -88,20 +61,11 @@ export async function GET(request: NextRequest) {
 
             const oldPrice = order.totalPrice;
 
-            // Update both v2 order and legacy submission
-            await db.$transaction(async (tx) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await (tx as any).v2Order.update({
-                    where: { id: order.id },
-                    data: { totalPrice: newTotal },
-                });
-                if (order.legacySubmissionId) {
-                    await tx.registrationSubmission.update({
-                        where: { id: order.legacySubmissionId },
-                        data: { totalPrice: newTotal },
-                    });
-                }
-            });
+            await updateOrderTotalPrice(
+                order.id,
+                order.legacySubmissionId,
+                newTotal,
+            );
             updated++;
 
             // Send price change email

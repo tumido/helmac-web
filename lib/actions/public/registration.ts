@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { checkCapacity, findDuplicateEmail } from "@/lib/services/v2";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
 import type { InputField, AdditionalPersonData, CapacityLimit, PricingDefinition } from "@/lib/types/registration-form";
 import { getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
@@ -102,12 +103,13 @@ async function validateCapacityLimits(
 
         if (submittedCount <= 0) continue;
 
-        const rows = await db.$queryRaw<{ would_exceed: boolean }[]>(
-            Prisma.sql`SELECT would_exceed FROM v2_check_capacity(
-                ${yearId}, ${field.name}, ${limit.value}, ${submittedCount}
-            )`,
+        const result = await checkCapacity(
+            yearId,
+            field.name,
+            limit.value,
+            submittedCount,
         );
-        if (rows[0]?.would_exceed) {
+        if (result?.wouldExceed) {
             return {
                 fieldName: field.name,
                 error: `Kapacita pro "${limit.value}" je již vyčerpána`,
@@ -367,22 +369,13 @@ export async function submitDynamicRegistration(
     if (!isTest && emailField) {
         const emailValue = String(submissionData[emailField.name] || "").toLowerCase();
         if (emailValue) {
-            const existing = await db.$queryRaw<{ id: string }[]>(
-                Prisma.sql`
-                    SELECT oli.id FROM v2_order_line_items oli
-                    JOIN v2_form_fields ff ON ff.id = oli.field_id
-                    JOIN v2_orders o ON o.id = oli.order_id
-                    WHERE oli.year_id = ${activeYear.id}
-                        AND ff.name = ${emailField.name}
-                        AND LOWER(oli.value) = ${emailValue}
-                        AND o.order_type = 'registration'
-                        AND o.is_test = false
-                        AND o.status NOT IN ('CANCELLED', 'REJECTED')
-                    LIMIT 1
-                `,
+            const isDuplicate = await findDuplicateEmail(
+                activeYear.id,
+                emailField.name,
+                emailValue,
             );
 
-            if (existing.length > 0) {
+            if (isDuplicate) {
                 return {
                     success: false,
                     message: "Na tento email již existuje registrace",

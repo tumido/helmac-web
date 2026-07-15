@@ -1,8 +1,16 @@
 import { cache } from "react";
-import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { OptionCounts, OptionPeople } from "@/lib/types/registration-form";
 import type { StatFilter } from "@/lib/types/content-blocks";
+import {
+    getRegistrationSummary,
+    getOptionCounts,
+    getFormStructure,
+    getValueRows,
+    getFilteredOrderSummary,
+    countOrders,
+} from "@/lib/services/v2";
+import type { V2FormStructure, V2OptionCountsResult } from "@/lib/services/v2";
 
 // ---- Types ----
 
@@ -36,120 +44,12 @@ const PRICING_FIELD_TYPES = new Set([
     "pricing_quantity",
 ]);
 
-// ---- v2 query helpers ----
-
-interface V2Summary {
-    registrations: number;
-    confirmed: number;
-    pending: number;
-    waitlist: number;
-    paidTotal: number;
-    unpaidTotal: number;
-    people: number;
-}
-
-interface V2OptionCountsResult {
-    [fieldName: string]: {
-        counts: Record<string, number>;
-        capacityLimits: Record<string, number>;
-    };
-}
-
-interface V2FormField {
-    id: string;
-    legacyId: string | null;
-    name: string;
-    label: string;
-    type: string;
-    pricingDefinitionId: string | null;
-    options: string[];
-    sortOrder: number;
-}
-
-interface V2PricingDef {
-    id: string;
-    name: string;
-    options: { id: string; name: string }[];
-}
-
-interface V2FormStructure {
-    fields: V2FormField[];
-    pricingDefinitions: V2PricingDef[];
-    capacityLimits: {
-        id: string;
-        fieldId: string;
-        optionValue: string;
-        maxCount: number;
-    }[];
-}
-
-interface V2ValueRow {
-    orderId: string;
-    personId: string;
-    fieldName: string;
-    value: string;
-}
-
-async function queryV2Summary(
-    yearId: string,
-): Promise<V2Summary> {
-    const rows = await db.$queryRaw<{ v2_get_registration_summary: V2Summary }[]>(
-        Prisma.sql`SELECT v2_get_registration_summary(${yearId}) AS v2_get_registration_summary`,
-    );
-    return rows[0]?.v2_get_registration_summary ?? {
-        registrations: 0,
-        confirmed: 0,
-        pending: 0,
-        waitlist: 0,
-        paidTotal: 0,
-        unpaidTotal: 0,
-        people: 0,
-    };
-}
-
-async function queryV2OptionCounts(
-    yearId: string,
-    fieldNames?: string[] | null,
-    statuses?: string[] | null,
-    isPaid?: boolean | null,
-): Promise<V2OptionCountsResult> {
-    const rows = await db.$queryRaw<{ v2_get_option_counts: V2OptionCountsResult }[]>(
-        Prisma.sql`SELECT v2_get_option_counts(
-            ${yearId},
-            ${fieldNames ?? Prisma.sql`NULL`}::text[],
-            ${statuses ?? Prisma.sql`NULL`}::text[],
-            ${isPaid ?? Prisma.sql`NULL`}::boolean
-        ) AS v2_get_option_counts`,
-    );
-    return rows[0]?.v2_get_option_counts ?? {};
-}
-
-async function queryV2FormStructure(
-    yearId: string,
-): Promise<V2FormStructure | null> {
-    const rows = await db.$queryRaw<{ v2_get_form_structure: V2FormStructure | null }[]>(
-        Prisma.sql`SELECT v2_get_form_structure(${yearId}) AS v2_get_form_structure`,
-    );
-    return rows[0]?.v2_get_form_structure ?? null;
-}
-
-async function queryV2ValueRows(
-    yearId: string,
-    fieldNames: string[],
-): Promise<V2ValueRow[]> {
-    if (fieldNames.length === 0) return [];
-    const rows = await db.$queryRaw<{ v2_get_value_rows: V2ValueRow[] }[]>(
-        Prisma.sql`SELECT v2_get_value_rows(${yearId}, ${fieldNames}::text[]) AS v2_get_value_rows`,
-    );
-    return rows[0]?.v2_get_value_rows ?? [];
-}
-
 // ---- Build RegistrationStats from v2 data ----
 
 function buildFieldStats(
     formStructure: V2FormStructure,
     optionCountsResult: V2OptionCountsResult,
-    rawValueRows: V2ValueRow[],
+    rawValueRows: { personId: string; fieldName: string; value: string }[],
 ): {
     fields: Record<string, FieldStatsData>;
     fieldLabels: Record<string, string>;
@@ -162,54 +62,57 @@ function buildFieldStats(
     const fieldOptions: Record<string, string[]> = {};
     const capacityLimits: Record<string, Record<string, number>> = {};
 
-    // Build pricing def lookup for option names
     const pricingDefById = new Map(
         formStructure.pricingDefinitions.map((d) => [d.id, d]),
     );
-
-    // Build field ID → name lookup for capacity limits
     const fieldIdToName = new Map(
         formStructure.fields.map((f) => [f.id, f.name]),
     );
 
-    // Build value rows grouped by personId (to produce per-person row records)
+    // Group value rows by personId to produce per-person records
     const personValues = new Map<string, Record<string, string>>();
     for (const row of rawValueRows) {
-        const key = row.personId;
-        if (!personValues.has(key)) personValues.set(key, {});
-        personValues.get(key)![row.fieldName] = row.value ?? "";
+        if (!personValues.has(row.personId))
+            personValues.set(row.personId, {});
+        personValues.get(row.personId)![row.fieldName] =
+            row.value ?? "";
     }
     const valueRows = Array.from(personValues.values());
 
     for (const field of formStructure.fields) {
         fieldLabels[field.name] = field.label;
 
-        // Build field options list
         const isPricing = PRICING_FIELD_TYPES.has(field.type);
         let opts: string[] = [];
         if (field.type === "checkbox") {
             opts = ["Ano", "Ne"];
-        } else if (field.type === "select" || field.type === "radio") {
+        } else if (
+            field.type === "select" ||
+            field.type === "radio"
+        ) {
             opts = field.options ?? [];
         } else if (isPricing && field.pricingDefinitionId) {
-            const pricingDef = pricingDefById.get(field.pricingDefinitionId);
+            const pricingDef = pricingDefById.get(
+                field.pricingDefinitionId,
+            );
             if (pricingDef) {
                 opts = pricingDef.options.map((o) => o.name);
             }
         }
         if (opts.length > 0) fieldOptions[field.name] = opts;
 
-        // Build FieldStatsData from v2 option counts
-        const fieldCounts = optionCountsResult[field.name]?.counts ?? {};
+        const fieldCounts =
+            optionCountsResult[field.name]?.counts ?? {};
         const total = Object.values(fieldCounts).reduce(
             (s, c) => s + c,
             0,
         );
 
-        // Compute sum/average from value rows for numeric fields
         let numericSum = 0;
         let numericCount = 0;
-        const fieldValues = valueRows.map((r) => r[field.name] ?? "");
+        const fieldValues = valueRows.map(
+            (r) => r[field.name] ?? "",
+        );
 
         if (field.type === "number" || isPricing) {
             for (const val of fieldValues) {
@@ -235,7 +138,6 @@ function buildFieldStats(
         };
     }
 
-    // Build capacity limits
     for (const cl of formStructure.capacityLimits) {
         const fieldName = fieldIdToName.get(cl.fieldId);
         if (!fieldName) continue;
@@ -244,7 +146,13 @@ function buildFieldStats(
         capacityLimits[fieldName][cl.optionValue] = cl.maxCount;
     }
 
-    return { fields, fieldLabels, fieldOptions, capacityLimits, valueRows };
+    return {
+        fields,
+        fieldLabels,
+        fieldOptions,
+        capacityLimits,
+        valueRows,
+    };
 }
 
 // ---- Public API ----
@@ -278,19 +186,14 @@ export const getRegistrationStatus = cache(async () => {
         };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const countResult = await (db as any).v2Order.count({
-        where: {
-            yearId: activeYear.id,
-            isTest: false,
-            status: { notIn: ["CANCELLED", "REJECTED"] },
-        },
+    const registrationCount = await countOrders({
+        yearId: activeYear.id,
     });
 
     return {
         isOpen: activeYear.registrationOpen,
         year: activeYear,
-        registrationCount: countResult,
+        registrationCount,
         registrationStartDate: activeYear.registrationStartDate,
         hasForm: !!activeYear.registrationForm,
         formFields: activeYear.registrationForm?.fields ?? null,
@@ -299,11 +202,11 @@ export const getRegistrationStatus = cache(async () => {
 
 export const getRegistrationStatsForYear = cache(
     async (yearId: string): Promise<RegistrationStats> => {
-        const [summary, optionCounts, formStructure] =
+        const [summary, optionCountsResult, formStructure] =
             await Promise.all([
-                queryV2Summary(yearId),
-                queryV2OptionCounts(yearId),
-                queryV2FormStructure(yearId),
+                getRegistrationSummary(yearId),
+                getOptionCounts(yearId),
+                getFormStructure(yearId),
             ]);
 
         if (!formStructure) {
@@ -326,17 +229,22 @@ export const getRegistrationStatsForYear = cache(
         const fieldNames = formStructure.fields.map(
             (f) => f.name,
         );
-        const rawValueRows = await queryV2ValueRows(
+        const rawValueRows = await getValueRows(
             yearId,
             fieldNames,
         );
 
-        const { fields, fieldLabels, fieldOptions, capacityLimits, valueRows } =
-            buildFieldStats(
-                formStructure,
-                optionCounts,
-                rawValueRows,
-            );
+        const {
+            fields,
+            fieldLabels,
+            fieldOptions,
+            capacityLimits,
+            valueRows,
+        } = buildFieldStats(
+            formStructure,
+            optionCountsResult,
+            rawValueRows,
+        );
 
         return {
             registrations: summary.registrations,
@@ -367,82 +275,31 @@ export async function getFilteredRegistrationStats(
         ? filter.statuses
         : null;
     const isPaid = filter.isPaid ?? null;
-
-    // Field-name filters for scoping the option counts query
     const fieldFilterNames = filter.fieldFilters?.map(
         (f) => f.fieldName,
     );
 
-    const [optionCounts, formStructure] = await Promise.all([
-        queryV2OptionCounts(
-            yearId,
-            fieldFilterNames ?? null,
-            statuses,
-            isPaid,
-        ),
-        queryV2FormStructure(yearId),
-    ]);
-
-    // For filtered stats, query a custom summary matching the filters
-    const statusFilter = statuses
-        ? Prisma.sql`AND o.status = ANY(${statuses}::text[])`
-        : Prisma.sql`AND o.status NOT IN ('CANCELLED', 'REJECTED')`;
-    const paidFilter =
-        isPaid !== null
-            ? Prisma.sql`AND o.is_paid = ${isPaid}`
-            : Prisma.empty;
-
-    const summaryRows = await db.$queryRaw<{
-        registrations: bigint;
-        confirmed: bigint;
-        pending: bigint;
-        waitlist: bigint;
-        paid_total: bigint;
-        unpaid_total: bigint;
-        people: bigint;
-    }[]>(
-        Prisma.sql`
-            SELECT
-                COUNT(*) AS registrations,
-                COUNT(*) FILTER (WHERE o.status = 'CONFIRMED') AS confirmed,
-                COUNT(*) FILTER (WHERE o.status = 'PENDING') AS pending,
-                COUNT(*) FILTER (WHERE o.status = 'WAITLIST') AS waitlist,
-                COALESCE(SUM(o.total_price) FILTER (WHERE o.is_paid), 0) AS paid_total,
-                COALESCE(SUM(o.total_price) FILTER (WHERE NOT o.is_paid), 0) AS unpaid_total,
-                COALESCE((
-                    SELECT COUNT(DISTINCT op.id)
-                    FROM v2_order_people op
-                    WHERE op.order_id = ANY(ARRAY_AGG(o.id))
-                ), 0) AS people
-            FROM v2_orders o
-            WHERE o.year_id = ${yearId}
-                AND o.is_test = false
-                AND o.parent_order_id IS NULL
-                AND o.order_type = 'registration'
-                ${statusFilter}
-                ${paidFilter}
-        `,
-    );
-
-    const summary = summaryRows[0] ?? {
-        registrations: BigInt(0),
-        confirmed: BigInt(0),
-        pending: BigInt(0),
-        waitlist: BigInt(0),
-        paid_total: BigInt(0),
-        unpaid_total: BigInt(0),
-        people: BigInt(0),
-    };
+    const [summary, optionCountsResult, formStructure] =
+        await Promise.all([
+            getFilteredOrderSummary(yearId, statuses, isPaid),
+            getOptionCounts(
+                yearId,
+                fieldFilterNames ?? null,
+                statuses,
+                isPaid,
+            ),
+            getFormStructure(yearId),
+        ]);
 
     if (!formStructure) {
         return {
-            registrations: Number(summary.registrations),
-            people: Number(summary.people),
-            paid_total: Number(summary.paid_total),
-            unpaid_total: Number(summary.unpaid_total),
-            confirmed: Number(summary.confirmed),
-            pending: Number(summary.pending),
-            waitlist: Number(summary.waitlist),
+            registrations: summary.registrations,
+            people: summary.people,
+            paid_total: summary.paidTotal,
+            unpaid_total: summary.unpaidTotal,
+            confirmed: summary.confirmed,
+            pending: summary.pending,
+            waitlist: summary.waitlist,
             fields: {},
             fieldLabels: {},
             fieldOptions: {},
@@ -454,26 +311,31 @@ export async function getFilteredRegistrationStats(
     const fieldNames = formStructure.fields.map(
         (f) => f.name,
     );
-    const rawValueRows = await queryV2ValueRows(
+    const rawValueRows = await getValueRows(
         yearId,
         fieldNames,
     );
 
-    const { fields, fieldLabels, fieldOptions, capacityLimits, valueRows } =
-        buildFieldStats(
-            formStructure,
-            optionCounts,
-            rawValueRows,
-        );
+    const {
+        fields,
+        fieldLabels,
+        fieldOptions,
+        capacityLimits,
+        valueRows,
+    } = buildFieldStats(
+        formStructure,
+        optionCountsResult,
+        rawValueRows,
+    );
 
     return {
-        registrations: Number(summary.registrations),
-        people: Number(summary.people),
-        paid_total: Number(summary.paid_total),
-        unpaid_total: Number(summary.unpaid_total),
-        confirmed: Number(summary.confirmed),
-        pending: Number(summary.pending),
-        waitlist: Number(summary.waitlist),
+        registrations: summary.registrations,
+        people: summary.people,
+        paid_total: summary.paidTotal,
+        unpaid_total: summary.unpaidTotal,
+        confirmed: summary.confirmed,
+        pending: summary.pending,
+        waitlist: summary.waitlist,
         fields,
         fieldLabels,
         fieldOptions,
@@ -482,7 +344,7 @@ export async function getFilteredRegistrationStats(
     };
 }
 
-// ---- Simple queries (kept as Prisma ORM, still needed) ----
+// ---- Simple queries ----
 
 export const getRegistrationFormForYear = cache(
     async (yearId: string) => {
@@ -557,7 +419,7 @@ export const getSubmissionCountForYear = cache(
     },
 );
 
-// ---- Option counts (v2) ----
+// ---- Option counts ----
 
 export const getOptionCountsForYear = cache(
     async (yearId: string): Promise<OptionCounts> => {
@@ -574,7 +436,7 @@ export async function getOptionCountsForYearFresh(
 async function computeOptionCounts(
     yearId: string,
 ): Promise<OptionCounts> {
-    const result = await queryV2OptionCounts(yearId);
+    const result = await getOptionCounts(yearId);
     const counts: OptionCounts = {};
     for (const [fieldName, data] of Object.entries(result)) {
         counts[fieldName] = data.counts;
@@ -582,21 +444,21 @@ async function computeOptionCounts(
     return counts;
 }
 
-// ---- Option people (v2) ----
+// ---- Option people ----
 
 export const getOptionPeopleForYear = cache(
     async (
         yearId: string,
         personFieldName: string,
     ): Promise<OptionPeople> => {
-        // Query line items with person data to build the option→people mapping
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const lineItems = await (db as any).v2OrderLineItem.findMany({
+        const lineItems = await db.v2OrderLineItem.findMany({
             where: {
                 yearId,
                 order: {
                     isTest: false,
-                    status: { notIn: ["CANCELLED", "REJECTED"] },
+                    status: {
+                        notIn: ["CANCELLED", "REJECTED"],
+                    },
                 },
             },
             select: {
