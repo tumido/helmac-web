@@ -4,8 +4,10 @@ import { requireEditor } from "@/lib/auth";
 import { getFormStructure } from "@/lib/services/v2";
 import {
     getRegistrationStatsForYear,
+    getFilteredRegistrationStats,
     type RegistrationStats,
 } from "@/lib/services/registration";
+import type { StatFilter } from "@/lib/types/content-blocks";
 
 export interface RegistrationFieldInfo {
     name: string;
@@ -63,12 +65,9 @@ export async function getRegistrationStatsPreview(
 ): Promise<RegistrationStats> {
     await requireEditor();
     if (filter) {
-        const { getFilteredRegistrationStats } = await import(
-            "@/lib/services/registration"
-        );
         return getFilteredRegistrationStats(
             yearId,
-            filter as import("@/lib/types/content-blocks").StatFilter,
+            filter as StatFilter,
         );
     }
     return getRegistrationStatsForYear(yearId);
