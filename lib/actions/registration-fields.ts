@@ -1,10 +1,7 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { requireEditor } from "@/lib/auth";
-import { getAllInputFields } from "@/lib/types/registration-form";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { getFieldOptionValues } from "@/lib/utils/pricing";
+import { getFormStructure } from "@/lib/services/v2";
 import {
     getRegistrationStatsForYear,
     type RegistrationStats,
@@ -17,49 +14,61 @@ export interface RegistrationFieldInfo {
     options?: string[];
 }
 
+const PRICING_FIELD_TYPES = new Set([
+    "pricing_select",
+    "pricing_multi_select",
+    "pricing_quantity",
+]);
+
 export async function getRegistrationFields(
-    yearId: string
+    yearId: string,
 ): Promise<RegistrationFieldInfo[]> {
     await requireEditor();
 
-    const form = await db.registrationForm.findUnique({
-        where: { yearId },
-        select: { fields: true },
-    });
-    if (!form) return [];
+    const formStructure = await getFormStructure(yearId);
+    if (!formStructure) return [];
 
-    const formData = migrateFormData(form.fields);
-    const inputFields = getAllInputFields(formData.fields);
+    const pricingDefById = new Map(
+        formStructure.pricingDefinitions.map((d) => [d.id, d]),
+    );
 
-    return inputFields.map((f) => {
-        const options =
-            f.type === "checkbox"
-                ? ["Ano", "Ne"]
-                : getFieldOptionValues(
-                      f,
-                      formData.pricingDefinitions
-                  );
+    return formStructure.fields.map((f) => {
+        let options: string[] | undefined;
+        if (f.type === "checkbox") {
+            options = ["Ano", "Ne"];
+        } else if (f.type === "select" || f.type === "radio") {
+            options =
+                f.options.length > 0 ? f.options : undefined;
+        } else if (
+            PRICING_FIELD_TYPES.has(f.type) &&
+            f.pricingDefinitionId
+        ) {
+            const def = pricingDefById.get(
+                f.pricingDefinitionId,
+            );
+            options = def?.options.map((o) => o.name);
+        }
         return {
             name: f.name,
             label: f.label,
             type: f.type,
-            options:
-                options.length > 0 ? options : undefined,
+            options,
         };
     });
 }
 
 export async function getRegistrationStatsPreview(
     yearId: string,
-    filter?: Record<string, unknown>
+    filter?: Record<string, unknown>,
 ): Promise<RegistrationStats> {
     await requireEditor();
     if (filter) {
-        const { getFilteredRegistrationStats } =
-            await import("@/lib/services/registration");
+        const { getFilteredRegistrationStats } = await import(
+            "@/lib/services/registration"
+        );
         return getFilteredRegistrationStats(
             yearId,
-            filter as import("@/lib/types/content-blocks").StatFilter
+            filter as import("@/lib/types/content-blocks").StatFilter,
         );
     }
     return getRegistrationStatsForYear(yearId);
