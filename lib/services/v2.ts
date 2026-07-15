@@ -31,6 +31,7 @@ export interface V2FormField {
     label: string;
     type: string;
     pricingDefinitionId: string | null;
+    includeForAdditionalPeople: boolean;
     options: string[];
     sortOrder: number;
 }
