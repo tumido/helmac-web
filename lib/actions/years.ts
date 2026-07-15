@@ -8,6 +8,7 @@ import { createYearSchema, updateYearSchema, updateEmailTemplateSchema } from "@
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 import { parseEmailAttachmentsJson } from "@/lib/validators/email-attachment";
 import { contentBlocksSchema } from "@/lib/validators/content-blocks";
+import { syncYearEmailToV2, toggleYearEmailInV2 } from "@/lib/utils/v2-dual-write";
 
 export type YearActionState = {
     error?: {
@@ -354,16 +355,26 @@ export async function updateEmailTemplate(yearId: string, formData: FormData) {
     }
 
     try {
-        await db.year.update({
-            where: { id: yearId },
-            data: {
-                confirmationEmailSubject: validated.data.confirmationEmailSubject,
-                confirmationEmailBody: validated.data.confirmationEmailBody,
-                confirmationEmailBcc: validated.data.confirmationEmailBcc,
-                confirmationEmailAccountId: validated.data.emailAccountId,
-                confirmationEmailSections: sections,
-                confirmationEmailAttachments: attachments,
-            },
+        await db.$transaction(async (tx) => {
+            await tx.year.update({
+                where: { id: yearId },
+                data: {
+                    confirmationEmailSubject: validated.data.confirmationEmailSubject,
+                    confirmationEmailBody: validated.data.confirmationEmailBody,
+                    confirmationEmailBcc: validated.data.confirmationEmailBcc,
+                    confirmationEmailAccountId: validated.data.emailAccountId,
+                    confirmationEmailSections: sections,
+                    confirmationEmailAttachments: attachments,
+                },
+            });
+            await syncYearEmailToV2(tx, yearId, "confirmation", {
+                subject: validated.data.confirmationEmailSubject,
+                body: validated.data.confirmationEmailBody,
+                bcc: validated.data.confirmationEmailBcc,
+                accountId: validated.data.emailAccountId,
+                sections,
+                attachments,
+            });
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);
@@ -436,9 +447,12 @@ export async function toggleConfirmationEmail(yearId: string, enabled: boolean) 
             }
         }
 
-        await db.year.update({
-            where: { id: yearId },
-            data: { confirmationEmailEnabled: enabled },
+        await db.$transaction(async (tx) => {
+            await tx.year.update({
+                where: { id: yearId },
+                data: { confirmationEmailEnabled: enabled },
+            });
+            await toggleYearEmailInV2(tx, yearId, "confirmation", enabled);
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);
@@ -483,16 +497,26 @@ export async function updatePriceChangeEmailTemplate(yearId: string, formData: F
     }
 
     try {
-        await db.year.update({
-            where: { id: yearId },
-            data: {
-                priceChangeEmailSubject: validated.data.confirmationEmailSubject,
-                priceChangeEmailBody: validated.data.confirmationEmailBody,
-                priceChangeEmailBcc: validated.data.confirmationEmailBcc,
-                priceChangeEmailAccountId: validated.data.emailAccountId,
-                priceChangeEmailSections: sections,
-                priceChangeEmailAttachments: attachments,
-            },
+        await db.$transaction(async (tx) => {
+            await tx.year.update({
+                where: { id: yearId },
+                data: {
+                    priceChangeEmailSubject: validated.data.confirmationEmailSubject,
+                    priceChangeEmailBody: validated.data.confirmationEmailBody,
+                    priceChangeEmailBcc: validated.data.confirmationEmailBcc,
+                    priceChangeEmailAccountId: validated.data.emailAccountId,
+                    priceChangeEmailSections: sections,
+                    priceChangeEmailAttachments: attachments,
+                },
+            });
+            await syncYearEmailToV2(tx, yearId, "price_change", {
+                subject: validated.data.confirmationEmailSubject,
+                body: validated.data.confirmationEmailBody,
+                bcc: validated.data.confirmationEmailBcc,
+                accountId: validated.data.emailAccountId,
+                sections,
+                attachments,
+            });
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);
@@ -525,9 +549,12 @@ export async function togglePriceChangeEmail(yearId: string, enabled: boolean) {
             }
         }
 
-        await db.year.update({
-            where: { id: yearId },
-            data: { priceChangeEmailEnabled: enabled },
+        await db.$transaction(async (tx) => {
+            await tx.year.update({
+                where: { id: yearId },
+                data: { priceChangeEmailEnabled: enabled },
+            });
+            await toggleYearEmailInV2(tx, yearId, "price_change", enabled);
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);

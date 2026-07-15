@@ -9,6 +9,11 @@ import {
 } from "@/lib/validators/conditional-email";
 import { parseEmailConditionalSectionsJson } from "@/lib/validators/email-section";
 import { parseEmailAttachmentsJson } from "@/lib/validators/email-attachment";
+import {
+    syncConditionalEmailToV2,
+    toggleConditionalEmailInV2,
+    deleteConditionalEmailFromV2,
+} from "@/lib/utils/v2-dual-write";
 
 export async function createConditionalEmail(
     yearId: string,
@@ -32,19 +37,39 @@ export async function createConditionalEmail(
     }
 
     try {
-        const conditionalEmail = await db.conditionalEmail.create({
-            data: {
-                yearId,
-                name: validated.data.name,
-                conditionFieldId: validated.data.conditionFieldId,
-                conditionFieldName: validated.data.conditionFieldName,
-                conditionOperator: validated.data.conditionOperator,
-                conditionValue:
-                    validated.data.conditionOperator === "equals" ||
-                    validated.data.conditionOperator === "quantity_gt_zero"
-                        ? validated.data.conditionValue ?? null
-                        : null,
-            },
+        const conditionValue =
+            validated.data.conditionOperator === "equals" ||
+            validated.data.conditionOperator === "quantity_gt_zero"
+                ? validated.data.conditionValue ?? null
+                : null;
+
+        const conditionalEmail = await db.$transaction(async (tx) => {
+            const ce = await tx.conditionalEmail.create({
+                data: {
+                    yearId,
+                    name: validated.data.name,
+                    conditionFieldId: validated.data.conditionFieldId,
+                    conditionFieldName: validated.data.conditionFieldName,
+                    conditionOperator: validated.data.conditionOperator,
+                    conditionValue,
+                },
+            });
+
+            const year = await tx.year.findUnique({
+                where: { id: yearId },
+                select: { registrationForm: { select: { id: true } } },
+            });
+            const formId = year?.registrationForm?.id;
+            if (formId) {
+                await syncConditionalEmailToV2(tx, ce.id, yearId, formId, {
+                    name: validated.data.name,
+                    conditionFieldId: validated.data.conditionFieldId,
+                    conditionOperator: validated.data.conditionOperator,
+                    conditionValue,
+                });
+            }
+
+            return ce;
         });
 
         revalidatePath(`/admin/rocniky/${yearId}/emaily`);
@@ -90,16 +115,41 @@ export async function updateConditionalEmailTemplate(emailId: string, formData: 
     }
 
     try {
-        const email = await db.conditionalEmail.update({
-            where: { id: emailId },
-            data: {
-                subject: validated.data.confirmationEmailSubject,
-                body: validated.data.confirmationEmailBody,
-                bcc: validated.data.confirmationEmailBcc,
-                accountId: validated.data.emailAccountId,
-                sections,
-                attachments,
-            },
+        const email = await db.$transaction(async (tx) => {
+            const ce = await tx.conditionalEmail.update({
+                where: { id: emailId },
+                data: {
+                    subject: validated.data.confirmationEmailSubject,
+                    body: validated.data.confirmationEmailBody,
+                    bcc: validated.data.confirmationEmailBcc,
+                    accountId: validated.data.emailAccountId,
+                    sections,
+                    attachments,
+                },
+            });
+
+            const year = await tx.year.findUnique({
+                where: { id: ce.yearId },
+                select: { registrationForm: { select: { id: true } } },
+            });
+            const formId = year?.registrationForm?.id;
+            if (formId) {
+                await syncConditionalEmailToV2(tx, emailId, ce.yearId, formId, {
+                    name: ce.name,
+                    conditionFieldId: ce.conditionFieldId,
+                    conditionOperator: ce.conditionOperator,
+                    conditionValue: ce.conditionValue,
+                    subject: validated.data.confirmationEmailSubject,
+                    body: validated.data.confirmationEmailBody,
+                    bcc: validated.data.confirmationEmailBcc,
+                    accountId: validated.data.emailAccountId,
+                    sections,
+                    attachments,
+                    sortOrder: ce.sortOrder,
+                });
+            }
+
+            return ce;
         });
 
         revalidatePath(`/admin/rocniky/${email.yearId}/emaily`);
@@ -129,9 +179,20 @@ export async function toggleConditionalEmail(emailId: string, enabled: boolean) 
             }
         }
 
-        const email = await db.conditionalEmail.update({
-            where: { id: emailId },
-            data: { enabled },
+        const email = await db.$transaction(async (tx) => {
+            const ce = await tx.conditionalEmail.update({
+                where: { id: emailId },
+                data: { enabled },
+            });
+            const year = await tx.year.findUnique({
+                where: { id: ce.yearId },
+                select: { registrationForm: { select: { id: true } } },
+            });
+            const formId = year?.registrationForm?.id;
+            if (formId) {
+                await toggleConditionalEmailInV2(tx, emailId, ce.yearId, formId, enabled);
+            }
+            return ce;
         });
 
         revalidatePath(`/admin/rocniky/${email.yearId}/emaily`);
@@ -150,8 +211,19 @@ export async function deleteConditionalEmail(emailId: string) {
     }
 
     try {
-        const email = await db.conditionalEmail.delete({
-            where: { id: emailId },
+        const email = await db.$transaction(async (tx) => {
+            const ce = await tx.conditionalEmail.delete({
+                where: { id: emailId },
+            });
+            const year = await tx.year.findUnique({
+                where: { id: ce.yearId },
+                select: { registrationForm: { select: { id: true } } },
+            });
+            const formId = year?.registrationForm?.id;
+            if (formId) {
+                await deleteConditionalEmailFromV2(tx, emailId, ce.yearId, formId);
+            }
+            return ce;
         });
 
         revalidatePath(`/admin/rocniky/${email.yearId}/emaily`);

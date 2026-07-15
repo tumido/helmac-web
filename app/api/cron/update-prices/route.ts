@@ -10,6 +10,7 @@ import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { FormField, InputField, PricingDefinition, PricingSummaryData } from "@/lib/types/registration-form";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { syncOrderScalarToV2 } from "@/lib/utils/v2-dual-write";
 
 export const dynamic = "force-dynamic";
 
@@ -102,16 +103,19 @@ export async function GET(request: NextRequest) {
 
             const oldPrice = submission.totalPrice;
 
-            await db.registrationSubmission.update({
-                where: { id: submission.id },
-                data: {
-                    totalPrice,
-                    pricingSummary: {
-                        ...summary,
-                        applicableTierIndex,
+            await db.$transaction(async (tx) => {
+                await tx.registrationSubmission.update({
+                    where: { id: submission.id },
+                    data: {
                         totalPrice,
-                    } as unknown as Prisma.InputJsonValue,
-                },
+                        pricingSummary: {
+                            ...summary,
+                            applicableTierIndex,
+                            totalPrice,
+                        } as unknown as Prisma.InputJsonValue,
+                    },
+                });
+                await syncOrderScalarToV2(tx, submission.id, { totalPrice });
             });
             updated++;
 

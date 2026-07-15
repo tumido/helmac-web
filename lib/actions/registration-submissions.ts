@@ -12,6 +12,7 @@ import { migrateFormData } from "@/lib/utils/form-migration";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { syncOrderScalarToV2, syncOrderLineItemsToV2 } from "@/lib/utils/v2-dual-write";
 
 interface ActionResult {
     success?: boolean;
@@ -25,10 +26,14 @@ export async function updateSubmissionStatus(
     await requireAdmin();
 
     try {
-        const submission = await db.registrationSubmission.update({
-            where: { id: submissionId },
-            data: { status },
-            select: { yearId: true },
+        const submission = await db.$transaction(async (tx) => {
+            const sub = await tx.registrationSubmission.update({
+                where: { id: submissionId },
+                data: { status },
+                select: { yearId: true },
+            });
+            await syncOrderScalarToV2(tx, submissionId, { status });
+            return sub;
         });
 
         revalidatePath(`/admin/rocniky/${submission.yearId}/registrace`);
@@ -46,13 +51,15 @@ export async function toggleSubmissionPayment(
     await requireAdmin();
 
     try {
-        const submission = await db.registrationSubmission.update({
-            where: { id: submissionId },
-            data: {
-                isPaid,
-                paidAt: isPaid ? new Date() : null,
-            },
-            select: { yearId: true },
+        const paidAt = isPaid ? new Date() : null;
+        const submission = await db.$transaction(async (tx) => {
+            const sub = await tx.registrationSubmission.update({
+                where: { id: submissionId },
+                data: { isPaid, paidAt },
+                select: { yearId: true },
+            });
+            await syncOrderScalarToV2(tx, submissionId, { isPaid, paidAt });
+            return sub;
         });
 
         revalidatePath(`/admin/rocniky/${submission.yearId}/registrace`);
@@ -70,10 +77,14 @@ export async function updateSubmissionData(
     await requireAdmin();
 
     try {
-        const submission = await db.registrationSubmission.update({
-            where: { id: submissionId },
-            data: { data: data as Prisma.InputJsonValue },
-            select: { yearId: true },
+        const submission = await db.$transaction(async (tx) => {
+            const sub = await tx.registrationSubmission.update({
+                where: { id: submissionId },
+                data: { data: data as Prisma.InputJsonValue },
+                select: { yearId: true, formId: true },
+            });
+            await syncOrderLineItemsToV2(tx, submissionId, data, sub.formId);
+            return sub;
         });
 
         revalidatePath(`/admin/rocniky/${submission.yearId}/registrace`);
@@ -214,9 +225,16 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
         });
 
         if (sent) {
-            await db.registrationSubmission.update({
-                where: { id: submissionId },
-                data: { emailSent: true, emailSentAt: new Date() },
+            const emailSentAt = new Date();
+            await db.$transaction(async (tx) => {
+                await tx.registrationSubmission.update({
+                    where: { id: submissionId },
+                    data: { emailSent: true, emailSentAt },
+                });
+                await syncOrderScalarToV2(tx, submissionId, {
+                    emailSent: true,
+                    emailSentAt,
+                });
             });
 
             revalidatePath(`/admin/rocniky/${submission.yearId}/registrace/${submissionId}`);
@@ -237,10 +255,15 @@ export async function updateAdminNote(
     await requireAdmin();
 
     try {
-        const submission = await db.registrationSubmission.update({
-            where: { id: submissionId },
-            data: { adminNote: adminNote || null },
-            select: { yearId: true },
+        const note = adminNote || null;
+        const submission = await db.$transaction(async (tx) => {
+            const sub = await tx.registrationSubmission.update({
+                where: { id: submissionId },
+                data: { adminNote: note },
+                select: { yearId: true },
+            });
+            await syncOrderScalarToV2(tx, submissionId, { adminNote: note });
+            return sub;
         });
 
         revalidatePath(`/admin/rocniky/${submission.yearId}/registrace`);
@@ -255,9 +278,16 @@ export async function deleteSubmission(submissionId: string): Promise<ActionResu
     await requireAdmin();
 
     try {
-        const submission = await db.registrationSubmission.delete({
-            where: { id: submissionId },
-            select: { yearId: true },
+        const submission = await db.$transaction(async (tx) => {
+            // Delete v2 order first (not FK-linked to old submission)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (tx as any).v2Order.deleteMany({
+                where: { legacySubmissionId: submissionId },
+            });
+            return tx.registrationSubmission.delete({
+                where: { id: submissionId },
+                select: { yearId: true },
+            });
         });
 
         revalidatePath(`/admin/rocniky/${submission.yearId}/registrace`);

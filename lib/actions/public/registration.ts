@@ -20,6 +20,7 @@ import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 import { getPublicSession } from "@/lib/public-auth";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import { buildVisibleFieldIds } from "@/lib/utils/visible-fields";
+import { createV2Order, syncOrderScalarToV2 } from "@/lib/utils/v2-dual-write";
 
 export interface PaymentData {
     totalAmount: number;
@@ -481,19 +482,44 @@ export async function submitDynamicRegistration(
 
     // Create submission
     try {
-        const submission = await db.registrationSubmission.create({
-            data: {
+        const gdprConsentAt = !publicUserId ? new Date() : null;
+
+        const submission = await db.$transaction(async (tx) => {
+            const formId = activeYear.registrationForm!.id;
+
+            const sub = await tx.registrationSubmission.create({
+                data: {
+                    yearId: activeYear.id,
+                    formId,
+                    data: submissionData as Prisma.InputJsonValue,
+                    status: "PENDING",
+                    pricingSummary: pricingSummary as unknown as Prisma.InputJsonValue ?? undefined,
+                    variableSymbol,
+                    totalPrice,
+                    publicUserId,
+                    gdprConsentAt: gdprConsentAt ?? undefined,
+                    isTest,
+                },
+            });
+
+            await createV2Order(tx, {
                 yearId: activeYear.id,
-                formId: activeYear.registrationForm.id,
-                data: submissionData as Prisma.InputJsonValue,
+                formId,
+                legacySubmissionId: sub.id,
+                submissionData,
+                additionalPeople: parsedAP,
                 status: "PENDING",
-                pricingSummary: pricingSummary as unknown as Prisma.InputJsonValue ?? undefined,
                 variableSymbol,
                 totalPrice,
                 publicUserId,
-                gdprConsentAt: !publicUserId ? new Date() : undefined,
                 isTest,
-            },
+                gdprConsentAt,
+                allInputFields,
+                visibleFieldIds,
+                apVisibleFieldIdsPerPerson,
+            });
+
+            return sub;
         });
 
         // Build payment data if bank account is configured and there's a price
@@ -615,9 +641,14 @@ export async function submitDynamicRegistration(
                 });
 
                 if (sent) {
+                    const emailSentAt = new Date();
                     await db.registrationSubmission.update({
                         where: { id: submission.id },
-                        data: { emailSent: true, emailSentAt: new Date() },
+                        data: { emailSent: true, emailSentAt },
+                    });
+                    await syncOrderScalarToV2(db, submission.id, {
+                        emailSent: true,
+                        emailSentAt,
                     });
                 }
             } catch (emailError) {
