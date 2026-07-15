@@ -1,62 +1,10 @@
 import { cache } from "react";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { OptionCounts, OptionPeople } from "@/lib/types/registration-form";
-import { getAllInputFields } from "@/lib/types/registration-form";
-import { migrateFormData } from "@/lib/utils/form-migration";
 import type { StatFilter } from "@/lib/types/content-blocks";
-import type { RegistrationStatus } from "@prisma/client";
 
-// fieldName -> map of opt.id (and opt.name) -> opt.name, used to translate stored
-// pricing-field values (option ids) back to option names so OptionCounts stays
-// name-keyed for ALL pricing field types (select, multi-select, quantity). This
-// is what capacity-limit lookups (keyed by option name) rely on.
-type PricingFieldMap = Record<string, Record<string, string>>;
-
-export const getRegistrationStatus = cache(async () => {
-    const activeYear = await db.year.findFirst({
-        where: { isActive: true, isArchived: false },
-        select: {
-            id: true,
-            year: true,
-            title: true,
-            startDate: true,
-            endDate: true,
-            registrationOpen: true,
-            registrationStartDate: true,
-            registrationSuccessContent: true,
-            registrationForm: {
-                select: { id: true, fields: true },
-            },
-            _count: {
-                select: {
-                    registrationSubmissions: {
-                        where: { isTest: false },
-                    },
-                },
-            },
-        },
-    });
-
-    if (!activeYear) {
-        return {
-            isOpen: false,
-            year: null,
-            registrationCount: 0,
-            registrationStartDate: null,
-            hasForm: false,
-            formFields: null,
-        };
-    }
-
-    return {
-        isOpen: activeYear.registrationOpen,
-        year: activeYear,
-        registrationCount: activeYear._count.registrationSubmissions,
-        registrationStartDate: activeYear.registrationStartDate,
-        hasForm: !!activeYear.registrationForm,
-        formFields: activeYear.registrationForm?.fields ?? null,
-    };
-});
+// ---- Types ----
 
 export interface FieldStatsData {
     total: number;
@@ -88,556 +36,444 @@ const PRICING_FIELD_TYPES = new Set([
     "pricing_quantity",
 ]);
 
-function collectFieldStats(
-    counts: Record<string, number>,
-    val: unknown,
-    keyToName?: Record<string, string>
-): { numericSum: number; numericCount: number } {
-    let numericSum = 0;
-    let numericCount = 0;
-    // For pricing fields the stored value is an option id (GUID); translate it
-    // to the option name so counts match fieldOptions (name-keyed). Non-pricing
-    // fields have no map and pass through unchanged.
-    const toName = (key: string): string => keyToName?.[key] ?? key;
-    if (val === undefined || val === null || val === "")
-        return { numericSum, numericCount };
-    const str = String(val);
-    if (str === "false")
-        return { numericSum, numericCount };
+// ---- v2 query helpers ----
 
-    if (str.startsWith("[")) {
-        try {
-            const arr = JSON.parse(str);
-            if (Array.isArray(arr)) {
-                for (const item of arr) {
-                    const s = String(item);
-                    if (!s) continue;
-                    const optName = toName(s);
-                    counts[optName] = (counts[optName] || 0) + 1;
-                }
-                return { numericSum, numericCount };
-            }
-        } catch {
-            /* not JSON */
-        }
-    }
-
-    if (str.startsWith("{")) {
-        try {
-            const obj = JSON.parse(str);
-            if (
-                obj &&
-                typeof obj === "object" &&
-                !Array.isArray(obj)
-            ) {
-                for (const [k, qty] of Object.entries(
-                    obj
-                )) {
-                    const n = Number(qty) || 0;
-                    if (n > 0) {
-                        const optName = toName(k);
-                        counts[optName] =
-                            (counts[optName] || 0) + n;
-                        numericSum += n;
-                        numericCount++;
-                    }
-                }
-                return { numericSum, numericCount };
-            }
-        } catch {
-            /* not JSON */
-        }
-    }
-
-    const optName = toName(str);
-    counts[optName] = (counts[optName] || 0) + 1;
-    const num = Number(str);
-    if (!isNaN(num)) {
-        numericSum += num;
-        numericCount++;
-    }
-    return { numericSum, numericCount };
+interface V2Summary {
+    registrations: number;
+    confirmed: number;
+    pending: number;
+    waitlist: number;
+    paidTotal: number;
+    unpaidTotal: number;
+    people: number;
 }
+
+interface V2OptionCountsResult {
+    [fieldName: string]: {
+        counts: Record<string, number>;
+        capacityLimits: Record<string, number>;
+    };
+}
+
+interface V2FormField {
+    id: string;
+    legacyId: string | null;
+    name: string;
+    label: string;
+    type: string;
+    pricingDefinitionId: string | null;
+    options: string[];
+    sortOrder: number;
+}
+
+interface V2PricingDef {
+    id: string;
+    name: string;
+    options: { id: string; name: string }[];
+}
+
+interface V2FormStructure {
+    fields: V2FormField[];
+    pricingDefinitions: V2PricingDef[];
+    capacityLimits: {
+        id: string;
+        fieldId: string;
+        optionValue: string;
+        maxCount: number;
+    }[];
+}
+
+interface V2ValueRow {
+    orderId: string;
+    personId: string;
+    fieldName: string;
+    value: string;
+}
+
+async function queryV2Summary(
+    yearId: string,
+): Promise<V2Summary> {
+    const rows = await db.$queryRaw<{ v2_get_registration_summary: V2Summary }[]>(
+        Prisma.sql`SELECT v2_get_registration_summary(${yearId}) AS v2_get_registration_summary`,
+    );
+    return rows[0]?.v2_get_registration_summary ?? {
+        registrations: 0,
+        confirmed: 0,
+        pending: 0,
+        waitlist: 0,
+        paidTotal: 0,
+        unpaidTotal: 0,
+        people: 0,
+    };
+}
+
+async function queryV2OptionCounts(
+    yearId: string,
+    fieldNames?: string[] | null,
+    statuses?: string[] | null,
+    isPaid?: boolean | null,
+): Promise<V2OptionCountsResult> {
+    const rows = await db.$queryRaw<{ v2_get_option_counts: V2OptionCountsResult }[]>(
+        Prisma.sql`SELECT v2_get_option_counts(
+            ${yearId},
+            ${fieldNames ?? Prisma.sql`NULL`}::text[],
+            ${statuses ?? Prisma.sql`NULL`}::text[],
+            ${isPaid ?? Prisma.sql`NULL`}::boolean
+        ) AS v2_get_option_counts`,
+    );
+    return rows[0]?.v2_get_option_counts ?? {};
+}
+
+async function queryV2FormStructure(
+    yearId: string,
+): Promise<V2FormStructure | null> {
+    const rows = await db.$queryRaw<{ v2_get_form_structure: V2FormStructure | null }[]>(
+        Prisma.sql`SELECT v2_get_form_structure(${yearId}) AS v2_get_form_structure`,
+    );
+    return rows[0]?.v2_get_form_structure ?? null;
+}
+
+async function queryV2ValueRows(
+    yearId: string,
+    fieldNames: string[],
+): Promise<V2ValueRow[]> {
+    if (fieldNames.length === 0) return [];
+    const rows = await db.$queryRaw<{ v2_get_value_rows: V2ValueRow[] }[]>(
+        Prisma.sql`SELECT v2_get_value_rows(${yearId}, ${fieldNames}::text[]) AS v2_get_value_rows`,
+    );
+    return rows[0]?.v2_get_value_rows ?? [];
+}
+
+// ---- Build RegistrationStats from v2 data ----
+
+function buildFieldStats(
+    formStructure: V2FormStructure,
+    optionCountsResult: V2OptionCountsResult,
+    rawValueRows: V2ValueRow[],
+): {
+    fields: Record<string, FieldStatsData>;
+    fieldLabels: Record<string, string>;
+    fieldOptions: Record<string, string[]>;
+    capacityLimits: Record<string, Record<string, number>>;
+    valueRows: Record<string, string>[];
+} {
+    const fields: Record<string, FieldStatsData> = {};
+    const fieldLabels: Record<string, string> = {};
+    const fieldOptions: Record<string, string[]> = {};
+    const capacityLimits: Record<string, Record<string, number>> = {};
+
+    // Build pricing def lookup for option names
+    const pricingDefById = new Map(
+        formStructure.pricingDefinitions.map((d) => [d.id, d]),
+    );
+
+    // Build field ID → name lookup for capacity limits
+    const fieldIdToName = new Map(
+        formStructure.fields.map((f) => [f.id, f.name]),
+    );
+
+    // Build value rows grouped by personId (to produce per-person row records)
+    const personValues = new Map<string, Record<string, string>>();
+    for (const row of rawValueRows) {
+        const key = row.personId;
+        if (!personValues.has(key)) personValues.set(key, {});
+        personValues.get(key)![row.fieldName] = row.value ?? "";
+    }
+    const valueRows = Array.from(personValues.values());
+
+    for (const field of formStructure.fields) {
+        fieldLabels[field.name] = field.label;
+
+        // Build field options list
+        const isPricing = PRICING_FIELD_TYPES.has(field.type);
+        let opts: string[] = [];
+        if (field.type === "checkbox") {
+            opts = ["Ano", "Ne"];
+        } else if (field.type === "select" || field.type === "radio") {
+            opts = field.options ?? [];
+        } else if (isPricing && field.pricingDefinitionId) {
+            const pricingDef = pricingDefById.get(field.pricingDefinitionId);
+            if (pricingDef) {
+                opts = pricingDef.options.map((o) => o.name);
+            }
+        }
+        if (opts.length > 0) fieldOptions[field.name] = opts;
+
+        // Build FieldStatsData from v2 option counts
+        const fieldCounts = optionCountsResult[field.name]?.counts ?? {};
+        const total = Object.values(fieldCounts).reduce(
+            (s, c) => s + c,
+            0,
+        );
+
+        // Compute sum/average from value rows for numeric fields
+        let numericSum = 0;
+        let numericCount = 0;
+        const fieldValues = valueRows.map((r) => r[field.name] ?? "");
+
+        if (field.type === "number" || isPricing) {
+            for (const val of fieldValues) {
+                if (!val) continue;
+                const num = Number(val);
+                if (!isNaN(num)) {
+                    numericSum += num;
+                    numericCount++;
+                }
+            }
+        }
+
+        fields[field.name] = {
+            total,
+            counts: fieldCounts,
+            sum: numericSum,
+            average:
+                numericCount > 0
+                    ? Math.round(numericSum / numericCount)
+                    : 0,
+            values: fieldValues,
+            isCurrency: isPricing,
+        };
+    }
+
+    // Build capacity limits
+    for (const cl of formStructure.capacityLimits) {
+        const fieldName = fieldIdToName.get(cl.fieldId);
+        if (!fieldName) continue;
+        if (!capacityLimits[fieldName])
+            capacityLimits[fieldName] = {};
+        capacityLimits[fieldName][cl.optionValue] = cl.maxCount;
+    }
+
+    return { fields, fieldLabels, fieldOptions, capacityLimits, valueRows };
+}
+
+// ---- Public API ----
+
+export const getRegistrationStatus = cache(async () => {
+    const activeYear = await db.year.findFirst({
+        where: { isActive: true, isArchived: false },
+        select: {
+            id: true,
+            year: true,
+            title: true,
+            startDate: true,
+            endDate: true,
+            registrationOpen: true,
+            registrationStartDate: true,
+            registrationSuccessContent: true,
+            registrationForm: {
+                select: { id: true, fields: true },
+            },
+        },
+    });
+
+    if (!activeYear) {
+        return {
+            isOpen: false,
+            year: null,
+            registrationCount: 0,
+            registrationStartDate: null,
+            hasForm: false,
+            formFields: null,
+        };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const countResult = await (db as any).v2Order.count({
+        where: {
+            yearId: activeYear.id,
+            isTest: false,
+            status: { notIn: ["CANCELLED", "REJECTED"] },
+        },
+    });
+
+    return {
+        isOpen: activeYear.registrationOpen,
+        year: activeYear,
+        registrationCount: countResult,
+        registrationStartDate: activeYear.registrationStartDate,
+        hasForm: !!activeYear.registrationForm,
+        formFields: activeYear.registrationForm?.fields ?? null,
+    };
+});
 
 export const getRegistrationStatsForYear = cache(
     async (yearId: string): Promise<RegistrationStats> => {
-        const [
-            submissions,
-            paidAgg,
-            unpaidAgg,
-            confirmedCount,
-            pendingCount,
-            waitlistCount,
-            form,
-        ] = await Promise.all([
-            db.registrationSubmission.findMany({
-                where: {
-                    yearId,
-                    isTest: false,
-                    status: { notIn: ["CANCELLED", "REJECTED"] },
-                },
-                select: { data: true },
-            }),
-            db.registrationSubmission.aggregate({
-                where: {
-                    yearId,
-                    isTest: false,
-                    isPaid: true,
-                    status: { notIn: ["CANCELLED", "REJECTED"] },
-                },
-                _sum: { totalPrice: true },
-            }),
-            db.registrationSubmission.aggregate({
-                where: {
-                    yearId,
-                    isTest: false,
-                    isPaid: false,
-                    status: { notIn: ["CANCELLED", "REJECTED"] },
-                },
-                _sum: { totalPrice: true },
-            }),
-            db.registrationSubmission.count({
-                where: { yearId, isTest: false, status: "CONFIRMED" },
-            }),
-            db.registrationSubmission.count({
-                where: { yearId, isTest: false, status: "PENDING" },
-            }),
-            db.registrationSubmission.count({
-                where: { yearId, isTest: false, status: "WAITLIST" },
-            }),
-            db.registrationForm.findUnique({
-                where: { yearId },
-                select: { fields: true },
-            }),
-        ]);
+        const [summary, optionCounts, formStructure] =
+            await Promise.all([
+                queryV2Summary(yearId),
+                queryV2OptionCounts(yearId),
+                queryV2FormStructure(yearId),
+            ]);
 
-        const people = submissions.reduce((sum, sub) => {
-            const data = sub.data as Record<string, unknown>;
-            const ap = Array.isArray(data.additionalPeople)
-                ? data.additionalPeople.length
-                : 0;
-            return sum + 1 + ap;
-        }, 0);
-
-        const fields: Record<string, FieldStatsData> = {};
-        const valueRows: Record<string, string>[] = [];
-        if (form) {
-            const formData = migrateFormData(form.fields);
-            const inputFields = getAllInputFields(formData.fields);
-            const pricingFieldMap = buildPricingFieldMap(form.fields);
-            const fieldTypeMap = new Map(
-                inputFields.map((f) => [f.name, f.type])
-            );
-
-            const fieldAccumulators = new Map(
-                inputFields.map((f) => [
-                    f.name,
-                    {
-                        counts: {} as Record<string, number>,
-                        total: 0,
-                        numericSum: 0,
-                        numericCount: 0,
-                    },
-                ])
-            );
-
-            const collectRow = (
-                data: Record<string, unknown>
-            ) => {
-                const row: Record<string, string> = {};
-                for (const field of inputFields) {
-                    const val = data[field.name];
-                    const str =
-                        val !== undefined &&
-                        val !== null &&
-                        val !== "" &&
-                        String(val) !== "false"
-                            ? String(val)
-                            : "";
-                    row[field.name] = str;
-
-                    const acc = fieldAccumulators.get(
-                        field.name
-                    )!;
-                    if (str) acc.total++;
-                    const result = collectFieldStats(
-                        acc.counts,
-                        val,
-                        pricingFieldMap[field.name]
-                    );
-                    acc.numericSum += result.numericSum;
-                    acc.numericCount += result.numericCount;
-                }
-                valueRows.push(row);
+        if (!formStructure) {
+            return {
+                registrations: summary.registrations,
+                people: summary.people,
+                paid_total: summary.paidTotal,
+                unpaid_total: summary.unpaidTotal,
+                confirmed: summary.confirmed,
+                pending: summary.pending,
+                waitlist: summary.waitlist,
+                fields: {},
+                fieldLabels: {},
+                fieldOptions: {},
+                capacityLimits: {},
+                valueRows: [],
             };
-
-            for (const sub of submissions) {
-                const data = sub.data as Record<
-                    string,
-                    unknown
-                >;
-                collectRow(data);
-                const ap = data.additionalPeople;
-                if (Array.isArray(ap)) {
-                    for (const person of ap) {
-                        if (
-                            person &&
-                            typeof person === "object"
-                        ) {
-                            collectRow(
-                                person as Record<
-                                    string,
-                                    unknown
-                                >
-                            );
-                        }
-                    }
-                }
-            }
-
-            for (const field of inputFields) {
-                const acc = fieldAccumulators.get(
-                    field.name
-                )!;
-                fields[field.name] = {
-                    total: acc.total,
-                    counts: acc.counts,
-                    sum: acc.numericSum,
-                    average:
-                        acc.numericCount > 0
-                            ? Math.round(
-                                  acc.numericSum /
-                                      acc.numericCount
-                              )
-                            : 0,
-                    values: valueRows.map(
-                        (r) => r[field.name] ?? ""
-                    ),
-                    isCurrency: PRICING_FIELD_TYPES.has(
-                        fieldTypeMap.get(field.name) ?? ""
-                    ),
-                };
-            }
         }
 
-        const fieldLabels: Record<string, string> = {};
-        const fieldOptions: Record<string, string[]> = {};
-        const capacityLimits: Record<string, Record<string, number>> = {};
-        if (form) {
-            const fd = migrateFormData(form.fields);
-            const { getFieldOptionValues } = await import(
-                "@/lib/utils/pricing"
+        const fieldNames = formStructure.fields.map(
+            (f) => f.name,
+        );
+        const rawValueRows = await queryV2ValueRows(
+            yearId,
+            fieldNames,
+        );
+
+        const { fields, fieldLabels, fieldOptions, capacityLimits, valueRows } =
+            buildFieldStats(
+                formStructure,
+                optionCounts,
+                rawValueRows,
             );
-            const allFields = getAllInputFields(fd.fields);
-            const idToName = new Map(allFields.map((f) => [f.id, f.name]));
-            for (const f of allFields) {
-                fieldLabels[f.name] = f.label;
-                const opts =
-                    f.type === "checkbox"
-                        ? ["Ano", "Ne"]
-                        : getFieldOptionValues(f, fd.pricingDefinitions);
-                if (opts.length > 0) fieldOptions[f.name] = opts;
-            }
-            for (const cl of fd.capacityLimits) {
-                const fieldName = idToName.get(cl.fieldId);
-                if (!fieldName) continue;
-                if (!capacityLimits[fieldName]) capacityLimits[fieldName] = {};
-                capacityLimits[fieldName][cl.value] = cl.maxCount;
-            }
-        }
 
         return {
-            registrations: submissions.length,
-            people,
-            paid_total: paidAgg._sum.totalPrice ?? 0,
-            unpaid_total: unpaidAgg._sum.totalPrice ?? 0,
-            confirmed: confirmedCount,
-            pending: pendingCount,
-            waitlist: waitlistCount,
+            registrations: summary.registrations,
+            people: summary.people,
+            paid_total: summary.paidTotal,
+            unpaid_total: summary.unpaidTotal,
+            confirmed: summary.confirmed,
+            pending: summary.pending,
+            waitlist: summary.waitlist,
             fields,
             fieldLabels,
             fieldOptions,
             capacityLimits,
             valueRows,
         };
-    }
+    },
 );
-
-function matchesFilter(
-    data: Record<string, unknown>,
-    filter: StatFilter
-): boolean {
-    if (filter.fieldFilters) {
-        for (const ff of filter.fieldFilters) {
-            const val = String(data[ff.fieldName] ?? "");
-            if (val.startsWith("[")) {
-                try {
-                    const arr = JSON.parse(val);
-                    if (
-                        Array.isArray(arr) &&
-                        !arr.includes(ff.value)
-                    )
-                        return false;
-                    continue;
-                } catch {
-                    /* not JSON */
-                }
-            }
-            if (val !== ff.value) return false;
-        }
-    }
-    return true;
-}
 
 export async function getFilteredRegistrationStats(
     yearId: string,
-    filter?: StatFilter
+    filter?: StatFilter,
 ): Promise<RegistrationStats> {
     if (!filter) {
         return getRegistrationStatsForYear(yearId);
     }
 
-    const statusExclude: RegistrationStatus[] = [
-        "CANCELLED",
-        "REJECTED",
-    ];
-    const statusWhere = filter.statuses?.length
-        ? { in: filter.statuses as RegistrationStatus[] }
-        : { notIn: statusExclude };
-    const paidWhere =
-        filter.isPaid !== undefined
-            ? { isPaid: filter.isPaid }
-            : {};
+    const statuses = filter.statuses?.length
+        ? filter.statuses
+        : null;
+    const isPaid = filter.isPaid ?? null;
 
-    const baseWhere = {
-        yearId,
-        isTest: false,
-        status: statusWhere,
-        ...paidWhere,
-    };
+    // Field-name filters for scoping the option counts query
+    const fieldFilterNames = filter.fieldFilters?.map(
+        (f) => f.fieldName,
+    );
 
-    const [submissions, form] = await Promise.all([
-        db.registrationSubmission.findMany({
-            where: baseWhere,
-            select: {
-                data: true,
-                status: true,
-                isPaid: true,
-                totalPrice: true,
-            },
-        }),
-        db.registrationForm.findUnique({
-            where: { yearId },
-            select: { fields: true },
-        }),
+    const [optionCounts, formStructure] = await Promise.all([
+        queryV2OptionCounts(
+            yearId,
+            fieldFilterNames ?? null,
+            statuses,
+            isPaid,
+        ),
+        queryV2FormStructure(yearId),
     ]);
 
-    const hasFieldFilter =
-        filter.fieldFilters && filter.fieldFilters.length > 0;
+    // For filtered stats, query a custom summary matching the filters
+    const statusFilter = statuses
+        ? Prisma.sql`AND o.status = ANY(${statuses}::text[])`
+        : Prisma.sql`AND o.status NOT IN ('CANCELLED', 'REJECTED')`;
+    const paidFilter =
+        isPaid !== null
+            ? Prisma.sql`AND o.is_paid = ${isPaid}`
+            : Prisma.empty;
 
-    const personMatches = (
-        data: Record<string, unknown>
-    ) => !hasFieldFilter || matchesFilter(data, filter);
+    const summaryRows = await db.$queryRaw<{
+        registrations: bigint;
+        confirmed: bigint;
+        pending: bigint;
+        waitlist: bigint;
+        paid_total: bigint;
+        unpaid_total: bigint;
+        people: bigint;
+    }[]>(
+        Prisma.sql`
+            SELECT
+                COUNT(*) AS registrations,
+                COUNT(*) FILTER (WHERE o.status = 'CONFIRMED') AS confirmed,
+                COUNT(*) FILTER (WHERE o.status = 'PENDING') AS pending,
+                COUNT(*) FILTER (WHERE o.status = 'WAITLIST') AS waitlist,
+                COALESCE(SUM(o.total_price) FILTER (WHERE o.is_paid), 0) AS paid_total,
+                COALESCE(SUM(o.total_price) FILTER (WHERE NOT o.is_paid), 0) AS unpaid_total,
+                COALESCE((
+                    SELECT COUNT(DISTINCT op.id)
+                    FROM v2_order_people op
+                    WHERE op.order_id = ANY(ARRAY_AGG(o.id))
+                ), 0) AS people
+            FROM v2_orders o
+            WHERE o.year_id = ${yearId}
+                AND o.is_test = false
+                AND o.parent_order_id IS NULL
+                AND o.order_type = 'registration'
+                ${statusFilter}
+                ${paidFilter}
+        `,
+    );
 
-    const filtered = hasFieldFilter
-        ? submissions.filter((s) => {
-              const data = s.data as Record<
-                  string,
-                  unknown
-              >;
-              if (matchesFilter(data, filter)) return true;
-              if (Array.isArray(data.additionalPeople)) {
-                  for (const p of data.additionalPeople) {
-                      if (
-                          p &&
-                          typeof p === "object" &&
-                          matchesFilter(
-                              p as Record<
-                                  string,
-                                  unknown
-                              >,
-                              filter
-                          )
-                      )
-                          return true;
-                  }
-              }
-              return false;
-          })
-        : submissions;
+    const summary = summaryRows[0] ?? {
+        registrations: BigInt(0),
+        confirmed: BigInt(0),
+        pending: BigInt(0),
+        waitlist: BigInt(0),
+        paid_total: BigInt(0),
+        unpaid_total: BigInt(0),
+        people: BigInt(0),
+    };
 
-    let people = 0;
-    let confirmed = 0;
-    let pending = 0;
-    let waitlist = 0;
-
-    for (const sub of filtered) {
-        const data = sub.data as Record<string, unknown>;
-        if (personMatches(data)) people++;
-        if (Array.isArray(data.additionalPeople)) {
-            for (const p of data.additionalPeople) {
-                if (
-                    p &&
-                    typeof p === "object" &&
-                    personMatches(
-                        p as Record<string, unknown>
-                    )
-                )
-                    people++;
-            }
-        }
-        if (sub.status === "CONFIRMED") confirmed++;
-        if (sub.status === "PENDING") pending++;
-        if (sub.status === "WAITLIST") waitlist++;
-    }
-
-    const fields: Record<string, FieldStatsData> = {};
-    const valueRows: Record<string, string>[] = [];
-    if (form) {
-        const formData = migrateFormData(form.fields);
-        const inputFields = getAllInputFields(
-            formData.fields
-        );
-        const pricingFieldMap = buildPricingFieldMap(form.fields);
-        const fieldTypeMap = new Map(
-            inputFields.map((f) => [f.name, f.type])
-        );
-
-        const fieldAccumulators = new Map(
-            inputFields.map((f) => [
-                f.name,
-                {
-                    counts: {} as Record<string, number>,
-                    total: 0,
-                    numericSum: 0,
-                    numericCount: 0,
-                },
-            ])
-        );
-
-        const collectRow = (
-            data: Record<string, unknown>
-        ) => {
-            const row: Record<string, string> = {};
-            for (const field of inputFields) {
-                const val = data[field.name];
-                const str =
-                    val !== undefined &&
-                    val !== null &&
-                    val !== "" &&
-                    String(val) !== "false"
-                        ? String(val)
-                        : "";
-                row[field.name] = str;
-
-                const acc = fieldAccumulators.get(
-                    field.name
-                )!;
-                if (str) acc.total++;
-                const result = collectFieldStats(
-                    acc.counts,
-                    val,
-                    pricingFieldMap[field.name]
-                );
-                acc.numericSum += result.numericSum;
-                acc.numericCount += result.numericCount;
-            }
-            valueRows.push(row);
+    if (!formStructure) {
+        return {
+            registrations: Number(summary.registrations),
+            people: Number(summary.people),
+            paid_total: Number(summary.paid_total),
+            unpaid_total: Number(summary.unpaid_total),
+            confirmed: Number(summary.confirmed),
+            pending: Number(summary.pending),
+            waitlist: Number(summary.waitlist),
+            fields: {},
+            fieldLabels: {},
+            fieldOptions: {},
+            capacityLimits: {},
+            valueRows: [],
         };
-
-        for (const sub of filtered) {
-            const data = sub.data as Record<
-                string,
-                unknown
-            >;
-            if (personMatches(data)) collectRow(data);
-            const ap = data.additionalPeople;
-            if (Array.isArray(ap)) {
-                for (const person of ap) {
-                    if (
-                        person &&
-                        typeof person === "object"
-                    ) {
-                        const pd = person as Record<
-                            string,
-                            unknown
-                        >;
-                        if (personMatches(pd))
-                            collectRow(pd);
-                    }
-                }
-            }
-        }
-
-        for (const field of inputFields) {
-            const acc = fieldAccumulators.get(
-                field.name
-            )!;
-            fields[field.name] = {
-                total: acc.total,
-                counts: acc.counts,
-                sum: acc.numericSum,
-                average:
-                    acc.numericCount > 0
-                        ? Math.round(
-                              acc.numericSum /
-                                  acc.numericCount
-                          )
-                        : 0,
-                values: valueRows.map(
-                    (r) => r[field.name] ?? ""
-                ),
-                isCurrency: PRICING_FIELD_TYPES.has(
-                    fieldTypeMap.get(field.name) ?? ""
-                ),
-            };
-        }
     }
 
-    let paidTotal = 0;
-    let unpaidTotal = 0;
-    for (const sub of filtered) {
-        if (sub.isPaid) {
-            paidTotal += sub.totalPrice ?? 0;
-        } else {
-            unpaidTotal += sub.totalPrice ?? 0;
-        }
-    }
+    const fieldNames = formStructure.fields.map(
+        (f) => f.name,
+    );
+    const rawValueRows = await queryV2ValueRows(
+        yearId,
+        fieldNames,
+    );
 
-    const fieldLabels: Record<string, string> = {};
-    const fieldOptions: Record<string, string[]> = {};
-    const capacityLimits: Record<string, Record<string, number>> = {};
-    if (form) {
-        const fd = migrateFormData(form.fields);
-        const { getFieldOptionValues } = await import(
-            "@/lib/utils/pricing"
+    const { fields, fieldLabels, fieldOptions, capacityLimits, valueRows } =
+        buildFieldStats(
+            formStructure,
+            optionCounts,
+            rawValueRows,
         );
-        const allFields = getAllInputFields(fd.fields);
-        const idToName = new Map(allFields.map((f) => [f.id, f.name]));
-        for (const f of allFields) {
-            fieldLabels[f.name] = f.label;
-            const opts =
-                f.type === "checkbox"
-                    ? ["Ano", "Ne"]
-                    : getFieldOptionValues(f, fd.pricingDefinitions);
-            if (opts.length > 0) fieldOptions[f.name] = opts;
-        }
-        for (const cl of fd.capacityLimits) {
-            const fieldName = idToName.get(cl.fieldId);
-            if (!fieldName) continue;
-            if (!capacityLimits[fieldName]) capacityLimits[fieldName] = {};
-            capacityLimits[fieldName][cl.value] = cl.maxCount;
-        }
-    }
 
     return {
-        registrations: filtered.length,
-        people,
-        paid_total: paidTotal,
-        unpaid_total: unpaidTotal,
-        confirmed,
-        pending,
-        waitlist,
+        registrations: Number(summary.registrations),
+        people: Number(summary.people),
+        paid_total: Number(summary.paid_total),
+        unpaid_total: Number(summary.unpaid_total),
+        confirmed: Number(summary.confirmed),
+        pending: Number(summary.pending),
+        waitlist: Number(summary.waitlist),
         fields,
         fieldLabels,
         fieldOptions,
@@ -646,280 +482,156 @@ export async function getFilteredRegistrationStats(
     };
 }
 
-export const getRegistrationFormForYear = cache(async (yearId: string) => {
-    return db.registrationForm.findUnique({
-        where: { yearId },
-        select: {
-            id: true,
-            fields: true,
-            createdAt: true,
-            updatedAt: true,
-        },
-    });
-});
+// ---- Simple queries (kept as Prisma ORM, still needed) ----
 
-export const getSubmissionsForYear = cache(async (yearId: string) => {
-    return db.registrationSubmission.findMany({
-        where: { yearId },
-        orderBy: { createdAt: "desc" },
-        select: {
-            id: true,
-            data: true,
-            status: true,
-            isPaid: true,
-            paidAt: true,
-            totalPrice: true,
-            variableSymbol: true,
-            createdAt: true,
-        },
-    });
-});
-
-export const getSubmissionById = cache(async (id: string) => {
-    return db.registrationSubmission.findUnique({
-        where: { id },
-        select: {
-            id: true,
-            yearId: true,
-            formId: true,
-            data: true,
-            status: true,
-            isPaid: true,
-            paidAt: true,
-            pricingSummary: true,
-            variableSymbol: true,
-            totalPrice: true,
-            emailSent: true,
-            emailSentAt: true,
-            adminNote: true,
-            isTest: true,
-            createdAt: true,
-            updatedAt: true,
-            form: {
-                select: { fields: true },
+export const getRegistrationFormForYear = cache(
+    async (yearId: string) => {
+        return db.registrationForm.findUnique({
+            where: { yearId },
+            select: {
+                id: true,
+                fields: true,
+                createdAt: true,
+                updatedAt: true,
             },
-            year: {
-                select: { year: true, title: true },
+        });
+    },
+);
+
+export const getSubmissionsForYear = cache(
+    async (yearId: string) => {
+        return db.registrationSubmission.findMany({
+            where: { yearId },
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                data: true,
+                status: true,
+                isPaid: true,
+                paidAt: true,
+                totalPrice: true,
+                variableSymbol: true,
+                createdAt: true,
             },
-        },
-    });
-});
+        });
+    },
+);
 
-export const getSubmissionCountForYear = cache(async (yearId: string) => {
-    return db.registrationSubmission.count({
-        where: { yearId, isTest: false },
-    });
-});
+export const getSubmissionById = cache(
+    async (id: string) => {
+        return db.registrationSubmission.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                yearId: true,
+                formId: true,
+                data: true,
+                status: true,
+                isPaid: true,
+                paidAt: true,
+                pricingSummary: true,
+                variableSymbol: true,
+                totalPrice: true,
+                emailSent: true,
+                emailSentAt: true,
+                adminNote: true,
+                isTest: true,
+                createdAt: true,
+                updatedAt: true,
+                form: {
+                    select: { fields: true },
+                },
+                year: {
+                    select: { year: true, title: true },
+                },
+            },
+        });
+    },
+);
 
-// Cached version for page load
-export const getOptionCountsForYear = cache(async (yearId: string): Promise<OptionCounts> => {
-    return computeOptionCounts(yearId);
-});
+export const getSubmissionCountForYear = cache(
+    async (yearId: string) => {
+        return db.registrationSubmission.count({
+            where: { yearId, isTest: false },
+        });
+    },
+);
 
-// Fresh version for submission validation (no cache)
-export async function getOptionCountsForYearFresh(yearId: string): Promise<OptionCounts> {
+// ---- Option counts (v2) ----
+
+export const getOptionCountsForYear = cache(
+    async (yearId: string): Promise<OptionCounts> => {
+        return computeOptionCounts(yearId);
+    },
+);
+
+export async function getOptionCountsForYearFresh(
+    yearId: string,
+): Promise<OptionCounts> {
     return computeOptionCounts(yearId);
 }
 
-function countValues(
-    counts: OptionCounts,
-    data: Record<string, unknown>,
-    pricingFields: PricingFieldMap,
-): void {
-    for (const [name, val] of Object.entries(data)) {
-        if (name === "additionalPeople") continue;
-        const str = String(val ?? "");
-        if (!str || str === "false") continue;
-        if (!counts[name]) counts[name] = {};
-
-        // For pricing fields the stored value is an option id (GUID); translate
-        // it back to the option name so counts match capacity limits (name-keyed).
-        // Non-pricing fields (plain select/radio) have no map and pass through.
-        const keyToName = pricingFields[name];
-        const toName = (key: string): string => keyToName?.[key] ?? key;
-
-        // Handle JSON array values (pricing_multi_select)
-        if (str.startsWith("[")) {
-            try {
-                const arr = JSON.parse(str);
-                if (Array.isArray(arr)) {
-                    for (const item of arr) {
-                        const s = String(item);
-                        if (!s) continue;
-                        const optName = toName(s);
-                        counts[name][optName] = (counts[name][optName] || 0) + 1;
-                    }
-                    continue;
-                }
-            } catch { /* not JSON, treat as plain string */ }
-        }
-
-        // Handle JSON object values (pricing_quantity): sum quantities per option,
-        // translating opt.id / opt.name keys to opt.name so OptionCounts stays name-keyed.
-        if (str.startsWith("{") && keyToName) {
-            try {
-                const obj = JSON.parse(str);
-                if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-                    for (const [key, qty] of Object.entries(obj)) {
-                        const optName = toName(key);
-                        const n = Number(qty) || 0;
-                        if (n > 0) counts[name][optName] = (counts[name][optName] || 0) + n;
-                    }
-                    continue;
-                }
-            } catch { /* not JSON, treat as plain string */ }
-        }
-
-        // Plain string value (pricing_select → option id, or plain select → name)
-        const optName = toName(str);
-        counts[name][optName] = (counts[name][optName] || 0) + 1;
-    }
-}
-
-export const getOptionPeopleForYear = cache(async (yearId: string, personFieldName: string): Promise<OptionPeople> => {
-    const [submissions, form] = await Promise.all([
-        db.registrationSubmission.findMany({
-            where: {
-                yearId,
-                isTest: false,
-                status: { notIn: ["CANCELLED", "REJECTED"] },
-            },
-            select: { data: true },
-        }),
-        db.registrationForm.findUnique({
-            where: { yearId },
-            select: { fields: true },
-        }),
-    ]);
-
-    const pricingFields = buildPricingFieldMap(form?.fields);
-    const people: OptionPeople = {};
-
-    function collectPeople(data: Record<string, unknown>, personLabel: string): void {
-        for (const [name, val] of Object.entries(data)) {
-            if (name === "additionalPeople") continue;
-            const str = String(val ?? "");
-            if (!str || str === "false") continue;
-            if (!people[name]) people[name] = {};
-
-            // Pricing fields store option ids (GUIDs); translate to option name.
-            const keyToName = pricingFields[name];
-            const toName = (key: string): string => keyToName?.[key] ?? key;
-
-            // Handle JSON array values (pricing_multi_select)
-            if (str.startsWith("[")) {
-                try {
-                    const arr = JSON.parse(str);
-                    if (Array.isArray(arr)) {
-                        for (const item of arr) {
-                            const s = String(item);
-                            if (!s) continue;
-                            const optName = toName(s);
-                            if (!people[name][optName]) people[name][optName] = [];
-                            people[name][optName].push(personLabel);
-                        }
-                        continue;
-                    }
-                } catch { /* not JSON, treat as plain string */ }
-            }
-
-            // Handle JSON object values (pricing_quantity): group the person under
-            // each selected option once (qty > 0), regardless of quantity, since
-            // OptionPeople lists people per option rather than summing quantities.
-            if (str.startsWith("{") && keyToName) {
-                try {
-                    const obj = JSON.parse(str);
-                    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-                        for (const [key, qty] of Object.entries(obj)) {
-                            if ((Number(qty) || 0) <= 0) continue;
-                            const optName = toName(key);
-                            if (!people[name][optName]) people[name][optName] = [];
-                            people[name][optName].push(personLabel);
-                        }
-                        continue;
-                    }
-                } catch { /* not JSON, treat as plain string */ }
-            }
-
-            const optName = toName(str);
-            if (!people[name][optName]) people[name][optName] = [];
-            people[name][optName].push(personLabel);
-        }
-    }
-
-    for (const sub of submissions) {
-        const data = sub.data as Record<string, unknown>;
-        const mainLabel = String(data[personFieldName] ?? "");
-        if (mainLabel) {
-            collectPeople(data, mainLabel);
-        }
-        const ap = data.additionalPeople;
-        if (Array.isArray(ap)) {
-            for (const person of ap) {
-                if (person && typeof person === "object") {
-                    const personData = person as Record<string, unknown>;
-                    const apLabel = String(personData[personFieldName] ?? "") || mainLabel;
-                    if (apLabel) {
-                        collectPeople(personData, apLabel);
-                    }
-                }
-            }
-        }
-    }
-    return people;
-});
-
-async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
-    const [submissions, form] = await Promise.all([
-        db.registrationSubmission.findMany({
-            where: {
-                yearId,
-                isTest: false,
-                status: { notIn: ["CANCELLED", "REJECTED"] },
-            },
-            select: { data: true },
-        }),
-        db.registrationForm.findUnique({
-            where: { yearId },
-            select: { fields: true },
-        }),
-    ]);
-
-    const pricingFields = buildPricingFieldMap(form?.fields);
-
+async function computeOptionCounts(
+    yearId: string,
+): Promise<OptionCounts> {
+    const result = await queryV2OptionCounts(yearId);
     const counts: OptionCounts = {};
-    for (const sub of submissions) {
-        const data = sub.data as Record<string, unknown>;
-        // Count main person values
-        countValues(counts, data, pricingFields);
-        // Count additional people values
-        const ap = data.additionalPeople;
-        if (Array.isArray(ap)) {
-            for (const person of ap) {
-                if (person && typeof person === "object") {
-                    countValues(counts, person as Record<string, unknown>, pricingFields);
-                }
-            }
-        }
+    for (const [fieldName, data] of Object.entries(result)) {
+        counts[fieldName] = data.counts;
     }
     return counts;
 }
 
-function buildPricingFieldMap(rawFields: unknown): PricingFieldMap {
-    if (!rawFields) return {};
-    const formData = migrateFormData(rawFields);
-    const inputFields = getAllInputFields(formData.fields);
-    const map: PricingFieldMap = {};
-    for (const field of inputFields) {
-        if (!PRICING_FIELD_TYPES.has(field.type) || !field.pricingId) continue;
-        const def = formData.pricingDefinitions.find((d) => d.id === field.pricingId);
-        if (!def) continue;
-        const keyToName: Record<string, string> = {};
-        for (const opt of def.options) {
-            keyToName[opt.id] = opt.name;
-            keyToName[opt.name] = opt.name;
+// ---- Option people (v2) ----
+
+export const getOptionPeopleForYear = cache(
+    async (
+        yearId: string,
+        personFieldName: string,
+    ): Promise<OptionPeople> => {
+        // Query line items with person data to build the option→people mapping
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const lineItems = await (db as any).v2OrderLineItem.findMany({
+            where: {
+                yearId,
+                order: {
+                    isTest: false,
+                    status: { notIn: ["CANCELLED", "REJECTED"] },
+                },
+            },
+            select: {
+                value: true,
+                person: {
+                    select: {
+                        id: true,
+                        lineItems: {
+                            where: {
+                                field: { name: personFieldName },
+                            },
+                            select: { value: true },
+                            take: 1,
+                        },
+                    },
+                },
+                field: { select: { name: true } },
+            },
+        });
+
+        const people: OptionPeople = {};
+        for (const li of lineItems) {
+            const fieldName = li.field.name;
+            const value = li.value;
+            if (!value || value === "false") continue;
+
+            const personLabel =
+                li.person.lineItems[0]?.value ?? "";
+            if (!personLabel) continue;
+
+            if (!people[fieldName]) people[fieldName] = {};
+            if (!people[fieldName][value])
+                people[fieldName][value] = [];
+            people[fieldName][value].push(personLabel);
         }
-        map[field.name] = keyToName;
-    }
-    return map;
-}
+        return people;
+    },
+);
