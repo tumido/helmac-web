@@ -1,7 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
-import type { PricingSummaryData } from "@/lib/types/registration-form";
+import type {
+    InputField,
+    FormField,
+    PricingDefinition,
+    PricingSummaryData,
+} from "@/lib/types/registration-form";
 
 // ============================================================
 // Types — v2 DB function return shapes
@@ -346,4 +351,44 @@ export async function getFilteredOrderSummary(
         unpaidTotal: Number(row.unpaid_total),
         people: Number(row.people),
     };
+}
+
+// ============================================================
+// Converters — map v2 types to legacy component-facing types
+// ============================================================
+
+export function v2FieldToInputField(f: V2FormField): InputField {
+    return {
+        type: f.type as InputField["type"],
+        id: f.id,
+        name: f.name,
+        label: f.label,
+        required: false,
+        editable: false,
+        options: f.options,
+        pricingId: f.pricingDefinitionId ?? undefined,
+        includeForAdditionalPeople: f.includeForAdditionalPeople,
+    };
+}
+
+export function v2FieldsToFormFields(
+    fields: V2FormField[],
+): FormField[] {
+    return fields.map(v2FieldToInputField);
+}
+
+export function v2PricingDefsToPricingDefs(
+    defs: V2PricingDef[],
+): PricingDefinition[] {
+    return defs.map((d) => ({
+        id: d.id,
+        name: d.name,
+        usePriceTiers: false,
+        options: d.options.map((o) => ({
+            id: o.id,
+            name: o.name,
+            description: "",
+            prices: [],
+        })),
+    }));
 }
