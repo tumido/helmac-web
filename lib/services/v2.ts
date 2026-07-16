@@ -288,6 +288,101 @@ export async function updateOrderTotalPrice(
     });
 }
 
+// ---- Order row shape for admin tables ----
+
+export interface OrderPersonRow {
+    personIndex: number;
+    values: Record<string, string>;
+}
+
+export interface OrderRow {
+    id: string;
+    legacySubmissionId: string | null;
+    status: string;
+    isPaid: boolean;
+    paidAt: Date | null;
+    totalPrice: number | null;
+    variableSymbol: string | null;
+    emailSent: boolean;
+    adminNote: string | null;
+    isTest: boolean;
+    createdAt: Date;
+    people: OrderPersonRow[];
+}
+
+export async function getOrdersForYear(
+    yearId: string,
+    options?: { isTest?: boolean | null },
+): Promise<OrderRow[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {
+        yearId,
+        parentOrderId: null,
+        orderType: "registration",
+    };
+    if (options?.isTest !== null && options?.isTest !== undefined) {
+        where.isTest = options.isTest;
+    }
+
+    const orders = await db.v2Order.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            legacySubmissionId: true,
+            status: true,
+            isPaid: true,
+            paidAt: true,
+            totalPrice: true,
+            variableSymbol: true,
+            emailSent: true,
+            adminNote: true,
+            isTest: true,
+            createdAt: true,
+            people: {
+                orderBy: { personIndex: "asc" },
+                select: {
+                    personIndex: true,
+                    lineItems: {
+                        select: {
+                            value: true,
+                            field: {
+                                select: { name: true },
+                            },
+                            pricingOption: {
+                                select: { name: true },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    return orders.map((o) => ({
+        id: o.id,
+        legacySubmissionId: o.legacySubmissionId,
+        status: o.status,
+        isPaid: o.isPaid,
+        paidAt: o.paidAt,
+        totalPrice: o.totalPrice,
+        variableSymbol: o.variableSymbol,
+        emailSent: o.emailSent,
+        adminNote: o.adminNote,
+        isTest: o.isTest,
+        createdAt: o.createdAt,
+        people: o.people.map((p) => ({
+            personIndex: p.personIndex,
+            values: Object.fromEntries(
+                p.lineItems.map((li) => [
+                    li.field.name,
+                    li.pricingOption?.name ?? li.value ?? "",
+                ]),
+            ),
+        })),
+    }));
+}
+
 export async function getFilteredOrderSummary(
     yearId: string,
     statuses: string[] | null,

@@ -20,40 +20,32 @@ import {
     TableSortLabel,
 } from "@mui/material";
 import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
-import { CheckCircle, Cancel, Email, Search } from "@mui/icons-material";
+import {
+    CheckCircle,
+    Cancel,
+    Email,
+    Search,
+} from "@mui/icons-material";
 import { AdminNoteButton } from "@/components/admin/admin-note-button";
-import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
-import { isInputField } from "@/lib/types/registration-form";
-import type { RegistrationStatus } from "@prisma/client";
 import { isMinor } from "@/lib/utils/minor-detection";
 import { formatPrice } from "@/lib/utils/pricing";
-import { getAdditionalPeople } from "@/lib/utils/additional-people";
 import { formatDate } from "@/lib/utils/date";
-import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { parseSelected } from "@/lib/utils/pricing-field-values";
+import type { OrderRow } from "@/lib/services/v2";
 
-
-interface Submission {
-    id: string;
-    data: unknown;
-    status: RegistrationStatus;
-    isPaid: boolean;
-    paidAt: Date | null;
-    totalPrice: number | null;
-    variableSymbol: string | null;
-    emailSent: boolean;
-    adminNote: string | null;
-    isTest: boolean;
-    createdAt: Date;
+interface FieldInfo {
+    name: string;
+    label: string;
+    type: string;
+    includeForAdditionalPeople: boolean;
 }
 
 interface SubmissionsTableProps {
-    submissions: Submission[];
-    fields: FormField[];
-    allInputFields: InputField[];
-    pricingDefinitions: PricingDefinition[];
+    orders: OrderRow[];
+    displayFields: FieldInfo[];
+    allFields: FieldInfo[];
     yearId: string;
-    statusFilter: RegistrationStatus | null;
+    statusFilter: string | null;
     paidFilter: boolean | null;
     fieldFilter: string | null;
     valueFilter: string | null;
@@ -61,120 +53,148 @@ interface SubmissionsTableProps {
     readOnly?: boolean;
 }
 
-function renderDisplayValue(field: InputField, displayData: Record<string, unknown>): string {
-    const raw = displayData[field.name];
-    if (raw === null || raw === undefined) return "";
+function renderValue(
+    field: FieldInfo,
+    values: Record<string, string>,
+): string {
+    const raw = values[field.name];
+    if (!raw) return "";
     if (field.type === "pricing_multi_select") {
-        // resolver returns JSON.stringify(names); show as comma-separated
         const names = parseSelected(raw);
         return names.length > 0 ? names.join(", ") : "";
     }
-    return String(raw);
+    return raw;
 }
 
 type SortKey = string;
 type SortDirection = "asc" | "desc";
 
-export function SubmissionsTable({ submissions, fields, allInputFields: allInputFieldsProp, pricingDefinitions, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate, readOnly = false }: SubmissionsTableProps) {
+export function SubmissionsTable({
+    orders,
+    displayFields,
+    allFields,
+    yearId,
+    statusFilter,
+    paidFilter,
+    fieldFilter,
+    valueFilter,
+    eventStartDate,
+    readOnly = false,
+}: SubmissionsTableProps) {
     const router = useRouter();
     const { setDisplayedCount } = useSubmissionsCount();
     const [search, setSearch] = useState("");
-    const [sortKey, setSortKey] = useState<SortKey>("createdAt");
-    const [sortDir, setSortDir] = useState<SortDirection>("desc");
+    const [sortKey, setSortKey] =
+        useState<SortKey>("createdAt");
+    const [sortDir, setSortDir] =
+        useState<SortDirection>("desc");
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
-            setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+            setSortDir((prev) =>
+                prev === "asc" ? "desc" : "asc",
+            );
         } else {
             setSortKey(key);
             setSortDir("asc");
         }
     };
 
-    // Get first 4 input fields for column display
-    const displayFields = fields
-        .filter((f): f is InputField => isInputField(f))
-        .slice(0, 4);
+    const birthDateFields = allFields.filter(
+        (f) => f.type === "birth_date",
+    );
+    const apBirthDateFields = birthDateFields.filter(
+        (f) => f.includeForAdditionalPeople,
+    );
+    const refDate = eventStartDate
+        ? new Date(eventStartDate)
+        : undefined;
 
-    // Find birth_date fields for minor detection
-    const allInputFields = allInputFieldsProp;
-    const birthDateFields = allInputFields.filter((f) => f.type === "birth_date");
-    const apBirthDateFields = birthDateFields.filter((f) => f.includeForAdditionalPeople);
-    const refDate = eventStartDate ? new Date(eventStartDate) : undefined;
+    const mainValues = (o: OrderRow) =>
+        o.people[0]?.values ?? {};
+    const apPeople = (o: OrderRow) =>
+        o.people.filter((p) => p.personIndex > 0);
 
-    // Precompute resolved display data (option ids → names) once per submission
-    // and per additional-person record. Reused by filter/search/render.
-    const enriched = submissions.map((s) => {
-        const data = s.data as Record<string, unknown>;
-        const displayData = resolveSubmissionDataForDisplay(data, allInputFields, pricingDefinitions);
-        const apList = getAdditionalPeople(data);
-        const displayAP = apList.map((p) =>
-            resolveSubmissionDataForDisplay(
-                p as Record<string, unknown>,
-                allInputFields,
-                pricingDefinitions,
-            ),
-        );
-        return { submission: s, data, displayData, apList, displayAP };
-    });
-
+    // Filtering
     const statusFiltered = statusFilter
-        ? enriched.filter((e) => e.submission.status === statusFilter)
-        : enriched;
+        ? orders.filter((o) => o.status === statusFilter)
+        : orders;
 
-    const paidFiltered = paidFilter !== null
-        ? statusFiltered.filter((e) => e.submission.isPaid === paidFilter)
-        : statusFiltered;
+    const paidFiltered =
+        paidFilter !== null
+            ? statusFiltered.filter(
+                  (o) => o.isPaid === paidFilter,
+              )
+            : statusFiltered;
 
     // Match primary + additional people so the filtered count agrees with v2 option counts
-    const fieldFiltered = fieldFilter && valueFilter
-        ? paidFiltered.filter((e) => {
-            const datasets = [e.displayData, ...e.displayAP];
-            return datasets.some((data) => {
-                const rawVal = data[fieldFilter];
-                if (rawVal === true || rawVal === false) {
-                    return (rawVal ? "Ano" : "Ne") === valueFilter;
-                }
-                if (typeof rawVal === "string" && rawVal.startsWith("[")) {
-                    try {
-                        const arr = JSON.parse(rawVal);
-                        if (Array.isArray(arr)) {
-                            return arr.includes(valueFilter);
-                        }
-                    } catch { /* not JSON */ }
-                }
-                return String(rawVal ?? "") === valueFilter;
-            });
-        })
-        : paidFiltered;
+    const fieldFiltered =
+        fieldFilter && valueFilter
+            ? paidFiltered.filter((o) =>
+                  o.people.some((p) => {
+                      const val = p.values[fieldFilter];
+                      if (
+                          val === "true" ||
+                          val === "false"
+                      ) {
+                          return (
+                              (val === "true"
+                                  ? "Ano"
+                                  : "Ne") === valueFilter
+                          );
+                      }
+                      if (
+                          typeof val === "string" &&
+                          val.startsWith("[")
+                      ) {
+                          try {
+                              const arr = JSON.parse(val);
+                              if (Array.isArray(arr))
+                                  return arr.includes(
+                                      valueFilter,
+                                  );
+                          } catch {
+                              /* ignore */
+                          }
+                      }
+                      return (val ?? "") === valueFilter;
+                  }),
+              )
+            : paidFiltered;
 
     const filtered = search.trim()
-        ? fieldFiltered.filter((e) => {
-            const term = search.trim().toLowerCase();
-
-            // Search main form data values (resolved)
-            for (const val of Object.values(e.displayData)) {
-                if (val != null && String(val).toLowerCase().includes(term)) {
-                    return true;
-                }
-            }
-
-            // Search additional people data (resolved)
-            for (const personData of e.displayAP) {
-                for (const val of Object.values(personData)) {
-                    if (val != null && String(val).toLowerCase().includes(term)) {
-                        return true;
-                    }
-                }
-            }
-
-            // Search variable symbol
-            if (e.submission.variableSymbol && e.submission.variableSymbol.toLowerCase().includes(term)) {
-                return true;
-            }
-
-            return false;
-        })
+        ? fieldFiltered.filter((o) => {
+              const term = search.trim().toLowerCase();
+              for (const val of Object.values(
+                  mainValues(o),
+              )) {
+                  if (
+                      val
+                          ?.toLowerCase()
+                          .includes(term)
+                  )
+                      return true;
+              }
+              for (const p of apPeople(o)) {
+                  for (const val of Object.values(
+                      p.values,
+                  )) {
+                      if (
+                          val
+                              ?.toLowerCase()
+                              .includes(term)
+                      )
+                          return true;
+                  }
+              }
+              if (
+                  o.variableSymbol
+                      ?.toLowerCase()
+                      .includes(term)
+              )
+                  return true;
+              return false;
+          })
         : fieldFiltered;
 
     // Report the displayed count up to the badge (see SubmissionsCountChip).
@@ -182,36 +202,58 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
         setDisplayedCount(filtered.length);
     }, [filtered.length, setDisplayedCount]);
 
+    // Sorting
     const sorted = [...filtered].sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
-
         if (sortKey.startsWith("field:")) {
-            const fieldName = sortKey.slice(6);
-            const aVal = String(a.displayData[fieldName] ?? "");
-            const bVal = String(b.displayData[fieldName] ?? "");
+            const name = sortKey.slice(6);
+            const aVal = mainValues(a)[name] ?? "";
+            const bVal = mainValues(b)[name] ?? "";
             return dir * aVal.localeCompare(bVal, "cs");
         }
-
-        const as = a.submission;
-        const bs = b.submission;
         switch (sortKey) {
-            case "peopleCount": {
-                const aCount = 1 + a.apList.length;
-                const bCount = 1 + b.apList.length;
-                return dir * (aCount - bCount);
-            }
+            case "peopleCount":
+                return (
+                    dir *
+                    (a.people.length - b.people.length)
+                );
             case "isPaid":
-                return dir * (Number(as.isPaid) - Number(bs.isPaid));
+                return (
+                    dir *
+                    (Number(a.isPaid) - Number(b.isPaid))
+                );
             case "totalPrice":
-                return dir * ((as.totalPrice ?? -Infinity) - (bs.totalPrice ?? -Infinity));
+                return (
+                    dir *
+                    ((a.totalPrice ?? -Infinity) -
+                        (b.totalPrice ?? -Infinity))
+                );
             case "variableSymbol":
-                return dir * (as.variableSymbol ?? "").localeCompare(bs.variableSymbol ?? "", "cs");
+                return (
+                    dir *
+                    (a.variableSymbol ?? "").localeCompare(
+                        b.variableSymbol ?? "",
+                        "cs",
+                    )
+                );
             case "emailSent":
-                return dir * (Number(as.emailSent) - Number(bs.emailSent));
+                return (
+                    dir *
+                    (Number(a.emailSent) -
+                        Number(b.emailSent))
+                );
             case "adminNote":
-                return dir * (Number(!!as.adminNote) - Number(!!bs.adminNote));
+                return (
+                    dir *
+                    (Number(!!a.adminNote) -
+                        Number(!!b.adminNote))
+                );
             case "createdAt":
-                return dir * (new Date(as.createdAt).getTime() - new Date(bs.createdAt).getTime());
+                return (
+                    dir *
+                    (new Date(a.createdAt).getTime() -
+                        new Date(b.createdAt).getTime())
+                );
             default:
                 return 0;
         }
@@ -219,276 +261,572 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
 
     if (filtered.length === 0 && !search.trim()) {
         return (
-            <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
-                {statusFilter ? "Žádné registrace s tímto stavem" : "Zatím žádné registrace"}
+            <Typography
+                color="text.secondary"
+                sx={{ textAlign: "center", py: 4 }}
+            >
+                {statusFilter
+                    ? "Žádné registrace s tímto stavem"
+                    : "Zatím žádné registrace"}
             </Typography>
         );
     }
 
     return (
         <>
-        <TextField
-            size="small"
-            placeholder="Hledat..."
-            fullWidth
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ mb: 2 }}
-            InputProps={{
-                startAdornment: (
-                    <InputAdornment position="start">
-                        <Search />
-                    </InputAdornment>
-                ),
-            }}
-        />
-        {filtered.length === 0 ? (
-            <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
-                Žádné výsledky
-            </Typography>
-        ) : (
-        <TableContainer component={Paper}>
-            <Table size="small">
-                <TableHead>
-                    <TableRow>
-                        {displayFields.map((field) => {
-                            const key = `field:${field.name}`;
-                            return (
-                                <TableCell key={field.id} sortDirection={sortKey === key ? sortDir : false}>
-                                    <TableSortLabel
-                                        active={sortKey === key}
-                                        direction={sortKey === key ? sortDir : "asc"}
-                                        onClick={() => handleSort(key)}
-                                    >
-                                        {field.label}
-                                    </TableSortLabel>
-                                </TableCell>
-                            );
-                        })}
-                        {([
-                            ["peopleCount", "Osoby"],
-                            ["isPaid", "Zaplaceno"],
-                            ["totalPrice", "Cena"],
-                            ["variableSymbol", "VS"],
-                            ["emailSent", "Email"],
-                            ["adminNote", "Poznámka"],
-                            ["createdAt", "Datum"],
-                        ] as const).map(([key, label]) => (
-                            <TableCell key={key} sortDirection={sortKey === key ? sortDir : false}>
-                                <TableSortLabel
-                                    active={sortKey === key}
-                                    direction={sortKey === key ? sortDir : "asc"}
-                                    onClick={() => handleSort(key)}
-                                >
-                                    {label}
-                                </TableSortLabel>
-                            </TableCell>
-                        ))}
-                        <TableCell></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {sorted.map((e) => {
-                        const submission = e.submission;
-                        const data = e.data;
-                        const displayData = e.displayData;
-                        const ap = e.apList;
-                        const displayAP = e.displayAP;
-                        const hasAP = ap.length > 0;
-                        const detailUrl = `/admin/rocniky/${yearId}/registrace/${submission.id}`;
-                        const isMainPersonMinor = birthDateFields.some((bf) => {
-                            const val = data[bf.name];
-                            return val && isMinor(String(val), refDate);
-                        });
-
-                        return (
-                            <Fragment key={submission.id}>
-                                <TableRow
-                                    hover
-                                    sx={{
-                                        cursor: "pointer",
-                                        ...(hasAP && { "& td": { borderBottom: 0 } }),
-                                        ...(isMainPersonMinor && {
-                                            "& td:first-of-type": {
-                                                borderLeft: 3,
-                                                borderLeftColor: "warning.main",
-                                            },
-                                        }),
-                                    }}
-                                    onClick={() => router.push(detailUrl)}
-                                >
-                                    {displayFields.map((field, idx) => (
-                                        <TableCell key={field.id}>
-                                            {idx === 0 && submission.isTest && (
-                                                <Chip
-                                                    label="TEST"
-                                                    color="warning"
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{ mr: 1, fontWeight: 700 }}
-                                                />
-                                            )}
-                                            {field.type === "birth_date" && !!data[field.name] && isMinor(String(data[field.name]), refDate) ? (
-                                                <Tooltip title="Nezletilý">
-                                                    <Chip
-                                                        label={String(data[field.name])}
-                                                        color="warning"
-                                                        size="small"
-                                                    />
-                                                </Tooltip>
-                                            ) : (
-                                                <Typography variant="body2" noWrap sx={{ maxWidth: 200, display: "inline" }}>
-                                                    {renderDisplayValue(field, displayData)}
-                                                </Typography>
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {(() => {
-                                                const apCount = ap.length;
-
-                                                // Count minors among main person and additional people
-                                                let minorCount = 0;
-                                                if (birthDateFields.length > 0) {
-                                                    for (const bf of birthDateFields) {
-                                                        const val = data[bf.name];
-                                                        if (val && isMinor(String(val), refDate)) {
-                                                            minorCount++;
-                                                        }
-                                                    }
+            <TextField
+                size="small"
+                placeholder="Hledat..."
+                fullWidth
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{ mb: 2 }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <Search />
+                        </InputAdornment>
+                    ),
+                }}
+            />
+            {filtered.length === 0 ? (
+                <Typography
+                    color="text.secondary"
+                    sx={{ textAlign: "center", py: 4 }}
+                >
+                    Žádné výsledky
+                </Typography>
+            ) : (
+                <TableContainer component={Paper}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                {displayFields.map(
+                                    (field) => {
+                                        const key = `field:${field.name}`;
+                                        return (
+                                            <TableCell
+                                                key={
+                                                    field.name
                                                 }
-                                                if (apBirthDateFields.length > 0) {
-                                                    for (const person of ap) {
-                                                        const personData = person as Record<string, unknown>;
-                                                        for (const bf of apBirthDateFields) {
-                                                            const val = personData[bf.name];
-                                                            if (val && isMinor(String(val), refDate)) {
-                                                                minorCount++;
-                                                            }
-                                                        }
-                                                    }
+                                                sortDirection={
+                                                    sortKey ===
+                                                    key
+                                                        ? sortDir
+                                                        : false
                                                 }
-
-                                                const base = apCount > 0 ? `1 + ${apCount}` : "1";
-                                                return minorCount > 0 ? `${base} (${minorCount} nezl.)` : base;
-                                            })()}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {submission.isPaid ? (
-                                            <CheckCircle fontSize="small" color="success" />
-                                        ) : (
-                                            <Cancel fontSize="small" color="disabled" />
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" noWrap>
-                                            {submission.totalPrice != null ? formatPrice(submission.totalPrice) : "—"}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" noWrap sx={{ fontFamily: "monospace" }}>
-                                            {submission.variableSymbol ?? "—"}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Tooltip title={submission.emailSent ? "Email odeslán" : "Email neodeslán"}>
-                                            <Email fontSize="small" color={submission.emailSent ? "success" : "disabled"} />
-                                        </Tooltip>
-                                    </TableCell>
-                                    <TableCell onClick={(e) => e.stopPropagation()}>
-                                        {!readOnly && (
-                                            <AdminNoteButton
-                                                submissionId={submission.id}
-                                                adminNote={submission.adminNote}
-                                            />
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" noWrap>
-                                            {formatDate(submission.createdAt)}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell onClick={(e) => e.stopPropagation()}>
-                                        {!readOnly && !submission.isPaid && (
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={async () => {
-                                                    await toggleSubmissionPayment(submission.id, true);
-                                                }}
                                             >
-                                                Zaplatit
-                                            </Button>
-                                        )}
+                                                <TableSortLabel
+                                                    active={
+                                                        sortKey ===
+                                                        key
+                                                    }
+                                                    direction={
+                                                        sortKey ===
+                                                        key
+                                                            ? sortDir
+                                                            : "asc"
+                                                    }
+                                                    onClick={() =>
+                                                        handleSort(
+                                                            key,
+                                                        )
+                                                    }
+                                                >
+                                                    {
+                                                        field.label
+                                                    }
+                                                </TableSortLabel>
+                                            </TableCell>
+                                        );
+                                    },
+                                )}
+                                {(
+                                    [
+                                        [
+                                            "peopleCount",
+                                            "Osoby",
+                                        ],
+                                        [
+                                            "isPaid",
+                                            "Zaplaceno",
+                                        ],
+                                        [
+                                            "totalPrice",
+                                            "Cena",
+                                        ],
+                                        [
+                                            "variableSymbol",
+                                            "VS",
+                                        ],
+                                        [
+                                            "emailSent",
+                                            "Email",
+                                        ],
+                                        [
+                                            "adminNote",
+                                            "Poznámka",
+                                        ],
+                                        [
+                                            "createdAt",
+                                            "Datum",
+                                        ],
+                                    ] as const
+                                ).map(([key, label]) => (
+                                    <TableCell
+                                        key={key}
+                                        sortDirection={
+                                            sortKey === key
+                                                ? sortDir
+                                                : false
+                                        }
+                                    >
+                                        <TableSortLabel
+                                            active={
+                                                sortKey ===
+                                                key
+                                            }
+                                            direction={
+                                                sortKey ===
+                                                key
+                                                    ? sortDir
+                                                    : "asc"
+                                            }
+                                            onClick={() =>
+                                                handleSort(
+                                                    key,
+                                                )
+                                            }
+                                        >
+                                            {label}
+                                        </TableSortLabel>
                                     </TableCell>
-                                </TableRow>
-                                {ap.map((person, apIndex) => {
-                                    const personData = person as Record<string, unknown>;
-                                    const personDisplay = displayAP[apIndex] ?? personData;
-                                    const isLast = apIndex === ap.length - 1;
-                                    const isAPMinor = apBirthDateFields.some((bf) => {
-                                        const val = personData[bf.name];
-                                        return val && isMinor(String(val), refDate);
-                                    });
-                                    return (
+                                ))}
+                                <TableCell></TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {sorted.map((order) => {
+                                const values =
+                                    mainValues(order);
+                                const ap = apPeople(order);
+                                const hasAP =
+                                    ap.length > 0;
+                                const detailUrl = `/admin/rocniky/${yearId}/registrace/${order.legacySubmissionId ?? order.id}`;
+                                const isMainMinor =
+                                    birthDateFields.some(
+                                        (bf) => {
+                                            const val =
+                                                values[
+                                                    bf.name
+                                                ];
+                                            return (
+                                                val &&
+                                                isMinor(
+                                                    val,
+                                                    refDate,
+                                                )
+                                            );
+                                        },
+                                    );
+
+                                return (
+                                    <Fragment
+                                        key={order.id}
+                                    >
                                         <TableRow
-                                            key={`${submission.id}-ap-${apIndex}`}
+                                            hover
                                             sx={{
                                                 cursor: "pointer",
-                                                backgroundColor: "action.hover",
-                                                ...(!isLast && { "& td": { borderBottom: 0 } }),
-                                            }}
-                                            onClick={() => router.push(detailUrl)}
-                                        >
-                                            {displayFields.map((field, fieldIndex) => (
-                                                <TableCell
-                                                    key={field.id}
-                                                    sx={{
-                                                        ...(fieldIndex === 0 && {
+                                                ...(hasAP && {
+                                                    "& td":
+                                                        {
+                                                            borderBottom: 0,
+                                                        },
+                                                }),
+                                                ...(isMainMinor && {
+                                                    "& td:first-of-type":
+                                                        {
                                                             borderLeft: 3,
-                                                            borderLeftColor: isAPMinor ? "warning.main" : "grey.400",
-                                                            pl: 3,
-                                                        }),
-                                                    }}
-                                                >
-                                                    {field.includeForAdditionalPeople ? (
-                                                        field.type === "birth_date" && !!personData[field.name] && isMinor(String(personData[field.name]), refDate) ? (
+                                                            borderLeftColor:
+                                                                "warning.main",
+                                                        },
+                                                }),
+                                            }}
+                                            onClick={() =>
+                                                router.push(
+                                                    detailUrl,
+                                                )
+                                            }
+                                        >
+                                            {displayFields.map(
+                                                (
+                                                    field,
+                                                    idx,
+                                                ) => (
+                                                    <TableCell
+                                                        key={
+                                                            field.name
+                                                        }
+                                                    >
+                                                        {idx ===
+                                                            0 &&
+                                                            order.isTest && (
+                                                                <Chip
+                                                                    label="TEST"
+                                                                    color="warning"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    sx={{
+                                                                        mr: 1,
+                                                                        fontWeight: 700,
+                                                                    }}
+                                                                />
+                                                            )}
+                                                        {field.type ===
+                                                            "birth_date" &&
+                                                        values[
+                                                            field
+                                                                .name
+                                                        ] &&
+                                                        isMinor(
+                                                            values[
+                                                                field
+                                                                    .name
+                                                            ],
+                                                            refDate,
+                                                        ) ? (
                                                             <Tooltip title="Nezletilý">
                                                                 <Chip
-                                                                    label={String(personData[field.name])}
+                                                                    label={
+                                                                        values[
+                                                                            field
+                                                                                .name
+                                                                        ]
+                                                                    }
                                                                     color="warning"
                                                                     size="small"
                                                                 />
                                                             </Tooltip>
                                                         ) : (
-                                                            <Typography variant="body2" noWrap sx={{ maxWidth: 200, display: "inline" }}>
-                                                                {renderDisplayValue(field, personDisplay)}
+                                                            <Typography
+                                                                variant="body2"
+                                                                noWrap
+                                                                sx={{
+                                                                    maxWidth: 200,
+                                                                    display:
+                                                                        "inline",
+                                                                }}
+                                                            >
+                                                                {renderValue(
+                                                                    field,
+                                                                    values,
+                                                                )}
                                                             </Typography>
-                                                        )
-                                                    ) : null}
-                                                </TableCell>
-                                            ))}
-                                            {/* Empty cells for Osoby, Zaplaceno, Cena, VS, Email, Poznámka, Datum, Akce */}
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
-                                            <TableCell />
+                                                        )}
+                                                    </TableCell>
+                                                ),
+                                            )}
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {(() => {
+                                                        let minorCount = 0;
+                                                        for (const bf of birthDateFields) {
+                                                            if (
+                                                                values[
+                                                                    bf
+                                                                        .name
+                                                                ] &&
+                                                                isMinor(
+                                                                    values[
+                                                                        bf
+                                                                            .name
+                                                                    ],
+                                                                    refDate,
+                                                                )
+                                                            )
+                                                                minorCount++;
+                                                        }
+                                                        for (const p of ap) {
+                                                            for (const bf of apBirthDateFields) {
+                                                                if (
+                                                                    p
+                                                                        .values[
+                                                                        bf
+                                                                            .name
+                                                                    ] &&
+                                                                    isMinor(
+                                                                        p
+                                                                            .values[
+                                                                            bf
+                                                                                .name
+                                                                        ],
+                                                                        refDate,
+                                                                    )
+                                                                )
+                                                                    minorCount++;
+                                                            }
+                                                        }
+                                                        const base =
+                                                            ap.length >
+                                                            0
+                                                                ? `1 + ${ap.length}`
+                                                                : "1";
+                                                        return minorCount >
+                                                            0
+                                                            ? `${base} (${minorCount} nezl.)`
+                                                            : base;
+                                                    })()}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                {order.isPaid ? (
+                                                    <CheckCircle
+                                                        fontSize="small"
+                                                        color="success"
+                                                    />
+                                                ) : (
+                                                    <Cancel
+                                                        fontSize="small"
+                                                        color="disabled"
+                                                    />
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography
+                                                    variant="body2"
+                                                    noWrap
+                                                >
+                                                    {order.totalPrice !=
+                                                    null
+                                                        ? formatPrice(
+                                                              order.totalPrice,
+                                                          )
+                                                        : "—"}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography
+                                                    variant="body2"
+                                                    noWrap
+                                                    sx={{
+                                                        fontFamily:
+                                                            "monospace",
+                                                    }}
+                                                >
+                                                    {order.variableSymbol ??
+                                                        "—"}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Tooltip
+                                                    title={
+                                                        order.emailSent
+                                                            ? "Email odeslán"
+                                                            : "Email neodeslán"
+                                                    }
+                                                >
+                                                    <Email
+                                                        fontSize="small"
+                                                        color={
+                                                            order.emailSent
+                                                                ? "success"
+                                                                : "disabled"
+                                                        }
+                                                    />
+                                                </Tooltip>
+                                            </TableCell>
+                                            <TableCell
+                                                onClick={(
+                                                    e,
+                                                ) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
+                                                {!readOnly &&
+                                                    order.legacySubmissionId && (
+                                                        <AdminNoteButton
+                                                            submissionId={
+                                                                order.legacySubmissionId
+                                                            }
+                                                            adminNote={
+                                                                order.adminNote
+                                                            }
+                                                        />
+                                                    )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography
+                                                    variant="body2"
+                                                    noWrap
+                                                >
+                                                    {formatDate(
+                                                        order.createdAt,
+                                                    )}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell
+                                                onClick={(
+                                                    e,
+                                                ) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
+                                                {!readOnly &&
+                                                    !order.isPaid &&
+                                                    order.legacySubmissionId && (
+                                                        <Button
+                                                            variant="outlined"
+                                                            size="small"
+                                                            onClick={async () => {
+                                                                await toggleSubmissionPayment(
+                                                                    order.legacySubmissionId!,
+                                                                    true,
+                                                                );
+                                                            }}
+                                                        >
+                                                            Zaplatit
+                                                        </Button>
+                                                    )}
+                                            </TableCell>
                                         </TableRow>
-                                    );
-                                })}
-                            </Fragment>
-                        );
-                    })}
-                </TableBody>
-            </Table>
-        </TableContainer>
-        )}
+                                        {ap.map(
+                                            (
+                                                person,
+                                                apIdx,
+                                            ) => {
+                                                const isLast =
+                                                    apIdx ===
+                                                    ap.length -
+                                                        1;
+                                                const isAPMinor =
+                                                    apBirthDateFields.some(
+                                                        (
+                                                            bf,
+                                                        ) =>
+                                                            person
+                                                                .values[
+                                                                bf
+                                                                    .name
+                                                            ] &&
+                                                            isMinor(
+                                                                person
+                                                                    .values[
+                                                                    bf
+                                                                        .name
+                                                                ],
+                                                                refDate,
+                                                            ),
+                                                    );
+                                                return (
+                                                    <TableRow
+                                                        key={`${order.id}-ap-${apIdx}`}
+                                                        sx={{
+                                                            cursor: "pointer",
+                                                            backgroundColor:
+                                                                "action.hover",
+                                                            ...(!isLast && {
+                                                                "& td":
+                                                                    {
+                                                                        borderBottom: 0,
+                                                                    },
+                                                            }),
+                                                        }}
+                                                        onClick={() =>
+                                                            router.push(
+                                                                detailUrl,
+                                                            )
+                                                        }
+                                                    >
+                                                        {displayFields.map(
+                                                            (
+                                                                field,
+                                                                fIdx,
+                                                            ) => (
+                                                                <TableCell
+                                                                    key={
+                                                                        field.name
+                                                                    }
+                                                                    sx={{
+                                                                        ...(fIdx ===
+                                                                            0 && {
+                                                                            borderLeft: 3,
+                                                                            borderLeftColor:
+                                                                                isAPMinor
+                                                                                    ? "warning.main"
+                                                                                    : "grey.400",
+                                                                            pl: 3,
+                                                                        }),
+                                                                    }}
+                                                                >
+                                                                    {field.includeForAdditionalPeople ? (
+                                                                        field.type ===
+                                                                            "birth_date" &&
+                                                                        person
+                                                                            .values[
+                                                                            field
+                                                                                .name
+                                                                        ] &&
+                                                                        isMinor(
+                                                                            person
+                                                                                .values[
+                                                                                field
+                                                                                    .name
+                                                                            ],
+                                                                            refDate,
+                                                                        ) ? (
+                                                                            <Tooltip title="Nezletilý">
+                                                                                <Chip
+                                                                                    label={
+                                                                                        person
+                                                                                            .values[
+                                                                                            field
+                                                                                                .name
+                                                                                        ]
+                                                                                    }
+                                                                                    color="warning"
+                                                                                    size="small"
+                                                                                />
+                                                                            </Tooltip>
+                                                                        ) : (
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                noWrap
+                                                                                sx={{
+                                                                                    maxWidth: 200,
+                                                                                    display:
+                                                                                        "inline",
+                                                                                }}
+                                                                            >
+                                                                                {renderValue(
+                                                                                    field,
+                                                                                    person.values,
+                                                                                )}
+                                                                            </Typography>
+                                                                        )
+                                                                    ) : null}
+                                                                </TableCell>
+                                                            ),
+                                                        )}
+                                                        <TableCell />
+                                                        <TableCell />
+                                                        <TableCell />
+                                                        <TableCell />
+                                                        <TableCell />
+                                                        <TableCell />
+                                                        <TableCell />
+                                                        <TableCell />
+                                                    </TableRow>
+                                                );
+                                            },
+                                        )}
+                                    </Fragment>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
         </>
     );
 }
