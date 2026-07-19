@@ -164,7 +164,7 @@ export function CampaignDetailActions({
                     </Button>
                 )}
 
-                {status !== "SENDING" && (
+                {status === "DRAFT" && (
                     <Button
                         variant="outlined"
                         color="error"

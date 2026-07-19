@@ -22,6 +22,7 @@ import { CampaignForm } from "../campaign-form";
 import { buildCampaignPlaceholders } from "../placeholders";
 import { CAMPAIGN_STATUS_CONFIG } from "../campaign-status";
 import { CampaignDetailActions } from "./campaign-detail-actions";
+import { MassEmailRecipientList } from "./mass-email-recipient-list";
 
 export const dynamic = "force-dynamic";
 
@@ -164,6 +165,12 @@ export default async function KampanDetailPage({
               })
             : [];
 
+    const recipientItems = await db.emailQueueItem.findMany({
+        where: { campaignId: campaign.id },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, recipient: true, status: true, sentAt: true },
+    });
+
     const progress =
         campaign.totalCount > 0 ? (sentCount / campaign.totalCount) * 100 : 0;
 
@@ -218,6 +225,38 @@ export default async function KampanDetailPage({
                     )}
                 </CardContent>
             </Card>
+
+            <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Text emailu
+                    </Typography>
+                    <Box
+                        sx={{
+                            border: 1,
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            p: 2,
+                            maxHeight: 300,
+                            overflowY: "auto",
+                        }}
+                        dangerouslySetInnerHTML={{ __html: campaign.body }}
+                    />
+                </CardContent>
+            </Card>
+
+            <Box sx={{ mb: 3 }}>
+                <MassEmailRecipientList
+                    items={recipientItems.map((item) => ({
+                        id: item.id,
+                        recipient: item.recipient,
+                        status: item.status,
+                        sentAt: item.sentAt
+                            ? item.sentAt.toLocaleString("cs-CZ")
+                            : null,
+                    }))}
+                />
+            </Box>
 
             <CampaignDetailActions
                 campaignId={campaign.id}

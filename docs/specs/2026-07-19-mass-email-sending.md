@@ -42,6 +42,17 @@ After confirming, the admin is redirected to the detail page showing live
 progress (sent / total, failed items with errors, pause / resume / retry).
 Sending happens in the background and survives closing the browser.
 
+## Detail page as a permanent log
+
+The detail page of a started send is an audit log and always stays visible:
+
+- Shows the subject, the rendered email body, and a collapsible "Příjemci (N)"
+  list of every recipient address with per-recipient status (sent / failed /
+  queued) and sent time.
+- A started send (`SENDING` / `PAUSED` / `COMPLETED`) **cannot be deleted** —
+  neither from the UI nor via the server action. Only unsent legacy drafts
+  (`DRAFT`) remain deletable.
+
 ## Sending backend (pre-existing, kept as-is)
 
 - Each send persists an `EmailCampaign` row plus `EmailQueueItem` rows (one per

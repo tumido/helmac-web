@@ -10,6 +10,7 @@ Mass-email campaigns (`EmailCampaign` + `EmailQueueItem` models) are sent throug
 - Safety nets for a dropped chain: daily `update-prices` cron re-kicks when a `SENDING` campaign exists; the campaign detail page shows a stalled warning + resume button.
 - Admin UI: `app/admin/rocniky/[id]/emaily/hromadne/` — compose-and-send flow (admin-only, `requireAdmin` on pages): `mass-email-composer.tsx` on the main page (group select all/paid/unpaid → fixed statuses `PENDING/CONFIRMED/WAITLIST`, no placeholders in the editor) with a test-send dialog and a confirm dialog that runs `createCampaign` + `startCampaign` back-to-back, then redirects to the detail page for live progress. There is no draft-authoring page; `campaign-form.tsx` remains only for editing legacy `DRAFT` rows on the detail page.
 - UI wording: user-facing Czech text says "hromadný email" / "hromadné emaily" — never "kampaň" (spec: `docs/specs/2026-07-19-mass-email-sending.md`). Code identifiers keep the `campaign` naming.
+- Started sends are a permanent audit log: `deleteCampaign` only deletes `DRAFT` rows by design; the detail page shows the body and the full recipient list and must stay accessible.
 
 ## Rate limits (Seznam.cz)
 

@@ -110,9 +110,9 @@ export async function deleteCampaign(campaignId: string): Promise<ActionResult> 
         if (!campaign) {
             return { error: "Hromadný email nebyl nalezen" };
         }
-        if (campaign.status === "SENDING") {
+        if (campaign.status !== "DRAFT") {
             return {
-                error: "Probíhající hromadný email nelze smazat, nejdříve ho pozastavte",
+                error: "Odeslaný hromadný email nelze smazat, slouží jako trvalý záznam",
             };
         }
 
