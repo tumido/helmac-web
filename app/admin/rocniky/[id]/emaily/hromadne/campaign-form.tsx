@@ -249,12 +249,13 @@ export function CampaignForm({
                     <Typography variant="h6">Obsah emailu</Typography>
 
                     <FormControl fullWidth disabled={isSaving}>
-                        <InputLabel>Odesílatel</InputLabel>
+                        <InputLabel shrink>Odesílatel</InputLabel>
                         <Select
                             value={accountId}
                             onChange={(e) => setAccountId(e.target.value)}
                             label="Odesílatel"
                             displayEmpty
+                            notched
                         >
                             <MenuItem value="">Hlavní emailový účet</MenuItem>
                             {emailAccounts.map((account) => (
