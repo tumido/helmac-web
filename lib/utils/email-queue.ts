@@ -172,6 +172,17 @@ export async function processEmailQueue(): Promise<ProcessResult> {
                             break;
                         }
 
+                        // Stop mid-batch when an admin pauses (or otherwise
+                        // un-SENDINGs) the campaign; one cheap query per item
+                        // at a ~3s cadence
+                        const current = await db.emailCampaign.findUnique({
+                            where: { id: campaign.id },
+                            select: { status: true },
+                        });
+                        if (current?.status !== "SENDING") {
+                            break;
+                        }
+
                         // Mark sending BEFORE the SMTP call so a crash cannot
                         // cause an unbounded resend of the same item
                         await db.emailQueueItem.update({
@@ -264,8 +275,9 @@ export async function processEmailQueue(): Promise<ProcessResult> {
         result.capReached = result.remaining > 0 && allowed === 0;
 
         if (result.remaining === 0) {
-            await db.emailCampaign.update({
-                where: { id: campaign.id },
+            // Status guard: never flip a campaign paused mid-batch to COMPLETED
+            await db.emailCampaign.updateMany({
+                where: { id: campaign.id, status: "SENDING" },
                 data: { status: "COMPLETED", completedAt: new Date() },
             });
         }

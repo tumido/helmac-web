@@ -5,7 +5,7 @@ Mass-email campaigns (`EmailCampaign` + `EmailQueueItem` models) are sent throug
 ## Architecture
 
 - `lib/utils/email-queue.ts` — `processEmailQueue()` claims the oldest `SENDING` campaign via an atomic `lockedAt` lock, sends one throttled batch, enforces global hourly/daily caps by counting `sent` items by `sentAt`, and returns `remaining`. `kickEmailQueue()` fire-and-forgets a POST to the processor route (5s abort; always call it inside `after()` from `next/server`).
-- `app/api/email-queue/process/route.ts` — Bearer `CRON_SECRET` auth, `maxDuration = 300`. Re-kicks itself while items remain; idles via `waitForCapHeadroom()` when caps are exhausted.
+- `app/api/email-queue/process/route.ts` — Bearer `CRON_SECRET` auth (fails closed with 500 when `CRON_SECRET` is unset), `maxDuration = 300`. Re-kicks itself while items remain; idles via `waitForCapHeadroom()` when caps are exhausted.
 - `lib/actions/email-campaigns.ts` — admin server actions (create/update/delete/preview/start/pause/resume/retry). `startCampaign` resolves recipients via `lib/utils/email-campaign-recipients.ts` (dedupes by email, stores per-recipient placeholders on each queue item) and kicks the chain.
 - Safety nets for a dropped chain: daily `update-prices` cron re-kicks when a `SENDING` campaign exists; the campaign detail page shows a stalled warning + resume button.
 - Admin UI: `app/admin/rocniky/[id]/emaily/hromadne/` — compose-and-send flow (admin-only, `requireAdmin` on pages): `mass-email-composer.tsx` on the main page (group select all/paid/unpaid → fixed statuses `PENDING/CONFIRMED/WAITLIST`, no placeholders in the editor) with a test-send dialog and a confirm dialog that runs `createCampaign` + `startCampaign` back-to-back, then redirects to the detail page for live progress. There is no draft-authoring page; `campaign-form.tsx` remains only for editing legacy `DRAFT` rows on the detail page.
@@ -19,6 +19,8 @@ Seznam publishes no exact per-account outbound limit but blocks bursty senders. 
 ## Invariants
 
 - Items are marked `sending` + `attempts` incremented BEFORE the SMTP call (bounds duplicate sends on crash); `sending` items found at claim time are recovered to `pending`.
+- `startCampaign` claims DRAFT→SENDING atomically (`updateMany` with status guard inside the transaction, before `createMany`) so a double-click cannot enqueue recipients twice.
+- The send loop re-checks campaign status before each item and breaks when it is no longer `SENDING`, so pause takes effect within one item (~3s), and the COMPLETED flip is status-guarded so a paused campaign is never marked completed.
 - Permanent failures (SMTP 5xx, `EENVELOPE`) or exhausted attempts → `failed` with `lastError`; temporary errors return to `pending`.
 - Campaign body/subject are rendered per item at send time with `replacePlaceholders` — never duplicate the body into queue items.
 - Local testing: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/email-queue/process` (CRON_SECRET lives in `.env.local`).
