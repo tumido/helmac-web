@@ -45,6 +45,7 @@ export function MassEmailSendConfirmDialog({
     const router = useRouter();
     const [count, setCount] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [draftId, setDraftId] = useState<string | null>(null);
     const [isSending, startSending] = useTransition();
 
     useEffect(() => {
@@ -52,6 +53,7 @@ export function MassEmailSendConfirmDialog({
         let cancelled = false;
         setCount(null);
         setError(null);
+        setDraftId(null);
         previewRecipients(yearId, filter).then((result) => {
             if (cancelled) return;
             if (result.error) {
@@ -75,26 +77,37 @@ export function MassEmailSendConfirmDialog({
     const handleSend = () => {
         setError(null);
         startSending(async () => {
-            const created = await createCampaign(yearId, {
-                name: subject.slice(0, 200),
-                subject,
-                body,
-                bcc: null,
-                accountId: accountId || null,
-                recipientFilter: filter,
-            });
-            if (created.error || !created.id) {
-                setError(created.error ?? "Nepodařilo se odeslat");
-                return;
+            // Reuse the draft from a previous failed attempt instead of
+            // creating a duplicate
+            let campaignId = draftId;
+            if (!campaignId) {
+                const created = await createCampaign(yearId, {
+                    name: subject.slice(0, 200),
+                    subject,
+                    body,
+                    bcc: null,
+                    accountId: accountId || null,
+                    recipientFilter: filter,
+                });
+                if (created.error || !created.id) {
+                    setError(created.error ?? "Nepodařilo se odeslat");
+                    return;
+                }
+                campaignId = created.id;
             }
 
-            const started = await startCampaign(created.id);
+            const started = await startCampaign(campaignId);
             if (started.error) {
-                // The record exists as a draft — send it from its detail page
-                setError(started.error);
+                // The record survives as a draft — stay here so the admin
+                // sees the error, and offer a link to retry from the detail
+                setDraftId(campaignId);
+                setError(
+                    `${started.error}. Email byl uložen jako koncept — odeslání můžete zopakovat z jeho detailu.`,
+                );
+                return;
             }
             router.push(
-                `/admin/rocniky/${yearId}/emaily/hromadne/${created.id}`,
+                `/admin/rocniky/${yearId}/emaily/hromadne/${campaignId}`,
             );
             router.refresh();
         });
@@ -172,7 +185,29 @@ export function MassEmailSendConfirmDialog({
                             Vybrané skupině neodpovídají žádní příjemci.
                         </Alert>
                     )}
-                    {error && <Alert severity="error">{error}</Alert>}
+                    {error && (
+                        <Alert
+                            severity="error"
+                            action={
+                                draftId ? (
+                                    <Button
+                                        color="inherit"
+                                        size="small"
+                                        onClick={() => {
+                                            router.push(
+                                                `/admin/rocniky/${yearId}/emaily/hromadne/${draftId}`,
+                                            );
+                                            router.refresh();
+                                        }}
+                                    >
+                                        Přejít na koncept
+                                    </Button>
+                                ) : undefined
+                            }
+                        >
+                            {error}
+                        </Alert>
+                    )}
                 </Box>
             </DialogContent>
             <DialogActions>
