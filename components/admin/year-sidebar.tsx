@@ -28,6 +28,7 @@ import {
     PriceChange,
     Payment,
     ForwardToInbox,
+    Send,
     Settings,
 } from "@mui/icons-material";
 import { ListItemLinkButton } from "@/components/ui/link-button";
@@ -156,6 +157,12 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
             text: "Platba",
             href: `${base}/emaily/platba`,
             icon: Payment,
+            indented: true,
+        },
+        {
+            text: "Hromadné",
+            href: `${base}/emaily/hromadne`,
+            icon: Send,
             indented: true,
         },
         ...yearData.conditionalEmails.map((ce) => ({

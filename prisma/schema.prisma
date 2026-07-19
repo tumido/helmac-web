@@ -66,6 +66,7 @@ model EmailAccount {
   paymentYears      Year[]             @relation("PaymentEmail")
   conditionalEmails ConditionalEmail[] @relation("ConditionalEmailAccount")
   v2EmailTemplates  V2EmailTemplate[]
+  emailCampaigns    EmailCampaign[]    @relation("CampaignAccount")
 
   @@map("email_accounts")
 }
@@ -153,6 +154,7 @@ model Year {
   bankTransactions        BankTransaction[]
   conditionalEmails       ConditionalEmail[]
   homepageSteps           HomepageStep[]
+  emailCampaigns          EmailCampaign[]
 
   v2PriceTiers         V2PriceTier[]
   v2PricingDefinitions V2PricingDefinition[]
@@ -578,6 +580,61 @@ enum RegistrationStatus {
   WAITLIST
   CANCELLED
   REJECTED
+}
+
+// ============================================
+// EMAIL CAMPAIGNS - Mass email sending queue
+// ============================================
+
+model EmailCampaign {
+  id     String @id @default(cuid())
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  name    String
+  subject String
+  body    String  @db.Text
+  bcc     String?
+
+  accountId String?
+  account   EmailAccount? @relation("CampaignAccount", fields: [accountId], references: [id], onDelete: SetNull)
+
+  status          String @default("DRAFT") // DRAFT | SENDING | PAUSED | COMPLETED
+  recipientFilter Json   @default("{}") // { statuses: string[], paid: "all"|"paid"|"unpaid" }
+  totalCount      Int    @default(0)
+
+  lockedAt    DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  queueItems EmailQueueItem[]
+
+  @@map("email_campaigns")
+}
+
+model EmailQueueItem {
+  id         String        @id @default(cuid())
+  campaignId String
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  recipient    String
+  submissionId String?
+  placeholders Json    @default("{}") // per-recipient placeholder map; rendered at send time
+
+  status    String    @default("pending") // pending | sending | sent | failed
+  attempts  Int       @default(0)
+  lastError String?
+  sentAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId, status])
+  @@index([sentAt])
+  @@map("email_queue_items")
 }
 
 // ============================================

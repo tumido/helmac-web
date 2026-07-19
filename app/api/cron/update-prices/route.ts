@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { kickEmailQueue } from "@/lib/utils/email-queue";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
 import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
@@ -225,6 +227,15 @@ export async function GET(request: NextRequest) {
         } catch (error) {
             errors.push(`${submission.id}: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
+    }
+
+    // Safety net: restart a mass-email queue whose self-invocation chain died
+    // (Vercel Hobby has no spare cron slot for a dedicated queue drainer)
+    const sendingCampaigns = await db.emailCampaign.count({
+        where: { status: "SENDING" },
+    });
+    if (sendingCampaigns > 0) {
+        after(() => kickEmailQueue());
     }
 
     return NextResponse.json({
