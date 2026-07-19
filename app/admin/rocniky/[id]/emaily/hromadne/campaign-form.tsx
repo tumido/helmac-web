@@ -135,7 +135,7 @@ export function CampaignForm({
             <CardContent>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     <TextField
-                        label="Název kampaně"
+                        label="Název"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         fullWidth

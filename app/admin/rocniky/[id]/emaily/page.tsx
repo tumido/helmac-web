@@ -246,7 +246,8 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                     </Typography>
 
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Jednorázové kampaně odeslané vybraným registrovaným účastníkům.
+                        Jednorázové hromadné emaily odeslané vybraným
+                        registrovaným účastníkům.
                     </Typography>
 
                     <LinkButton
@@ -254,7 +255,7 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                         variant="outlined"
                         startIcon={<Send />}
                     >
-                        Spravovat kampaně
+                        Spravovat hromadné emaily
                     </LinkButton>
                 </CardContent>
             </Card>

@@ -52,7 +52,7 @@ export async function createCampaign(
         return { success: true, id: campaign.id };
     } catch (error) {
         console.error("Failed to create campaign:", error);
-        return { error: "Nepodařilo se vytvořit kampaň" };
+        return { error: "Nepodařilo se vytvořit hromadný email" };
     }
 }
 
@@ -82,7 +82,9 @@ export async function updateCampaign(
         });
 
         if (updated.count === 0) {
-            return { error: "Kampaň lze upravit pouze ve stavu konceptu" };
+            return {
+                error: "Hromadný email lze upravit pouze ve stavu konceptu",
+            };
         }
 
         const campaign = await db.emailCampaign.findUnique({
@@ -93,7 +95,7 @@ export async function updateCampaign(
         return { success: true };
     } catch (error) {
         console.error("Failed to update campaign:", error);
-        return { error: "Nepodařilo se uložit kampaň" };
+        return { error: "Nepodařilo se uložit hromadný email" };
     }
 }
 
@@ -106,10 +108,12 @@ export async function deleteCampaign(campaignId: string): Promise<ActionResult> 
             select: { yearId: true, status: true },
         });
         if (!campaign) {
-            return { error: "Kampaň nebyla nalezena" };
+            return { error: "Hromadný email nebyl nalezen" };
         }
         if (campaign.status === "SENDING") {
-            return { error: "Probíhající kampaň nelze smazat, nejdříve ji pozastavte" };
+            return {
+                error: "Probíhající hromadný email nelze smazat, nejdříve ho pozastavte",
+            };
         }
 
         await db.emailCampaign.delete({ where: { id: campaignId } });
@@ -118,7 +122,7 @@ export async function deleteCampaign(campaignId: string): Promise<ActionResult> 
         return { success: true };
     } catch (error) {
         console.error("Failed to delete campaign:", error);
-        return { error: "Nepodařilo se smazat kampaň" };
+        return { error: "Nepodařilo se smazat hromadný email" };
     }
 }
 
@@ -154,15 +158,15 @@ export async function startCampaign(campaignId: string): Promise<ActionResult> {
             select: { id: true, yearId: true, status: true, recipientFilter: true },
         });
         if (!campaign) {
-            return { error: "Kampaň nebyla nalezena" };
+            return { error: "Hromadný email nebyl nalezen" };
         }
         if (campaign.status !== "DRAFT") {
-            return { error: "Kampaň již byla odeslána" };
+            return { error: "Hromadný email již byl odeslán" };
         }
 
         const filter = recipientFilterSchema.safeParse(campaign.recipientFilter);
         if (!filter.success) {
-            return { error: "Kampaň nemá platný filtr příjemců" };
+            return { error: "Hromadný email nemá platný filtr příjemců" };
         }
 
         const recipients = await resolveCampaignRecipients(
@@ -198,7 +202,7 @@ export async function startCampaign(campaignId: string): Promise<ActionResult> {
         return { success: true };
     } catch (error) {
         console.error("Failed to start campaign:", error);
-        return { error: "Nepodařilo se spustit kampaň" };
+        return { error: "Nepodařilo se spustit odesílání" };
     }
 }
 
@@ -211,7 +215,7 @@ export async function pauseCampaign(campaignId: string): Promise<ActionResult> {
             data: { status: "PAUSED" },
         });
         if (updated.count === 0) {
-            return { error: "Kampaň právě neodesílá" };
+            return { error: "Hromadný email se právě neodesílá" };
         }
 
         const campaign = await db.emailCampaign.findUnique({
@@ -222,7 +226,7 @@ export async function pauseCampaign(campaignId: string): Promise<ActionResult> {
         return { success: true };
     } catch (error) {
         console.error("Failed to pause campaign:", error);
-        return { error: "Nepodařilo se pozastavit kampaň" };
+        return { error: "Nepodařilo se pozastavit odesílání" };
     }
 }
 
@@ -239,10 +243,10 @@ export async function resumeCampaign(campaignId: string): Promise<ActionResult> 
             select: { yearId: true, status: true },
         });
         if (!campaign) {
-            return { error: "Kampaň nebyla nalezena" };
+            return { error: "Hromadný email nebyl nalezen" };
         }
         if (campaign.status !== "PAUSED" && campaign.status !== "SENDING") {
-            return { error: "Kampaň nelze obnovit" };
+            return { error: "Odesílání nelze obnovit" };
         }
 
         if (campaign.status === "PAUSED") {
@@ -258,7 +262,7 @@ export async function resumeCampaign(campaignId: string): Promise<ActionResult> 
         return { success: true };
     } catch (error) {
         console.error("Failed to resume campaign:", error);
-        return { error: "Nepodařilo se obnovit kampaň" };
+        return { error: "Nepodařilo se obnovit odesílání" };
     }
 }
 
@@ -271,7 +275,7 @@ export async function retryFailedItems(campaignId: string): Promise<ActionResult
             select: { yearId: true, status: true },
         });
         if (!campaign) {
-            return { error: "Kampaň nebyla nalezena" };
+            return { error: "Hromadný email nebyl nalezen" };
         }
 
         const updated = await db.emailQueueItem.updateMany({

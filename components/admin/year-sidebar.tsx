@@ -139,6 +139,7 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
         icon: typeof Email;
         exact?: boolean;
         indented?: boolean;
+        roles?: string[];
     }[] = [
         { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },
         {
@@ -164,6 +165,7 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
             href: `${base}/emaily/hromadne`,
             icon: Send,
             indented: true,
+            roles: ["SUPER_ADMIN", "ADMIN"],
         },
         ...yearData.conditionalEmails.map((ce) => ({
             text: ce.name,
@@ -171,7 +173,9 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
             icon: ForwardToInbox,
             indented: true,
         })),
-    ];
+    ].filter(
+        (item) => !item.roles || (userRole && item.roles.includes(userRole))
+    );
 
     return (
         <Box>

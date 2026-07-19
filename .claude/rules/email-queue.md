@@ -8,7 +8,8 @@ Mass-email campaigns (`EmailCampaign` + `EmailQueueItem` models) are sent throug
 - `app/api/email-queue/process/route.ts` — Bearer `CRON_SECRET` auth, `maxDuration = 300`. Re-kicks itself while items remain; idles via `waitForCapHeadroom()` when caps are exhausted.
 - `lib/actions/email-campaigns.ts` — admin server actions (create/update/delete/preview/start/pause/resume/retry). `startCampaign` resolves recipients via `lib/utils/email-campaign-recipients.ts` (dedupes by email, stores per-recipient placeholders on each queue item) and kicks the chain.
 - Safety nets for a dropped chain: daily `update-prices` cron re-kicks when a `SENDING` campaign exists; the campaign detail page shows a stalled warning + resume button.
-- Admin UI: `app/admin/rocniky/[id]/emaily/hromadne/`.
+- Admin UI: `app/admin/rocniky/[id]/emaily/hromadne/` — compose-and-send flow (admin-only, `requireAdmin` on pages): `mass-email-composer.tsx` on the main page (group select all/paid/unpaid → fixed statuses `PENDING/CONFIRMED/WAITLIST`, no placeholders in the editor) with a test-send dialog and a confirm dialog that runs `createCampaign` + `startCampaign` back-to-back, then redirects to the detail page for live progress. There is no draft-authoring page; `campaign-form.tsx` remains only for editing legacy `DRAFT` rows on the detail page.
+- UI wording: user-facing Czech text says "hromadný email" / "hromadné emaily" — never "kampaň" (spec: `docs/specs/2026-07-19-mass-email-sending.md`). Code identifiers keep the `campaign` naming.
 
 ## Rate limits (Seznam.cz)
 

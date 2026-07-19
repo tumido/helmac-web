@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { recipientFilterSchema } from "@/lib/validators/email-campaign";
 import { CampaignForm } from "../campaign-form";
@@ -39,6 +40,8 @@ interface KampanDetailPageProps {
 export default async function KampanDetailPage({
     params,
 }: KampanDetailPageProps) {
+    await requireAdmin();
+
     const { id, campaignId } = await params;
 
     const campaign = await db.emailCampaign.findUnique({

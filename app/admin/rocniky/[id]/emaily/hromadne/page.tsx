@@ -1,5 +1,4 @@
 import {
-    Box,
     Card,
     Chip,
     Container,
@@ -10,12 +9,13 @@ import {
     TableRow,
     Typography,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
 import { CAMPAIGN_STATUS_CONFIG } from "./campaign-status";
+import { MassEmailComposer } from "./mass-email-composer";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +24,19 @@ interface HromadnePageProps {
 }
 
 export default async function HromadnePage({ params }: HromadnePageProps) {
+    await requireAdmin();
+
     const { id } = await params;
-    const year = await db.year.findUnique({
-        where: { id },
-        select: { id: true, year: true },
-    });
+    const [year, emailAccounts] = await Promise.all([
+        db.year.findUnique({
+            where: { id },
+            select: { id: true, year: true },
+        }),
+        db.emailAccount.findMany({
+            select: { id: true, email: true, label: true, isMain: true },
+            orderBy: [{ isMain: "desc" }, { email: "asc" }],
+        }),
+    ]);
 
     if (!year) {
         notFound();
@@ -72,26 +80,22 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
                 title="Hromadné emaily"
             />
 
-            <Box sx={{ mb: 3 }}>
-                <LinkButton
-                    href={`/admin/rocniky/${year.id}/emaily/hromadne/novy`}
-                    variant="contained"
-                    startIcon={<Add />}
-                >
-                    Nová kampaň
-                </LinkButton>
-            </Box>
+            <MassEmailComposer yearId={year.id} emailAccounts={emailAccounts} />
+
+            <Typography variant="h6" sx={{ mb: 2 }}>
+                Historie
+            </Typography>
 
             {campaigns.length === 0 ? (
                 <Typography color="text.secondary">
-                    Zatím žádné kampaně.
+                    Zatím žádné hromadné emaily.
                 </Typography>
             ) : (
                 <Card variant="outlined">
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Název</TableCell>
+                                <TableCell>Předmět</TableCell>
                                 <TableCell>Stav</TableCell>
                                 <TableCell>Odesláno</TableCell>
                                 <TableCell>Neúspěšné</TableCell>

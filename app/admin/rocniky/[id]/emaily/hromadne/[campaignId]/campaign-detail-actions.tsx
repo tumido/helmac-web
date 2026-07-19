@@ -127,7 +127,7 @@ export function CampaignDetailActions({
                         onClick={handleOpenConfirm}
                         disabled={isPending}
                     >
-                        Odeslat kampaň
+                        Odeslat hromadný email
                     </Button>
                 )}
 
@@ -178,12 +178,13 @@ export function CampaignDetailActions({
             </Box>
 
             <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-                <DialogTitle>Odeslat kampaň?</DialogTitle>
+                <DialogTitle>Odeslat hromadný email?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Kampaň se začne odesílat všem příjemcům odpovídajícím
-                        uloženému filtru. Odesílání je rozloženo v čase kvůli
-                        limitům poskytovatele a může trvat i několik hodin.
+                        Hromadný email se začne odesílat všem příjemcům
+                        odpovídajícím uloženému filtru. Odesílání je rozloženo v
+                        čase kvůli limitům poskytovatele a může trvat i několik
+                        hodin.
                         {recipientCount !== null &&
                             ` Počet příjemců: ${recipientCount}.`}
                     </DialogContentText>
@@ -203,10 +204,10 @@ export function CampaignDetailActions({
             </Dialog>
 
             <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
-                <DialogTitle>Smazat kampaň?</DialogTitle>
+                <DialogTitle>Smazat hromadný email?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Kampaň a její fronta emailů budou trvale odstraněny.
+                        Hromadný email a jeho fronta budou trvale odstraněny.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
