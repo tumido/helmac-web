@@ -177,7 +177,20 @@ export async function startCampaign(campaignId: string): Promise<ActionResult> {
             return { error: "Filtru neodpovídají žádní příjemci" };
         }
 
+        // Atomic DRAFT→SENDING claim guards against a double-click or two
+        // admins enqueueing every recipient twice
+        let claimed = false;
         await db.$transaction(async (tx) => {
+            const updated = await tx.emailCampaign.updateMany({
+                where: { id: campaign.id, status: "DRAFT" },
+                data: {
+                    status: "SENDING",
+                    totalCount: recipients.length,
+                    startedAt: new Date(),
+                },
+            });
+            if (updated.count === 0) return;
+            claimed = true;
             await tx.emailQueueItem.createMany({
                 data: recipients.map((r) => ({
                     campaignId: campaign.id,
@@ -186,15 +199,10 @@ export async function startCampaign(campaignId: string): Promise<ActionResult> {
                     placeholders: r.placeholders as Prisma.InputJsonValue,
                 })),
             });
-            await tx.emailCampaign.update({
-                where: { id: campaign.id },
-                data: {
-                    status: "SENDING",
-                    totalCount: recipients.length,
-                    startedAt: new Date(),
-                },
-            });
         });
+        if (!claimed) {
+            return { error: "Hromadný email již byl odeslán" };
+        }
 
         after(() => kickEmailQueue());
 
