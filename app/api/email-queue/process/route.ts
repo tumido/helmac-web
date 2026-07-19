@@ -14,6 +14,16 @@ export const maxDuration = 300;
 // Vercel Hobby crons run only once a day, hence this chain instead of a
 // minute-level cron.
 async function handle(request: NextRequest) {
+    // Fail closed: without a secret the comparison below would accept
+    // the literal "Bearer undefined"
+    if (!process.env.CRON_SECRET) {
+        console.error("Email queue processor: CRON_SECRET is not configured");
+        return NextResponse.json(
+            { error: "CRON_SECRET is not configured" },
+            { status: 500 },
+        );
+    }
+
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
