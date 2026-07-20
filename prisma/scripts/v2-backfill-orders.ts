@@ -502,7 +502,7 @@ async function main() {
         priceMismatches: 0,
     };
 
-    const lastLog = Date.now();
+    let lastLog = Date.now();
 
     for (let i = 0; i < submissions.length; i++) {
         const sub = submissions[i];
@@ -556,7 +556,8 @@ async function main() {
             });
             stats.bankLinked += bankCount;
 
-            if ((i + 1) % 50 === 0 || i === submissions.length - 1 || Date.now() - lastLog > 10_000) {
+            if ((i + 1) % 50 === 0 || i === submissions.length - 1 || Date.now() - lastLog > 30_000) {
+                lastLog = Date.now();
                 console.log(
                     `  [${i + 1}/${submissions.length}] ${stats.orders} orders, ${stats.people} people, ${stats.lineItems} line items`,
                 );
@@ -574,7 +575,8 @@ async function main() {
                 { timeout: 60_000 },
             );
 
-            if ((i + 1) % 50 === 0 || i === submissions.length - 1 || Date.now() - lastLog > 10_000) {
+            if ((i + 1) % 50 === 0 || i === submissions.length - 1 || Date.now() - lastLog > 30_000) {
+                lastLog = Date.now();
                 console.log(
                     `  [${i + 1}/${submissions.length}] ${stats.orders} orders, ${stats.people} people, ${stats.lineItems} line items, ${stats.bankLinked} bank txns linked`,
                 );
