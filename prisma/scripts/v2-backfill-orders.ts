@@ -6,6 +6,7 @@ import { getAllInputFields } from "../../lib/types/registration-form";
 import type {
     InputField,
     PricingSummaryData,
+    PricingDefinition,
 } from "../../lib/types/registration-form";
 import {
     parseQuantities,
@@ -25,8 +26,10 @@ interface FormMaps {
     optionLegacyToV2: Map<string, { id: string; name: string }>;
     optionNameToV2: Map<string, { id: string; name: string }>;
     tiers: { id: string; sortOrder: number; deadline: Date | null }[];
-    tierPrices: Map<string, Map<string, number>>; // tierId → optionId → price
+    tierPrices: Map<string, Map<string, number>>;
     inputFields: InputField[];
+    pricingDefinitions: PricingDefinition[];
+    priceTierDates: string[];
 }
 
 const formMapsCache = new Map<string, FormMaps>();
@@ -68,16 +71,16 @@ async function getFormMaps(formId: string): Promise<FormMaps | null> {
         orderBy: { sortOrder: "asc" },
     });
 
-    // Pre-load all prices for all tiers
+    // Pre-load all prices in a single query
+    const allPrices = await prisma.v2PricingOptionPrice.findMany({
+        where: { tierId: { in: tiers.map((t) => t.id) } },
+    });
     const tierPrices = new Map<string, Map<string, number>>();
     for (const tier of tiers) {
-        const prices = await prisma.v2PricingOptionPrice.findMany({
-            where: { tierId: tier.id },
-        });
-        tierPrices.set(
-            tier.id,
-            new Map(prices.map((p) => [p.optionId, p.price])),
-        );
+        tierPrices.set(tier.id, new Map());
+    }
+    for (const p of allPrices) {
+        tierPrices.get(p.tierId)?.set(p.optionId, p.price);
     }
 
     const maps: FormMaps = {
@@ -87,36 +90,52 @@ async function getFormMaps(formId: string): Promise<FormMaps | null> {
         tiers,
         tierPrices,
         inputFields,
+        pricingDefinitions: formData.pricingDefinitions,
+        priceTierDates: formData.priceTiers ?? [],
     };
     formMapsCache.set(formId, maps);
     return maps;
 }
 
-// ---- Tier resolution ----
+// ---- Per-option price resolution ----
 
-function getActiveTierId(
+// Resolve the unit price for an option using the same logic as
+// computePricingSummary: per-definition tier resolution.
+function getOptionPriceForSubmission(
     maps: FormMaps,
+    field: InputField,
+    optionV2Id: string,
     pricingSummary: PricingSummaryData | null,
-): string | null {
-    if (maps.tiers.length === 0) return null;
+): number {
+    const def = maps.pricingDefinitions.find(
+        (d) => d.id === field.pricingId,
+    );
+    if (!def) return 0;
 
+    // Non-tiered definitions always use prices[0] → map to
+    // the first v2 tier (sortOrder 0)
+    if (!def.usePriceTiers) {
+        const firstTier = maps.tiers[0];
+        if (!firstTier) return 0;
+        return maps.tierPrices.get(firstTier.id)?.get(optionV2Id) ?? 0;
+    }
+
+    // Tiered definitions: use the applicableTierIndex from the snapshot
+    // to find the correct date-based tier
     if (pricingSummary && pricingSummary.applicableTierIndex != null) {
-        const tier = maps.tiers[pricingSummary.applicableTierIndex];
-        if (tier) return tier.id;
+        const idx = pricingSummary.applicableTierIndex;
+        const tier = maps.tiers[idx];
+        if (tier) {
+            return maps.tierPrices.get(tier.id)?.get(optionV2Id) ?? 0;
+        }
     }
 
     // Fallback tier (deadline = null)
     const fallback = maps.tiers.find((t) => !t.deadline);
-    return fallback?.id ?? maps.tiers[maps.tiers.length - 1].id;
-}
-
-function getOptionPrice(
-    maps: FormMaps,
-    tierId: string | null,
-    optionId: string,
-): number {
-    if (!tierId) return 0;
-    return maps.tierPrices.get(tierId)?.get(optionId) ?? 0;
+    if (fallback) {
+        return maps.tierPrices.get(fallback.id)?.get(optionV2Id) ?? 0;
+    }
+    return 0;
 }
 
 // ---- Line item resolution ----
@@ -132,7 +151,7 @@ function resolveLineItems(
     field: InputField,
     rawValue: unknown,
     maps: FormMaps,
-    tierId: string | null,
+    pricingSummary: PricingSummaryData | null,
 ): LineItemData[] {
     if (field.type === "pricing_select") {
         const optionId = String(rawValue);
@@ -144,7 +163,9 @@ function resolveLineItems(
                 pricingOptionId: v2Opt.id,
                 value: v2Opt.name,
                 quantity: 1,
-                unitPriceAtSubmission: getOptionPrice(maps, tierId, v2Opt.id),
+                unitPriceAtSubmission: getOptionPriceForSubmission(
+                    maps, field, v2Opt.id, pricingSummary,
+                ),
             }];
         }
         return [{
@@ -167,7 +188,9 @@ function resolveLineItems(
                     pricingOptionId: v2Opt.id,
                     value: v2Opt.name,
                     quantity: 1,
-                    unitPriceAtSubmission: getOptionPrice(maps, tierId, v2Opt.id),
+                    unitPriceAtSubmission: getOptionPriceForSubmission(
+                        maps, field, v2Opt.id, pricingSummary,
+                    ),
                 });
             }
         }
@@ -189,7 +212,9 @@ function resolveLineItems(
                     pricingOptionId: v2Opt.id,
                     value: v2Opt.name,
                     quantity: qty,
-                    unitPriceAtSubmission: getOptionPrice(maps, tierId, v2Opt.id),
+                    unitPriceAtSubmission: getOptionPriceForSubmission(
+                        maps, field, v2Opt.id, pricingSummary,
+                    ),
                 });
             }
         }
@@ -215,6 +240,7 @@ interface DryRunStats {
     lineItems: number;
     bankLinked: number;
     skipped: number;
+    priceMismatches: number;
 }
 
 async function backfillSubmission(
@@ -240,14 +266,15 @@ async function backfillSubmission(
         updatedAt: Date;
     },
     maps: FormMaps,
-): Promise<{ people: number; lineItems: number; bankLinked: number }> {
+): Promise<{ people: number; lineItems: number; bankLinked: number; priceMismatch: boolean }> {
     const data = sub.data as Record<string, unknown>;
     const pricingSummary = sub.pricingSummary as PricingSummaryData | null;
 
     // Idempotent: delete existing v2 data for this submission
     await tx.v2Order.deleteMany({ where: { legacySubmissionId: sub.id } });
 
-    // 1. Create v2_orders
+    // 1. Create v2_orders (don't set updatedAt — let @updatedAt handle it
+    // to avoid Prisma overriding the explicit value)
     const order = await tx.v2Order.create({
         data: {
             yearId: sub.yearId,
@@ -266,12 +293,8 @@ async function backfillSubmission(
             isTest: sub.isTest,
             legacySubmissionId: sub.id,
             createdAt: sub.createdAt,
-            updatedAt: sub.updatedAt,
         },
     });
-
-    // Resolve which tier was active for this submission's price
-    const tierId = getActiveTierId(maps, pricingSummary);
 
     // 2. Create main person + line items
     const mainPerson = await tx.v2OrderPerson.create({
@@ -284,6 +307,7 @@ async function backfillSubmission(
 
     let totalLineItems = 0;
     let totalPeople = 1;
+    let lineItemPriceSum = 0;
 
     for (const field of maps.inputFields) {
         const v2Field = maps.fieldNameToV2.get(field.name);
@@ -292,7 +316,7 @@ async function backfillSubmission(
         const rawValue = data[field.name];
         if (rawValue === undefined || rawValue === null) continue;
 
-        const items = resolveLineItems(field, rawValue, maps, tierId);
+        const items = resolveLineItems(field, rawValue, maps, pricingSummary);
         for (const li of items) {
             await tx.v2OrderLineItem.create({
                 data: {
@@ -300,10 +324,14 @@ async function backfillSubmission(
                     orderId: order.id,
                     yearId: sub.yearId,
                     fieldId: v2Field.id,
-                    ...li,
+                    pricingOptionId: li.pricingOptionId,
+                    value: li.value,
+                    quantity: li.quantity,
+                    unitPriceAtSubmission: li.unitPriceAtSubmission,
                 },
             });
             totalLineItems++;
+            lineItemPriceSum += li.unitPriceAtSubmission * li.quantity;
         }
     }
 
@@ -329,7 +357,7 @@ async function backfillSubmission(
                 const rawValue = personData[field.name];
                 if (rawValue === undefined || rawValue === null) continue;
 
-                const items = resolveLineItems(field, rawValue, maps, tierId);
+                const items = resolveLineItems(field, rawValue, maps, pricingSummary);
                 for (const li of items) {
                     await tx.v2OrderLineItem.create({
                         data: {
@@ -337,16 +365,29 @@ async function backfillSubmission(
                             orderId: order.id,
                             yearId: sub.yearId,
                             fieldId: v2Field.id,
-                            ...li,
+                            pricingOptionId: li.pricingOptionId,
+                            value: li.value,
+                            quantity: li.quantity,
+                            unitPriceAtSubmission: li.unitPriceAtSubmission,
                         },
                     });
                     totalLineItems++;
+                    lineItemPriceSum += li.unitPriceAtSubmission * li.quantity;
                 }
             }
         }
     }
 
-    // 4. Link bank transactions
+    // 4. Per-order price assertion
+    const expectedTotal = sub.totalPrice ?? 0;
+    const priceMismatch = expectedTotal !== lineItemPriceSum;
+    if (priceMismatch) {
+        console.warn(
+            `  MISMATCH: ${sub.id} totalPrice=${expectedTotal} lineItemSum=${lineItemPriceSum} (diff=${lineItemPriceSum - expectedTotal})`,
+        );
+    }
+
+    // 5. Link bank transactions
     const bankResult = await tx.bankTransaction.updateMany({
         where: { submissionId: sub.id },
         data: { orderId: order.id },
@@ -356,6 +397,7 @@ async function backfillSubmission(
         people: totalPeople,
         lineItems: totalLineItems,
         bankLinked: bankResult.count,
+        priceMismatch,
     };
 }
 
@@ -394,10 +436,9 @@ async function verify(): Promise<void> {
         );
     }
 
-    // Spot-check: compare totalPrice on orders vs sum of line item prices
-    const sampleOrders = await prisma.v2Order.findMany({
-        where: { totalPrice: { not: null, gt: 0 } },
-        take: 5,
+    // Full price reconciliation across all orders
+    const orders = await prisma.v2Order.findMany({
+        where: { totalPrice: { not: null } },
         select: {
             id: true,
             totalPrice: true,
@@ -409,7 +450,7 @@ async function verify(): Promise<void> {
     });
 
     let mismatches = 0;
-    for (const order of sampleOrders) {
+    for (const order of orders) {
         const lineItemTotal = order.lineItems.reduce(
             (sum: number, li: { unitPriceAtSubmission: number; quantity: number }) =>
                 sum + li.unitPriceAtSubmission * li.quantity,
@@ -423,9 +464,13 @@ async function verify(): Promise<void> {
             mismatches++;
         }
     }
-    if (mismatches === 0 && sampleOrders.length > 0) {
+    if (mismatches === 0) {
         console.log(
-            `  Price spot-check: ${sampleOrders.length} orders OK`,
+            `  Price reconciliation: all ${orders.length} orders OK`,
+        );
+    } else {
+        console.warn(
+            `  Price reconciliation: ${mismatches} MISMATCH(ES) out of ${orders.length} orders`,
         );
     }
 }
@@ -454,7 +499,10 @@ async function main() {
         lineItems: 0,
         bankLinked: 0,
         skipped: 0,
+        priceMismatches: 0,
     };
+
+    const lastLog = Date.now();
 
     for (let i = 0; i < submissions.length; i++) {
         const sub = submissions[i];
@@ -464,27 +512,31 @@ async function main() {
             console.warn(
                 `  [${i + 1}/${submissions.length}] Skipping ${sub.id} — no v2 catalog for form ${sub.formId}`,
             );
+            // Clean up any stale v2 orders from a previous run
+            if (!DRY_RUN) {
+                await prisma.v2Order.deleteMany({
+                    where: { legacySubmissionId: sub.id },
+                });
+            }
             stats.skipped++;
             continue;
         }
 
         if (DRY_RUN) {
-            // Count what would be created
             const data = sub.data as Record<string, unknown>;
             const ap = Array.isArray(data.additionalPeople)
                 ? data.additionalPeople
                 : [];
+            const pricingSummary = sub.pricingSummary as PricingSummaryData | null;
             stats.orders++;
             stats.people += 1 + ap.length;
 
             let liCount = 0;
-            const pricingSummary = sub.pricingSummary as PricingSummaryData | null;
-            const tierId = getActiveTierId(maps, pricingSummary);
             for (const field of maps.inputFields) {
                 if (!maps.fieldNameToV2.has(field.name)) continue;
                 const val = data[field.name];
                 if (val === undefined || val === null) continue;
-                liCount += resolveLineItems(field, val, maps, tierId).length;
+                liCount += resolveLineItems(field, val, maps, pricingSummary).length;
             }
             for (const person of ap) {
                 const pd = person as Record<string, unknown>;
@@ -493,12 +545,18 @@ async function main() {
                     if (!maps.fieldNameToV2.has(field.name)) continue;
                     const val = pd[field.name];
                     if (val === undefined || val === null) continue;
-                    liCount += resolveLineItems(field, val, maps, tierId).length;
+                    liCount += resolveLineItems(field, val, maps, pricingSummary).length;
                 }
             }
             stats.lineItems += liCount;
 
-            if ((i + 1) % 50 === 0 || i === submissions.length - 1) {
+            // Dry-run bank transaction count
+            const bankCount = await prisma.bankTransaction.count({
+                where: { submissionId: sub.id },
+            });
+            stats.bankLinked += bankCount;
+
+            if ((i + 1) % 50 === 0 || i === submissions.length - 1 || Date.now() - lastLog > 10_000) {
                 console.log(
                     `  [${i + 1}/${submissions.length}] ${stats.orders} orders, ${stats.people} people, ${stats.lineItems} line items`,
                 );
@@ -511,11 +569,12 @@ async function main() {
                     stats.people += result.people;
                     stats.lineItems += result.lineItems;
                     stats.bankLinked += result.bankLinked;
+                    if (result.priceMismatch) stats.priceMismatches++;
                 },
-                { timeout: 30_000 },
+                { timeout: 60_000 },
             );
 
-            if ((i + 1) % 50 === 0 || i === submissions.length - 1) {
+            if ((i + 1) % 50 === 0 || i === submissions.length - 1 || Date.now() - lastLog > 10_000) {
                 console.log(
                     `  [${i + 1}/${submissions.length}] ${stats.orders} orders, ${stats.people} people, ${stats.lineItems} line items, ${stats.bankLinked} bank txns linked`,
                 );
@@ -530,6 +589,9 @@ async function main() {
     console.log(`  Bank transactions linked: ${stats.bankLinked}`);
     if (stats.skipped > 0) {
         console.log(`  Skipped (no v2 catalog): ${stats.skipped}`);
+    }
+    if (stats.priceMismatches > 0) {
+        console.warn(`  PRICE MISMATCHES: ${stats.priceMismatches}`);
     }
 
     if (DRY_RUN) {
