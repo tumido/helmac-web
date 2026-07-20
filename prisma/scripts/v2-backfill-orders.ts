@@ -2,7 +2,6 @@
 // @ts-nocheck — Prisma-generated v2 model delegates are not visible to tsc outside the Next.js build scope
 import { PrismaClient } from "@prisma/client";
 import { migrateFormData } from "../../lib/utils/form-migration";
-import { getAllInputFields } from "../../lib/types/registration-form";
 import type {
     InputField,
     PricingSummaryData,
@@ -23,8 +22,9 @@ type TxClient = any;
 
 interface FormMaps {
     fieldNameToV2: Map<string, { id: string; type: string }>;
-    optionLegacyToV2: Map<string, { id: string; name: string }>;
-    optionNameToV2: Map<string, { id: string; name: string }>;
+    optionLegacyToV2: Map<string, { id: string; name: string; definitionId: string }>;
+    optionNameByDef: Map<string, Map<string, { id: string; name: string }>>;
+    defLegacyToV2: Map<string, string>;
     tiers: { id: string; sortOrder: number; deadline: Date | null }[];
     tierPrices: Map<string, Map<string, number>>;
     inputFields: InputField[];
@@ -45,26 +45,49 @@ async function getFormMaps(formId: string): Promise<FormMaps | null> {
     if (!form) return null;
 
     const formData = migrateFormData(form.fields);
-    const inputFields = getAllInputFields(formData.fields);
 
+    // Include inactive fields/options — submissions may reference
+    // fields that were later removed from the form
     const v2Fields = await prisma.v2FormField.findMany({
-        where: { formId, isActive: true },
+        where: { formId },
+        include: { pricingDefinition: true },
     });
     const fieldNameToV2 = new Map(
         v2Fields.map((f) => [f.name, { id: f.id, type: f.type }]),
     );
 
+    // Build inputFields from v2 (includes inactive) rather than from
+    // the current JSON blob (which only has active fields)
+    const inputFields: InputField[] = v2Fields.map((f) => ({
+        type: f.type as InputField["type"],
+        id: f.legacyId ?? f.id,
+        name: f.name,
+        label: f.label,
+        required: f.required,
+        editable: f.editable,
+        options: f.options,
+        pricingId: f.pricingDefinition?.legacyId ?? f.pricingDefinitionId ?? undefined,
+        includeForAdditionalPeople: f.includeForAdditionalPeople,
+    }));
+
     const v2Options = await prisma.v2PricingOption.findMany({
-        where: { definition: { formId }, isActive: true },
+        where: { definition: { formId } },
+        select: { id: true, legacyId: true, name: true, definitionId: true },
     });
     const optionLegacyToV2 = new Map(
         v2Options
             .filter((o) => o.legacyId)
-            .map((o) => [o.legacyId!, { id: o.id, name: o.name }]),
+            .map((o) => [o.legacyId!, { id: o.id, name: o.name, definitionId: o.definitionId }]),
     );
-    const optionNameToV2 = new Map(
-        v2Options.map((o) => [o.name, { id: o.id, name: o.name }]),
-    );
+    // Scope name lookup per definition to avoid collisions
+    // when different definitions share option names (e.g. "Ano", "Ne")
+    const optionNameByDef = new Map<string, Map<string, { id: string; name: string }>>();
+    for (const o of v2Options) {
+        if (!optionNameByDef.has(o.definitionId)) {
+            optionNameByDef.set(o.definitionId, new Map());
+        }
+        optionNameByDef.get(o.definitionId)!.set(o.name, { id: o.id, name: o.name });
+    }
 
     const tiers = await prisma.v2PriceTier.findMany({
         where: { formId },
@@ -83,14 +106,42 @@ async function getFormMaps(formId: string): Promise<FormMaps | null> {
         tierPrices.get(p.tierId)?.set(p.optionId, p.price);
     }
 
+    // Build pricing definitions from v2 (includes inactive) for
+    // usePriceTiers resolution in getOptionPriceForSubmission
+    const v2Defs = await prisma.v2PricingDefinition.findMany({
+        where: { formId },
+    });
+    const pricingDefinitions: PricingDefinition[] = v2Defs.map((d) => ({
+        id: d.legacyId ?? d.id,
+        name: d.name,
+        type: (d.type ?? "options") as "options" | "quantity",
+        multiSelect: d.multiSelect,
+        usePriceTiers: d.usePriceTiers,
+        options: v2Options
+            .filter((o) => o.definitionId === d.id)
+            .map((o) => ({
+                id: o.legacyId ?? o.id,
+                name: o.name,
+                description: "",
+                prices: [],
+            })),
+    }));
+
+    const defLegacyToV2 = new Map(
+        v2Defs
+            .filter((d) => d.legacyId)
+            .map((d) => [d.legacyId!, d.id]),
+    );
+
     const maps: FormMaps = {
         fieldNameToV2,
         optionLegacyToV2,
-        optionNameToV2,
+        optionNameByDef,
+        defLegacyToV2,
         tiers,
         tierPrices,
         inputFields,
-        pricingDefinitions: formData.pricingDefinitions,
+        pricingDefinitions,
         priceTierDates: formData.priceTiers ?? [],
     };
     formMapsCache.set(formId, maps);
@@ -98,6 +149,35 @@ async function getFormMaps(formId: string): Promise<FormMaps | null> {
 }
 
 // ---- Per-option price resolution ----
+
+// Resolve the v2 tier that matches a pricingSummary snapshot tier.
+// Match by deadline date (not by array index) since the v2 tiers
+// may have been merged/reordered by the catalog backfill.
+function resolveV2Tier(
+    maps: FormMaps,
+    pricingSummary: PricingSummaryData | null,
+): { id: string; deadline: Date | null } | null {
+    if (!pricingSummary || pricingSummary.applicableTierIndex == null) {
+        return maps.tiers.find((t) => !t.deadline) ?? null;
+    }
+
+    const snapshotTier = pricingSummary.tiers[pricingSummary.applicableTierIndex];
+    if (!snapshotTier) {
+        return maps.tiers.find((t) => !t.deadline) ?? null;
+    }
+
+    if (snapshotTier.tierDate === null) {
+        return maps.tiers.find((t) => !t.deadline) ?? null;
+    }
+
+    const snapshotDateStr = snapshotTier.tierDate.slice(0, 10);
+    const matched = maps.tiers.find((t) => {
+        if (!t.deadline) return false;
+        return t.deadline.toISOString().slice(0, 10) === snapshotDateStr;
+    });
+
+    return matched ?? maps.tiers.find((t) => !t.deadline) ?? null;
+}
 
 // Resolve the unit price for an option using the same logic as
 // computePricingSummary: per-definition tier resolution.
@@ -112,28 +192,22 @@ function getOptionPriceForSubmission(
     );
     if (!def) return 0;
 
-    // Non-tiered definitions always use prices[0] → map to
-    // the first v2 tier (sortOrder 0)
+    // Non-tiered definitions always use a single flat price.
+    // The catalog backfill may store it on only the first tier
+    // (sortOrder 0), while the dual-write stores it on all tiers.
+    // Search all tiers for the first non-zero price.
     if (!def.usePriceTiers) {
-        const firstTier = maps.tiers[0];
-        if (!firstTier) return 0;
-        return maps.tierPrices.get(firstTier.id)?.get(optionV2Id) ?? 0;
-    }
-
-    // Tiered definitions: use the applicableTierIndex from the snapshot
-    // to find the correct date-based tier
-    if (pricingSummary && pricingSummary.applicableTierIndex != null) {
-        const idx = pricingSummary.applicableTierIndex;
-        const tier = maps.tiers[idx];
-        if (tier) {
-            return maps.tierPrices.get(tier.id)?.get(optionV2Id) ?? 0;
+        for (const tier of maps.tiers) {
+            const price = maps.tierPrices.get(tier.id)?.get(optionV2Id);
+            if (price !== undefined && price !== 0) return price;
         }
+        return maps.tierPrices.get(maps.tiers[0]?.id)?.get(optionV2Id) ?? 0;
     }
 
-    // Fallback tier (deadline = null)
-    const fallback = maps.tiers.find((t) => !t.deadline);
-    if (fallback) {
-        return maps.tierPrices.get(fallback.id)?.get(optionV2Id) ?? 0;
+    // Tiered definitions: match the snapshot tier by deadline date
+    const tier = resolveV2Tier(maps, pricingSummary);
+    if (tier) {
+        return maps.tierPrices.get(tier.id)?.get(optionV2Id) ?? 0;
     }
     return 0;
 }
@@ -147,6 +221,22 @@ interface LineItemData {
     unitPriceAtSubmission: number;
 }
 
+function resolveV2Option(
+    maps: FormMaps,
+    field: InputField,
+    optionKey: string,
+): { id: string; name: string } | undefined {
+    const byLegacy = maps.optionLegacyToV2.get(optionKey);
+    if (byLegacy) return byLegacy;
+
+    // Fall back to name lookup scoped to this field's pricing
+    // definition to avoid collisions (e.g. "Ano" in two defs)
+    if (!field.pricingId) return undefined;
+    const v2DefId = maps.defLegacyToV2.get(field.pricingId);
+    if (!v2DefId) return undefined;
+    return maps.optionNameByDef.get(v2DefId)?.get(optionKey);
+}
+
 function resolveLineItems(
     field: InputField,
     rawValue: unknown,
@@ -155,9 +245,7 @@ function resolveLineItems(
 ): LineItemData[] {
     if (field.type === "pricing_select") {
         const optionId = String(rawValue);
-        const v2Opt =
-            maps.optionLegacyToV2.get(optionId) ??
-            maps.optionNameToV2.get(optionId);
+        const v2Opt = resolveV2Option(maps, field, optionId);
         if (v2Opt) {
             return [{
                 pricingOptionId: v2Opt.id,
@@ -180,9 +268,7 @@ function resolveLineItems(
         const selected = parseSelected(rawValue);
         const items: LineItemData[] = [];
         for (const optId of selected) {
-            const v2Opt =
-                maps.optionLegacyToV2.get(optId) ??
-                maps.optionNameToV2.get(optId);
+            const v2Opt = resolveV2Option(maps, field, optId);
             if (v2Opt) {
                 items.push({
                     pricingOptionId: v2Opt.id,
@@ -204,9 +290,7 @@ function resolveLineItems(
         const items: LineItemData[] = [];
         for (const [optId, qty] of Object.entries(quantities)) {
             if (qty <= 0) continue;
-            const v2Opt =
-                maps.optionLegacyToV2.get(optId) ??
-                maps.optionNameToV2.get(optId);
+            const v2Opt = resolveV2Option(maps, field, optId);
             if (v2Opt) {
                 items.push({
                     pricingOptionId: v2Opt.id,
@@ -473,6 +557,36 @@ async function verify(): Promise<void> {
             `  Price reconciliation: ${mismatches} MISMATCH(ES) out of ${orders.length} orders`,
         );
     }
+
+    // Verify capacity limits are not exceeded
+    const capacityLimits = await prisma.v2CapacityLimit.findMany({
+        include: { field: { select: { name: true } } },
+    });
+    if (capacityLimits.length > 0) {
+        console.log(`\n  Capacity check (${capacityLimits.length} limits):`);
+        let exceeded = 0;
+        for (const cl of capacityLimits) {
+            const rows = await prisma.$queryRaw`
+                SELECT COALESCE(SUM(oc.count), 0)::int AS current_count
+                FROM v2_option_counts oc
+                WHERE oc.year_id = ${cl.yearId}
+                    AND oc.field_name = ${cl.field.name}
+                    AND oc.option_value = ${cl.optionValue}
+            ` as { current_count: number }[];
+            const current = rows[0]?.current_count ?? 0;
+            if (current > cl.maxCount) {
+                console.warn(
+                    `    EXCEEDED: ${cl.field.name}="${cl.optionValue}" count=${current} max=${cl.maxCount}`,
+                );
+                exceeded++;
+            }
+        }
+        if (exceeded === 0) {
+            console.log(`    All capacity limits OK`);
+        } else {
+            console.warn(`    ${exceeded} capacity limit(s) exceeded`);
+        }
+    }
 }
 
 // ---- Main ----
@@ -493,6 +607,15 @@ async function main() {
         return;
     }
 
+    // Disable the capacity trigger — historical data already passed
+    // capacity checks at submission time
+    if (!DRY_RUN) {
+        await prisma.$executeRawUnsafe(
+            `ALTER TABLE v2_order_line_items DISABLE TRIGGER trg_v2_enforce_capacity`,
+        );
+        console.log("Capacity trigger disabled for backfill\n");
+    }
+
     const stats: DryRunStats = {
         orders: 0,
         people: 0,
@@ -501,6 +624,10 @@ async function main() {
         skipped: 0,
         priceMismatches: 0,
     };
+
+    // Accumulate option counts during dry-run for capacity checks
+    // fieldName → optionValue → count
+    const dryRunOptionCounts = new Map<string, Map<string, number>>();
 
     let lastLog = Date.now();
 
@@ -532,23 +659,75 @@ async function main() {
             stats.people += 1 + ap.length;
 
             let liCount = 0;
-            for (const field of maps.inputFields) {
-                if (!maps.fieldNameToV2.has(field.name)) continue;
-                const val = data[field.name];
-                if (val === undefined || val === null) continue;
-                liCount += resolveLineItems(field, val, maps, pricingSummary).length;
-            }
-            for (const person of ap) {
-                const pd = person as Record<string, unknown>;
-                for (const field of maps.inputFields) {
-                    if (!field.includeForAdditionalPeople) continue;
+            let liPriceSum = 0;
+
+            const sumItems = (
+                personData: Record<string, unknown>,
+                fieldsToCheck: InputField[],
+            ) => {
+                for (const field of fieldsToCheck) {
                     if (!maps.fieldNameToV2.has(field.name)) continue;
-                    const val = pd[field.name];
+                    const val = personData[field.name];
                     if (val === undefined || val === null) continue;
-                    liCount += resolveLineItems(field, val, maps, pricingSummary).length;
+                    const items = resolveLineItems(field, val, maps, pricingSummary);
+                    liCount += items.length;
+                    for (const li of items) {
+                        liPriceSum += li.unitPriceAtSubmission * li.quantity;
+                    }
                 }
+            };
+
+            sumItems(data, maps.inputFields);
+            for (const person of ap) {
+                sumItems(
+                    person as Record<string, unknown>,
+                    maps.inputFields.filter((f) => f.includeForAdditionalPeople),
+                );
             }
             stats.lineItems += liCount;
+
+            // Accumulate option counts for capacity check
+            // (only non-test, non-cancelled/rejected — matching v2_option_counts view)
+            const shouldCount = !sub.isTest &&
+                sub.status !== "CANCELLED" && sub.status !== "REJECTED";
+            if (shouldCount) {
+                const countItems = (
+                    personData: Record<string, unknown>,
+                    fieldsToCheck: InputField[],
+                ) => {
+                    for (const field of fieldsToCheck) {
+                        const v2Field = maps.fieldNameToV2.get(field.name);
+                        if (!v2Field) continue;
+                        const val = personData[field.name];
+                        if (val === undefined || val === null) continue;
+                        const items = resolveLineItems(field, val, maps, pricingSummary);
+                        for (const li of items) {
+                            if (!li.value || li.value === "" || li.value === "false") continue;
+                            const optValue = li.value;
+                            if (!dryRunOptionCounts.has(field.name)) {
+                                dryRunOptionCounts.set(field.name, new Map());
+                            }
+                            const fieldMap = dryRunOptionCounts.get(field.name)!;
+                            fieldMap.set(optValue, (fieldMap.get(optValue) ?? 0) + li.quantity);
+                        }
+                    }
+                };
+                countItems(data, maps.inputFields);
+                for (const person of ap) {
+                    countItems(
+                        person as Record<string, unknown>,
+                        maps.inputFields.filter((f) => f.includeForAdditionalPeople),
+                    );
+                }
+            }
+
+            const expectedTotal = sub.totalPrice ?? 0;
+            if (expectedTotal !== liPriceSum) {
+                console.warn(
+                    `  MISMATCH: ${sub.id} totalPrice=${expectedTotal} lineItemSum=${liPriceSum} (diff=${liPriceSum - expectedTotal})`,
+                );
+                stats.priceMismatches++;
+            }
 
             // Dry-run bank transaction count
             const bankCount = await prisma.bankTransaction.count({
@@ -597,9 +776,115 @@ async function main() {
     }
 
     if (DRY_RUN) {
+        // Compare accumulated counts against v1 option counts
+        const { getOptionCountsForYearFresh } = await import(
+            "../../lib/services/registration"
+        );
+        const yearIds = new Set(submissions.map((s) => s.yearId));
+
+        // Build field ID → label map for readable output
+        const fieldIdToLabel = new Map<string, string>();
+        for (const [, maps] of formMapsCache) {
+            for (const f of maps.inputFields) {
+                fieldIdToLabel.set(f.id, f.label);
+                fieldIdToLabel.set(f.name, f.label);
+            }
+        }
+        const label = (fieldName: string) =>
+            fieldIdToLabel.get(fieldName) ?? fieldName;
+
+        // Build capacity limit lookup: fieldName → optionValue → maxCount
+        const capacityLimits = await prisma.v2CapacityLimit.findMany({
+            include: { field: { select: { name: true } } },
+        });
+        const capLookup = new Map<string, number>();
+        for (const cl of capacityLimits) {
+            capLookup.set(`${cl.field.name}:${cl.optionValue}`, cl.maxCount);
+        }
+
+        // Build option legacyId → name map to consolidate v1 counts
+        // (v1 counts UUIDs and names separately; resolve UUIDs to names)
+        const optIdToName = new Map<string, string>();
+        for (const [, maps] of formMapsCache) {
+            for (const [legacyId, opt] of maps.optionLegacyToV2) {
+                optIdToName.set(legacyId, opt.name);
+            }
+        }
+
+        console.log(`\n  Option count reconciliation (${yearIds.size} year(s)):`);
+        const mismatches: { field: string; option: string; v1: number; v2: number; diff: number; cap: string }[] = [];
+        for (const yearId of yearIds) {
+            const v1Raw = await getOptionCountsForYearFresh(yearId);
+
+            // Consolidate v1 counts: resolve option IDs to names
+            const v1Consolidated: Record<string, Record<string, number>> = {};
+            for (const [fieldName, optionMap] of Object.entries(v1Raw)) {
+                if (!v1Consolidated[fieldName]) v1Consolidated[fieldName] = {};
+                for (const [optValue, count] of Object.entries(optionMap)) {
+                    const resolvedName = optIdToName.get(optValue) ?? optValue;
+                    v1Consolidated[fieldName][resolvedName] =
+                        (v1Consolidated[fieldName][resolvedName] ?? 0) + count;
+                }
+            }
+
+            for (const [fieldName, optionMap] of Object.entries(v1Consolidated)) {
+                for (const [optValue, v1Count] of Object.entries(optionMap)) {
+                    const v2Count = dryRunOptionCounts.get(fieldName)?.get(optValue) ?? 0;
+                    if (v1Count !== v2Count) {
+                        const maxCount = capLookup.get(`${fieldName}:${optValue}`);
+                        const capStr = maxCount !== undefined
+                            ? (v2Count > maxCount ? `${maxCount} EXCEEDED` : `${maxCount}`)
+                            : "—";
+                        mismatches.push({
+                            field: label(fieldName),
+                            option: optValue,
+                            v1: v1Count,
+                            v2: v2Count,
+                            diff: v2Count - v1Count,
+                            cap: capStr,
+                        });
+                    }
+                }
+            }
+        }
+        if (mismatches.length === 0) {
+            console.log(`    All option counts match v1`);
+        } else {
+            console.warn(`    ${mismatches.length} option count mismatch(es):\n`);
+            console.table(mismatches);
+        }
+
+        // Capacity check against full v2 counts
+        if (capacityLimits.length > 0) {
+            const exceeded: { field: string; option: string; count: number; max: number }[] = [];
+            for (const cl of capacityLimits) {
+                const count = dryRunOptionCounts.get(cl.field.name)?.get(cl.optionValue) ?? 0;
+                if (count > cl.maxCount) {
+                    exceeded.push({
+                        field: label(cl.field.name),
+                        option: cl.optionValue,
+                        count,
+                        max: cl.maxCount,
+                    });
+                }
+            }
+            if (exceeded.length === 0) {
+                console.log(`\n  Capacity check: all ${capacityLimits.length} limits OK`);
+            } else {
+                console.warn(`\n  Capacity check: ${exceeded.length} limit(s) exceeded:\n`);
+                console.table(exceeded);
+            }
+        }
+
         console.log("\nDry run complete — no changes made.\n");
         return;
     }
+
+    // Re-enable the capacity trigger
+    await prisma.$executeRawUnsafe(
+        `ALTER TABLE v2_order_line_items ENABLE TRIGGER trg_v2_enforce_capacity`,
+    );
+    console.log("\nCapacity trigger re-enabled");
 
     await verify();
     console.log("\nDone!");
