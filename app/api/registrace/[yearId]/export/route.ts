@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAllInputFields, getAPInputFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
+import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { formatDateTime } from "@/lib/utils/date";
 import { isMinor } from "@/lib/utils/minor-detection";
 
@@ -128,7 +129,14 @@ export async function GET(
     // Build CSV rows (main person + AP rows)
     const rows: string[][] = [];
     for (const sub of submissions) {
-        const data = sub.data as Record<string, unknown>;
+        // Resolve pricing option ids (GUIDs) to human-readable names, matching
+        // the admin UI and confirmation emails. Leaves non-pricing fields and
+        // additionalPeople untouched (shallow copy of top-level keys only).
+        const data = resolveSubmissionDataForDisplay(
+            sub.data as Record<string, unknown>,
+            inputFields,
+            formData.pricingDefinitions,
+        );
 
         // Main person row
         rows.push([
@@ -154,7 +162,11 @@ export async function GET(
         if (Array.isArray(ap)) {
             ap.forEach((person, idx) => {
                 if (!person || typeof person !== "object") return;
-                const personData = person as Record<string, unknown>;
+                const personData = resolveSubmissionDataForDisplay(
+                    person as Record<string, unknown>,
+                    inputFields,
+                    formData.pricingDefinitions,
+                );
                 rows.push([
                     `Další osoba ${idx + 1}`,
                     ...inputFields.flatMap((f) => {
