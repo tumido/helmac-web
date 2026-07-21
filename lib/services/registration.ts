@@ -7,8 +7,10 @@ import type { StatFilter } from "@/lib/types/content-blocks";
 import type { RegistrationStatus } from "@prisma/client";
 
 // fieldName -> map of opt.id (and opt.name) -> opt.name, used to translate stored
-// quantity-field JSON keys back to option names so OptionCounts stays name-keyed.
-type QuantityFieldMap = Record<string, Record<string, string>>;
+// pricing-field values (option ids) back to option names so OptionCounts stays
+// name-keyed for ALL pricing field types (select, multi-select, quantity). This
+// is what capacity-limit lookups (keyed by option name) rely on.
+type PricingFieldMap = Record<string, Record<string, string>>;
 
 export const getRegistrationStatus = cache(async () => {
     const activeYear = await db.year.findFirst({
@@ -88,10 +90,15 @@ const PRICING_FIELD_TYPES = new Set([
 
 function collectFieldStats(
     counts: Record<string, number>,
-    val: unknown
+    val: unknown,
+    keyToName?: Record<string, string>
 ): { numericSum: number; numericCount: number } {
     let numericSum = 0;
     let numericCount = 0;
+    // For pricing fields the stored value is an option id (GUID); translate it
+    // to the option name so counts match fieldOptions (name-keyed). Non-pricing
+    // fields have no map and pass through unchanged.
+    const toName = (key: string): string => keyToName?.[key] ?? key;
     if (val === undefined || val === null || val === "")
         return { numericSum, numericCount };
     const str = String(val);
@@ -105,7 +112,8 @@ function collectFieldStats(
                 for (const item of arr) {
                     const s = String(item);
                     if (!s) continue;
-                    counts[s] = (counts[s] || 0) + 1;
+                    const optName = toName(s);
+                    counts[optName] = (counts[optName] || 0) + 1;
                 }
                 return { numericSum, numericCount };
             }
@@ -127,8 +135,9 @@ function collectFieldStats(
                 )) {
                     const n = Number(qty) || 0;
                     if (n > 0) {
-                        counts[k] =
-                            (counts[k] || 0) + n;
+                        const optName = toName(k);
+                        counts[optName] =
+                            (counts[optName] || 0) + n;
                         numericSum += n;
                         numericCount++;
                     }
@@ -140,7 +149,8 @@ function collectFieldStats(
         }
     }
 
-    counts[str] = (counts[str] || 0) + 1;
+    const optName = toName(str);
+    counts[optName] = (counts[optName] || 0) + 1;
     const num = Number(str);
     if (!isNaN(num)) {
         numericSum += num;
@@ -710,13 +720,19 @@ export async function getOptionCountsForYearFresh(yearId: string): Promise<Optio
 function countValues(
     counts: OptionCounts,
     data: Record<string, unknown>,
-    quantityFields: QuantityFieldMap,
+    pricingFields: PricingFieldMap,
 ): void {
     for (const [name, val] of Object.entries(data)) {
         if (name === "additionalPeople") continue;
         const str = String(val ?? "");
         if (!str || str === "false") continue;
         if (!counts[name]) counts[name] = {};
+
+        // For pricing fields the stored value is an option id (GUID); translate
+        // it back to the option name so counts match capacity limits (name-keyed).
+        // Non-pricing fields (plain select/radio) have no map and pass through.
+        const keyToName = pricingFields[name];
+        const toName = (key: string): string => keyToName?.[key] ?? key;
 
         // Handle JSON array values (pricing_multi_select)
         if (str.startsWith("[")) {
@@ -725,7 +741,9 @@ function countValues(
                 if (Array.isArray(arr)) {
                     for (const item of arr) {
                         const s = String(item);
-                        if (s) counts[name][s] = (counts[name][s] || 0) + 1;
+                        if (!s) continue;
+                        const optName = toName(s);
+                        counts[name][optName] = (counts[name][optName] || 0) + 1;
                     }
                     continue;
                 }
@@ -734,13 +752,12 @@ function countValues(
 
         // Handle JSON object values (pricing_quantity): sum quantities per option,
         // translating opt.id / opt.name keys to opt.name so OptionCounts stays name-keyed.
-        if (str.startsWith("{") && quantityFields[name]) {
+        if (str.startsWith("{") && keyToName) {
             try {
                 const obj = JSON.parse(str);
                 if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-                    const keyToName = quantityFields[name];
                     for (const [key, qty] of Object.entries(obj)) {
-                        const optName = keyToName[key] ?? key;
+                        const optName = toName(key);
                         const n = Number(qty) || 0;
                         if (n > 0) counts[name][optName] = (counts[name][optName] || 0) + n;
                     }
@@ -749,7 +766,9 @@ function countValues(
             } catch { /* not JSON, treat as plain string */ }
         }
 
-        counts[name][str] = (counts[name][str] || 0) + 1;
+        // Plain string value (pricing_select → option id, or plain select → name)
+        const optName = toName(str);
+        counts[name][optName] = (counts[name][optName] || 0) + 1;
     }
 }
 
@@ -831,19 +850,19 @@ async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
         }),
     ]);
 
-    const quantityFields = buildQuantityFieldMap(form?.fields);
+    const pricingFields = buildPricingFieldMap(form?.fields);
 
     const counts: OptionCounts = {};
     for (const sub of submissions) {
         const data = sub.data as Record<string, unknown>;
         // Count main person values
-        countValues(counts, data, quantityFields);
+        countValues(counts, data, pricingFields);
         // Count additional people values
         const ap = data.additionalPeople;
         if (Array.isArray(ap)) {
             for (const person of ap) {
                 if (person && typeof person === "object") {
-                    countValues(counts, person as Record<string, unknown>, quantityFields);
+                    countValues(counts, person as Record<string, unknown>, pricingFields);
                 }
             }
         }
@@ -851,13 +870,19 @@ async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
     return counts;
 }
 
-function buildQuantityFieldMap(rawFields: unknown): QuantityFieldMap {
+const PRICING_FIELD_TYPES_WITH_OPTIONS = new Set([
+    "pricing_select",
+    "pricing_multi_select",
+    "pricing_quantity",
+]);
+
+function buildPricingFieldMap(rawFields: unknown): PricingFieldMap {
     if (!rawFields) return {};
     const formData = migrateFormData(rawFields);
     const inputFields = getAllInputFields(formData.fields);
-    const map: QuantityFieldMap = {};
+    const map: PricingFieldMap = {};
     for (const field of inputFields) {
-        if (field.type !== "pricing_quantity" || !field.pricingId) continue;
+        if (!PRICING_FIELD_TYPES_WITH_OPTIONS.has(field.type) || !field.pricingId) continue;
         const def = formData.pricingDefinitions.find((d) => d.id === field.pricingId);
         if (!def) continue;
         const keyToName: Record<string, string> = {};
