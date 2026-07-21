@@ -224,6 +224,7 @@ export const getRegistrationStatsForYear = cache(
         if (form) {
             const formData = migrateFormData(form.fields);
             const inputFields = getAllInputFields(formData.fields);
+            const pricingFieldMap = buildPricingFieldMap(form.fields);
             const fieldTypeMap = new Map(
                 inputFields.map((f) => [f.name, f.type])
             );
@@ -261,7 +262,8 @@ export const getRegistrationStatsForYear = cache(
                     if (str) acc.total++;
                     const result = collectFieldStats(
                         acc.counts,
-                        val
+                        val,
+                        pricingFieldMap[field.name]
                     );
                     acc.numericSum += result.numericSum;
                     acc.numericCount += result.numericCount;
@@ -496,6 +498,7 @@ export async function getFilteredRegistrationStats(
         const inputFields = getAllInputFields(
             formData.fields
         );
+        const pricingFieldMap = buildPricingFieldMap(form.fields);
         const fieldTypeMap = new Map(
             inputFields.map((f) => [f.name, f.type])
         );
@@ -533,7 +536,8 @@ export async function getFilteredRegistrationStats(
                 if (str) acc.total++;
                 const result = collectFieldStats(
                     acc.counts,
-                    val
+                    val,
+                    pricingFieldMap[field.name]
                 );
                 acc.numericSum += result.numericSum;
                 acc.numericCount += result.numericCount;
@@ -773,15 +777,22 @@ function countValues(
 }
 
 export const getOptionPeopleForYear = cache(async (yearId: string, personFieldName: string): Promise<OptionPeople> => {
-    const submissions = await db.registrationSubmission.findMany({
-        where: {
-            yearId,
-            isTest: false,
-            status: { notIn: ["CANCELLED", "REJECTED"] },
-        },
-        select: { data: true },
-    });
+    const [submissions, form] = await Promise.all([
+        db.registrationSubmission.findMany({
+            where: {
+                yearId,
+                isTest: false,
+                status: { notIn: ["CANCELLED", "REJECTED"] },
+            },
+            select: { data: true },
+        }),
+        db.registrationForm.findUnique({
+            where: { yearId },
+            select: { fields: true },
+        }),
+    ]);
 
+    const pricingFields = buildPricingFieldMap(form?.fields);
     const people: OptionPeople = {};
 
     function collectPeople(data: Record<string, unknown>, personLabel: string): void {
@@ -791,6 +802,10 @@ export const getOptionPeopleForYear = cache(async (yearId: string, personFieldNa
             if (!str || str === "false") continue;
             if (!people[name]) people[name] = {};
 
+            // Pricing fields store option ids (GUIDs); translate to option name.
+            const keyToName = pricingFields[name];
+            const toName = (key: string): string => keyToName?.[key] ?? key;
+
             // Handle JSON array values (pricing_multi_select)
             if (str.startsWith("[")) {
                 try {
@@ -799,16 +814,18 @@ export const getOptionPeopleForYear = cache(async (yearId: string, personFieldNa
                         for (const item of arr) {
                             const s = String(item);
                             if (!s) continue;
-                            if (!people[name][s]) people[name][s] = [];
-                            people[name][s].push(personLabel);
+                            const optName = toName(s);
+                            if (!people[name][optName]) people[name][optName] = [];
+                            people[name][optName].push(personLabel);
                         }
                         continue;
                     }
                 } catch { /* not JSON, treat as plain string */ }
             }
 
-            if (!people[name][str]) people[name][str] = [];
-            people[name][str].push(personLabel);
+            const optName = toName(str);
+            if (!people[name][optName]) people[name][optName] = [];
+            people[name][optName].push(personLabel);
         }
     }
 
