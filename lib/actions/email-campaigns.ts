@@ -286,8 +286,11 @@ export async function retryFailedItems(campaignId: string): Promise<ActionResult
             return { error: "Hromadný email nebyl nalezen" };
         }
 
+        // Only retry soft failures. Permanently-failed items (SMTP 5xx / bad
+        // address) never succeed on retry and re-hammering them hurts sender
+        // reputation, so they stay "failed".
         const updated = await db.emailQueueItem.updateMany({
-            where: { campaignId, status: "failed" },
+            where: { campaignId, status: "failed", permanent: false },
             data: { status: "pending", attempts: 0, lastError: null },
         });
         if (updated.count === 0) {

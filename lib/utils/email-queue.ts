@@ -137,6 +137,10 @@ export async function processEmailQueue(): Promise<ProcessResult> {
     try {
         // Recover items stuck in "sending" from a crashed invocation.
         // Their attempts counter was already incremented, so no retry loop.
+        // Residual risk: if the crash happened AFTER the SMTP send but BEFORE
+        // the "sent" write, the recipient gets one duplicate on recovery. The
+        // pre-incremented attempts bounds this to at most one extra send per
+        // crash; we accept it rather than add a pre-send idempotency journal.
         await db.emailQueueItem.updateMany({
             where: { campaignId: campaign.id, status: "sending" },
             data: { status: "pending" },
@@ -237,6 +241,12 @@ export async function processEmailQueue(): Promise<ProcessResult> {
                                 where: { id: item.id },
                                 data: {
                                     status: permanent ? "failed" : "pending",
+                                    // Only a hard SMTP failure (5xx / bad
+                                    // envelope) is a permanent failure. Running
+                                    // out of attempts also lands in "failed"
+                                    // below, but stays retryable — a manual
+                                    // bulk retry gives those fresh attempts.
+                                    permanent: isPermanentSendError(err),
                                     lastError: message,
                                 },
                             });
@@ -320,6 +330,12 @@ export async function kickEmailQueue(): Promise<void> {
  * When the hourly cap is exhausted, idle inside the current invocation and
  * re-check periodically until headroom appears or the time budget runs out.
  * Keeps the self-invocation chain alive across a cap window.
+ *
+ * This deliberately burns serverless compute idling (up to ~timeBudgetMs in
+ * 30s ticks) instead of returning and relying on the daily cron to re-kick:
+ * the cron runs once a day (Vercel Hobby), so returning here could stall a
+ * campaign for up to 24h. Holding the invocation trades a few minutes of idle
+ * compute for same-window delivery continuity.
  */
 export async function waitForCapHeadroom(startedAt: number): Promise<boolean> {
     while (Date.now() - startedAt < EMAIL_QUEUE_CONFIG.timeBudgetMs()) {

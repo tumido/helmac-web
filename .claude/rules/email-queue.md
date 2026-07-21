@@ -21,6 +21,6 @@ Seznam publishes no exact per-account outbound limit but blocks bursty senders. 
 - Items are marked `sending` + `attempts` incremented BEFORE the SMTP call (bounds duplicate sends on crash); `sending` items found at claim time are recovered to `pending`.
 - `startCampaign` claims DRAFT→SENDING atomically (`updateMany` with status guard inside the transaction, before `createMany`) so a double-click cannot enqueue recipients twice.
 - The send loop re-checks campaign status before each item and breaks when it is no longer `SENDING`, so pause takes effect within one item (~3s), and the COMPLETED flip is status-guarded so a paused campaign is never marked completed.
-- Permanent failures (SMTP 5xx, `EENVELOPE`) or exhausted attempts → `failed` with `lastError`; temporary errors return to `pending`.
+- Permanent failures (SMTP 5xx, `EENVELOPE`) or exhausted attempts → `failed` with `lastError`; temporary errors return to `pending`. Only hard failures set the `permanent` flag on the queue item — attempts-exhausted rows stay `permanent: false`. `retryFailedItems` resets only `permanent: false` rows (so a bulk retry never re-hammers dead addresses, which hurts sender reputation).
 - Campaign body/subject are rendered per item at send time with `replacePlaceholders` — never duplicate the body into queue items.
 - Local testing: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/email-queue/process` (CRON_SECRET lives in `.env.local`).

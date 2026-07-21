@@ -626,6 +626,7 @@ model EmailQueueItem {
 
   status    String    @default("pending") // pending | sending | sent | failed
   attempts  Int       @default(0)
+  permanent Boolean   @default(false) // hard failure (SMTP 5xx / bad address); bulk retry skips these
   lastError String?
   sentAt    DateTime?
 
