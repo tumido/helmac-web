@@ -823,6 +823,24 @@ export const getOptionPeopleForYear = cache(async (yearId: string, personFieldNa
                 } catch { /* not JSON, treat as plain string */ }
             }
 
+            // Handle JSON object values (pricing_quantity): group the person under
+            // each selected option once (qty > 0), regardless of quantity, since
+            // OptionPeople lists people per option rather than summing quantities.
+            if (str.startsWith("{") && keyToName) {
+                try {
+                    const obj = JSON.parse(str);
+                    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+                        for (const [key, qty] of Object.entries(obj)) {
+                            if ((Number(qty) || 0) <= 0) continue;
+                            const optName = toName(key);
+                            if (!people[name][optName]) people[name][optName] = [];
+                            people[name][optName].push(personLabel);
+                        }
+                        continue;
+                    }
+                } catch { /* not JSON, treat as plain string */ }
+            }
+
             const optName = toName(str);
             if (!people[name][optName]) people[name][optName] = [];
             people[name][optName].push(personLabel);
@@ -887,19 +905,13 @@ async function computeOptionCounts(yearId: string): Promise<OptionCounts> {
     return counts;
 }
 
-const PRICING_FIELD_TYPES_WITH_OPTIONS = new Set([
-    "pricing_select",
-    "pricing_multi_select",
-    "pricing_quantity",
-]);
-
 function buildPricingFieldMap(rawFields: unknown): PricingFieldMap {
     if (!rawFields) return {};
     const formData = migrateFormData(rawFields);
     const inputFields = getAllInputFields(formData.fields);
     const map: PricingFieldMap = {};
     for (const field of inputFields) {
-        if (!PRICING_FIELD_TYPES_WITH_OPTIONS.has(field.type) || !field.pricingId) continue;
+        if (!PRICING_FIELD_TYPES.has(field.type) || !field.pricingId) continue;
         const def = formData.pricingDefinitions.find((d) => d.id === field.pricingId);
         if (!def) continue;
         const keyToName: Record<string, string> = {};
