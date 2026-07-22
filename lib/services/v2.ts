@@ -241,7 +241,7 @@ export async function updateOrderTotalPrice(
     totalPrice: number,
 ): Promise<void> {
     await db.$transaction(async (tx) => {
-        tx.v2Order.update({
+        await tx.v2Order.update({
             where: { id: orderId },
             data: { totalPrice },
         });
