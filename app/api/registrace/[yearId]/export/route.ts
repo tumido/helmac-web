@@ -168,7 +168,7 @@ export async function GET(
                     if (li.field.name !== fieldParam)
                         continue;
                     const displayVal = normalizeCheckboxValue(
-                        li.pricingOption?.name ?? li.value,
+                        li.pricingOption?.name ?? li.value ?? "",
                     );
                     if (displayVal === valueParam)
                         return true;
