@@ -158,7 +158,7 @@ export async function checkCapacity(
             remaining,
             would_exceed AS "wouldExceed"
         FROM v2_check_capacity(
-            ${yearId}, ${fieldName}, ${optionValue}, ${additional}
+            ${yearId}, ${fieldName}, ${optionValue}, ${additional}::int
         )`,
     );
     return rows[0] ?? null;
