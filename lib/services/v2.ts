@@ -35,6 +35,8 @@ export interface V2FormField {
     name: string;
     label: string;
     type: string;
+    required: boolean;
+    editable: boolean;
     pricingDefinitionId: string | null;
     includeForAdditionalPeople: boolean;
     options: string[];
@@ -367,8 +369,8 @@ export function v2FieldToInputField(f: V2FormField): InputField {
         id: f.legacyId ?? f.id,
         name: f.name,
         label: f.label,
-        required: false,
-        editable: false,
+        required: f.required,
+        editable: f.editable,
         options: f.options,
         pricingId: f.pricingDefinitionId ?? undefined,
         includeForAdditionalPeople: f.includeForAdditionalPeople,
