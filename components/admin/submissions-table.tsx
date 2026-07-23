@@ -145,17 +145,11 @@ export function SubmissionsTable({
                       }
                       if (
                           typeof val === "string" &&
-                          val.startsWith("[")
+                          val.includes(", ")
                       ) {
-                          try {
-                              const arr = JSON.parse(val);
-                              if (Array.isArray(arr))
-                                  return arr.includes(
-                                      valueFilter,
-                                  );
-                          } catch {
-                              /* ignore */
-                          }
+                          return val
+                              .split(", ")
+                              .includes(valueFilter);
                       }
                       return (val ?? "") === valueFilter;
                   }),
