@@ -29,9 +29,13 @@ export function useSubmissionsCount(): SubmissionsCountContextValue {
 
 export function SubmissionsCountChip({ total }: { total: number }) {
     const { displayedCount } = useSubmissionsCount();
-    const label =
-        displayedCount != null && displayedCount < total
-            ? `splňuje ${displayedCount} z ${total} registrací`
-            : `${total} registrací`;
+    let label: string;
+    if (displayedCount != null && displayedCount < total) {
+        label = displayedCount === 0
+            ? `Žádná z ${total} registrací`
+            : `splňuje ${displayedCount} z ${total} registrací`;
+    } else {
+        label = `${total} registrací`;
+    }
     return <Chip label={label} color="primary" variant="outlined" />;
 }
