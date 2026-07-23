@@ -49,6 +49,21 @@ export const getArchivedYears = cache(async () => {
     });
 });
 
+export const getYearRegistrationSettings = cache(
+    async (id: string) => {
+        return db.year.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                year: true,
+                title: true,
+                registrationOpen: true,
+                registrationStartDate: true,
+            },
+        });
+    },
+);
+
 export const getYearById = cache(async (id: string) => {
     return db.year.findUnique({
         where: { id },

@@ -1,102 +1,105 @@
 import { Container, Box, Divider } from "@mui/material";
-import { Description, People, CheckCircleOutline } from "@mui/icons-material";
+import {
+    Description,
+    People,
+    CheckCircleOutline,
+} from "@mui/icons-material";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSettings } from "@/components/admin/registration-settings";
 import { CapacityLimitsEditor } from "@/components/admin/capacity-limits-editor";
 import { OptionCountsEditor } from "@/components/admin/option-counts-editor";
 import { LinkButton } from "@/components/ui/link-button";
-import { getRegistrationFormForYear, getOptionCountsForYear } from "@/lib/services";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import { getOptionCountsForYear } from "@/lib/services";
+import { getYearRegistrationSettings } from "@/lib/services/years";
+import {
+    hasMainEmailAccount,
+    hasConfiguredBankAccount,
+} from "@/lib/services/bank-account";
+import {
+    getRegistrationSummary,
+    getFormStructure,
+    v2FieldToInputField,
+    v2PricingDefsToPricingDefs,
+} from "@/lib/services/v2";
 
 interface RegistracePageProps {
     params: Promise<{ id: string }>;
 }
 
-async function getYearRegistration(yearId: string) {
-    return db.year.findUnique({
-        where: { id: yearId },
-        select: {
-            id: true,
-            year: true,
-            title: true,
-            registrationOpen: true,
-            registrationStartDate: true,
-            _count: {
-                select: {
-                    registrationSubmissions: {
-                        where: { isTest: false },
-                    },
-                },
-            },
-        },
-    });
-}
+const OPTION_FIELD_TYPES = new Set([
+    "select",
+    "radio",
+    "pricing_select",
+    "pricing_multi_select",
+    "pricing_quantity",
+]);
 
-export default async function RegistracePage({ params }: RegistracePageProps) {
+export default async function RegistracePage({
+    params,
+}: RegistracePageProps) {
     await requireAdmin();
     const { id } = await params;
-    const year = await getYearRegistration(id);
+
+    const year = await getYearRegistrationSettings(id);
 
     if (!year) {
         notFound();
     }
 
-    // Count total registered people (main registrants + additional people)
-    const submissions = await db.registrationSubmission.findMany({
-        where: { yearId: year.id, isTest: false, status: { notIn: ["CANCELLED", "REJECTED"] } },
-        select: { data: true },
-    });
-    const totalPeopleCount = submissions.reduce((sum, sub) => {
-        const data = sub.data as Record<string, unknown>;
-        const ap = Array.isArray(data.additionalPeople) ? data.additionalPeople.length : 0;
-        return sum + 1 + ap;
-    }, 0);
-
-    const [paidAgg, unpaidAgg] = await Promise.all([
-        db.registrationSubmission.aggregate({
-            where: { yearId: year.id, isTest: false, isPaid: true, status: { notIn: ["CANCELLED", "REJECTED"] } },
-            _sum: { totalPrice: true },
-        }),
-        db.registrationSubmission.aggregate({
-            where: { yearId: year.id, isTest: false, isPaid: false, status: { notIn: ["CANCELLED", "REJECTED"] } },
-            _sum: { totalPrice: true },
-        }),
+    const [summary, formStructure] = await Promise.all([
+        getRegistrationSummary(year.id),
+        getFormStructure(year.id),
     ]);
-    const paidSum = paidAgg._sum.totalPrice ?? 0;
-    const unpaidSum = unpaidAgg._sum.totalPrice ?? 0;
 
-    // Fetch form data for capacity limits editor
-    const registrationForm = await getRegistrationFormForYear(year.id);
-    const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
-
-    // Fields with options for capacity limits
-    const allInputFields = formData
-        ? getAllInputFields(formData.fields).filter(
-            (f) => f.type === "select" || f.type === "radio" || f.type === "pricing_select" || f.type === "pricing_multi_select" || f.type === "pricing_quantity"
-        )
+    const allInputFields = formStructure
+        ? formStructure.fields
+              .filter((f) => OPTION_FIELD_TYPES.has(f.type))
+              .map(v2FieldToInputField)
         : [];
 
-    // Compute option counts if there are any option fields
-    const optionCounts = formData && allInputFields.length > 0
-        ? await getOptionCountsForYear(year.id)
-        : undefined;
+    const optionCounts =
+        formStructure && allInputFields.length > 0
+            ? await getOptionCountsForYear(year.id)
+            : undefined;
 
-    // Check registration open constraints
-    const mainEmail = await db.emailAccount.findFirst({ where: { isMain: true } });
-    const bankAccount = await db.bankAccount.findFirst({
-        where: { bankAccountNumber: { not: null } },
-    });
+    const v2IdToLegacyId = new Map(
+        (formStructure?.fields ?? [])
+            .filter((f) => f.legacyId)
+            .map((f) => [f.id, f.legacyId!]),
+    );
+    const capacityLimits = (
+        formStructure?.capacityLimits ?? []
+    ).map((cl) => ({
+        ...cl,
+        fieldId: v2IdToLegacyId.get(cl.fieldId) ?? cl.fieldId,
+    }));
+    const showOptionCounts = (() => {
+        const layout = formStructure?.layout as
+            | { showOptionCounts?: string[] }
+            | null
+            | undefined;
+        return layout?.showOptionCounts ?? [];
+    })();
+
+    const [hasEmail, hasBank] = await Promise.all([
+        hasMainEmailAccount(),
+        hasConfiguredBankAccount(),
+    ]);
 
     return (
         <Container maxWidth="md">
             <PageHeader
                 breadcrumbs={[
-                    { label: "Ročníky", href: "/admin/rocniky" },
-                    { label: `${year.year}`, href: `/admin/rocniky/${year.id}` },
+                    {
+                        label: "Ročníky",
+                        href: "/admin/rocniky",
+                    },
+                    {
+                        label: `${year.year}`,
+                        href: `/admin/rocniky/${year.id}`,
+                    },
                     { label: "Registrace" },
                 ]}
                 title="Registrace"
@@ -105,38 +108,58 @@ export default async function RegistracePage({ params }: RegistracePageProps) {
             <RegistrationSettings
                 yearId={year.id}
                 registrationOpen={year.registrationOpen}
-                registrationStartDate={year.registrationStartDate}
-                submissionCount={year._count.registrationSubmissions}
-                totalPeopleCount={totalPeopleCount}
-                paidSum={paidSum}
-                unpaidSum={unpaidSum}
-                hasMainEmail={!!mainEmail}
-                hasBankAccount={!!bankAccount}
+                registrationStartDate={
+                    year.registrationStartDate
+                }
+                submissionCount={summary.registrations}
+                totalPeopleCount={summary.people}
+                paidSum={summary.paidTotal}
+                unpaidSum={summary.unpaidTotal}
+                hasMainEmail={hasEmail}
+                hasBankAccount={hasBank}
             />
 
-            {formData && allInputFields.length > 0 && (
-                <>
-                    <Divider sx={{ my: 3 }} />
-                    <CapacityLimitsEditor
-                        yearId={year.id}
-                        capacityLimits={formData.capacityLimits}
-                        allInputFields={allInputFields}
-                        pricingDefinitions={formData.pricingDefinitions}
-                        optionCounts={optionCounts}
-                    />
-                    <Divider sx={{ my: 3 }} />
-                    <OptionCountsEditor
-                        yearId={year.id}
-                        showOptionCounts={formData.showOptionCounts}
-                        allInputFields={allInputFields}
-                        optionCounts={optionCounts}
-                    />
-                </>
-            )}
+            {formStructure &&
+                allInputFields.length > 0 && (
+                    <>
+                        <Divider sx={{ my: 3 }} />
+                        <CapacityLimitsEditor
+                            yearId={year.id}
+                            capacityLimits={capacityLimits.map(
+                                (cl) => ({
+                                    id: cl.id,
+                                    fieldId: cl.fieldId,
+                                    value: cl.optionValue ?? "",
+                                    maxCount: cl.maxCount,
+                                }),
+                            )}
+                            allInputFields={allInputFields}
+                            pricingDefinitions={v2PricingDefsToPricingDefs(
+                                formStructure.pricingDefinitions,
+                            )}
+                            optionCounts={optionCounts}
+                        />
+                        <Divider sx={{ my: 3 }} />
+                        <OptionCountsEditor
+                            yearId={year.id}
+                            showOptionCounts={
+                                showOptionCounts
+                            }
+                            allInputFields={allInputFields}
+                            optionCounts={optionCounts}
+                        />
+                    </>
+                )}
 
             <Divider sx={{ my: 3 }} />
 
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 2,
+                    flexWrap: "wrap",
+                }}
+            >
                 <LinkButton
                     href={`/admin/rocniky/${year.id}/registrace/formular`}
                     variant="outlined"

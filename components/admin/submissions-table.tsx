@@ -126,23 +126,25 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
         ? statusFiltered.filter((e) => e.submission.isPaid === paidFilter)
         : statusFiltered;
 
+    // Match primary + additional people so the filtered count agrees with v2 option counts
     const fieldFiltered = fieldFilter && valueFilter
         ? paidFiltered.filter((e) => {
-            const rawVal = e.displayData[fieldFilter];
-            // Checkbox fields store boolean, but filter uses "Ano"/"Ne"
-            if (rawVal === true || rawVal === false) {
-                return (rawVal ? "Ano" : "Ne") === valueFilter;
-            }
-            // pricing_multi_select: resolver returns JSON array string of names
-            if (typeof rawVal === "string" && rawVal.startsWith("[")) {
-                try {
-                    const arr = JSON.parse(rawVal);
-                    if (Array.isArray(arr)) {
-                        return arr.includes(valueFilter);
-                    }
-                } catch { /* not JSON */ }
-            }
-            return String(rawVal ?? "") === valueFilter;
+            const datasets = [e.displayData, ...e.displayAP];
+            return datasets.some((data) => {
+                const rawVal = data[fieldFilter];
+                if (rawVal === true || rawVal === false) {
+                    return (rawVal ? "Ano" : "Ne") === valueFilter;
+                }
+                if (typeof rawVal === "string" && rawVal.startsWith("[")) {
+                    try {
+                        const arr = JSON.parse(rawVal);
+                        if (Array.isArray(arr)) {
+                            return arr.includes(valueFilter);
+                        }
+                    } catch { /* not JSON */ }
+                }
+                return String(rawVal ?? "") === valueFilter;
+            });
         })
         : paidFiltered;
 

@@ -1,7 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
-import type { PricingSummaryData } from "@/lib/types/registration-form";
+import type {
+    InputField,
+    FormField,
+    PricingDefinition,
+    PricingSummaryData,
+} from "@/lib/types/registration-form";
 
 // ============================================================
 // Types — v2 DB function return shapes
@@ -30,6 +35,8 @@ export interface V2FormField {
     name: string;
     label: string;
     type: string;
+    required: boolean;
+    editable: boolean;
     pricingDefinitionId: string | null;
     includeForAdditionalPeople: boolean;
     options: string[];
@@ -39,10 +46,14 @@ export interface V2FormField {
 export interface V2PricingDef {
     id: string;
     name: string;
+    type?: string;
+    multiSelect?: boolean;
+    unitName?: string;
     options: { id: string; name: string }[];
 }
 
 export interface V2FormStructure {
+    layout: unknown;
     fields: V2FormField[];
     pricingDefinitions: V2PricingDef[];
     capacityLimits: {
@@ -346,4 +357,48 @@ export async function getFilteredOrderSummary(
         unpaidTotal: Number(row.unpaid_total),
         people: Number(row.people),
     };
+}
+
+// ============================================================
+// Converters — map v2 types to legacy component-facing types
+// ============================================================
+
+export function v2FieldToInputField(f: V2FormField): InputField {
+    return {
+        type: f.type as InputField["type"],
+        id: f.legacyId ?? f.id,
+        name: f.name,
+        label: f.label,
+        required: f.required,
+        editable: f.editable,
+        options: f.options,
+        pricingId: f.pricingDefinitionId ?? undefined,
+        includeForAdditionalPeople: f.includeForAdditionalPeople,
+    };
+}
+
+export function v2FieldsToFormFields(
+    fields: V2FormField[],
+): FormField[] {
+    return fields.map(v2FieldToInputField);
+}
+
+export function v2PricingDefsToPricingDefs(
+    defs: V2PricingDef[],
+): PricingDefinition[] {
+    return defs.map((d) => ({
+        id: d.id,
+        name: d.name,
+        type: (d.type ?? "options") as "options" | "quantity",
+        multiSelect: d.multiSelect,
+        unitName: d.unitName,
+        usePriceTiers: false,
+        // prices not needed for admin pages — only option names/IDs
+        options: d.options.map((o) => ({
+            id: o.id,
+            name: o.name,
+            description: "",
+            prices: [],
+        })),
+    }));
 }
