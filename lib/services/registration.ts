@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { OptionCounts, OptionPeople } from "@/lib/types/registration-form";
 import type { StatFilter } from "@/lib/types/content-blocks";
@@ -69,15 +70,32 @@ function buildFieldStats(
         formStructure.fields.map((f) => [f.id, f.name]),
     );
 
+    // Build field type lookup for checkbox filtering
+    const fieldTypeMap = new Map(
+        formStructure.fields.map((f) => [f.name, f.type]),
+    );
+
     // Group value rows by personId to produce per-person records
-    const personValues = new Map<string, Record<string, string>>();
+    const personValues = new Map<string, Record<string, string[]>>();
     for (const row of rawValueRows) {
+        const val = row.value ?? "";
+        if (val === "false" && fieldTypeMap.get(row.fieldName) === "checkbox")
+            continue;
         if (!personValues.has(row.personId))
             personValues.set(row.personId, {});
-        personValues.get(row.personId)![row.fieldName] =
-            row.value ?? "";
+        const person = personValues.get(row.personId)!;
+        if (!person[row.fieldName]) person[row.fieldName] = [];
+        person[row.fieldName].push(val);
     }
-    const valueRows = Array.from(personValues.values());
+    const valueRows = Array.from(personValues.values()).map(
+        (person) => {
+            const row: Record<string, string> = {};
+            for (const [name, vals] of Object.entries(person)) {
+                row[name] = vals.join(", ");
+            }
+            return row;
+        },
+    );
 
     for (const field of formStructure.fields) {
         fieldLabels[field.name] = field.label;
@@ -103,18 +121,24 @@ function buildFieldStats(
 
         const fieldCounts =
             optionCountsResult[field.name]?.counts ?? {};
-        const total = Object.values(fieldCounts).reduce(
-            (s, c) => s + c,
-            0,
-        );
 
-        let numericSum = 0;
-        let numericCount = 0;
         const fieldValues = valueRows.map(
             (r) => r[field.name] ?? "",
         );
+        // total = respondents with a non-empty value (not sum of quantities)
+        const total = fieldValues.filter((v) => v !== "").length;
 
-        if (field.type === "number" || isPricing) {
+        let numericSum = 0;
+        let numericCount = 0;
+
+        if (field.type === "pricing_quantity") {
+            // For pricing_quantity, option counts ARE quantities (SUM(oli.quantity))
+            numericSum = Object.values(fieldCounts).reduce(
+                (s, c) => s + c,
+                0,
+            );
+            numericCount = total || 1;
+        } else if (field.type === "number") {
             for (const val of fieldValues) {
                 if (!val) continue;
                 const num = Number(val);
@@ -275,13 +299,15 @@ export async function getFilteredRegistrationStats(
         ? filter.statuses
         : null;
     const isPaid = filter.isPaid ?? null;
+    const hasFieldValueFilters =
+        filter.fieldFilters && filter.fieldFilters.length > 0;
+
     const fieldFilterNames = filter.fieldFilters?.map(
         (f) => f.fieldName,
     );
 
-    const [summary, optionCountsResult, formStructure] =
+    const [optionCountsResult, formStructure] =
         await Promise.all([
-            getFilteredOrderSummary(yearId, statuses, isPaid),
             getOptionCounts(
                 yearId,
                 fieldFilterNames ?? null,
@@ -292,6 +318,9 @@ export async function getFilteredRegistrationStats(
         ]);
 
     if (!formStructure) {
+        const summary = await getFilteredOrderSummary(
+            yearId, statuses, isPaid,
+        );
         return {
             registrations: summary.registrations,
             people: summary.people,
@@ -311,10 +340,46 @@ export async function getFilteredRegistrationStats(
     const fieldNames = formStructure.fields.map(
         (f) => f.name,
     );
-    const rawValueRows = await getValueRows(
+    let rawValueRows = await getValueRows(
         yearId,
         fieldNames,
     );
+
+    // When field-value filters exist, filter rawValueRows to only include
+    // orders where at least one person matches ALL field-value pairs.
+    let matchingOrderIds: string[] | null = null;
+    if (hasFieldValueFilters) {
+        const orderPersonRows = new Map<string, Map<string, Set<string>>>();
+        for (const row of rawValueRows) {
+            if (!orderPersonRows.has(row.orderId))
+                orderPersonRows.set(row.orderId, new Map());
+            const persons = orderPersonRows.get(row.orderId)!;
+            if (!persons.has(row.personId))
+                persons.set(row.personId, new Set());
+            persons.get(row.personId)!.add(
+                `${row.fieldName}\0${row.value}`,
+            );
+        }
+
+        matchingOrderIds = [];
+        for (const [orderId, persons] of orderPersonRows) {
+            let orderMatches = false;
+            for (const values of persons.values()) {
+                const personMatches = filter.fieldFilters!.every(
+                    (ff) => values.has(`${ff.fieldName}\0${ff.value}`),
+                );
+                if (personMatches) {
+                    orderMatches = true;
+                    break;
+                }
+            }
+            if (orderMatches) matchingOrderIds.push(orderId);
+        }
+
+        rawValueRows = rawValueRows.filter(
+            (r) => matchingOrderIds!.includes(r.orderId),
+        );
+    }
 
     const {
         fields,
@@ -327,6 +392,24 @@ export async function getFilteredRegistrationStats(
         optionCountsResult,
         rawValueRows,
     );
+
+    // Compute summary — when field-value filters exist, recompute from
+    // the matching orders only instead of using the broad SQL summary.
+    let summary;
+    if (matchingOrderIds !== null && matchingOrderIds.length > 0) {
+        summary = await getOrderSummaryByIds(
+            matchingOrderIds, statuses, isPaid,
+        );
+    } else if (matchingOrderIds !== null) {
+        summary = {
+            registrations: 0, confirmed: 0, pending: 0, waitlist: 0,
+            paidTotal: 0, unpaidTotal: 0, people: 0,
+        };
+    } else {
+        summary = await getFilteredOrderSummary(
+            yearId, statuses, isPaid,
+        );
+    }
 
     return {
         registrations: summary.registrations,
@@ -341,6 +424,79 @@ export async function getFilteredRegistrationStats(
         fieldOptions,
         capacityLimits,
         valueRows,
+    };
+}
+
+async function getOrderSummaryByIds(
+    orderIds: string[],
+    statuses: string[] | null,
+    isPaid: boolean | null,
+): Promise<{
+    registrations: number;
+    confirmed: number;
+    pending: number;
+    waitlist: number;
+    paidTotal: number;
+    unpaidTotal: number;
+    people: number;
+}> {
+    const statusFilter = statuses
+        ? Prisma.sql`AND o.status = ANY(${statuses}::text[])`
+        : Prisma.sql`AND o.status NOT IN ('CANCELLED', 'REJECTED')`;
+    const paidFilter =
+        isPaid !== null
+            ? Prisma.sql`AND o.is_paid = ${isPaid}`
+            : Prisma.empty;
+
+    const rows = await db.$queryRaw<
+        {
+            registrations: bigint;
+            confirmed: bigint;
+            pending: bigint;
+            waitlist: bigint;
+            paid_total: bigint;
+            unpaid_total: bigint;
+            people: bigint;
+        }[]
+    >(
+        Prisma.sql`
+            SELECT
+                COUNT(*) AS registrations,
+                COUNT(*) FILTER (WHERE o.status = 'CONFIRMED') AS confirmed,
+                COUNT(*) FILTER (WHERE o.status = 'PENDING') AS pending,
+                COUNT(*) FILTER (WHERE o.status = 'WAITLIST') AS waitlist,
+                COALESCE(SUM(o.total_price) FILTER (WHERE o.is_paid), 0) AS paid_total,
+                COALESCE(SUM(o.total_price) FILTER (WHERE NOT o.is_paid), 0) AS unpaid_total,
+                COALESCE((
+                    SELECT COUNT(DISTINCT op.id)
+                    FROM v2_order_people op
+                    WHERE op.order_id = ANY(ARRAY_AGG(o.id))
+                ), 0) AS people
+            FROM v2_orders o
+            WHERE o.id = ANY(${orderIds}::text[])
+                AND o.is_test = false
+                AND o.parent_order_id IS NULL
+                AND o.order_type = 'registration'
+                ${statusFilter}
+                ${paidFilter}
+        `,
+    );
+
+    const row = rows[0];
+    if (!row) {
+        return {
+            registrations: 0, confirmed: 0, pending: 0, waitlist: 0,
+            paidTotal: 0, unpaidTotal: 0, people: 0,
+        };
+    }
+    return {
+        registrations: Number(row.registrations),
+        confirmed: Number(row.confirmed),
+        pending: Number(row.pending),
+        waitlist: Number(row.waitlist),
+        paidTotal: Number(row.paid_total),
+        unpaidTotal: Number(row.unpaid_total),
+        people: Number(row.people),
     };
 }
 

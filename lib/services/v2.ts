@@ -1,5 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
+import type { PricingSummaryData } from "@/lib/types/registration-form";
 
 // ============================================================
 // Types — v2 DB function return shapes
@@ -172,12 +174,14 @@ export async function findDuplicateEmail(
             SELECT oli.id FROM v2_order_line_items oli
             JOIN v2_form_fields ff ON ff.id = oli.field_id
             JOIN v2_orders o ON o.id = oli.order_id
+            JOIN v2_order_people op ON op.id = oli.person_id
             WHERE oli.year_id = ${yearId}
                 AND ff.name = ${emailFieldName}
                 AND LOWER(oli.value) = ${emailValue}
                 AND o.order_type = 'registration'
                 AND o.is_test = false
                 AND o.status NOT IN ('CANCELLED', 'REJECTED')
+                AND op.person_index = 0
             LIMIT 1
         `,
     );
@@ -197,6 +201,8 @@ export async function countOrders(where: {
         where: {
             yearId: where.yearId,
             isTest: where.isTest ?? false,
+            parentOrderId: null,
+            orderType: "registration",
             status: {
                 notIn: where.statusNotIn ?? [
                     "CANCELLED",
@@ -246,9 +252,25 @@ export async function updateOrderTotalPrice(
             data: { totalPrice },
         });
         if (legacySubmissionId) {
+            const sub = await tx.registrationSubmission.findUnique({
+                where: { id: legacySubmissionId },
+                select: { pricingSummary: true },
+            });
+            const pricingSummary = sub?.pricingSummary as unknown as PricingSummaryData | null;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updateData: Record<string, any> = { totalPrice };
+            if (pricingSummary?.tiers) {
+                const { applicableTierIndex } =
+                    getApplicablePriceFromSummary(pricingSummary);
+                updateData.pricingSummary = {
+                    ...pricingSummary,
+                    applicableTierIndex,
+                    totalPrice,
+                } as unknown as Prisma.InputJsonValue;
+            }
             await tx.registrationSubmission.update({
                 where: { id: legacySubmissionId },
-                data: { totalPrice },
+                data: updateData,
             });
         }
     });
