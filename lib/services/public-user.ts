@@ -60,7 +60,84 @@ async function refreshStalePrices(
     }
 }
 
+export async function linkUnclaimedRegistrations(
+    userId: string,
+    email: string,
+): Promise<void> {
+    try {
+        const forms = await db.registrationForm.findMany({
+            select: { id: true, fields: true },
+        });
+
+        for (const form of forms) {
+            const fields = form.fields as unknown as {
+                fields: Array<{
+                    type?: string;
+                    name?: string;
+                    children?: Array<{
+                        type?: string;
+                        name?: string;
+                    }>;
+                }>;
+            };
+            let emailFieldName: string | null = null;
+
+            const findEmailField = (
+                elements: Array<{
+                    type?: string;
+                    name?: string;
+                    children?: Array<{
+                        type?: string;
+                        name?: string;
+                    }>;
+                }>,
+            ) => {
+                for (const el of elements) {
+                    if (el.type === "email" && el.name) {
+                        emailFieldName = el.name;
+                        return;
+                    }
+                    if (el.children) {
+                        findEmailField(el.children);
+                    }
+                }
+            };
+
+            if (fields && Array.isArray(fields.fields)) {
+                findEmailField(fields.fields);
+            }
+
+            if (!emailFieldName) continue;
+
+            await db.registrationSubmission.updateMany({
+                where: {
+                    formId: form.id,
+                    publicUserId: null,
+                    data: {
+                        path: [emailFieldName],
+                        equals: email,
+                    },
+                },
+                data: { publicUserId: userId },
+            });
+        }
+    } catch (error) {
+        console.error(
+            "Failed to link existing registrations:",
+            error,
+        );
+    }
+}
+
 export async function getPublicUserRegistrations(userId: string) {
+    const user = await db.publicUser.findUnique({
+        where: { id: userId },
+        select: { email: true },
+    });
+    if (user) {
+        await linkUnclaimedRegistrations(userId, user.email);
+    }
+
     const registrations = await db.registrationSubmission.findMany({
         where: { publicUserId: userId },
         orderBy: { createdAt: "desc" },

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getAllInputFields, getAPInputFields } from "@/lib/types/registration-form";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { getFormStructure } from "@/lib/services/v2";
 import { formatDateTime } from "@/lib/utils/date";
 import { isMinor } from "@/lib/utils/minor-detection";
 
@@ -16,108 +15,177 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function escapeCsvValue(value: string): string {
-    if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    if (
+        value.includes(",") ||
+        value.includes('"') ||
+        value.includes("\n")
+    ) {
         return `"${value.replace(/"/g, '""')}"`;
     }
     return value;
 }
 
+function normalizeCheckboxValue(val: string): string {
+    if (val === "true") return "Ano";
+    if (val === "false") return "Ne";
+    return val;
+}
+
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ yearId: string }> }
+    { params }: { params: Promise<{ yearId: string }> },
 ) {
     try {
         await requireAdmin();
     } catch {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: 401 },
+        );
     }
 
     const { yearId } = await params;
 
-    // Optional filters from query params
-    const statusParam = request.nextUrl.searchParams.get("status");
-    const paidParam = request.nextUrl.searchParams.get("paid");
-    const fieldParam = request.nextUrl.searchParams.get("field");
-    const valueParam = request.nextUrl.searchParams.get("value");
-    const testParam = request.nextUrl.searchParams.get("test");
+    const statusParam =
+        request.nextUrl.searchParams.get("status");
+    const paidParam =
+        request.nextUrl.searchParams.get("paid");
+    const fieldParam =
+        request.nextUrl.searchParams.get("field");
+    const valueParam =
+        request.nextUrl.searchParams.get("value");
+    const testParam =
+        request.nextUrl.searchParams.get("test");
 
-    const validStatuses = ["PENDING", "CONFIRMED", "WAITLIST", "CANCELLED", "REJECTED"];
-    const statusFilter = statusParam && validStatuses.includes(statusParam) ? statusParam : null;
-    const paidFilter = paidParam === "true" ? true : paidParam === "false" ? false : null;
+    const validStatuses = [
+        "PENDING",
+        "CONFIRMED",
+        "WAITLIST",
+        "CANCELLED",
+        "REJECTED",
+    ];
+    const statusFilter =
+        statusParam && validStatuses.includes(statusParam)
+            ? statusParam
+            : null;
+    const paidFilter =
+        paidParam === "true"
+            ? true
+            : paidParam === "false"
+              ? false
+              : null;
     const testFilter: "real" | "test" | "all" =
-        testParam === "test" || testParam === "all" ? testParam : "real";
-
-    const submissionWhere: Record<string, unknown> = { yearId };
-    if (statusFilter) {
-        submissionWhere.status = statusFilter;
-    }
-    if (paidFilter !== null) {
-        submissionWhere.isPaid = paidFilter;
-    }
-    if (testFilter === "real") {
-        submissionWhere.isTest = false;
-    } else if (testFilter === "test") {
-        submissionWhere.isTest = true;
-    }
+        testParam === "test" || testParam === "all"
+            ? testParam
+            : "real";
 
     const year = await db.year.findUnique({
         where: { id: yearId },
+        select: { year: true, startDate: true },
+    });
+    if (!year) {
+        return NextResponse.json(
+            { error: "Not found" },
+            { status: 404 },
+        );
+    }
+
+    const formStructure = await getFormStructure(yearId);
+    if (!formStructure) {
+        return NextResponse.json(
+            { error: "Not found" },
+            { status: 404 },
+        );
+    }
+
+    const apFieldNames = new Set(
+        formStructure.fields
+            .filter((f) => f.includeForAdditionalPeople)
+            .map((f) => f.name),
+    );
+    const refDate = year.startDate
+        ? new Date(year.startDate)
+        : undefined;
+
+    // Build order filter
+    const orderWhere: Prisma.V2OrderWhereInput = {
+        yearId,
+        parentOrderId: null,
+        orderType: "registration",
+    };
+    if (statusFilter) orderWhere.status = statusFilter;
+    if (paidFilter !== null) orderWhere.isPaid = paidFilter;
+    if (testFilter === "real") orderWhere.isTest = false;
+    else if (testFilter === "test") orderWhere.isTest = true;
+
+    // Query v2 orders with people and line items
+    const orders = await db.v2Order.findMany({
+        where: orderWhere,
+        orderBy: { createdAt: "asc" },
         select: {
-            year: true,
-            startDate: true,
-            registrationForm: {
-                select: { fields: true },
-            },
-            registrationSubmissions: {
-                where: submissionWhere,
-                orderBy: { createdAt: "asc" },
+            status: true,
+            isPaid: true,
+            totalPrice: true,
+            variableSymbol: true,
+            createdAt: true,
+            people: {
+                orderBy: { personIndex: "asc" },
                 select: {
-                    data: true,
-                    status: true,
-                    isPaid: true,
-                    totalPrice: true,
-                    variableSymbol: true,
-                    createdAt: true,
+                    personIndex: true,
+                    lineItems: {
+                        select: {
+                            value: true,
+                            quantity: true,
+                            field: {
+                                select: {
+                                    name: true,
+                                    type: true,
+                                },
+                            },
+                            pricingOption: {
+                                select: { name: true },
+                            },
+                        },
+                    },
                 },
             },
         },
     });
 
-    if (!year || !year.registrationForm) {
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    // Build field name → label map and ordered field list
+    const fieldNames = formStructure.fields.map(
+        (f) => f.name,
+    );
+    const fieldTypeMap = new Map(
+        formStructure.fields.map((f) => [f.name, f.type]),
+    );
 
-    const formData = migrateFormData(year.registrationForm.fields);
-    const inputFields = getAllInputFields(formData.fields);
-    const apFieldNames = new Set(getAPInputFields(formData.fields).map((f) => f.name));
-    const refDate = year.startDate ? new Date(year.startDate) : undefined;
-
-    // Apply field-value filter (JSON field, must filter in JS)
-    let submissions = year.registrationSubmissions;
+    // Apply field-value filter (post-query since it's on line item values)
+    let filteredOrders = orders;
     if (fieldParam && valueParam) {
-        submissions = submissions.filter((sub) => {
-            const data = sub.data as Record<string, unknown>;
-            const rawVal = data[fieldParam];
-            if (rawVal === true || rawVal === false) {
-                return (rawVal ? "Ano" : "Ne") === valueParam;
+        filteredOrders = orders.filter((order) => {
+            for (const person of order.people) {
+                for (const li of person.lineItems) {
+                    if (li.field.name !== fieldParam)
+                        continue;
+                    const displayVal = normalizeCheckboxValue(
+                        li.pricingOption?.name ?? li.value ?? "",
+                    );
+                    if (displayVal === valueParam)
+                        return true;
+                }
             }
-            if (typeof rawVal === "string" && rawVal.startsWith("[")) {
-                try {
-                    const arr = JSON.parse(rawVal);
-                    if (Array.isArray(arr)) {
-                        return arr.includes(valueParam);
-                    }
-                } catch { /* not JSON */ }
-            }
-            return String(rawVal ?? "") === valueParam;
+            return false;
         });
     }
 
-    // Build CSV header (add "Nezletilý" column after each birth_date field)
+    // Build CSV header
     const headers = [
         "Typ",
-        ...inputFields.flatMap((f) =>
-            f.type === "birth_date" ? [f.label, "Nezletilý"] : [f.label]
+        ...formStructure.fields.flatMap((f) =>
+            f.type === "birth_date"
+                ? [f.label, "Nezletilý"]
+                : [f.label],
         ),
         "Stav",
         "Zaplaceno",
@@ -126,78 +194,106 @@ export async function GET(
         "Datum registrace",
     ];
 
-    // Build CSV rows (main person + AP rows)
+    // Build CSV rows
     const rows: string[][] = [];
-    for (const sub of submissions) {
-        // Resolve pricing option ids (GUIDs) to human-readable names, matching
-        // the admin UI and confirmation emails. Leaves non-pricing fields and
-        // additionalPeople untouched (shallow copy of top-level keys only).
-        const data = resolveSubmissionDataForDisplay(
-            sub.data as Record<string, unknown>,
-            inputFields,
-            formData.pricingDefinitions,
-        );
+    for (const order of filteredOrders) {
+        for (const person of order.people) {
+            const isMain = person.personIndex === 0;
 
-        // Main person row
-        rows.push([
-            "Hlavní",
-            ...inputFields.flatMap((f) => {
-                const val = data[f.name];
-                const formatted = val === true ? "Ano" : val === false ? "Ne" : String(val ?? "");
-                if (f.type === "birth_date") {
-                    const minor = val ? isMinor(String(val), refDate) : false;
-                    return [formatted, minor ? "Ano" : "Ne"];
-                }
-                return [formatted];
-            }),
-            STATUS_LABELS[sub.status] || sub.status,
-            sub.isPaid ? "Ano" : "Ne",
-            sub.totalPrice != null ? String(sub.totalPrice) : "",
-            sub.variableSymbol ?? "",
-            formatDateTime(sub.createdAt),
-        ]);
+            // Group line items by field name to handle multi-value fields
+            const lineItemsByField = new Map<
+                string,
+                typeof person.lineItems
+            >();
+            for (const li of person.lineItems) {
+                const name = li.field.name;
+                if (!lineItemsByField.has(name))
+                    lineItemsByField.set(name, []);
+                lineItemsByField.get(name)!.push(li);
+            }
 
-        // Additional people rows
-        const ap = data.additionalPeople;
-        if (Array.isArray(ap)) {
-            ap.forEach((person, idx) => {
-                if (!person || typeof person !== "object") return;
-                const personData = resolveSubmissionDataForDisplay(
-                    person as Record<string, unknown>,
-                    inputFields,
-                    formData.pricingDefinitions,
-                );
-                rows.push([
-                    `Další osoba ${idx + 1}`,
-                    ...inputFields.flatMap((f) => {
-                        if (!apFieldNames.has(f.name)) {
-                            return f.type === "birth_date" ? ["", ""] : [""];
-                        }
-                        const val = personData[f.name];
-                        const formatted = val === true ? "Ano" : val === false ? "Ne" : String(val ?? "");
-                        if (f.type === "birth_date") {
-                            const minor = val ? isMinor(String(val), refDate) : false;
-                            return [formatted, minor ? "Ano" : "Ne"];
-                        }
-                        return [formatted];
-                    }),
-                    "", // Status empty for AP rows
-                    "", // Paid empty for AP rows
-                    "", // Price empty for AP rows
-                    sub.variableSymbol ?? "", // Same VS as main person
-                    "", // Date empty for AP rows
-                ]);
-            });
+            rows.push([
+                isMain
+                    ? "Hlavní"
+                    : `Další osoba ${person.personIndex}`,
+                ...fieldNames.flatMap((name) => {
+                    if (
+                        !isMain &&
+                        !apFieldNames.has(name)
+                    ) {
+                        return fieldTypeMap.get(name) ===
+                            "birth_date"
+                            ? ["", ""]
+                            : [""];
+                    }
+                    const items =
+                        lineItemsByField.get(name) ?? [];
+                    const formatItem = (li: (typeof items)[0]) => {
+                        const raw =
+                            li.pricingOption?.name ??
+                            li.value ??
+                            "";
+                        if (raw === "[]" || raw === "{}")
+                            return "";
+                        return li.quantity > 1
+                            ? `${raw}: ${li.quantity}`
+                            : raw;
+                    };
+                    const val =
+                        items.length > 1
+                            ? items
+                                  .map(formatItem)
+                                  .filter(Boolean)
+                                  .join(", ")
+                            : items[0]
+                              ? formatItem(items[0])
+                              : "";
+                    const formatted =
+                        normalizeCheckboxValue(val);
+                    if (
+                        fieldTypeMap.get(name) ===
+                        "birth_date"
+                    ) {
+                        const minor = val
+                            ? isMinor(val, refDate)
+                            : false;
+                        return [
+                            formatted,
+                            minor ? "Ano" : "Ne",
+                        ];
+                    }
+                    return [formatted];
+                }),
+                isMain
+                    ? (STATUS_LABELS[order.status] ??
+                      order.status)
+                    : "",
+                isMain
+                    ? order.isPaid
+                        ? "Ano"
+                        : "Ne"
+                    : "",
+                isMain && order.totalPrice != null
+                    ? String(order.totalPrice)
+                    : "",
+                order.variableSymbol ?? "",
+                isMain
+                    ? formatDateTime(order.createdAt)
+                    : "",
+            ]);
         }
     }
 
-    // Generate CSV with UTF-8 BOM for Excel
-    const BOM = "\uFEFF";
+    const BOM = "﻿";
     const csvContent =
         BOM +
         headers.map(escapeCsvValue).join(",") +
         "\n" +
-        rows.map((row) => row.map(escapeCsvValue).join(",")).join("\n");
+        rows
+            .map((row) =>
+                row.map(escapeCsvValue).join(","),
+            )
+            .join("\n");
 
     return new NextResponse(csvContent, {
         headers: {

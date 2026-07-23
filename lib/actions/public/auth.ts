@@ -8,6 +8,7 @@ import { publicRegisterSchema, publicLoginSchema } from "@/lib/validators/public
 import { setPublicSession, clearPublicSession } from "@/lib/public-auth";
 import { sendVerificationEmail } from "@/lib/utils/email";
 import { getBaseUrl } from "@/lib/utils/url";
+import { linkUnclaimedRegistrations } from "@/lib/services/public-user";
 
 export interface AuthActionState {
     success: boolean;
@@ -81,7 +82,7 @@ export async function publicRegister(
     });
 
     // Link existing registrations by email
-    await linkExistingRegistrations(user.id, email);
+    await linkUnclaimedRegistrations(user.id, email);
 
     // Send verification email
     const verificationUrl = `${getBaseUrl()}/overeni-emailu?token=${token}`;
@@ -189,54 +190,3 @@ export async function resendVerification(email: string): Promise<AuthActionState
     return { success: true, message: "Ověřovací email byl odeslán" };
 }
 
-/**
- * Link existing RegistrationSubmission records to a newly created PublicUser
- * by matching email in the JSON data field.
- */
-async function linkExistingRegistrations(userId: string, email: string): Promise<void> {
-    try {
-        // Find all registration forms to get email field names
-        const forms = await db.registrationForm.findMany({
-            select: { id: true, fields: true },
-        });
-
-        for (const form of forms) {
-            // Find the email field name in this form
-            const fields = form.fields as unknown as { fields: Array<{ type?: string; name?: string; children?: Array<{ type?: string; name?: string }> }> };
-            let emailFieldName: string | null = null;
-
-            const findEmailField = (elements: Array<{ type?: string; name?: string; children?: Array<{ type?: string; name?: string }> }>) => {
-                for (const el of elements) {
-                    if (el.type === "email" && el.name) {
-                        emailFieldName = el.name;
-                        return;
-                    }
-                    if (el.children) {
-                        findEmailField(el.children);
-                    }
-                }
-            };
-
-            if (fields && Array.isArray(fields.fields)) {
-                findEmailField(fields.fields);
-            }
-
-            if (!emailFieldName) continue;
-
-            // Update matching submissions
-            await db.registrationSubmission.updateMany({
-                where: {
-                    formId: form.id,
-                    publicUserId: null,
-                    data: {
-                        path: [emailFieldName],
-                        equals: email,
-                    },
-                },
-                data: { publicUserId: userId },
-            });
-        }
-    } catch (error) {
-        console.error("Failed to link existing registrations:", error);
-    }
-}
