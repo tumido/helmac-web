@@ -57,6 +57,7 @@ export async function processTransactions(
     };
 
     const bankAccount = await getGlobalBankAccount();
+    const formCache = new Map<string, CachedForm>();
 
     for (const tx of transactions) {
         try {
@@ -235,6 +236,7 @@ export async function processTransactions(
                         totalPrice,
                         bankAccount,
                         result,
+                        formCache,
                     );
                 } catch (emailError) {
                     result.errors.push(
@@ -267,12 +269,11 @@ interface CachedForm {
     inputFields: InputField[];
     pricingDefinitions: PricingDefinition[];
 }
-const formFieldsCache = new Map<string, CachedForm>();
-
 async function getFormFields(
     formId: string,
+    cache: Map<string, CachedForm>,
 ): Promise<CachedForm> {
-    const cached = formFieldsCache.get(formId);
+    const cached = cache.get(formId);
     if (cached) return cached;
     const form = await db.registrationForm.findUnique({
         where: { id: formId },
@@ -284,7 +285,7 @@ async function getFormFields(
             inputFields: [],
             pricingDefinitions: [],
         };
-        formFieldsCache.set(formId, empty);
+        cache.set(formId, empty);
         return empty;
     }
     const formData = migrateFormData(form.fields);
@@ -293,7 +294,7 @@ async function getFormFields(
         inputFields: getAllInputFields(formData.fields),
         pricingDefinitions: formData.pricingDefinitions,
     };
-    formFieldsCache.set(formId, value);
+    cache.set(formId, value);
     return value;
 }
 
@@ -316,9 +317,9 @@ async function sendPaymentEmail(
         paymentEmailAttachments: unknown;
     },
     totalPrice: number,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    bankAccount: any,
+    bankAccount: Awaited<ReturnType<typeof getGlobalBankAccount>>,
     result: MatchResult,
+    formCache: Map<string, CachedForm>,
 ): Promise<void> {
     if (!order.legacySubmissionId) return;
 
@@ -331,6 +332,7 @@ async function sendPaymentEmail(
 
     const cachedForm = await getFormFields(
         submission.formId,
+        formCache,
     );
     const { fields, inputFields, pricingDefinitions } =
         cachedForm;

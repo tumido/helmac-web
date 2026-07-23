@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getFormStructure } from "@/lib/services/v2";
@@ -107,8 +108,7 @@ export async function GET(
         : undefined;
 
     // Build order filter
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orderWhere: Record<string, any> = {
+    const orderWhere: Prisma.V2OrderWhereInput = {
         yearId,
         parentOrderId: null,
         orderType: "registration",
@@ -135,6 +135,7 @@ export async function GET(
                     lineItems: {
                         select: {
                             value: true,
+                            quantity: true,
                             field: {
                                 select: {
                                     name: true,
@@ -227,21 +228,24 @@ export async function GET(
                     }
                     const items =
                         lineItemsByField.get(name) ?? [];
+                    const formatItem = (li: (typeof items)[0]) => {
+                        const label =
+                            li.pricingOption?.name ??
+                            li.value ??
+                            "";
+                        return li.quantity > 1
+                            ? `${label}: ${li.quantity}`
+                            : label;
+                    };
                     const val =
                         items.length > 1
                             ? items
-                                  .map(
-                                      (li) =>
-                                          li.pricingOption
-                                              ?.name ??
-                                          li.value,
-                                  )
+                                  .map(formatItem)
                                   .filter(Boolean)
                                   .join(", ")
-                            : (items[0]?.pricingOption
-                                  ?.name ??
-                              items[0]?.value ??
-                              "");
+                            : items[0]
+                              ? formatItem(items[0])
+                              : "";
                     const formatted =
                         normalizeCheckboxValue(val);
                     if (
