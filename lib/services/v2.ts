@@ -314,8 +314,7 @@ export async function getOrdersForYear(
     yearId: string,
     options?: { isTest?: boolean | null },
 ): Promise<OrderRow[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = {
+    const where: Prisma.V2OrderWhereInput = {
         yearId,
         parentOrderId: null,
         orderType: "registration",
@@ -371,15 +370,22 @@ export async function getOrdersForYear(
         adminNote: o.adminNote,
         isTest: o.isTest,
         createdAt: o.createdAt,
-        people: o.people.map((p) => ({
-            personIndex: p.personIndex,
-            values: Object.fromEntries(
-                p.lineItems.map((li) => [
-                    li.field.name,
-                    li.pricingOption?.name ?? li.value ?? "",
-                ]),
-            ),
-        })),
+        people: o.people.map((p) => {
+            const values: Record<string, string> = {};
+            for (const li of p.lineItems) {
+                const name = li.field.name;
+                const val =
+                    li.pricingOption?.name ??
+                    li.value ??
+                    "";
+                if (values[name]) {
+                    values[name] += `, ${val}`;
+                } else {
+                    values[name] = val;
+                }
+            }
+            return { personIndex: p.personIndex, values };
+        }),
     }));
 }
 
