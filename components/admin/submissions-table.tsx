@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSubmissionsCount } from "@/components/admin/submissions-count-context";
 import {
     Table,
     TableBody,
@@ -76,6 +77,7 @@ type SortDirection = "asc" | "desc";
 
 export function SubmissionsTable({ submissions, fields, allInputFields: allInputFieldsProp, pricingDefinitions, yearId, statusFilter, paidFilter, fieldFilter, valueFilter, eventStartDate, readOnly = false }: SubmissionsTableProps) {
     const router = useRouter();
+    const { setDisplayedCount } = useSubmissionsCount();
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<SortKey>("createdAt");
     const [sortDir, setSortDir] = useState<SortDirection>("desc");
@@ -172,6 +174,11 @@ export function SubmissionsTable({ submissions, fields, allInputFields: allInput
             return false;
         })
         : fieldFiltered;
+
+    // Report the displayed count up to the badge (see SubmissionsCountChip).
+    useEffect(() => {
+        setDisplayedCount(filtered.length);
+    }, [filtered.length, setDisplayedCount]);
 
     const sorted = [...filtered].sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
