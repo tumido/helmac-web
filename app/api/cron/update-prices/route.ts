@@ -52,6 +52,10 @@ export async function GET(request: NextRequest) {
     const errors: string[] = [];
     const emailErrors: string[] = [];
 
+    const templateCache = new Map<string, Awaited<ReturnType<typeof getEmailTemplate>>>();
+    const fieldIdMapCache = new Map<string, Map<string, string>>();
+    const yearCache = new Map<string, { year: number; title: string; subtitle: string | null } | null>();
+
     for (const order of orders) {
         try {
             const newTotal = await computeCurrentTotal(order.id);
@@ -71,7 +75,10 @@ export async function GET(request: NextRequest) {
             updated++;
 
             // Send price change email
-            const template = await getEmailTemplate(order.yearId, "price_change");
+            if (!templateCache.has(order.yearId)) {
+                templateCache.set(order.yearId, await getEmailTemplate(order.yearId, "price_change"));
+            }
+            const template = templateCache.get(order.yearId)!;
             if (
                 !template?.enabled ||
                 !template.subject ||
@@ -79,10 +86,13 @@ export async function GET(request: NextRequest) {
             )
                 continue;
 
-            const year = await db.year.findUnique({
-                where: { id: order.yearId },
-                select: { year: true, title: true, subtitle: true },
-            });
+            if (!yearCache.has(order.yearId)) {
+                yearCache.set(order.yearId, await db.year.findUnique({
+                    where: { id: order.yearId },
+                    select: { year: true, title: true, subtitle: true },
+                }));
+            }
+            const year = yearCache.get(order.yearId);
             if (!year) continue;
 
             try {
@@ -158,7 +168,10 @@ export async function GET(request: NextRequest) {
                     oldPrice != null ? `${oldPrice} Kč` : "";
                 placeholders.novaCena = `${newTotal} Kč`;
 
-                const fieldIdMap = await getFieldIdToLegacyIdMap(order.yearId);
+                if (!fieldIdMapCache.has(order.yearId)) {
+                    fieldIdMapCache.set(order.yearId, await getFieldIdToLegacyIdMap(order.yearId));
+                }
+                const fieldIdMap = fieldIdMapCache.get(order.yearId)!;
                 const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
 
                 const emailSubject = replacePlaceholders(

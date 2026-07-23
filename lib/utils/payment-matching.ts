@@ -62,6 +62,7 @@ export async function processTransactions(
 
     const bankAccount = await getGlobalBankAccount();
     const formCache = new Map<string, CachedForm>();
+    const fieldIdMapCache = new Map<string, Map<string, string>>();
 
     for (const tx of transactions) {
         try {
@@ -234,6 +235,7 @@ export async function processTransactions(
                         bankAccount,
                         result,
                         formCache,
+                        fieldIdMapCache,
                     );
                 }
             } catch (emailError) {
@@ -315,6 +317,7 @@ async function sendPaymentEmail(
     bankAccount: Awaited<ReturnType<typeof getGlobalBankAccount>>,
     result: MatchResult,
     formCache: Map<string, CachedForm>,
+    fieldIdMapCache: Map<string, Map<string, string>>,
 ): Promise<void> {
     if (!order.legacySubmissionId) return;
 
@@ -386,7 +389,10 @@ async function sendPaymentEmail(
     });
     placeholders.prijataCastka = `${tx.amount} Kč`;
 
-    const fieldIdMap = await getFieldIdToLegacyIdMap(order.yearId);
+    if (!fieldIdMapCache.has(order.yearId)) {
+        fieldIdMapCache.set(order.yearId, await getFieldIdToLegacyIdMap(order.yearId));
+    }
+    const fieldIdMap = fieldIdMapCache.get(order.yearId)!;
     const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
 
     const emailSubject = replacePlaceholders(
