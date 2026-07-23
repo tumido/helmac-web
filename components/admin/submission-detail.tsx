@@ -320,11 +320,13 @@ function computeTotal(
     fields: FieldMeta[],
     pricingDefById: Map<string, V2PricingDef>,
     currentTierId: string | null,
+    visibleFields?: Set<string>,
 ): number {
     let total = 0;
     for (const state of personStates) {
         for (const field of fields) {
             if (!field.pricingDefinitionId) continue;
+            if (visibleFields && !visibleFields.has(field.name)) continue;
             const def = pricingDefById.get(
                 field.pricingDefinitionId,
             );
@@ -899,27 +901,6 @@ export function SubmissionDetail({
         () => getCurrentTierId(order.priceTiers),
         [order.priceTiers],
     );
-    const computedPrice = useMemo(
-        () =>
-            computeTotal(
-                personStates,
-                fields,
-                pricingDefById,
-                currentTierId,
-            ),
-        [personStates, fields, pricingDefById, currentTierId],
-    );
-    const originalPrice = useMemo(
-        () =>
-            computeTotal(
-                initialStates,
-                fields,
-                pricingDefById,
-                currentTierId,
-            ),
-        [initialStates, fields, pricingDefById, currentTierId],
-    );
-
     const apFields = fields.filter(
         (f) => f.includeForAP,
     );
@@ -964,6 +945,29 @@ export function SubmissionDetail({
         }
         return names;
     }, [formData, visibleFields, allFieldNames]);
+
+    const computedPrice = useMemo(
+        () =>
+            computeTotal(
+                personStates,
+                fields,
+                pricingDefById,
+                currentTierId,
+                visibleFieldNames,
+            ),
+        [personStates, fields, pricingDefById, currentTierId, visibleFieldNames],
+    );
+    const originalPrice = useMemo(
+        () =>
+            computeTotal(
+                initialStates,
+                fields,
+                pricingDefById,
+                currentTierId,
+            ),
+        [initialStates, fields, pricingDefById, currentTierId],
+    );
+
     const mainSections = extractSections(
         order.formLayout,
         allFieldNames,
