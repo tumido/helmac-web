@@ -18,7 +18,6 @@ import {
     getFormStructure,
     v2FieldToInputField,
     v2PricingDefsToPricingDefs,
-    countOrders,
 } from "@/lib/services/v2";
 
 interface RegistracePageProps {
@@ -54,12 +53,10 @@ export default async function RegistracePage({
         notFound();
     }
 
-    const [summary, submissionCount, formStructure] =
-        await Promise.all([
-            getRegistrationSummary(year.id),
-            countOrders({ yearId: year.id }),
-            getFormStructure(year.id),
-        ]);
+    const [summary, formStructure] = await Promise.all([
+        getRegistrationSummary(year.id),
+        getFormStructure(year.id),
+    ]);
 
     const allInputFields = formStructure
         ? formStructure.fields
@@ -73,23 +70,9 @@ export default async function RegistracePage({
             : undefined;
 
     const capacityLimits = formStructure?.capacityLimits ?? [];
-    const showOptionCounts: string[] = [];
-    if (formStructure) {
-        const form = await db.registrationForm.findUnique({
-            where: { yearId: year.id },
-            select: { fields: true },
-        });
-        if (form) {
-            const raw = form.fields as {
-                showOptionCounts?: string[];
-            };
-            if (Array.isArray(raw?.showOptionCounts)) {
-                showOptionCounts.push(
-                    ...raw.showOptionCounts,
-                );
-            }
-        }
-    }
+    const showOptionCounts = allInputFields.map(
+        (f) => f.id,
+    );
 
     const mainEmail = await db.emailAccount.findFirst({
         where: { isMain: true },
@@ -121,7 +104,7 @@ export default async function RegistracePage({
                 registrationStartDate={
                     year.registrationStartDate
                 }
-                submissionCount={submissionCount}
+                submissionCount={summary.registrations}
                 totalPeopleCount={summary.people}
                 paidSum={summary.paidTotal}
                 unpaidSum={summary.unpaidTotal}
