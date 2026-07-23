@@ -5,7 +5,6 @@ import {
     CheckCircleOutline,
 } from "@mui/icons-material";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { RegistrationSettings } from "@/components/admin/registration-settings";
@@ -13,6 +12,11 @@ import { CapacityLimitsEditor } from "@/components/admin/capacity-limits-editor"
 import { OptionCountsEditor } from "@/components/admin/option-counts-editor";
 import { LinkButton } from "@/components/ui/link-button";
 import { getOptionCountsForYear } from "@/lib/services";
+import { getYearRegistrationSettings } from "@/lib/services/years";
+import {
+    hasMainEmailAccount,
+    hasConfiguredBankAccount,
+} from "@/lib/services/bank-account";
 import {
     getRegistrationSummary,
     getFormStructure,
@@ -38,16 +42,7 @@ export default async function RegistracePage({
     await requireAdmin();
     const { id } = await params;
 
-    const year = await db.year.findUnique({
-        where: { id },
-        select: {
-            id: true,
-            year: true,
-            title: true,
-            registrationOpen: true,
-            registrationStartDate: true,
-        },
-    });
+    const year = await getYearRegistrationSettings(id);
 
     if (!year) {
         notFound();
@@ -74,12 +69,10 @@ export default async function RegistracePage({
         (f) => f.id,
     );
 
-    const mainEmail = await db.emailAccount.findFirst({
-        where: { isMain: true },
-    });
-    const bankAccount = await db.bankAccount.findFirst({
-        where: { bankAccountNumber: { not: null } },
-    });
+    const [hasEmail, hasBank] = await Promise.all([
+        hasMainEmailAccount(),
+        hasConfiguredBankAccount(),
+    ]);
 
     return (
         <Container maxWidth="md">
@@ -108,8 +101,8 @@ export default async function RegistracePage({
                 totalPeopleCount={summary.people}
                 paidSum={summary.paidTotal}
                 unpaidSum={summary.unpaidTotal}
-                hasMainEmail={!!mainEmail}
-                hasBankAccount={!!bankAccount}
+                hasMainEmail={hasEmail}
+                hasBankAccount={hasBank}
             />
 
             {formStructure &&
