@@ -345,6 +345,7 @@ export async function getOrdersForYear(
                     lineItems: {
                         select: {
                             value: true,
+                            quantity: true,
                             field: {
                                 select: { name: true },
                             },
@@ -374,10 +375,14 @@ export async function getOrdersForYear(
             const values: Record<string, string> = {};
             for (const li of p.lineItems) {
                 const name = li.field.name;
-                const val =
+                const optName =
                     li.pricingOption?.name ??
                     li.value ??
                     "";
+                const val =
+                    li.quantity > 1
+                        ? `${optName} ×${li.quantity}`
+                        : optName;
                 if (values[name]) {
                     values[name] += `, ${val}`;
                 } else {

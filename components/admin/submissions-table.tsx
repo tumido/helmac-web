@@ -30,7 +30,6 @@ import { AdminNoteButton } from "@/components/admin/admin-note-button";
 import { isMinor } from "@/lib/utils/minor-detection";
 import { formatPrice } from "@/lib/utils/pricing";
 import { formatDate } from "@/lib/utils/date";
-import { parseSelected } from "@/lib/utils/pricing-field-values";
 import type { OrderRow } from "@/lib/services/v2";
 
 interface FieldInfo {
@@ -59,10 +58,6 @@ function renderValue(
 ): string {
     const raw = values[field.name];
     if (!raw) return "";
-    if (field.type === "pricing_multi_select") {
-        const names = parseSelected(raw);
-        return names.length > 0 ? names.join(", ") : "";
-    }
     return raw;
 }
 
