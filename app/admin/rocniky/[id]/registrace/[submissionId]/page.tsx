@@ -46,37 +46,32 @@ export default async function SubmissionDetailPage({
     }
 
     const fields = (() => {
-        const seen = new Set<string>();
-        const result: {
-            id: string;
-            name: string;
-            label: string;
-            type: string;
-            isActive: boolean;
-            options: string[];
-            pricingDefinitionId: string | null;
-            includeForAP: boolean;
-            sortOrder: number;
-        }[] = [];
+        const byName = new Map(
+            order.allFields.map((f) => [
+                f.name,
+                { ...f, includeForAP: f.includeForAdditionalPeople },
+            ]),
+        );
         for (const person of order.people) {
             for (const li of person.lineItems) {
-                if (seen.has(li.fieldName)) continue;
-                seen.add(li.fieldName);
-                result.push({
+                if (byName.has(li.fieldName)) continue;
+                byName.set(li.fieldName, {
                     id: li.fieldId,
                     name: li.fieldName,
                     label: li.fieldLabel,
                     type: li.fieldType,
                     isActive: li.fieldIsActive,
+                    sortOrder: li.fieldSortOrder,
                     options: li.fieldOptions,
                     pricingDefinitionId:
                         li.fieldPricingDefinitionId,
                     includeForAP: li.fieldIncludeForAP,
-                    sortOrder: li.fieldSortOrder,
+                    includeForAdditionalPeople:
+                        li.fieldIncludeForAP,
                 });
             }
         }
-        return result.sort(
+        return Array.from(byName.values()).sort(
             (a, b) => a.sortOrder - b.sortOrder,
         );
     })();

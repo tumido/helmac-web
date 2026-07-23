@@ -625,6 +625,17 @@ export interface OrderDetail {
     pricingSummary: unknown;
     people: OrderDetailPerson[];
     pricingDefinitions: V2PricingDef[];
+    allFields: {
+        id: string;
+        name: string;
+        label: string;
+        type: string;
+        isActive: boolean;
+        sortOrder: number;
+        options: string[];
+        pricingDefinitionId: string | null;
+        includeForAdditionalPeople: boolean;
+    }[];
 }
 
 export async function getOrderByLegacyId(
@@ -692,15 +703,13 @@ export async function getOrderByLegacyId(
 
     if (!order) return null;
 
-    const legacySub =
-        await db.registrationSubmission.findUnique({
+    const [legacySub, formStructure] = await Promise.all([
+        db.registrationSubmission.findUnique({
             where: { id: legacySubmissionId },
             select: { pricingSummary: true },
-        });
-
-    const formStructure = await getFormStructure(
-        order.yearId,
-    );
+        }),
+        getFormStructure(order.yearId),
+    ]);
     const pricingDefs =
         formStructure?.pricingDefinitions ?? [];
 
@@ -746,6 +755,21 @@ export async function getOrderByLegacyId(
             })),
         })),
         pricingDefinitions: pricingDefs,
+        allFields: (formStructure?.fields ?? []).map(
+            (f) => ({
+                id: f.id,
+                name: f.name,
+                label: f.label,
+                type: f.type,
+                isActive: true,
+                sortOrder: f.sortOrder,
+                options: f.options,
+                pricingDefinitionId:
+                    f.pricingDefinitionId,
+                includeForAdditionalPeople:
+                    f.includeForAdditionalPeople,
+            }),
+        ),
     };
 }
 
