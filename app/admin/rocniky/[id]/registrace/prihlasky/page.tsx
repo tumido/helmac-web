@@ -1,10 +1,14 @@
-import { Container, Box, Chip, Alert, Button } from "@mui/material";
+import { Container, Box, Alert, Button } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireEditor } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { SubmissionsTable } from "@/components/admin/submissions-table";
+import {
+    SubmissionsCountProvider,
+    SubmissionsCountChip,
+} from "@/components/admin/submissions-count-context";
 import { FieldValueFilter } from "@/components/admin/field-value-filter";
 import { ValidatePaymentsButton } from "@/components/admin/validate-payments-button";
 import { LinkButton } from "@/components/ui/link-button";
@@ -144,12 +148,9 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 ]}
                 title="Přihlášky"
             />
+            <SubmissionsCountProvider>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <Chip
-                    label={`${year.registrationSubmissions.length} registrací`}
-                    color="primary"
-                    variant="outlined"
-                />
+                <SubmissionsCountChip total={year.registrationSubmissions.length} />
                 {!isEditor && (
                     <>
                         <LinkButton
@@ -290,6 +291,7 @@ export default async function PrihlaskyPage({ params, searchParams }: PrihlaskyP
                 eventStartDate={year.startDate}
                 readOnly={isEditor}
             />
+            </SubmissionsCountProvider>
         </Container>
     );
 }
