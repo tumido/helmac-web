@@ -229,13 +229,15 @@ export async function GET(
                     const items =
                         lineItemsByField.get(name) ?? [];
                     const formatItem = (li: (typeof items)[0]) => {
-                        const label =
+                        const raw =
                             li.pricingOption?.name ??
                             li.value ??
                             "";
+                        if (raw === "[]" || raw === "{}")
+                            return "";
                         return li.quantity > 1
-                            ? `${label}: ${li.quantity}`
-                            : label;
+                            ? `${raw}: ${li.quantity}`
+                            : raw;
                     };
                     const val =
                         items.length > 1
