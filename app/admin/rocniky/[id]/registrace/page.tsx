@@ -64,10 +64,24 @@ export default async function RegistracePage({
             ? await getOptionCountsForYear(year.id)
             : undefined;
 
-    const capacityLimits = formStructure?.capacityLimits ?? [];
-    const showOptionCounts = allInputFields.map(
-        (f) => f.id,
+    const v2IdToLegacyId = new Map(
+        (formStructure?.fields ?? [])
+            .filter((f) => f.legacyId)
+            .map((f) => [f.id, f.legacyId!]),
     );
+    const capacityLimits = (
+        formStructure?.capacityLimits ?? []
+    ).map((cl) => ({
+        ...cl,
+        fieldId: v2IdToLegacyId.get(cl.fieldId) ?? cl.fieldId,
+    }));
+    const showOptionCounts = (() => {
+        const layout = formStructure?.layout as
+            | { showOptionCounts?: string[] }
+            | null
+            | undefined;
+        return layout?.showOptionCounts ?? [];
+    })();
 
     const [hasEmail, hasBank] = await Promise.all([
         hasMainEmailAccount(),
@@ -115,7 +129,7 @@ export default async function RegistracePage({
                                 (cl) => ({
                                     id: cl.id,
                                     fieldId: cl.fieldId,
-                                    value: cl.optionValue,
+                                    value: cl.optionValue ?? "",
                                     maxCount: cl.maxCount,
                                 }),
                             )}

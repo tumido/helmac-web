@@ -44,10 +44,14 @@ export interface V2FormField {
 export interface V2PricingDef {
     id: string;
     name: string;
+    type?: string;
+    multiSelect?: boolean;
+    unitName?: string;
     options: { id: string; name: string }[];
 }
 
 export interface V2FormStructure {
+    layout: unknown;
     fields: V2FormField[];
     pricingDefinitions: V2PricingDef[];
     capacityLimits: {
@@ -360,7 +364,7 @@ export async function getFilteredOrderSummary(
 export function v2FieldToInputField(f: V2FormField): InputField {
     return {
         type: f.type as InputField["type"],
-        id: f.id,
+        id: f.legacyId ?? f.id,
         name: f.name,
         label: f.label,
         required: false,
@@ -383,7 +387,11 @@ export function v2PricingDefsToPricingDefs(
     return defs.map((d) => ({
         id: d.id,
         name: d.name,
+        type: (d.type ?? "options") as "options" | "quantity",
+        multiSelect: d.multiSelect,
+        unitName: d.unitName,
         usePriceTiers: false,
+        // prices not needed for admin pages — only option names/IDs
         options: d.options.map((o) => ({
             id: o.id,
             name: o.name,
