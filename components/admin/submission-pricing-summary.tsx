@@ -9,12 +9,14 @@ interface SubmissionPricingSummaryProps {
     pricingSummary: PricingSummaryData | null;
     variableSymbol: string | null;
     totalPrice: number | null;
+    priceDiff?: number | null;
 }
 
 export function SubmissionPricingSummary({
     pricingSummary,
     variableSymbol,
     totalPrice,
+    priceDiff,
 }: SubmissionPricingSummaryProps) {
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -40,6 +42,20 @@ export function SubmissionPricingSummary({
                     <Typography variant="h6" fontWeight={600}>
                         {formatPrice(totalPrice)}
                     </Typography>
+                    {priceDiff != null && priceDiff !== 0 && (
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{
+                                color: priceDiff > 0
+                                    ? "warning.main"
+                                    : "success.main",
+                            }}
+                        >
+                            {priceDiff > 0 ? "+" : ""}
+                            {priceDiff.toLocaleString("cs-CZ")} Kč
+                        </Typography>
+                    )}
                 </Box>
             )}
 

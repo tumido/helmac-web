@@ -50,13 +50,36 @@ export interface V2PricingDef {
     type?: string;
     multiSelect?: boolean;
     unitName?: string;
-    options: { id: string; name: string }[];
+    options: {
+        id: string;
+        name: string;
+        prices: { tierId: string; price: number }[];
+    }[];
+}
+
+export interface V2PriceTier {
+    id: string;
+    deadline: string | null;
+    sortOrder: number;
+}
+
+export interface V2FormCondition {
+    id: string;
+    name: string;
+    rules: {
+        fieldId: string;
+        operator: string;
+        value: string | null;
+        connector: string;
+    }[];
 }
 
 export interface V2FormStructure {
     layout: unknown;
     fields: V2FormField[];
     pricingDefinitions: V2PricingDef[];
+    priceTiers: V2PriceTier[];
+    conditions: V2FormCondition[];
     capacityLimits: {
         id: string;
         fieldId: string;
@@ -626,6 +649,9 @@ export interface OrderDetail {
     pricingSummary: unknown;
     people: OrderDetailPerson[];
     pricingDefinitions: V2PricingDef[];
+    priceTiers: V2PriceTier[];
+    conditions: V2FormCondition[];
+    formLayout: unknown;
     allFields: {
         id: string;
         name: string;
@@ -756,6 +782,9 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
             })),
         })),
         pricingDefinitions: pricingDefs,
+        priceTiers: formStructure?.priceTiers ?? [],
+        conditions: formStructure?.conditions ?? [],
+        formLayout: formStructure?.layout ?? null,
         allFields: (formStructure?.fields ?? []).map(
             (f) => ({
                 id: f.id,
