@@ -675,7 +675,12 @@ export function SubmissionDetail({
                         </Tabs>
 
                     {personStates.map((state, idx) => {
-                        const person = order.people[idx];
+                        const person =
+                            order.people.find(
+                                (p) =>
+                                    p.personIndex ===
+                                    state.personIndex,
+                            );
                         const personAttending =
                             person
                                 ? attendance[person.id] ??
