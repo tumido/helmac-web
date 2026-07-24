@@ -586,6 +586,20 @@ enum RegistrationStatus {
 // EMAIL CAMPAIGNS - Mass email sending queue
 // ============================================
 
+enum EmailCampaignStatus {
+  DRAFT
+  SENDING
+  PAUSED
+  COMPLETED
+}
+
+enum EmailQueueItemStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
 model EmailCampaign {
   id     String @id @default(cuid())
   yearId String @map("year_id")
@@ -599,7 +613,7 @@ model EmailCampaign {
   accountId String?       @map("account_id")
   account   EmailAccount? @relation("CampaignAccount", fields: [accountId], references: [id], onDelete: SetNull)
 
-  status          String @default("DRAFT") // DRAFT | SENDING | PAUSED | COMPLETED
+  status          EmailCampaignStatus @default(DRAFT)
   recipientFilter Json   @default("{}") @map("recipient_filter") // { statuses: string[], paid: "all"|"paid"|"unpaid" }
   totalCount      Int    @default(0) @map("total_count")
 
@@ -625,7 +639,7 @@ model EmailQueueItem {
   order        V2Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
   placeholders Json     @default("{}") // per-recipient placeholder map; rendered at send time
 
-  status    String    @default("pending") // pending | sending | sent | failed
+  status    EmailQueueItemStatus @default(PENDING)
   attempts  Int       @default(0)
   permanent Boolean   @default(false) // hard failure (SMTP 5xx / bad address); bulk retry skips these
   lastError String?   @map("last_error")

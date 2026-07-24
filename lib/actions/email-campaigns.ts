@@ -298,8 +298,8 @@ export async function retryFailedItems(campaignId: string): Promise<ActionResult
         // address) never succeed on retry and re-hammering them hurts sender
         // reputation, so they stay "failed".
         const updated = await db.emailQueueItem.updateMany({
-            where: { campaignId, status: "failed", permanent: false },
-            data: { status: "pending", attempts: 0, lastError: null },
+            where: { campaignId, status: "FAILED", permanent: false },
+            data: { status: "PENDING", attempts: 0, lastError: null },
         });
         if (updated.count === 0) {
             return { error: "Žádné neúspěšné emaily k opakování" };

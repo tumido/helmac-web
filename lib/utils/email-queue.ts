@@ -76,10 +76,10 @@ export async function getCapHeadroom(): Promise<number> {
     const now = Date.now();
     const [hourCount, dayCount] = await Promise.all([
         db.emailQueueItem.count({
-            where: { status: "sent", sentAt: { gte: new Date(now - 3_600_000) } },
+            where: { status: "SENT", sentAt: { gte: new Date(now - 3_600_000) } },
         }),
         db.emailQueueItem.count({
-            where: { status: "sent", sentAt: { gte: new Date(now - 86_400_000) } },
+            where: { status: "SENT", sentAt: { gte: new Date(now - 86_400_000) } },
         }),
     ]);
     return Math.max(
@@ -190,8 +190,8 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
         // pre-incremented attempts bounds this to at most one extra send per
         // crash; we accept it rather than add a pre-send idempotency journal.
         await db.emailQueueItem.updateMany({
-            where: { campaignId: campaign.id, status: "sending" },
-            data: { status: "pending" },
+            where: { campaignId: campaign.id, status: "SENDING" },
+            data: { status: "PENDING" },
         });
 
         const headroom = await getCapHeadroom();
@@ -201,7 +201,7 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
             const items = await db.emailQueueItem.findMany({
                 where: {
                     campaignId: campaign.id,
-                    status: "pending",
+                    status: "PENDING",
                     attempts: { lt: maxAttempts },
                 },
                 orderBy: { createdAt: "asc" },
@@ -242,7 +242,7 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
                         await db.emailQueueItem.update({
                             where: { id: item.id },
                             data: {
-                                status: "sending",
+                                status: "SENDING",
                                 attempts: { increment: 1 },
                             },
                         });
@@ -272,7 +272,7 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
                             await db.emailQueueItem.update({
                                 where: { id: item.id },
                                 data: {
-                                    status: "sent",
+                                    status: "SENT",
                                     sentAt: new Date(),
                                     lastError: null,
                                 },
@@ -290,7 +290,7 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
                             await db.emailQueueItem.update({
                                 where: { id: item.id },
                                 data: {
-                                    status: permanent ? "failed" : "pending",
+                                    status: permanent ? "FAILED" : "PENDING",
                                     // Only a hard SMTP failure (5xx / bad
                                     // envelope) is a permanent failure. Running
                                     // out of attempts also lands in "failed"
@@ -319,16 +319,16 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
         await db.emailQueueItem.updateMany({
             where: {
                 campaignId: campaign.id,
-                status: "pending",
+                status: "PENDING",
                 attempts: { gte: maxAttempts },
             },
-            data: { status: "failed", lastError: "Vyčerpán počet pokusů" },
+            data: { status: "FAILED", lastError: "Vyčerpán počet pokusů" },
         });
 
         result.remaining = await db.emailQueueItem.count({
             where: {
                 campaignId: campaign.id,
-                status: "pending",
+                status: "PENDING",
                 attempts: { lt: maxAttempts },
             },
         });

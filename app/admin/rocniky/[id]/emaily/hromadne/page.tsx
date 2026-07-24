@@ -10,6 +10,7 @@ import {
     Typography,
 } from "@mui/material";
 import { notFound } from "next/navigation";
+import type { EmailQueueItemStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
@@ -62,7 +63,10 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
         _count: { _all: true },
     });
 
-    function countFor(campaignId: string, status: string): number {
+    function countFor(
+        campaignId: string,
+        status: EmailQueueItemStatus,
+    ): number {
         return (
             counts.find(
                 (c) => c.campaignId === campaignId && c.status === status,
@@ -114,7 +118,7 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
                                 const statusConfig =
                                     CAMPAIGN_STATUS_CONFIG[campaign.status] ??
                                     CAMPAIGN_STATUS_CONFIG.DRAFT;
-                                const failed = countFor(campaign.id, "failed");
+                                const failed = countFor(campaign.id, "FAILED");
                                 return (
                                     <TableRow key={campaign.id} hover>
                                         <TableCell>{campaign.name}</TableCell>
@@ -128,7 +132,7 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
                                         <TableCell>
                                             {campaign.status === "DRAFT"
                                                 ? "—"
-                                                : `${countFor(campaign.id, "sent")} / ${campaign.totalCount}`}
+                                                : `${countFor(campaign.id, "SENT")} / ${campaign.totalCount}`}
                                         </TableCell>
                                         <TableCell>
                                             {failed > 0 ? (

@@ -18,10 +18,10 @@ const ITEM_STATUS_CONFIG: Record<
     string,
     { label: string; color: "default" | "success" | "error" }
 > = {
-    sent: { label: "Odesláno", color: "success" },
-    failed: { label: "Neúspěšné", color: "error" },
-    pending: { label: "Ve frontě", color: "default" },
-    sending: { label: "Ve frontě", color: "default" },
+    SENT: { label: "Odesláno", color: "success" },
+    FAILED: { label: "Neúspěšné", color: "error" },
+    PENDING: { label: "Ve frontě", color: "default" },
+    SENDING: { label: "Ve frontě", color: "default" },
 };
 
 interface RecipientItem {

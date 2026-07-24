@@ -14,6 +14,7 @@ import {
     Typography,
 } from "@mui/material";
 import { notFound } from "next/navigation";
+import type { EmailQueueItemStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
@@ -140,12 +141,12 @@ export default async function KampanDetailPage({
         where: { campaignId: campaign.id },
         _count: { _all: true },
     });
-    const countFor = (status: string) =>
+    const countFor = (status: EmailQueueItemStatus) =>
         counts.find((c) => c.status === status)?._count._all ?? 0;
 
-    const sentCount = countFor("sent");
-    const failedCount = countFor("failed");
-    const pendingCount = countFor("pending") + countFor("sending");
+    const sentCount = countFor("SENT");
+    const failedCount = countFor("FAILED");
+    const pendingCount = countFor("PENDING") + countFor("SENDING");
 
     const lockIdleSince = campaign.lockedAt ?? campaign.updatedAt;
     const stalled =
@@ -156,7 +157,7 @@ export default async function KampanDetailPage({
     const failedItems =
         failedCount > 0
             ? await db.emailQueueItem.findMany({
-                  where: { campaignId: campaign.id, status: "failed" },
+                  where: { campaignId: campaign.id, status: "FAILED" },
                   orderBy: { updatedAt: "desc" },
                   take: 50,
                   select: {
