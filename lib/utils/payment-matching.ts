@@ -21,9 +21,13 @@ import type {
 } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { ParsedBankTransaction } from "@/lib/utils/fio-api";
-import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { syncOrderScalarToV2 } from "@/lib/utils/v2-dual-write";
+import {
+    getEmailTemplate,
+    getFieldIdToLegacyIdMap,
+    v2SectionsToLegacy,
+} from "@/lib/services/v2";
 
 export interface MatchResult {
     total: number;
@@ -58,6 +62,8 @@ export async function processTransactions(
 
     const bankAccount = await getGlobalBankAccount();
     const formCache = new Map<string, CachedForm>();
+    const fieldIdMapCache = new Map<string, Map<string, string>>();
+    const templateCache = new Map<string, Awaited<ReturnType<typeof getEmailTemplate>>>();
 
     for (const tx of transactions) {
         try {
@@ -98,13 +104,6 @@ export async function processTransactions(
                             year: true,
                             title: true,
                             subtitle: true,
-                            paymentEmailEnabled: true,
-                            paymentEmailSubject: true,
-                            paymentEmailBody: true,
-                            paymentEmailBcc: true,
-                            paymentEmailAccountId: true,
-                            paymentEmailSections: true,
-                            paymentEmailAttachments: true,
                         },
                     },
                 },
@@ -218,31 +217,35 @@ export async function processTransactions(
             }
 
             // Send payment confirmation email
-            const { year } = order;
-            if (
-                year.paymentEmailEnabled &&
-                year.paymentEmailSubject &&
-                year.paymentEmailBody
-            ) {
-                try {
+            try {
+                if (!templateCache.has(order.yearId)) {
+                    templateCache.set(order.yearId, await getEmailTemplate(order.yearId, "payment"));
+                }
+                const template = templateCache.get(order.yearId)!;
+                if (
+                    template?.enabled &&
+                    template.subject &&
+                    template.body
+                ) {
                     await sendPaymentEmail(
                         order,
                         tx,
                         {
-                            ...year,
-                            paymentEmailSubject: year.paymentEmailSubject!,
-                            paymentEmailBody: year.paymentEmailBody!,
+                            ...template,
+                            subject: template.subject,
+                            body: template.body,
                         },
                         totalPrice,
                         bankAccount,
                         result,
                         formCache,
-                    );
-                } catch (emailError) {
-                    result.errors.push(
-                        `Email for tx ${tx.fioTransactionId}: ${emailError instanceof Error ? emailError.message : "Unknown"}`,
+                        fieldIdMapCache,
                     );
                 }
+            } catch (emailError) {
+                result.errors.push(
+                    `Email for tx ${tx.fioTransactionId}: ${emailError instanceof Error ? emailError.message : "Unknown"}`,
+                );
             }
         } catch (error) {
             if (
@@ -303,23 +306,22 @@ async function sendPaymentEmail(
         id: string;
         legacySubmissionId: string | null;
         yearId: string;
+        year: { year: number; title: string; subtitle: string | null };
     },
     tx: ParsedBankTransaction,
-    year: {
-        year: number;
-        title: string;
-        subtitle: string | null;
-        paymentEmailSubject: string;
-        paymentEmailBody: string;
-        paymentEmailBcc: string | null;
-        paymentEmailAccountId: string | null;
-        paymentEmailSections: unknown;
-        paymentEmailAttachments: unknown;
+    template: {
+        subject: string;
+        body: string;
+        bcc: string | null;
+        accountId: string | null;
+        attachments: unknown;
+        sections: import("@/lib/services/v2").V2EmailSection[];
     },
     totalPrice: number,
     bankAccount: Awaited<ReturnType<typeof getGlobalBankAccount>>,
     result: MatchResult,
     formCache: Map<string, CachedForm>,
+    fieldIdMapCache: Map<string, Map<string, string>>,
 ): Promise<void> {
     if (!order.legacySubmissionId) return;
 
@@ -385,21 +387,25 @@ async function sendPaymentEmail(
         bankAccount: bankAccountFormatted,
         iban,
         swift: bankAccount?.bankSwift ?? null,
-        yearNumber: year.year,
-        yearTitle: year.title,
-        yearSubtitle: year.subtitle,
+        yearNumber: order.year.year,
+        yearTitle: order.year.title,
+        yearSubtitle: order.year.subtitle,
     });
     placeholders.prijataCastka = `${tx.amount} Kč`;
 
+    if (!fieldIdMapCache.has(order.yearId)) {
+        fieldIdMapCache.set(order.yearId, await getFieldIdToLegacyIdMap(order.yearId));
+    }
+    const fieldIdMap = fieldIdMapCache.get(order.yearId)!;
+    const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
+
     const emailSubject = replacePlaceholders(
-        year.paymentEmailSubject,
+        template.subject,
         placeholders,
     );
     const bodyWithSections = appendConditionalSections({
-        body: year.paymentEmailBody,
-        sections:
-            (year.paymentEmailSections as unknown as EmailConditionalSection[]) ??
-            [],
+        body: template.body,
+        sections: legacySections,
         rawSubmissionData: submissionData,
         allFields: fields,
         pricingDefinitions,
@@ -411,9 +417,7 @@ async function sendPaymentEmail(
 
     const sectionAttachments =
         collectMatchingSectionAttachments({
-            sections:
-                (year.paymentEmailSections as unknown as EmailConditionalSection[]) ??
-                [],
+            sections: legacySections,
             rawSubmissionData: submissionData,
             allFields: fields,
             pricingDefinitions,
@@ -423,10 +427,10 @@ async function sendPaymentEmail(
         to: recipientEmail,
         subject: emailSubject,
         body: emailBody,
-        bcc: year.paymentEmailBcc ?? undefined,
-        accountId: year.paymentEmailAccountId,
+        bcc: template.bcc ?? undefined,
+        accountId: template.accountId,
         attachments: [
-            ...((year.paymentEmailAttachments as unknown as {
+            ...((template.attachments as {
                 filename: string;
                 url: string;
             }[]) ?? []),

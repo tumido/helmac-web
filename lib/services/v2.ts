@@ -578,3 +578,152 @@ export function v2PricingDefsToPricingDefs(
         })),
     }));
 }
+
+// ============================================================
+// Email templates from v2
+// ============================================================
+
+export interface V2EmailTemplate {
+    id: string;
+    type: string;
+    name: string;
+    enabled: boolean;
+    subject: string | null;
+    body: string | null;
+    bcc: string | null;
+    accountId: string | null;
+    attachments: unknown;
+    sections: V2EmailSection[];
+    condition: V2EmailCondition | null;
+}
+
+export interface V2EmailSection {
+    id: string;
+    body: string;
+    sortOrder: number;
+    attachments: unknown;
+    condition: V2EmailCondition | null;
+}
+
+export interface V2EmailCondition {
+    id: string;
+    name: string;
+    rules: {
+        fieldId: string | null;
+        operator: string;
+        value: string | null;
+        connector: string;
+    }[];
+}
+
+export async function getEmailTemplate(
+    yearId: string,
+    type: string,
+): Promise<V2EmailTemplate | null> {
+    const template = await db.v2EmailTemplate.findFirst({
+        where: { yearId, type },
+        include: {
+            sections: {
+                orderBy: { sortOrder: "asc" },
+                include: {
+                    condition: {
+                        include: {
+                            rules: {
+                                orderBy: { sortOrder: "asc" },
+                            },
+                        },
+                    },
+                },
+            },
+            condition: {
+                include: {
+                    rules: {
+                        orderBy: { sortOrder: "asc" },
+                    },
+                },
+            },
+        },
+    });
+    return template as V2EmailTemplate | null;
+}
+
+export async function getConditionalEmailTemplates(
+    yearId: string,
+): Promise<V2EmailTemplate[]> {
+    const templates = await db.v2EmailTemplate.findMany({
+        where: { yearId, type: "conditional", enabled: true },
+        include: {
+            sections: {
+                orderBy: { sortOrder: "asc" },
+                include: {
+                    condition: {
+                        include: {
+                            rules: {
+                                orderBy: { sortOrder: "asc" },
+                            },
+                        },
+                    },
+                },
+            },
+            condition: {
+                include: {
+                    rules: {
+                        orderBy: { sortOrder: "asc" },
+                    },
+                },
+            },
+        },
+    });
+    return templates as V2EmailTemplate[];
+}
+
+// Convert v2 email condition to FormCondition for evaluateCondition()
+export function v2ConditionToFormCondition(
+    cond: V2EmailCondition,
+    fieldIdToLegacyId: Map<string, string>,
+): import("@/lib/types/registration-form").FormCondition {
+    return {
+        id: cond.id,
+        name: cond.name,
+        rules: cond.rules.map((r) => ({
+            type: "field_value" as const,
+            fieldId: r.fieldId
+                ? (fieldIdToLegacyId.get(r.fieldId) ?? r.fieldId)
+                : undefined,
+            operator: r.operator as import("@/lib/types/registration-form").ConditionRule["operator"],
+            value: r.value ?? undefined,
+            connector: r.connector as "AND" | "OR",
+        })),
+    };
+}
+
+// Convert v2 email sections to EmailConditionalSection[] for appendConditionalSections()
+export function v2SectionsToLegacy(
+    sections: V2EmailSection[],
+    fieldIdToLegacyId: Map<string, string>,
+): import("@/lib/types/email-sections").EmailConditionalSection[] {
+    return sections.map((s) => ({
+        id: s.id,
+        condition: s.condition
+            ? v2ConditionToFormCondition(s.condition, fieldIdToLegacyId)
+            : { id: "", name: "", rules: [] },
+        body: s.body,
+        sortOrder: s.sortOrder,
+        attachments: (s.attachments as import("@/lib/validators/email-attachment").EmailAttachment[]) ?? [],
+    }));
+}
+
+// Build a fieldId → legacyId map for a year's form fields
+export async function getFieldIdToLegacyIdMap(
+    yearId: string,
+): Promise<Map<string, string>> {
+    const fields = await db.v2FormField.findMany({
+        where: { year: { id: yearId }, isActive: true },
+        select: { id: true, legacyId: true },
+    });
+    return new Map(
+        fields
+            .filter((f) => f.legacyId)
+            .map((f) => [f.id, f.legacyId!]),
+    );
+}

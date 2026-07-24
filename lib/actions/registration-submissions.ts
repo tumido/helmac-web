@@ -10,9 +10,13 @@ import { formatCzechAccount, czechAccountToIBAN } from "@/lib/utils/spayd";
 import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
-import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { syncOrderScalarToV2, syncOrderLineItemsToV2 } from "@/lib/utils/v2-dual-write";
+import {
+    getEmailTemplate,
+    getFieldIdToLegacyIdMap,
+    v2SectionsToLegacy,
+} from "@/lib/services/v2";
 
 interface ActionResult {
     success?: boolean;
@@ -113,13 +117,6 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
                         year: true,
                         title: true,
                         subtitle: true,
-                        confirmationEmailEnabled: true,
-                        confirmationEmailSubject: true,
-                        confirmationEmailBody: true,
-                        confirmationEmailBcc: true,
-                        confirmationEmailAccountId: true,
-                        confirmationEmailSections: true,
-                        confirmationEmailAttachments: true,
                     },
                 },
             },
@@ -129,7 +126,8 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             return { error: "Registrace nebyla nalezena" };
         }
 
-        if (!submission.year.confirmationEmailSubject || !submission.year.confirmationEmailBody) {
+        const template = await getEmailTemplate(submission.yearId, "confirmation");
+        if (!template?.subject || !template?.body) {
             return { error: "Šablona emailu není nastavena" };
         }
 
@@ -138,7 +136,6 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
         const allFields = getAllFields(formData.fields);
         const submissionData = submission.data as Record<string, unknown>;
 
-        // Find email field
         const emailField = allInputFields.find((f) => f.type === "email");
         const recipientEmail = emailField ? String(submissionData[emailField.name] ?? "") : "";
 
@@ -147,7 +144,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
         }
 
         const globalBank = await getGlobalBankAccount();
-        const bankAccount = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
+        const bankAccountStr = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
             ? formatCzechAccount(
                 globalBank.bankAccountNumber,
                 globalBank.bankAccountBankCode,
@@ -171,7 +168,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             submissionData: displaySubmissionData,
             variableSymbol: submission.variableSymbol,
             totalPrice: submission.totalPrice,
-            bankAccount,
+            bankAccount: bankAccountStr,
             iban,
             swift: globalBank?.bankSwift ?? null,
             yearNumber: submission.year.year,
@@ -179,17 +176,19 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             yearSubtitle: submission.year.subtitle,
         });
 
-        const subject = replacePlaceholders(submission.year.confirmationEmailSubject, placeholders);
+        const fieldIdMap = await getFieldIdToLegacyIdMap(submission.yearId);
+        const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
+
+        const subject = replacePlaceholders(template.subject, placeholders);
         const bodyWithSections = appendConditionalSections({
-            body: submission.year.confirmationEmailBody,
-            sections: (submission.year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
+            body: template.body,
+            sections: legacySections,
             rawSubmissionData: submissionData,
             allFields,
             pricingDefinitions: formData.pricingDefinitions,
         });
         const body = replacePlaceholders(bodyWithSections, placeholders);
 
-        // Generate QR payment image if payment data is available
         let qrImageBuffer: Buffer | null = null;
         if (
             submission.totalPrice &&
@@ -205,7 +204,7 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
         }
 
         const sectionAttachments = collectMatchingSectionAttachments({
-            sections: (submission.year.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
+            sections: legacySections,
             rawSubmissionData: submissionData,
             allFields,
             pricingDefinitions: formData.pricingDefinitions,
@@ -215,11 +214,11 @@ export async function resendConfirmationEmail(submissionId: string): Promise<Act
             to: recipientEmail,
             subject,
             body,
-            bcc: submission.year.confirmationEmailBcc ?? undefined,
+            bcc: template.bcc ?? undefined,
             qrImageBuffer: qrImageBuffer ?? undefined,
-            accountId: submission.year.confirmationEmailAccountId,
+            accountId: template.accountId,
             attachments: [
-                ...((submission.year.confirmationEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
+                ...((template.attachments as { filename: string; url: string }[]) ?? []),
                 ...sectionAttachments,
             ],
         });

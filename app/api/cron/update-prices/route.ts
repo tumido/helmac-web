@@ -4,6 +4,9 @@ import {
     getUnpaidOrders,
     computeCurrentTotal,
     updateOrderTotalPrice,
+    getEmailTemplate,
+    getFieldIdToLegacyIdMap,
+    v2SectionsToLegacy,
 } from "@/lib/services/v2";
 import {
     buildPlaceholders,
@@ -15,7 +18,6 @@ import {
 } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
-import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { migrateFormData } from "@/lib/utils/form-migration";
 import {
     getAllFields,
@@ -50,6 +52,10 @@ export async function GET(request: NextRequest) {
     const errors: string[] = [];
     const emailErrors: string[] = [];
 
+    const templateCache = new Map<string, Awaited<ReturnType<typeof getEmailTemplate>>>();
+    const fieldIdMapCache = new Map<string, Map<string, string>>();
+    const yearCache = new Map<string, { year: number; title: string; subtitle: string | null } | null>();
+
     for (const order of orders) {
         try {
             const newTotal = await computeCurrentTotal(order.id);
@@ -69,32 +75,27 @@ export async function GET(request: NextRequest) {
             updated++;
 
             // Send price change email
-            const year = await db.year.findUnique({
-                where: { id: order.yearId },
-                select: {
-                    year: true,
-                    title: true,
-                    subtitle: true,
-                    priceChangeEmailEnabled: true,
-                    priceChangeEmailSubject: true,
-                    priceChangeEmailBody: true,
-                    priceChangeEmailBcc: true,
-                    priceChangeEmailAccountId: true,
-                    priceChangeEmailSections: true,
-                    priceChangeEmailAttachments: true,
-                },
-            });
-
+            if (!templateCache.has(order.yearId)) {
+                templateCache.set(order.yearId, await getEmailTemplate(order.yearId, "price_change"));
+            }
+            const template = templateCache.get(order.yearId)!;
             if (
-                !year?.priceChangeEmailEnabled ||
-                !year.priceChangeEmailSubject ||
-                !year.priceChangeEmailBody
+                !template?.enabled ||
+                !template.subject ||
+                !template.body
             )
                 continue;
 
+            if (!yearCache.has(order.yearId)) {
+                yearCache.set(order.yearId, await db.year.findUnique({
+                    where: { id: order.yearId },
+                    select: { year: true, title: true, subtitle: true },
+                }));
+            }
+            const year = yearCache.get(order.yearId);
+            if (!year) continue;
+
             try {
-                // Get submission data for email placeholders
-                // (still uses legacy data blob for placeholder resolution)
                 if (!order.legacySubmissionId) continue;
                 const submission =
                     await db.registrationSubmission.findUnique({
@@ -167,14 +168,19 @@ export async function GET(request: NextRequest) {
                     oldPrice != null ? `${oldPrice} Kč` : "";
                 placeholders.novaCena = `${newTotal} Kč`;
 
+                if (!fieldIdMapCache.has(order.yearId)) {
+                    fieldIdMapCache.set(order.yearId, await getFieldIdToLegacyIdMap(order.yearId));
+                }
+                const fieldIdMap = fieldIdMapCache.get(order.yearId)!;
+                const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
+
                 const emailSubject = replacePlaceholders(
-                    year.priceChangeEmailSubject,
+                    template.subject!,
                     placeholders,
                 );
                 const bodyWithSections = appendConditionalSections({
-                    body: year.priceChangeEmailBody,
-                    sections:
-                        (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ??
+                    body: template.body!,
+                    sections: legacySections ??
                         [],
                     rawSubmissionData: submissionData,
                     allFields: cachedForm.fields,
@@ -196,9 +202,7 @@ export async function GET(request: NextRequest) {
 
                 const sectionAttachments =
                     collectMatchingSectionAttachments({
-                        sections:
-                            (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ??
-                            [],
+                        sections: legacySections ?? [],
                         rawSubmissionData: submissionData,
                         allFields: cachedForm.fields,
                         pricingDefinitions:
@@ -209,11 +213,11 @@ export async function GET(request: NextRequest) {
                     to: recipientEmail,
                     subject: emailSubject,
                     body: emailBody,
-                    bcc: year.priceChangeEmailBcc ?? undefined,
+                    bcc: template.bcc ?? undefined,
                     qrImageBuffer: qrImageBuffer ?? undefined,
-                    accountId: year.priceChangeEmailAccountId,
+                    accountId: template.accountId,
                     attachments: [
-                        ...((year.priceChangeEmailAttachments as unknown as {
+                        ...((template.attachments as {
                             filename: string;
                             url: string;
                         }[]) ?? []),

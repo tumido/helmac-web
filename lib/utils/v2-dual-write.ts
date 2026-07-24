@@ -603,13 +603,26 @@ export async function syncYearEmailToV2(
         });
         templateId = existing.id;
     } else {
+        const enabledKey: Record<EmailType, string> = {
+            confirmation: "confirmationEmailEnabled",
+            payment: "paymentEmailEnabled",
+            price_change: "priceChangeEmailEnabled",
+        };
+        const year = await tx.year.findUnique({
+            where: { id: yearId },
+            select: { [enabledKey[type]]: true },
+        });
+        const enabled =
+            (year as Record<string, boolean> | null)?.[
+                enabledKey[type]
+            ] ?? false;
         const created = await tx.v2EmailTemplate.create({
             data: {
                 ...templateData,
                 yearId,
                 type,
                 name: "",
-                enabled: false,
+                enabled,
             },
         });
         templateId = created.id;
@@ -630,10 +643,25 @@ export async function toggleYearEmailInV2(
     type: EmailType,
     enabled: boolean,
 ): Promise<void> {
-    await tx.v2EmailTemplate.updateMany({
+    const result = await tx.v2EmailTemplate.updateMany({
         where: { yearId, type },
         data: { enabled },
     });
+    if (result.count === 0) {
+        await tx.v2EmailTemplate.create({
+            data: {
+                yearId,
+                type,
+                name: "",
+                enabled,
+                subject: null,
+                body: null,
+                bcc: null,
+                accountId: null,
+                attachments: [],
+            },
+        });
+    }
 }
 
 // ---- Email sections ----
