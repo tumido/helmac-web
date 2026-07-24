@@ -9,9 +9,11 @@ import { togglePriceChangeEmail } from "@/lib/actions/years";
 import { togglePaymentEmail } from "@/lib/actions/bank-sync";
 import { ConditionalEmailCard } from "./conditional-email-card";
 import { CreateConditionalEmailDialog } from "./create-conditional-email-dialog";
-import { getRegistrationFormForYear } from "@/lib/services";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import {
+    getFormStructure,
+    v2PricingDefsToPricingDefs,
+    v2FieldToInputField,
+} from "@/lib/services/v2";
 import { getFieldOptionValues } from "@/lib/utils/pricing";
 
 interface EmailyPageProps {
@@ -102,11 +104,11 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
     const hasPriceChangeTemplate = !!year.priceChangeEmailSubject && !!year.priceChangeEmailBody;
     const hasPaymentTemplate = !!year.paymentEmailSubject && !!year.paymentEmailBody;
 
-    // Build available fields for conditional email creation
-    const registrationForm = await getRegistrationFormForYear(year.id);
-    const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
-    const allInputFields = formData ? getAllInputFields(formData.fields) : [];
-    const pricingDefinitions = formData?.pricingDefinitions ?? [];
+    const formStructure = await getFormStructure(year.id);
+    const pricingDefinitions = formStructure
+        ? v2PricingDefsToPricingDefs(formStructure.pricingDefinitions)
+        : [];
+    const allInputFields = (formStructure?.fields ?? []).map(v2FieldToInputField);
     const fieldNameToLabel = new Map(allInputFields.map((f) => [f.name, f.label]));
     const availableFields = allInputFields
         .filter((f) => {

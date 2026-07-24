@@ -2,11 +2,19 @@
 
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import {
+    checkCapacity,
+    findDuplicateEmail,
+    getEmailTemplate,
+    getConditionalEmailTemplates,
+    getFieldIdToLegacyIdMap,
+    v2SectionsToLegacy,
+    v2ConditionToFormCondition,
+} from "@/lib/services/v2";
 import { buildSubmissionSchema } from "@/lib/validators/registration-submission";
-import type { InputField, OptionCounts, AdditionalPersonData, CapacityLimit, PricingDefinition } from "@/lib/types/registration-form";
+import type { InputField, AdditionalPersonData, CapacityLimit, PricingDefinition } from "@/lib/types/registration-form";
 import { getAllFields, getAllInputFields, getAPInputFields, MAX_ADDITIONAL_PEOPLE } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getOptionCountsForYearFresh } from "@/lib/services/registration";
 import { getAPFieldNames } from "@/lib/utils/additional-people";
 import { computePricingSummary } from "@/lib/utils/pricing-summary";
 import { parseQuantities } from "@/lib/utils/pricing-field-values";
@@ -14,8 +22,6 @@ import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
 import { generateUniqueVariableSymbol } from "@/lib/utils/variable-symbol";
 import { czechAccountToIBAN, generateSPAYD, formatCzechAccount } from "@/lib/utils/spayd";
 import { sendConfirmationEmail, replacePlaceholders, buildPlaceholders, generateQRPaymentImage, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
-import type { EmailConditionalSection } from "@/lib/types/email-sections";
-import type { ConditionRule, FormCondition } from "@/lib/types/registration-form";
 import { evaluateCondition } from "@/lib/utils/condition-evaluation";
 import { getPublicSession } from "@/lib/public-auth";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
@@ -45,30 +51,21 @@ export interface RegistrationState {
     paymentData?: PaymentData;
 }
 
-/**
- * Validate submitted values against capacity limits.
- * Returns field-level error if any capacity is exceeded.
- */
-function validateCapacityLimits(
+async function validateCapacityLimits(
+    yearId: string,
     capacityLimits: CapacityLimit[],
     submissionData: Record<string, unknown>,
     additionalPeople: AdditionalPersonData[],
     allInputFields: InputField[],
     pricingDefinitions: PricingDefinition[],
-    optionCounts: OptionCounts,
-): { fieldName: string; error: string } | null {
+): Promise<{ fieldName: string; error: string } | null> {
     for (const limit of capacityLimits) {
         const field = allInputFields.find((f) => f.id === limit.fieldId);
         if (!field) continue;
 
-        const currentCount = optionCounts[field.name]?.[limit.value] ?? 0;
-
-        // Count how many times this value appears in current submission
         let submittedCount = 0;
 
         if (field.type === "pricing_quantity") {
-            // Sum quantities for this option across main + AP. Quantity JSON is
-            // keyed by opt.id in the form; tolerate opt.name as a fallback.
             const def = pricingDefinitions.find((d) => d.id === field.pricingId);
             const opt = def?.options.find((o) => o.name === limit.value);
             const sumQty = (raw: unknown): number => {
@@ -82,8 +79,6 @@ function validateCapacityLimits(
                 submittedCount += sumQty(person[field.name]);
             }
         } else {
-            // Form sends option IDs for pricing_select / pricing_multi_select, but
-            // limit.value is stored as the option name. Accept either via a lookup.
             const def = pricingDefinitions.find((d) => d.id === field.pricingId);
             const opt = def?.options.find((o) => o.name === limit.value);
             const matchesLimit = (val: string): boolean =>
@@ -112,7 +107,15 @@ function validateCapacityLimits(
             }
         }
 
-        if (submittedCount > 0 && currentCount + submittedCount > limit.maxCount) {
+        if (submittedCount <= 0) continue;
+
+        const result = await checkCapacity(
+            yearId,
+            field.name,
+            limit.value,
+            submittedCount,
+        );
+        if (result?.wouldExceed) {
             return {
                 fieldName: field.name,
                 error: `Kapacita pro "${limit.value}" je již vyčerpána`,
@@ -141,13 +144,6 @@ export async function submitDynamicRegistration(
             title: true,
             subtitle: true,
             year: true,
-            confirmationEmailEnabled: true,
-            confirmationEmailSubject: true,
-            confirmationEmailBody: true,
-            confirmationEmailBcc: true,
-            confirmationEmailAccountId: true,
-            confirmationEmailSections: true,
-            confirmationEmailAttachments: true,
             registrationForm: {
                 select: { id: true, fields: true },
             },
@@ -185,13 +181,7 @@ export async function submitDynamicRegistration(
         }
     }
 
-    // Fetch option counts if capacity limits exist
     const hasCapacityLimits = formDataStored.capacityLimits.length > 0;
-    let optionCounts: OptionCounts | undefined;
-
-    if (hasCapacityLimits) {
-        optionCounts = await getOptionCountsForYearFresh(activeYear.id);
-    }
 
     // Build visible field IDs
     const visibleFieldIds = buildVisibleFieldIds(
@@ -349,14 +339,14 @@ export async function submitDynamicRegistration(
     }
 
     // Validate capacity limits (test registrations bypass capacity checks)
-    if (!isTest && hasCapacityLimits && optionCounts) {
-        const capacityError = validateCapacityLimits(
+    if (!isTest && hasCapacityLimits) {
+        const capacityError = await validateCapacityLimits(
+            activeYear.id,
             formDataStored.capacityLimits,
             submissionData,
             parsedAP,
             allInputFields,
             formDataStored.pricingDefinitions,
-            optionCounts,
         );
         if (capacityError) {
             return {
@@ -378,18 +368,13 @@ export async function submitDynamicRegistration(
     if (!isTest && emailField) {
         const emailValue = String(submissionData[emailField.name] || "").toLowerCase();
         if (emailValue) {
-            const existing = await db.registrationSubmission.findFirst({
-                where: {
-                    yearId: activeYear.id,
-                    data: {
-                        path: [emailField.name],
-                        equals: emailValue,
-                    },
-                },
-                select: { id: true },
-            });
+            const isDuplicate = await findDuplicateEmail(
+                activeYear.id,
+                emailField.name,
+                emailValue,
+            );
 
-            if (existing) {
+            if (isDuplicate) {
                 return {
                     success: false,
                     message: "Na tento email již existuje registrace",
@@ -602,101 +587,83 @@ export async function submitDynamicRegistration(
 
         // Send confirmation email if enabled (non-blocking).
         // Test registrations never send emails.
-        if (
-            !isTest &&
-            activeYear.confirmationEmailEnabled &&
-            activeYear.confirmationEmailSubject &&
-            activeYear.confirmationEmailBody &&
-            recipientEmail
-        ) {
+        if (!isTest && recipientEmail) {
+            const fieldIdMap = await getFieldIdToLegacyIdMap(activeYear.id);
+
             try {
-                const emailSubject = replacePlaceholders(activeYear.confirmationEmailSubject, placeholders);
-                const bodyWithSections = appendConditionalSections({
-                    body: activeYear.confirmationEmailBody,
-                    sections: (activeYear.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
-                    rawSubmissionData: submissionData,
-                    allFields,
-                    pricingDefinitions: formDataStored.pricingDefinitions,
-                });
-                const emailBody = replacePlaceholders(bodyWithSections, placeholders);
+                const confirmationTemplate = await getEmailTemplate(activeYear.id, "confirmation");
+                if (
+                    confirmationTemplate?.enabled &&
+                    confirmationTemplate.subject &&
+                    confirmationTemplate.body
+                ) {
+                    const legacySections = v2SectionsToLegacy(
+                        confirmationTemplate.sections,
+                        fieldIdMap,
+                    );
 
-                const sectionAttachments = collectMatchingSectionAttachments({
-                    sections: (activeYear.confirmationEmailSections as unknown as EmailConditionalSection[]) ?? [],
-                    rawSubmissionData: submissionData,
-                    allFields,
-                    pricingDefinitions: formDataStored.pricingDefinitions,
-                });
-
-                const sent = await sendConfirmationEmail({
-                    to: recipientEmail,
-                    subject: emailSubject,
-                    body: emailBody,
-                    bcc: activeYear.confirmationEmailBcc ?? undefined,
-                    qrImageBuffer: qrImageBuffer ?? undefined,
-                    accountId: activeYear.confirmationEmailAccountId,
-                    attachments: [
-                        ...((activeYear.confirmationEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
-                        ...sectionAttachments,
-                    ],
-                });
-
-                if (sent) {
-                    const emailSentAt = new Date();
-                    await db.registrationSubmission.update({
-                        where: { id: submission.id },
-                        data: { emailSent: true, emailSentAt },
+                    const emailSubject = replacePlaceholders(confirmationTemplate.subject, placeholders);
+                    const bodyWithSections = appendConditionalSections({
+                        body: confirmationTemplate.body,
+                        sections: legacySections,
+                        rawSubmissionData: submissionData,
+                        allFields,
+                        pricingDefinitions: formDataStored.pricingDefinitions,
                     });
-                    await syncOrderScalarToV2(db, submission.id, {
-                        emailSent: true,
-                        emailSentAt,
+                    const emailBody = replacePlaceholders(bodyWithSections, placeholders);
+
+                    const sectionAttachments = collectMatchingSectionAttachments({
+                        sections: legacySections,
+                        rawSubmissionData: submissionData,
+                        allFields,
+                        pricingDefinitions: formDataStored.pricingDefinitions,
                     });
+
+                    const sent = await sendConfirmationEmail({
+                        to: recipientEmail,
+                        subject: emailSubject,
+                        body: emailBody,
+                        bcc: confirmationTemplate.bcc ?? undefined,
+                        qrImageBuffer: qrImageBuffer ?? undefined,
+                        accountId: confirmationTemplate.accountId,
+                        attachments: [
+                            ...((confirmationTemplate.attachments as { filename: string; url: string }[]) ?? []),
+                            ...sectionAttachments,
+                        ],
+                    });
+
+                    if (sent) {
+                        const emailSentAt = new Date();
+                        await db.registrationSubmission.update({
+                            where: { id: submission.id },
+                            data: { emailSent: true, emailSentAt },
+                        });
+                        await syncOrderScalarToV2(db, submission.id, {
+                            emailSent: true,
+                            emailSentAt,
+                        });
+                    }
                 }
             } catch (emailError) {
                 console.error("Failed to send confirmation email:", emailError);
-                // Email failure does NOT block registration
             }
-        }
 
-        // Send conditional emails (non-blocking).
-        // Test registrations never send emails.
-        if (!isTest && recipientEmail) {
+            // Send conditional emails
             try {
-                const conditionalEmails = await db.conditionalEmail.findMany({
-                    where: { yearId: activeYear.id, enabled: true },
-                    select: {
-                        id: true,
-                        name: true,
-                        conditionFieldId: true,
-                        conditionOperator: true,
-                        conditionValue: true,
-                        subject: true,
-                        body: true,
-                        bcc: true,
-                        accountId: true,
-                        sections: true,
-                        attachments: true,
-                    },
-                });
+                const conditionalTemplates = await getConditionalEmailTemplates(activeYear.id);
 
-                for (const ce of conditionalEmails) {
-                    if (!ce.subject || !ce.body) continue;
+                for (const ce of conditionalTemplates) {
+                    if (!ce.subject || !ce.body || !ce.condition) continue;
 
-                    const synth: FormCondition = {
-                        id: ce.id,
-                        name: ce.name,
-                        rules: [{
-                            type: "field_value",
-                            fieldId: ce.conditionFieldId,
-                            operator: ce.conditionOperator as ConditionRule["operator"],
-                            value: ce.conditionValue ?? "",
-                        }],
-                    };
-                    if (!evaluateCondition(synth, submissionData, allFields, formDataStored.pricingDefinitions)) continue;
+                    const formCondition = v2ConditionToFormCondition(ce.condition, fieldIdMap);
+                    if (!evaluateCondition(formCondition, submissionData, allFields, formDataStored.pricingDefinitions)) continue;
+
+                    const legacySections = v2SectionsToLegacy(ce.sections, fieldIdMap);
 
                     const ceSubject = replacePlaceholders(ce.subject, placeholders);
                     const ceBodyWithSections = appendConditionalSections({
                         body: ce.body,
-                        sections: (ce.sections as unknown as EmailConditionalSection[]) ?? [],
+                        sections: legacySections,
                         rawSubmissionData: submissionData,
                         allFields,
                         pricingDefinitions: formDataStored.pricingDefinitions,
@@ -704,7 +671,7 @@ export async function submitDynamicRegistration(
                     const ceBody = replacePlaceholders(ceBodyWithSections, placeholders);
 
                     const ceSectionAttachments = collectMatchingSectionAttachments({
-                        sections: (ce.sections as unknown as EmailConditionalSection[]) ?? [],
+                        sections: legacySections,
                         rawSubmissionData: submissionData,
                         allFields,
                         pricingDefinitions: formDataStored.pricingDefinitions,
@@ -718,14 +685,13 @@ export async function submitDynamicRegistration(
                         qrImageBuffer: qrImageBuffer ?? undefined,
                         accountId: ce.accountId,
                         attachments: [
-                            ...((ce.attachments as unknown as { filename: string; url: string }[]) ?? []),
+                            ...((ce.attachments as { filename: string; url: string }[]) ?? []),
                             ...ceSectionAttachments,
                         ],
                     });
                 }
             } catch (condEmailError) {
                 console.error("Failed to send conditional emails:", condEmailError);
-                // Conditional email failure does NOT block registration
             }
         }
 

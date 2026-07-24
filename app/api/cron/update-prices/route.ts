@@ -1,59 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
-import { after } from "next/server";
-import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse, after } from "next/server";
 import { db } from "@/lib/db";
 import { kickEmailQueue } from "@/lib/utils/email-queue";
-import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
-import { buildPlaceholders, replacePlaceholders, generateQRPaymentImage, sendConfirmationEmail, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
+import {
+    getUnpaidOrders,
+    computeCurrentTotal,
+    updateOrderTotalPrice,
+    getEmailTemplate,
+    getFieldIdToLegacyIdMap,
+    v2SectionsToLegacy,
+} from "@/lib/services/v2";
+import {
+    buildPlaceholders,
+    replacePlaceholders,
+    generateQRPaymentImage,
+    sendConfirmationEmail,
+    appendConditionalSections,
+    collectMatchingSectionAttachments,
+} from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
-import type { FormField, InputField, PricingDefinition, PricingSummaryData } from "@/lib/types/registration-form";
-import type { EmailConditionalSection } from "@/lib/types/email-sections";
+import { migrateFormData } from "@/lib/utils/form-migration";
+import {
+    getAllFields,
+    getAllInputFields,
+    isInputField,
+} from "@/lib/types/registration-form";
+import type {
+    FormField,
+    InputField,
+    PricingDefinition,
+} from "@/lib/types/registration-form";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
-import { syncOrderScalarToV2 } from "@/lib/utils/v2-dual-write";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-    // Authenticate via CRON_SECRET
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: 401 },
+        );
     }
 
-    const submissions = await db.registrationSubmission.findMany({
-        where: {
-            isPaid: false,
-            isTest: false,
-            pricingSummary: { not: Prisma.DbNull },
-            status: { notIn: ["CANCELLED", "REJECTED"] },
-        },
-        select: {
-            id: true,
-            totalPrice: true,
-            pricingSummary: true,
-            yearId: true,
-            formId: true,
-            data: true,
-            variableSymbol: true,
-            year: {
-                select: {
-                    year: true,
-                    title: true,
-                    subtitle: true,
-                    priceChangeEmailEnabled: true,
-                    priceChangeEmailSubject: true,
-                    priceChangeEmailBody: true,
-                    priceChangeEmailBcc: true,
-                    priceChangeEmailAccountId: true,
-                    priceChangeEmailSections: true,
-                    priceChangeEmailAttachments: true,
-                },
-            },
-        },
-    });
+    const orders = await getUnpaidOrders();
 
     const globalBank = await getGlobalBankAccount();
 
@@ -63,169 +53,195 @@ export async function GET(request: NextRequest) {
     const errors: string[] = [];
     const emailErrors: string[] = [];
 
-    // Cache form fields per formId to avoid repeated DB lookups
-    interface CachedForm {
-        fields: FormField[];
-        inputFields: InputField[];
-        pricingDefinitions: PricingDefinition[];
-    }
-    const formFieldsCache = new Map<string, CachedForm>();
+    const templateCache = new Map<string, Awaited<ReturnType<typeof getEmailTemplate>>>();
+    const fieldIdMapCache = new Map<string, Map<string, string>>();
+    const yearCache = new Map<string, { year: number; title: string; subtitle: string | null } | null>();
 
-    async function getFormInputFields(formId: string): Promise<CachedForm> {
-        const cached = formFieldsCache.get(formId);
-        if (cached) return cached;
-        const form = await db.registrationForm.findUnique({
-            where: { id: formId },
-            select: { fields: true },
-        });
-        if (!form) {
-            const empty: CachedForm = { fields: [], inputFields: [], pricingDefinitions: [] };
-            formFieldsCache.set(formId, empty);
-            return empty;
-        }
-        const formData = migrateFormData(form.fields);
-        const value: CachedForm = {
-            fields: getAllFields(formData.fields),
-            inputFields: getAllInputFields(formData.fields),
-            pricingDefinitions: formData.pricingDefinitions,
-        };
-        formFieldsCache.set(formId, value);
-        return value;
-    }
-
-    for (const submission of submissions) {
+    for (const order of orders) {
         try {
-            const summary = submission.pricingSummary as unknown as PricingSummaryData;
-            const { totalPrice, applicableTierIndex } = getApplicablePriceFromSummary(summary);
+            const newTotal = await computeCurrentTotal(order.id);
 
-            if (totalPrice === submission.totalPrice) {
+            if (newTotal === order.totalPrice) {
                 skipped++;
                 continue;
             }
 
-            const oldPrice = submission.totalPrice;
+            const oldPrice = order.totalPrice;
 
-            await db.$transaction(async (tx) => {
-                await tx.registrationSubmission.update({
-                    where: { id: submission.id },
-                    data: {
-                        totalPrice,
-                        pricingSummary: {
-                            ...summary,
-                            applicableTierIndex,
-                            totalPrice,
-                        } as unknown as Prisma.InputJsonValue,
-                    },
-                });
-                await syncOrderScalarToV2(tx, submission.id, { totalPrice });
-            });
+            await updateOrderTotalPrice(
+                order.id,
+                order.legacySubmissionId,
+                newTotal,
+            );
             updated++;
 
-            // Send price change email if enabled
-            const { year } = submission;
+            // Send price change email
+            if (!templateCache.has(order.yearId)) {
+                templateCache.set(order.yearId, await getEmailTemplate(order.yearId, "price_change"));
+            }
+            const template = templateCache.get(order.yearId)!;
             if (
-                year.priceChangeEmailEnabled &&
-                year.priceChangeEmailSubject &&
-                year.priceChangeEmailBody
-            ) {
-                try {
-                    const cachedForm = await getFormInputFields(submission.formId);
-                    const { fields: allFormFields, inputFields, pricingDefinitions } = cachedForm;
-                    const emailField = allFormFields.find((f) => isInputField(f) && f.type === "email");
-                    const submissionData = submission.data as Record<string, unknown>;
-                    const recipientEmail = emailField && isInputField(emailField)
-                        ? String(submissionData[emailField.name] ?? "")
+                !template?.enabled ||
+                !template.subject ||
+                !template.body
+            )
+                continue;
+
+            if (!yearCache.has(order.yearId)) {
+                yearCache.set(order.yearId, await db.year.findUnique({
+                    where: { id: order.yearId },
+                    select: { year: true, title: true, subtitle: true },
+                }));
+            }
+            const year = yearCache.get(order.yearId);
+            if (!year) continue;
+
+            try {
+                if (!order.legacySubmissionId) continue;
+                const submission =
+                    await db.registrationSubmission.findUnique({
+                        where: { id: order.legacySubmissionId },
+                        select: {
+                            data: true,
+                            formId: true,
+                            variableSymbol: true,
+                        },
+                    });
+                if (!submission) continue;
+
+                const cachedForm = await getFormFields(
+                    submission.formId,
+                );
+                const submissionData = submission.data as Record<
+                    string,
+                    unknown
+                >;
+                const emailField = cachedForm.fields.find(
+                    (f) => isInputField(f) && f.type === "email",
+                );
+                const recipientEmail =
+                    emailField && isInputField(emailField)
+                        ? String(
+                              submissionData[emailField.name] ?? "",
+                          )
                         : "";
 
-                    if (recipientEmail) {
-                        const bankAccountFormatted = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
-                            ? formatCzechAccount(
-                                globalBank.bankAccountNumber,
-                                globalBank.bankAccountBankCode,
-                                globalBank.bankAccountPrefix ?? undefined,
-                            )
-                            : null;
-                        const iban = globalBank?.bankAccountNumber && globalBank?.bankAccountBankCode
-                            ? czechAccountToIBAN(
-                                globalBank.bankAccountNumber,
-                                globalBank.bankAccountBankCode,
-                                globalBank.bankAccountPrefix ?? undefined,
-                            )
-                            : null;
+                if (!recipientEmail) continue;
 
-                        const displaySubmissionData = resolveSubmissionDataForDisplay(
-                            submissionData,
-                            inputFields,
-                            pricingDefinitions,
-                        );
-                        const placeholders = buildPlaceholders({
-                            submissionData: displaySubmissionData,
-                            variableSymbol: submission.variableSymbol,
-                            totalPrice,
-                            bankAccount: bankAccountFormatted,
-                            iban,
-                            swift: globalBank?.bankSwift ?? null,
-                            yearNumber: year.year,
-                            yearTitle: year.title,
-                            yearSubtitle: year.subtitle,
-                        });
+                const bankAccountFormatted =
+                    globalBank?.bankAccountNumber &&
+                    globalBank?.bankAccountBankCode
+                        ? formatCzechAccount(
+                              globalBank.bankAccountNumber,
+                              globalBank.bankAccountBankCode,
+                              globalBank.bankAccountPrefix ??
+                                  undefined,
+                          )
+                        : null;
+                const iban =
+                    globalBank?.bankAccountNumber &&
+                    globalBank?.bankAccountBankCode
+                        ? czechAccountToIBAN(
+                              globalBank.bankAccountNumber,
+                              globalBank.bankAccountBankCode,
+                              globalBank.bankAccountPrefix ??
+                                  undefined,
+                          )
+                        : null;
 
-                        // Add price change specific placeholders
-                        placeholders.staraCena = oldPrice != null ? `${oldPrice} Kč` : "";
-                        placeholders.novaCena = `${totalPrice} Kč`;
+                const displayData = resolveSubmissionDataForDisplay(
+                    submissionData,
+                    cachedForm.inputFields,
+                    cachedForm.pricingDefinitions,
+                );
+                const placeholders = buildPlaceholders({
+                    submissionData: displayData,
+                    variableSymbol: order.variableSymbol,
+                    totalPrice: newTotal,
+                    bankAccount: bankAccountFormatted,
+                    iban,
+                    swift: globalBank?.bankSwift ?? null,
+                    yearNumber: year.year,
+                    yearTitle: year.title,
+                    yearSubtitle: year.subtitle,
+                });
+                placeholders.staraCena =
+                    oldPrice != null ? `${oldPrice} Kč` : "";
+                placeholders.novaCena = `${newTotal} Kč`;
 
-                        const emailSubject = replacePlaceholders(year.priceChangeEmailSubject, placeholders);
-                        const bodyWithSections = appendConditionalSections({
-                            body: year.priceChangeEmailBody,
-                            sections: (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? [],
-                            rawSubmissionData: submissionData,
-                            allFields: allFormFields,
-                            pricingDefinitions,
-                        });
-                        const emailBody = replacePlaceholders(bodyWithSections, placeholders);
-
-                        // Generate QR payment image if bank account is configured
-                        let qrImageBuffer: Buffer | null = null;
-                        if (totalPrice > 0 && iban) {
-                            qrImageBuffer = await generateQRPaymentImage({
-                                iban,
-                                amount: totalPrice,
-                                variableSymbol: submission.variableSymbol ?? undefined,
-                            });
-                        }
-
-                        const sectionAttachments = collectMatchingSectionAttachments({
-                            sections: (year.priceChangeEmailSections as unknown as EmailConditionalSection[]) ?? [],
-                            rawSubmissionData: submissionData,
-                            allFields: allFormFields,
-                            pricingDefinitions,
-                        });
-
-                        const sent = await sendConfirmationEmail({
-                            to: recipientEmail,
-                            subject: emailSubject,
-                            body: emailBody,
-                            bcc: year.priceChangeEmailBcc ?? undefined,
-                            qrImageBuffer: qrImageBuffer ?? undefined,
-                            accountId: year.priceChangeEmailAccountId,
-                            attachments: [
-                                ...((year.priceChangeEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
-                                ...sectionAttachments,
-                            ],
-                        });
-
-                        if (sent) {
-                            emailsSent++;
-                        } else {
-                            emailErrors.push(`${submission.id}: Email send failed`);
-                        }
-                    }
-                } catch (emailError) {
-                    emailErrors.push(`${submission.id}: ${emailError instanceof Error ? emailError.message : "Unknown email error"}`);
+                if (!fieldIdMapCache.has(order.yearId)) {
+                    fieldIdMapCache.set(order.yearId, await getFieldIdToLegacyIdMap(order.yearId));
                 }
+                const fieldIdMap = fieldIdMapCache.get(order.yearId)!;
+                const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
+
+                const emailSubject = replacePlaceholders(
+                    template.subject!,
+                    placeholders,
+                );
+                const bodyWithSections = appendConditionalSections({
+                    body: template.body!,
+                    sections: legacySections ??
+                        [],
+                    rawSubmissionData: submissionData,
+                    allFields: cachedForm.fields,
+                    pricingDefinitions: cachedForm.pricingDefinitions,
+                });
+                const emailBody = replacePlaceholders(
+                    bodyWithSections,
+                    placeholders,
+                );
+
+                let qrImageBuffer: Buffer | null = null;
+                if (newTotal > 0 && iban) {
+                    qrImageBuffer = await generateQRPaymentImage({
+                        iban,
+                        amount: newTotal,
+                        variableSymbol: order.variableSymbol ?? undefined,
+                    });
+                }
+
+                const sectionAttachments =
+                    collectMatchingSectionAttachments({
+                        sections: legacySections ?? [],
+                        rawSubmissionData: submissionData,
+                        allFields: cachedForm.fields,
+                        pricingDefinitions:
+                            cachedForm.pricingDefinitions,
+                    });
+
+                const sent = await sendConfirmationEmail({
+                    to: recipientEmail,
+                    subject: emailSubject,
+                    body: emailBody,
+                    bcc: template.bcc ?? undefined,
+                    qrImageBuffer: qrImageBuffer ?? undefined,
+                    accountId: template.accountId,
+                    attachments: [
+                        ...((template.attachments as {
+                            filename: string;
+                            url: string;
+                        }[]) ?? []),
+                        ...sectionAttachments,
+                    ],
+                });
+
+                if (sent) {
+                    emailsSent++;
+                } else {
+                    emailErrors.push(
+                        `${order.id}: Email send failed`,
+                    );
+                }
+            } catch (emailError) {
+                emailErrors.push(
+                    `${order.id}: ${emailError instanceof Error ? emailError.message : "Unknown email error"}`,
+                );
             }
         } catch (error) {
-            errors.push(`${submission.id}: ${error instanceof Error ? error.message : "Unknown error"}`);
+            errors.push(
+                `${order.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
         }
     }
 
@@ -240,7 +256,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
         success: true,
-        processed: submissions.length,
+        processed: orders.length,
         updated,
         skipped,
         emailsSent,
@@ -248,4 +264,40 @@ export async function GET(request: NextRequest) {
         emailErrors,
         timestamp: new Date().toISOString(),
     });
+}
+
+// Cache form fields per formId within a single cron run
+interface CachedForm {
+    fields: FormField[];
+    inputFields: InputField[];
+    pricingDefinitions: PricingDefinition[];
+}
+const formFieldsCache = new Map<string, CachedForm>();
+
+async function getFormFields(
+    formId: string,
+): Promise<CachedForm> {
+    const cached = formFieldsCache.get(formId);
+    if (cached) return cached;
+    const form = await db.registrationForm.findUnique({
+        where: { id: formId },
+        select: { fields: true },
+    });
+    if (!form) {
+        const empty: CachedForm = {
+            fields: [],
+            inputFields: [],
+            pricingDefinitions: [],
+        };
+        formFieldsCache.set(formId, empty);
+        return empty;
+    }
+    const formData = migrateFormData(form.fields);
+    const value: CachedForm = {
+        fields: getAllFields(formData.fields),
+        inputFields: getAllInputFields(formData.fields),
+        pricingDefinitions: formData.pricingDefinitions,
+    };
+    formFieldsCache.set(formId, value);
+    return value;
 }

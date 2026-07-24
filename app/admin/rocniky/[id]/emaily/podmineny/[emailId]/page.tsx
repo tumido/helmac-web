@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmailTemplateEditor } from "@/components/admin/email-template-editor";
-import { getRegistrationFormForYear } from "@/lib/services";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields, getAllFields } from "@/lib/types/registration-form";
+import {
+    getFormStructure,
+    v2FieldsToFormFields,
+    v2PricingDefsToPricingDefs,
+} from "@/lib/services/v2";
 import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import type { EmailAttachment } from "@/lib/validators/email-attachment";
 import { updateConditionalEmailTemplate } from "@/lib/actions/conditional-emails";
@@ -55,19 +57,22 @@ export default async function ConditionalEmailPage({ params }: ConditionalEmailP
         notFound();
     }
 
-    // Build available placeholders from form fields
-    const registrationForm = await getRegistrationFormForYear(year.id);
-    const formData = registrationForm ? migrateFormData(registrationForm.fields) : null;
-    const allFormInputFields = formData ? getAllInputFields(formData.fields) : [];
-    const allFormFields = formData ? getAllFields(formData.fields) : [];
-    const pricingDefinitions = formData?.pricingDefinitions ?? [];
+    const formStructure = await getFormStructure(year.id);
+    const allFormFields = formStructure
+        ? v2FieldsToFormFields(formStructure.fields)
+        : [];
+    const pricingDefinitions = formStructure
+        ? v2PricingDefsToPricingDefs(formStructure.pricingDefinitions)
+        : [];
 
-    const fieldNameToLabel = new Map(allFormInputFields.map((f) => [f.name, f.label]));
+    const fieldNameToLabel = new Map(
+        (formStructure?.fields ?? []).map((f) => [f.name, f.label]),
+    );
     const conditionFieldLabel =
         fieldNameToLabel.get(conditionalEmail.conditionFieldName) ?? conditionalEmail.conditionFieldName;
 
     const availablePlaceholders = [
-        ...allFormInputFields.map((f) => ({ key: f.name, label: f.label })),
+        ...(formStructure?.fields ?? []).map((f) => ({ key: f.name, label: f.label })),
         { key: "variabilniSymbol", label: "Variabilní symbol" },
         { key: "celkovaCena", label: "Celková cena" },
         { key: "cisloUctu", label: "Číslo účtu" },

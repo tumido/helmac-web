@@ -1,14 +1,33 @@
 import { Prisma, BankTransactionMatchStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { buildPlaceholders, replacePlaceholders, sendConfirmationEmail, appendConditionalSections, collectMatchingSectionAttachments } from "@/lib/utils/email";
+import {
+    buildPlaceholders,
+    replacePlaceholders,
+    sendConfirmationEmail,
+    appendConditionalSections,
+    collectMatchingSectionAttachments,
+} from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllFields, getAllInputFields, isInputField } from "@/lib/types/registration-form";
-import type { FormField, InputField, PricingDefinition } from "@/lib/types/registration-form";
+import {
+    getAllFields,
+    getAllInputFields,
+    isInputField,
+} from "@/lib/types/registration-form";
+import type {
+    FormField,
+    InputField,
+    PricingDefinition,
+} from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
 import type { ParsedBankTransaction } from "@/lib/utils/fio-api";
-import type { EmailConditionalSection } from "@/lib/types/email-sections";
 import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { syncOrderScalarToV2 } from "@/lib/utils/v2-dual-write";
+import {
+    getEmailTemplate,
+    getFieldIdToLegacyIdMap,
+    v2SectionsToLegacy,
+} from "@/lib/services/v2";
 
 export interface MatchResult {
     total: number;
@@ -41,236 +60,197 @@ export async function processTransactions(
         errors: [],
     };
 
-    // Fetch global bank account for email placeholders
     const bankAccount = await getGlobalBankAccount();
-
-    // Cache form fields per formId for email placeholders and section conditions
-    interface CachedForm {
-        fields: FormField[];
-        inputFields: InputField[];
-        pricingDefinitions: PricingDefinition[];
-    }
-    const formFieldsCache = new Map<string, CachedForm>();
-
-    async function getFormFields(formId: string): Promise<CachedForm> {
-        const cached = formFieldsCache.get(formId);
-        if (cached) return cached;
-        const form = await db.registrationForm.findUnique({
-            where: { id: formId },
-            select: { fields: true },
-        });
-        if (!form) {
-            const empty: CachedForm = { fields: [], inputFields: [], pricingDefinitions: [] };
-            formFieldsCache.set(formId, empty);
-            return empty;
-        }
-        const formData = migrateFormData(form.fields);
-        const value: CachedForm = {
-            fields: getAllFields(formData.fields),
-            inputFields: getAllInputFields(formData.fields),
-            pricingDefinitions: formData.pricingDefinitions,
-        };
-        formFieldsCache.set(formId, value);
-        return value;
-    }
+    const formCache = new Map<string, CachedForm>();
+    const fieldIdMapCache = new Map<string, Map<string, string>>();
+    const templateCache = new Map<string, Awaited<ReturnType<typeof getEmailTemplate>>>();
 
     for (const tx of transactions) {
         try {
-            // 1. Skip outgoing transactions
             if (tx.amount <= 0) {
-                await createBankTransaction(null, tx, BankTransactionMatchStatus.OUTGOING);
+                await createBankTransaction(
+                    null,
+                    tx,
+                    BankTransactionMatchStatus.OUTGOING,
+                );
                 result.outgoing++;
                 continue;
             }
 
-            // 2. No variable symbol
             if (!tx.variableSymbol) {
-                await createBankTransaction(null, tx, BankTransactionMatchStatus.NO_VARIABLE_SYMBOL);
+                await createBankTransaction(
+                    null,
+                    tx,
+                    BankTransactionMatchStatus.NO_VARIABLE_SYMBOL,
+                );
                 result.noVs++;
                 continue;
             }
 
-            // 3. Lookup submission by VS (cross-year, VS is @unique).
-            // Test submissions are never matched against real bank transactions.
-            const submission = await db.registrationSubmission.findFirst({
+            // Look up v2 order by variable symbol
+            const order = await db.v2Order.findFirst({
                 where: {
                     variableSymbol: tx.variableSymbol,
                     isTest: false,
                 },
                 select: {
                     id: true,
+                    yearId: true,
                     isPaid: true,
                     totalPrice: true,
-                    data: true,
-                    formId: true,
-                    adminNote: true,
-                    yearId: true,
+                    legacySubmissionId: true,
                     year: {
                         select: {
-                            id: true,
                             year: true,
                             title: true,
                             subtitle: true,
-                            paymentEmailEnabled: true,
-                            paymentEmailSubject: true,
-                            paymentEmailBody: true,
-                            paymentEmailBcc: true,
-                            paymentEmailAccountId: true,
-                            paymentEmailSections: true,
-                            paymentEmailAttachments: true,
                         },
                     },
                 },
             });
 
-            // 4. Unknown VS
-            if (!submission) {
-                await createBankTransaction(null, tx, BankTransactionMatchStatus.UNKNOWN_VS);
+            if (!order) {
+                await createBankTransaction(
+                    null,
+                    tx,
+                    BankTransactionMatchStatus.UNKNOWN_VS,
+                );
                 result.unknownVs++;
                 continue;
             }
 
-            // 5. Already paid
-            if (submission.isPaid) {
-                await createBankTransaction(submission.yearId, tx, BankTransactionMatchStatus.ALREADY_PAID, submission.id);
+            if (order.isPaid) {
+                await createBankTransaction(
+                    order.yearId,
+                    tx,
+                    BankTransactionMatchStatus.ALREADY_PAID,
+                    order.legacySubmissionId,
+                    order.id,
+                );
                 result.alreadyPaid++;
                 continue;
             }
 
-            const totalPrice = submission.totalPrice ?? 0;
+            const totalPrice = order.totalPrice ?? 0;
 
-            // 6. Partial payment
             if (tx.amount < totalPrice) {
                 const dateStr = tx.date.toLocaleDateString("cs-CZ");
                 const note = `Částečná platba: ${tx.amount} Kč z ${totalPrice} Kč (${dateStr})`;
-                const existingNote = submission.adminNote ?? "";
-                const updatedNote = existingNote ? `${existingNote}\n${note}` : note;
 
-                await db.registrationSubmission.update({
-                    where: { id: submission.id },
-                    data: { adminNote: updatedNote },
-                });
+                if (order.legacySubmissionId) {
+                    const sub =
+                        await db.registrationSubmission.findUnique({
+                            where: { id: order.legacySubmissionId },
+                            select: { adminNote: true },
+                        });
+                    const existingNote = sub?.adminNote ?? "";
+                    const updatedNote = existingNote
+                        ? `${existingNote}\n${note}`
+                        : note;
 
-                await createBankTransaction(submission.yearId, tx, BankTransactionMatchStatus.PARTIAL_PAYMENT, submission.id);
+                    await db.$transaction(async (txn) => {
+                        await txn.registrationSubmission.update({
+                            where: {
+                                id: order.legacySubmissionId!,
+                            },
+                            data: { adminNote: updatedNote },
+                        });
+                        await syncOrderScalarToV2(
+                            txn,
+                            order.legacySubmissionId!,
+                            { adminNote: updatedNote },
+                        );
+                    });
+                }
+
+                await createBankTransaction(
+                    order.yearId,
+                    tx,
+                    BankTransactionMatchStatus.PARTIAL_PAYMENT,
+                    order.legacySubmissionId,
+                    order.id,
+                );
                 result.partial++;
                 continue;
             }
 
-            // 7. Full match or overpayment
-            const matchStatus = tx.amount > totalPrice
-                ? BankTransactionMatchStatus.OVERPAYMENT
-                : BankTransactionMatchStatus.MATCHED;
+            // Full match or overpayment
+            const matchStatus =
+                tx.amount > totalPrice
+                    ? BankTransactionMatchStatus.OVERPAYMENT
+                    : BankTransactionMatchStatus.MATCHED;
 
-            await db.registrationSubmission.update({
-                where: { id: submission.id },
-                data: {
-                    isPaid: true,
-                    paidAt: tx.date,
-                },
+            await db.$transaction(async (txn) => {
+                if (order.legacySubmissionId) {
+                    await txn.registrationSubmission.update({
+                        where: {
+                            id: order.legacySubmissionId,
+                        },
+                        data: {
+                            isPaid: true,
+                            paidAt: tx.date,
+                        },
+                    });
+                    await syncOrderScalarToV2(
+                        txn,
+                        order.legacySubmissionId,
+                        { isPaid: true, paidAt: tx.date },
+                    );
+                }
             });
 
-            await createBankTransaction(submission.yearId, tx, matchStatus, submission.id);
+            await createBankTransaction(
+                order.yearId,
+                tx,
+                matchStatus,
+                order.legacySubmissionId,
+                order.id,
+            );
 
-            if (matchStatus === BankTransactionMatchStatus.OVERPAYMENT) {
+            if (
+                matchStatus ===
+                BankTransactionMatchStatus.OVERPAYMENT
+            ) {
                 result.overpayment++;
             } else {
                 result.matched++;
             }
 
-            // 8. Send payment confirmation email
-            const { year } = submission;
-            if (
-                year.paymentEmailEnabled &&
-                year.paymentEmailSubject &&
-                year.paymentEmailBody
-            ) {
-                try {
-                    const cachedForm = await getFormFields(submission.formId);
-                    const { fields, inputFields, pricingDefinitions } = cachedForm;
-                    const emailField = fields.find((f) => isInputField(f) && f.type === "email");
-                    const submissionData = submission.data as Record<string, unknown>;
-                    const recipientEmail = emailField && isInputField(emailField)
-                        ? String(submissionData[emailField.name] ?? "")
-                        : "";
-
-                    if (recipientEmail) {
-                        const bankAccountFormatted = bankAccount?.bankAccountNumber && bankAccount?.bankAccountBankCode
-                            ? formatCzechAccount(
-                                bankAccount.bankAccountNumber,
-                                bankAccount.bankAccountBankCode,
-                                bankAccount.bankAccountPrefix ?? undefined,
-                            )
-                            : null;
-                        const iban = bankAccount?.bankAccountNumber && bankAccount?.bankAccountBankCode
-                            ? czechAccountToIBAN(
-                                bankAccount.bankAccountNumber,
-                                bankAccount.bankAccountBankCode,
-                                bankAccount.bankAccountPrefix ?? undefined,
-                            )
-                            : null;
-
-                        const displaySubmissionData = resolveSubmissionDataForDisplay(
-                            submissionData,
-                            inputFields,
-                            pricingDefinitions,
-                        );
-                        const placeholders = buildPlaceholders({
-                            submissionData: displaySubmissionData,
-                            variableSymbol: tx.variableSymbol,
-                            totalPrice,
-                            bankAccount: bankAccountFormatted,
-                            iban,
-                            swift: bankAccount?.bankSwift ?? null,
-                            yearNumber: year.year,
-                            yearTitle: year.title,
-                            yearSubtitle: year.subtitle,
-                        });
-
-                        placeholders.prijataCastka = `${tx.amount} Kč`;
-
-                        const emailSubject = replacePlaceholders(year.paymentEmailSubject, placeholders);
-                        const bodyWithSections = appendConditionalSections({
-                            body: year.paymentEmailBody,
-                            sections: (year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? [],
-                            rawSubmissionData: submissionData,
-                            allFields: fields,
-                            pricingDefinitions,
-                        });
-                        const emailBody = replacePlaceholders(bodyWithSections, placeholders);
-
-                        const sectionAttachments = collectMatchingSectionAttachments({
-                            sections: (year.paymentEmailSections as unknown as EmailConditionalSection[]) ?? [],
-                            rawSubmissionData: submissionData,
-                            allFields: fields,
-                            pricingDefinitions,
-                        });
-
-                        const sent = await sendConfirmationEmail({
-                            to: recipientEmail,
-                            subject: emailSubject,
-                            body: emailBody,
-                            bcc: year.paymentEmailBcc ?? undefined,
-                            accountId: year.paymentEmailAccountId,
-                            attachments: [
-                                ...((year.paymentEmailAttachments as unknown as { filename: string; url: string }[]) ?? []),
-                                ...sectionAttachments,
-                            ],
-                        });
-
-                        if (sent) {
-                            result.emailsSent++;
-                        }
-                    }
-                } catch (emailError) {
-                    result.errors.push(
-                        `Email for tx ${tx.fioTransactionId}: ${emailError instanceof Error ? emailError.message : "Unknown"}`,
+            // Send payment confirmation email
+            try {
+                if (!templateCache.has(order.yearId)) {
+                    templateCache.set(order.yearId, await getEmailTemplate(order.yearId, "payment"));
+                }
+                const template = templateCache.get(order.yearId)!;
+                if (
+                    template?.enabled &&
+                    template.subject &&
+                    template.body
+                ) {
+                    await sendPaymentEmail(
+                        order,
+                        tx,
+                        {
+                            ...template,
+                            subject: template.subject,
+                            body: template.body,
+                        },
+                        totalPrice,
+                        bankAccount,
+                        result,
+                        formCache,
+                        fieldIdMapCache,
                     );
                 }
+            } catch (emailError) {
+                result.errors.push(
+                    `Email for tx ${tx.fioTransactionId}: ${emailError instanceof Error ? emailError.message : "Unknown"}`,
+                );
             }
         } catch (error) {
-            // Handle duplicate (Prisma unique constraint on fioTransactionId)
             if (
-                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error instanceof
+                    Prisma.PrismaClientKnownRequestError &&
                 error.code === "P2002"
             ) {
                 result.duplicates++;
@@ -285,11 +265,192 @@ export async function processTransactions(
     return result;
 }
 
+// ---- Email sending (still uses legacy submission data for placeholders) ----
+
+interface CachedForm {
+    fields: FormField[];
+    inputFields: InputField[];
+    pricingDefinitions: PricingDefinition[];
+}
+async function getFormFields(
+    formId: string,
+    cache: Map<string, CachedForm>,
+): Promise<CachedForm> {
+    const cached = cache.get(formId);
+    if (cached) return cached;
+    const form = await db.registrationForm.findUnique({
+        where: { id: formId },
+        select: { fields: true },
+    });
+    if (!form) {
+        const empty: CachedForm = {
+            fields: [],
+            inputFields: [],
+            pricingDefinitions: [],
+        };
+        cache.set(formId, empty);
+        return empty;
+    }
+    const formData = migrateFormData(form.fields);
+    const value: CachedForm = {
+        fields: getAllFields(formData.fields),
+        inputFields: getAllInputFields(formData.fields),
+        pricingDefinitions: formData.pricingDefinitions,
+    };
+    cache.set(formId, value);
+    return value;
+}
+
+async function sendPaymentEmail(
+    order: {
+        id: string;
+        legacySubmissionId: string | null;
+        yearId: string;
+        year: { year: number; title: string; subtitle: string | null };
+    },
+    tx: ParsedBankTransaction,
+    template: {
+        subject: string;
+        body: string;
+        bcc: string | null;
+        accountId: string | null;
+        attachments: unknown;
+        sections: import("@/lib/services/v2").V2EmailSection[];
+    },
+    totalPrice: number,
+    bankAccount: Awaited<ReturnType<typeof getGlobalBankAccount>>,
+    result: MatchResult,
+    formCache: Map<string, CachedForm>,
+    fieldIdMapCache: Map<string, Map<string, string>>,
+): Promise<void> {
+    if (!order.legacySubmissionId) return;
+
+    const submission =
+        await db.registrationSubmission.findUnique({
+            where: { id: order.legacySubmissionId },
+            select: { data: true, formId: true },
+        });
+    if (!submission) return;
+
+    const cachedForm = await getFormFields(
+        submission.formId,
+        formCache,
+    );
+    const { fields, inputFields, pricingDefinitions } =
+        cachedForm;
+    const emailField = fields.find(
+        (f) => isInputField(f) && f.type === "email",
+    );
+    const submissionData = submission.data as Record<
+        string,
+        unknown
+    >;
+    const recipientEmail =
+        emailField && isInputField(emailField)
+            ? String(
+                  submissionData[emailField.name] ?? "",
+              )
+            : "";
+
+    if (!recipientEmail) return;
+
+    const bankAccountFormatted =
+        bankAccount?.bankAccountNumber &&
+        bankAccount?.bankAccountBankCode
+            ? formatCzechAccount(
+                  bankAccount.bankAccountNumber,
+                  bankAccount.bankAccountBankCode,
+                  bankAccount.bankAccountPrefix ??
+                      undefined,
+              )
+            : null;
+    const iban =
+        bankAccount?.bankAccountNumber &&
+        bankAccount?.bankAccountBankCode
+            ? czechAccountToIBAN(
+                  bankAccount.bankAccountNumber,
+                  bankAccount.bankAccountBankCode,
+                  bankAccount.bankAccountPrefix ??
+                      undefined,
+              )
+            : null;
+
+    const displayData = resolveSubmissionDataForDisplay(
+        submissionData,
+        inputFields,
+        pricingDefinitions,
+    );
+    const placeholders = buildPlaceholders({
+        submissionData: displayData,
+        variableSymbol: tx.variableSymbol,
+        totalPrice,
+        bankAccount: bankAccountFormatted,
+        iban,
+        swift: bankAccount?.bankSwift ?? null,
+        yearNumber: order.year.year,
+        yearTitle: order.year.title,
+        yearSubtitle: order.year.subtitle,
+    });
+    placeholders.prijataCastka = `${tx.amount} Kč`;
+
+    if (!fieldIdMapCache.has(order.yearId)) {
+        fieldIdMapCache.set(order.yearId, await getFieldIdToLegacyIdMap(order.yearId));
+    }
+    const fieldIdMap = fieldIdMapCache.get(order.yearId)!;
+    const legacySections = v2SectionsToLegacy(template.sections, fieldIdMap);
+
+    const emailSubject = replacePlaceholders(
+        template.subject,
+        placeholders,
+    );
+    const bodyWithSections = appendConditionalSections({
+        body: template.body,
+        sections: legacySections,
+        rawSubmissionData: submissionData,
+        allFields: fields,
+        pricingDefinitions,
+    });
+    const emailBody = replacePlaceholders(
+        bodyWithSections,
+        placeholders,
+    );
+
+    const sectionAttachments =
+        collectMatchingSectionAttachments({
+            sections: legacySections,
+            rawSubmissionData: submissionData,
+            allFields: fields,
+            pricingDefinitions,
+        });
+
+    const sent = await sendConfirmationEmail({
+        to: recipientEmail,
+        subject: emailSubject,
+        body: emailBody,
+        bcc: template.bcc ?? undefined,
+        accountId: template.accountId,
+        attachments: [
+            ...((template.attachments as {
+                filename: string;
+                url: string;
+            }[]) ?? []),
+            ...sectionAttachments,
+        ],
+    });
+
+    if (sent) {
+        result.emailsSent++;
+    }
+}
+
+// ---- Bank transaction creation ----
+
 async function createBankTransaction(
     yearId: string | null,
     tx: ParsedBankTransaction,
     matchStatus: BankTransactionMatchStatus,
-    submissionId?: string,
+    submissionId?: string | null,
+    orderId?: string,
 ) {
     await db.bankTransaction.create({
         data: {
@@ -304,6 +465,7 @@ async function createBankTransaction(
             userMessage: tx.userMessage,
             matchStatus,
             submissionId: submissionId ?? null,
+            orderId: orderId ?? null,
             processedAt: new Date(),
         },
     });
