@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
+import { buildCampaignPlaceholders } from "@/lib/services/email-campaign";
 import { CAMPAIGN_STATUS_CONFIG } from "./campaign-status";
 import { MassEmailComposer } from "./mass-email-composer";
 
@@ -27,7 +28,7 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
     await requireAdmin();
 
     const { id } = await params;
-    const [year, emailAccounts] = await Promise.all([
+    const [year, emailAccounts, availablePlaceholders] = await Promise.all([
         db.year.findUnique({
             where: { id },
             select: { id: true, year: true },
@@ -36,6 +37,7 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
             select: { id: true, email: true, label: true, isMain: true },
             orderBy: [{ isMain: "desc" }, { email: "asc" }],
         }),
+        buildCampaignPlaceholders(id),
     ]);
 
     if (!year) {
@@ -80,7 +82,11 @@ export default async function HromadnePage({ params }: HromadnePageProps) {
                 title="Hromadné emaily"
             />
 
-            <MassEmailComposer yearId={year.id} emailAccounts={emailAccounts} />
+            <MassEmailComposer
+                yearId={year.id}
+                emailAccounts={emailAccounts}
+                availablePlaceholders={availablePlaceholders}
+            />
 
             <Typography variant="h6" sx={{ mb: 2 }}>
                 Historie
