@@ -50,13 +50,36 @@ export interface V2PricingDef {
     type?: string;
     multiSelect?: boolean;
     unitName?: string;
-    options: { id: string; name: string }[];
+    options: {
+        id: string;
+        name: string;
+        prices: { tierId: string; price: number }[];
+    }[];
+}
+
+export interface V2PriceTier {
+    id: string;
+    deadline: string | null;
+    sortOrder: number;
+}
+
+export interface V2FormCondition {
+    id: string;
+    name: string;
+    rules: {
+        fieldId: string;
+        operator: string;
+        value: string | null;
+        connector: string;
+    }[];
 }
 
 export interface V2FormStructure {
     layout: unknown;
     fields: V2FormField[];
     pricingDefinitions: V2PricingDef[];
+    priceTiers: V2PriceTier[];
+    conditions: V2FormCondition[];
     capacityLimits: {
         id: string;
         fieldId: string;
@@ -607,6 +630,17 @@ export interface OrderDetailPerson {
     lineItems: OrderDetailLineItem[];
 }
 
+export interface OrderBankTransaction {
+    id: string;
+    date: Date;
+    amount: number;
+    currency: string;
+    variableSymbol: string | null;
+    counterpartAccount: string | null;
+    counterpartName: string | null;
+    matchStatus: string;
+}
+
 export interface OrderDetail {
     id: string;
     legacySubmissionId: string | null;
@@ -624,8 +658,12 @@ export interface OrderDetail {
     yearNumber: number;
     yearTitle: string;
     pricingSummary: unknown;
+    bankTransactions: OrderBankTransaction[];
     people: OrderDetailPerson[];
     pricingDefinitions: V2PricingDef[];
+    priceTiers: V2PriceTier[];
+    conditions: V2FormCondition[];
+    formLayout: unknown;
     allFields: {
         id: string;
         name: string;
@@ -660,6 +698,19 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
             yearId: true,
             year: {
                 select: { year: true, title: true },
+            },
+            bankTransactions: {
+                orderBy: { date: "desc" },
+                select: {
+                    id: true,
+                    date: true,
+                    amount: true,
+                    currency: true,
+                    variableSymbol: true,
+                    counterpartAccount: true,
+                    counterpartName: true,
+                    matchStatus: true,
+                },
             },
             people: {
                 orderBy: { personIndex: "asc" },
@@ -731,6 +782,7 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
         yearNumber: order.year.year,
         yearTitle: order.year.title,
         pricingSummary: legacySub?.pricingSummary ?? null,
+        bankTransactions: order.bankTransactions,
         people: order.people.map((p) => ({
             id: p.id,
             personIndex: p.personIndex,
@@ -756,6 +808,9 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
             })),
         })),
         pricingDefinitions: pricingDefs,
+        priceTiers: formStructure?.priceTiers ?? [],
+        conditions: formStructure?.conditions ?? [],
+        formLayout: formStructure?.layout ?? null,
         allFields: (formStructure?.fields ?? []).map(
             (f) => ({
                 id: f.id,
