@@ -1099,6 +1099,15 @@ export async function createV2Order(
             ] as [string, unknown],
         ),
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const optionV2IdToV2Create = new Map<string, any>(
+        v2Options.map(
+            (o: { id: string }) => [
+                o.id,
+                o,
+            ] as [string, unknown],
+        ),
+    );
 
     // Find current price tier
     const currentTierPrice = await getCurrentTierPriceMap(
@@ -1157,6 +1166,7 @@ export async function createV2Order(
             fieldNameToV2,
             optionLegacyToV2,
             optionNameToV2,
+            optionV2IdToV2Create,
             currentTierPrice,
             pi > 0,
         );
@@ -1222,6 +1232,8 @@ async function createLineItemsForPerson(
     optionLegacyToV2: Map<string, any>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     optionNameToV2: Map<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    optionV2IdToV2: Map<string, any>,
     currentTierPrice: Map<string, number>,
     isAdditionalPerson: boolean,
 ): Promise<void> {
@@ -1245,6 +1257,7 @@ async function createLineItemsForPerson(
             rawValue,
             optionLegacyToV2,
             optionNameToV2,
+            optionV2IdToV2,
             currentTierPrice,
         );
 
@@ -1280,11 +1293,14 @@ function resolveLineItems(
     optionLegacyToV2: Map<string, any>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     optionNameToV2: Map<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    optionV2IdToV2: Map<string, any>,
     currentTierPrice: Map<string, number>,
 ): LineItemData[] {
     if (field.type === "pricing_select") {
         const optionId = String(rawValue);
         const v2Opt =
+            optionV2IdToV2.get(optionId) ??
             optionLegacyToV2.get(optionId) ??
             optionNameToV2.get(optionId);
         if (v2Opt) {
@@ -1309,6 +1325,7 @@ function resolveLineItems(
         const items: LineItemData[] = [];
         for (const optId of selected) {
             const v2Opt =
+                optionV2IdToV2.get(optId) ??
                 optionLegacyToV2.get(optId) ??
                 optionNameToV2.get(optId);
             if (v2Opt) {
@@ -1337,6 +1354,7 @@ function resolveLineItems(
         for (const [optId, qty] of Object.entries(quantities)) {
             if (qty <= 0) continue;
             const v2Opt =
+                optionV2IdToV2.get(optId) ??
                 optionLegacyToV2.get(optId) ??
                 optionNameToV2.get(optId);
             if (v2Opt) {
@@ -1455,6 +1473,15 @@ export async function syncOrderLineItemsToV2(
             ] as [string, unknown],
         ),
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const optionV2IdToV2 = new Map<string, any>(
+        v2Options.map(
+            (o: { id: string }) => [
+                o.id,
+                o,
+            ] as [string, unknown],
+        ),
+    );
 
     const currentTierPrice = await getCurrentTierPriceMap(
         tx,
@@ -1511,6 +1538,7 @@ export async function syncOrderLineItemsToV2(
                 rawValue,
                 optionLegacyToV2,
                 optionNameToV2,
+                optionV2IdToV2,
                 currentTierPrice,
             );
             await syncFieldLineItems(
@@ -1521,8 +1549,22 @@ export async function syncOrderLineItemsToV2(
         }
     }
 
-    // Additional people
+    // Additional people — delete orphaned rows first
     const ap = newData.additionalPeople;
+    const apCount = Array.isArray(ap) ? ap.length : 0;
+    await tx.v2OrderLineItem.deleteMany({
+        where: {
+            orderId: order.id,
+            person: { personIndex: { gt: apCount } },
+        },
+    });
+    await tx.v2OrderPerson.deleteMany({
+        where: {
+            orderId: order.id,
+            personIndex: { gt: apCount },
+        },
+    });
+
     if (Array.isArray(ap)) {
         for (let pi = 0; pi < ap.length; pi++) {
             const apPerson = order.people.find(
@@ -1551,6 +1593,7 @@ export async function syncOrderLineItemsToV2(
                     rawValue,
                     optionLegacyToV2,
                     optionNameToV2,
+                    optionV2IdToV2,
                     currentTierPrice,
                 );
                 await syncFieldLineItems(
