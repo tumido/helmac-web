@@ -1,52 +1,45 @@
 import { db } from "@/lib/db";
 import { buildPlaceholders } from "@/lib/utils/email";
 import { czechAccountToIBAN, formatCzechAccount } from "@/lib/utils/spayd";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import {
-    getAllInputFields,
-    isInputField,
-} from "@/lib/types/registration-form";
-import type { InputField, PricingDefinition } from "@/lib/types/registration-form";
 import { getGlobalBankAccount } from "@/lib/services/bank-account";
-import { resolveSubmissionDataForDisplay } from "@/lib/utils/pricing-display";
+import { getOrdersForYear, getFormStructure } from "@/lib/services/v2";
 import type { RecipientFilter } from "@/lib/validators/email-campaign";
-import type { RegistrationStatus } from "@prisma/client";
 
 export interface ResolvedRecipient {
     email: string;
-    submissionId: string;
+    orderId: string;
     placeholders: Record<string, string>;
 }
 
 /**
- * Resolve campaign recipients from registration submissions of a year.
- * Extracts the address from the form's email field, builds per-recipient
- * placeholder maps, and dedupes by lowercased email (first submission wins).
+ * Resolve campaign recipients from the v2 orders of a year. Reads the email
+ * address from the form's email field, builds per-recipient placeholder maps
+ * from each order's primary registrant, and dedupes by lowercased email (first
+ * registration wins).
  */
 export async function resolveCampaignRecipients(
     yearId: string,
     filter: RecipientFilter,
 ): Promise<ResolvedRecipient[]> {
-    const submissions = await db.registrationSubmission.findMany({
-        where: {
-            yearId,
-            isTest: false,
-            status: { in: filter.statuses as RegistrationStatus[] },
-            ...(filter.paid === "paid" ? { isPaid: true } : {}),
-            ...(filter.paid === "unpaid" ? { isPaid: false } : {}),
-        },
-        orderBy: { createdAt: "asc" },
-        select: {
-            id: true,
-            formId: true,
-            data: true,
-            variableSymbol: true,
-            totalPrice: true,
-            year: { select: { year: true, title: true, subtitle: true } },
-        },
-    });
+    const structure = await getFormStructure(yearId);
+    if (!structure) return [];
 
-    if (submissions.length === 0) return [];
+    const emailField = structure.fields.find((f) => f.type === "email");
+    if (!emailField) return [];
+
+    // Checkbox values are stored in v2 as "true"/"false" strings; convert them
+    // back to real booleans so buildPlaceholders renders "Ano"/"Ne" as before.
+    const checkboxFields = new Set(
+        structure.fields
+            .filter((f) => f.type === "checkbox")
+            .map((f) => f.name),
+    );
+
+    const year = await db.year.findUnique({
+        where: { id: yearId },
+        select: { year: true, title: true, subtitle: true },
+    });
+    if (!year) return [];
 
     const globalBank = await getGlobalBankAccount();
     const bankAccount =
@@ -66,69 +59,54 @@ export async function resolveCampaignRecipients(
               )
             : null;
 
-    // Cache form fields per formId to avoid repeated DB lookups
-    interface CachedForm {
-        inputFields: InputField[];
-        pricingDefinitions: PricingDefinition[];
-    }
-    const formFieldsCache = new Map<string, CachedForm>();
-
-    async function getFormInputFields(formId: string): Promise<CachedForm> {
-        const cached = formFieldsCache.get(formId);
-        if (cached) return cached;
-        const form = await db.registrationForm.findUnique({
-            where: { id: formId },
-            select: { fields: true },
-        });
-        const formData = form ? migrateFormData(form.fields) : null;
-        const value: CachedForm = {
-            inputFields: formData ? getAllInputFields(formData.fields) : [],
-            pricingDefinitions: formData ? formData.pricingDefinitions : [],
-        };
-        formFieldsCache.set(formId, value);
-        return value;
-    }
+    const orders = await getOrdersForYear(yearId, { isTest: false });
 
     const seen = new Set<string>();
     const recipients: ResolvedRecipient[] = [];
 
-    for (const submission of submissions) {
-        const { inputFields, pricingDefinitions } = await getFormInputFields(
-            submission.formId,
-        );
-        const emailField = inputFields.find(
-            (f) => isInputField(f) && f.type === "email",
-        );
-        const submissionData = submission.data as Record<string, unknown>;
-        const email = emailField
-            ? String(submissionData[emailField.name] ?? "")
-                  .trim()
-                  .toLowerCase()
-            : "";
+    // getOrdersForYear returns newest-first; iterate oldest-first so dedupe
+    // keeps the first registration for a given email.
+    for (let i = orders.length - 1; i >= 0; i--) {
+        const order = orders[i];
 
+        if (!filter.statuses.includes(order.status as RecipientFilter["statuses"][number])) {
+            continue;
+        }
+        if (filter.paid === "paid" && !order.isPaid) continue;
+        if (filter.paid === "unpaid" && order.isPaid) continue;
+
+        const primary = order.people.find((p) => p.personIndex === 0);
+        if (!primary) continue;
+
+        const email = String(primary.values[emailField.name] ?? "")
+            .trim()
+            .toLowerCase();
         if (!email || seen.has(email)) continue;
         seen.add(email);
 
-        const displaySubmissionData = resolveSubmissionDataForDisplay(
-            submissionData,
-            inputFields,
-            pricingDefinitions,
-        );
+        const submissionData: Record<string, unknown> = { ...primary.values };
+        for (const name of checkboxFields) {
+            const raw = submissionData[name];
+            if (typeof raw === "string") {
+                submissionData[name] = raw === "true";
+            }
+        }
+
         const placeholders = buildPlaceholders({
-            submissionData: displaySubmissionData,
-            variableSymbol: submission.variableSymbol,
-            totalPrice: submission.totalPrice,
+            submissionData,
+            variableSymbol: order.variableSymbol,
+            totalPrice: order.totalPrice,
             bankAccount,
             iban,
             swift: globalBank?.bankSwift ?? null,
-            yearNumber: submission.year.year,
-            yearTitle: submission.year.title,
-            yearSubtitle: submission.year.subtitle,
+            yearNumber: year.year,
+            yearTitle: year.title,
+            yearSubtitle: year.subtitle,
         });
 
         recipients.push({
             email,
-            submissionId: submission.id,
+            orderId: order.id,
             placeholders,
         });
     }

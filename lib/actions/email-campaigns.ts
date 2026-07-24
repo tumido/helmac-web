@@ -195,7 +195,7 @@ export async function startCampaign(campaignId: string): Promise<ActionResult> {
                 data: recipients.map((r) => ({
                     campaignId: campaign.id,
                     recipient: r.email,
-                    submissionId: r.submissionId,
+                    orderId: r.orderId,
                     placeholders: r.placeholders as Prisma.InputJsonValue,
                 })),
             });

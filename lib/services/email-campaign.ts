@@ -1,18 +1,19 @@
-import { getRegistrationFormForYear } from "@/lib/services";
-import { migrateFormData } from "@/lib/utils/form-migration";
-import { getAllInputFields } from "@/lib/types/registration-form";
+import "server-only";
+import { getFormStructure } from "@/lib/services/v2";
 
+/**
+ * Placeholder keys available to a mass-email body for a given year: every form
+ * field (by `name`) plus the fixed computed placeholders. Read from the v2 form
+ * structure.
+ */
 export async function buildCampaignPlaceholders(
     yearId: string,
 ): Promise<{ key: string; label: string }[]> {
-    const registrationForm = await getRegistrationFormForYear(yearId);
-    const formData = registrationForm
-        ? migrateFormData(registrationForm.fields)
-        : null;
-    const allInputFields = formData ? getAllInputFields(formData.fields) : [];
+    const structure = await getFormStructure(yearId);
+    const fields = structure?.fields ?? [];
 
     return [
-        ...allInputFields.map((f) => ({ key: f.name, label: f.label })),
+        ...fields.map((f) => ({ key: f.name, label: f.label })),
         { key: "variabilniSymbol", label: "Variabilní symbol" },
         { key: "celkovaCena", label: "Celková cena" },
         { key: "cisloUctu", label: "Číslo účtu" },

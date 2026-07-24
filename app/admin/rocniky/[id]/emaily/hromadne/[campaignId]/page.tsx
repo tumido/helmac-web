@@ -19,7 +19,7 @@ import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { recipientFilterSchema } from "@/lib/validators/email-campaign";
 import { CampaignForm } from "../campaign-form";
-import { buildCampaignPlaceholders } from "../placeholders";
+import { buildCampaignPlaceholders } from "@/lib/services/email-campaign";
 import { CAMPAIGN_STATUS_CONFIG } from "../campaign-status";
 import { CampaignDetailActions } from "./campaign-detail-actions";
 import { MassEmailRecipientList } from "./mass-email-recipient-list";
