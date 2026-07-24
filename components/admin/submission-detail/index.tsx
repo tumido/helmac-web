@@ -36,7 +36,10 @@ import type {
 } from "@/lib/types/registration-form";
 import { getAllFields } from "@/lib/types/registration-form";
 import { migrateFormData } from "@/lib/utils/form-migration";
-import { useConditionalFields } from "@/components/public/features/registration/useConditionalFields";
+import {
+    useConditionalFields,
+    evaluateAPVisibleFields,
+} from "@/components/public/features/registration/useConditionalFields";
 import {
     updateSubmissionData,
     updateSubmissionStatus,
@@ -173,10 +176,10 @@ export function SubmissionDetail({
         [apFields],
     );
 
-    const visibleFieldNames = useMemo(() => {
-        if (!formData) return allFieldNames;
+    const idToName = useMemo(() => {
+        if (!formData) return null;
         const legacyFields = getAllFields(formData.fields);
-        const idToName = new Map(
+        return new Map(
             legacyFields
                 .filter(
                     (
@@ -190,13 +193,51 @@ export function SubmissionDetail({
                     (f as { name: string }).name,
                 ]),
         );
+    }, [formData]);
+
+    const idsToNames = (ids: Set<string>) => {
+        if (!idToName) return allFieldNames;
         const names = new Set<string>();
-        for (const id of visibleFields) {
+        for (const id of ids) {
             const name = idToName.get(id);
             if (name) names.add(name);
         }
         return names;
-    }, [formData, visibleFields, allFieldNames]);
+    };
+
+    const visibleFieldNames = useMemo(
+        () => idsToNames(visibleFields),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [visibleFields, idToName, allFieldNames],
+    );
+
+    const apVisibleFieldNames = useMemo(() => {
+        if (!formData) return personStates.map(() => apFieldNames);
+        return personStates.slice(1).map((state) => {
+            const apData = personStateToLegacyData(
+                state,
+                apFields,
+            );
+            const merged = {
+                ...mainValues,
+                ...apData,
+            } as Record<string, string | number | boolean>;
+            const ids = evaluateAPVisibleFields(
+                formData,
+                merged,
+            );
+            return idsToNames(ids);
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData, personStates, mainValues, apFields, idToName, apFieldNames]);
+
+    const allVisibleFields = useMemo(
+        () => [
+            visibleFieldNames,
+            ...apVisibleFieldNames,
+        ],
+        [visibleFieldNames, apVisibleFieldNames],
+    );
 
     const computedPrice = useMemo(
         () =>
@@ -205,14 +246,14 @@ export function SubmissionDetail({
                 fields,
                 pricingDefById,
                 currentTierId,
-                visibleFieldNames,
+                allVisibleFields,
             ),
         [
             personStates,
             fields,
             pricingDefById,
             currentTierId,
-            visibleFieldNames,
+            allVisibleFields,
         ],
     );
     const originalPrice = useMemo(
@@ -222,14 +263,14 @@ export function SubmissionDetail({
                 fields,
                 pricingDefById,
                 currentTierId,
-                visibleFieldNames,
+                allVisibleFields,
             ),
         [
             initialStates,
             fields,
             pricingDefById,
             currentTierId,
-            visibleFieldNames,
+            allVisibleFields,
         ],
     );
 
@@ -318,19 +359,23 @@ export function SubmissionDetail({
     };
 
     const handleRemovePerson = (personIdx: number) => {
-        setPersonStates((prev) =>
-            prev.filter((_, i) => i !== personIdx),
-        );
-        if (activeTab >= personStates.length - 1) {
-            setActiveTab(
-                Math.max(0, personStates.length - 2),
+        setPersonStates((prev) => {
+            const next = prev.filter(
+                (_, i) => i !== personIdx,
             );
-        }
+            setActiveTab((tab) =>
+                Math.min(tab, next.length - 1),
+            );
+            return next;
+        });
     };
 
     // ---- Actions ----
 
+    const legacyId = order.legacySubmissionId;
+
     const handleSave = async () => {
+        if (!legacyId) return;
         setSaving(true);
         setError(null);
         setSuccess(false);
@@ -352,7 +397,7 @@ export function SubmissionDetail({
         }
 
         const result = await updateSubmissionData(
-            order.legacySubmissionId!,
+            legacyId!,
             mainData,
         );
 
@@ -368,10 +413,11 @@ export function SubmissionDetail({
     const handleStatusChange = async (
         newStatus: RegistrationStatus,
     ) => {
+        if (!legacyId) return;
         setActionLoading(true);
         setError(null);
         const result = await updateSubmissionStatus(
-            order.legacySubmissionId!,
+            legacyId!,
             newStatus,
         );
         if (result.error) {
@@ -383,11 +429,12 @@ export function SubmissionDetail({
     };
 
     const handlePaymentToggle = async () => {
+        if (!legacyId) return;
         setActionLoading(true);
         setError(null);
         const newPaid = !currentPaid;
         const result = await toggleSubmissionPayment(
-            order.legacySubmissionId!,
+            legacyId!,
             newPaid,
         );
         if (result.error) {
@@ -399,10 +446,11 @@ export function SubmissionDetail({
     };
 
     const handleDelete = async () => {
+        if (!legacyId) return;
         setDeleteOpen(false);
         setActionLoading(true);
         const result = await deleteSubmission(
-            order.legacySubmissionId!,
+            legacyId!,
         );
         if (result.error) {
             setError(result.error);
@@ -415,10 +463,11 @@ export function SubmissionDetail({
     };
 
     const handleResendEmail = async () => {
+        if (!legacyId) return;
         setEmailSending(true);
         setError(null);
         const result = await resendConfirmationEmail(
-            order.legacySubmissionId!,
+            legacyId!,
         );
         if (result.error) {
             setError(result.error);
@@ -665,7 +714,12 @@ export function SubmissionDetail({
                                                             f,
                                                         ): f is FieldMeta =>
                                                             !!f &&
-                                                            visibleFieldNames.has(
+                                                            (
+                                                                allVisibleFields[
+                                                                    idx
+                                                                ] ??
+                                                                allFieldNames
+                                                            ).has(
                                                                 f.name,
                                                             ),
                                                     )
@@ -1261,7 +1315,7 @@ export function SubmissionDetail({
                             </Typography>
                             <AdminNoteDetail
                                 submissionId={
-                                    order.legacySubmissionId!
+                                    legacyId!
                                 }
                                 adminNote={
                                     order.adminNote

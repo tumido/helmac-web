@@ -203,10 +203,12 @@ export function computeTotal(
     fields: FieldMeta[],
     pricingDefById: Map<string, V2PricingDef>,
     currentTierId: string | null,
-    visibleFields?: Set<string>,
+    perPersonVisibleFields?: Set<string>[],
 ): number {
     let total = 0;
-    for (const state of personStates) {
+    for (let pi = 0; pi < personStates.length; pi++) {
+        const state = personStates[pi];
+        const visibleFields = perPersonVisibleFields?.[pi];
         for (const field of fields) {
             if (!field.pricingDefinitionId) continue;
             if (
