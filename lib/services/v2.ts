@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
@@ -638,7 +639,7 @@ export interface OrderDetail {
     }[];
 }
 
-export async function getOrderByLegacyId(
+export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
     legacySubmissionId: string,
 ): Promise<OrderDetail | null> {
     const order = await db.v2Order.findFirst({
@@ -771,7 +772,7 @@ export async function getOrderByLegacyId(
             }),
         ),
     };
-}
+});
 
 // ============================================================
 // Email templates from v2
