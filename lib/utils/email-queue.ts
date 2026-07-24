@@ -354,20 +354,32 @@ async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> 
 /**
  * Fire-and-forget kick of the queue processor route. Waits only long enough
  * (5s) to be confident the request left the building, never for the response
- * (the invocation may run for minutes). Errors are intentionally swallowed —
- * the daily cron and the admin UI resume button are the safety nets.
+ * (the invocation may run for minutes). The expected 5s AbortError is swallowed;
+ * a fast non-2xx response or a network failure is logged, since either means the
+ * kick never landed. The daily cron and the admin UI resume button remain the
+ * safety nets for a dropped chain.
  */
 export async function kickEmailQueue(): Promise<void> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-        await fetch(`${getBaseUrl()}/api/email-queue/process`, {
+        const res = await fetch(`${getBaseUrl()}/api/email-queue/process`, {
             method: "POST",
             headers: {
                 authorization: `Bearer ${process.env.CRON_SECRET}`,
             },
             signal: controller.signal,
         });
+        // A response that beats the 5s abort is always an early error return:
+        // a healthy drain runs for minutes and aborts here, and an empty queue
+        // returns 200. fetch does not reject on 4xx/5xx, so surface it — this
+        // catches a wrong getBaseUrl() (404) or a bad CRON_SECRET (401/500)
+        // that would otherwise break the self-chain silently.
+        if (!res.ok) {
+            console.error(
+                `Failed to kick email queue: processor returned ${res.status}`,
+            );
+        }
     } catch (error) {
         // AbortError after 5s is the expected path (we never wait for the
         // response). Anything else is a genuinely-failed kick worth logging;
