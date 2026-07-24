@@ -1,4 +1,4 @@
-import { Container, Box, Alert } from "@mui/material";
+import { Container, Alert } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -9,7 +9,6 @@ import {
     SubmissionsCountProvider,
     SubmissionsCountChip,
 } from "@/components/admin/submissions-count-context";
-import { FieldValueFilter } from "@/components/admin/field-value-filter";
 import { ValidatePaymentsButton } from "@/components/admin/validate-payments-button";
 import { LinkButton } from "@/components/ui/link-button";
 import { SubmissionsFilterBar } from "@/components/admin/submissions-filter-bar";
@@ -257,15 +256,22 @@ export default async function PrihlaskyPage({
                 title="Přihlášky"
             />
             <SubmissionsCountProvider>
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    mb: 2,
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end",
-                }}
+            <SubmissionsFilterBar
+                basePath={basePath}
+                statusFilter={statusFilter}
+                paidFilter={paidFilter}
+                testFilter={testFilter}
+                isEditor={isEditor}
+                statusParam={statusParam}
+                paidParam={paidParam}
+                testParam={testParam}
+                filterableFields={
+                    filterableFields.length > 0
+                        ? filterableFields
+                        : undefined
+                }
+                activeField={fieldFilter}
+                activeValue={valueFilter}
             >
                 <SubmissionsCountChip total={orders.length} />
                 {!isEditor && (
@@ -285,38 +291,13 @@ export default async function PrihlaskyPage({
                                 startIcon={<Download />}
                                 size="small"
                             >
-                                Export filtrovaných CSV
+                                Export filtrovaných
                             </LinkButton>
                         )}
                         <ValidatePaymentsButton />
                     </>
                 )}
-            </Box>
-            <SubmissionsFilterBar
-                basePath={basePath}
-                statusFilter={statusFilter}
-                paidFilter={paidFilter}
-                testFilter={testFilter}
-                isEditor={isEditor}
-                statusParam={statusParam}
-                paidParam={paidParam}
-                testParam={testParam}
-            />
-            {filterableFields.length > 0 && (
-                <FieldValueFilter
-                    basePath={basePath}
-                    fields={filterableFields}
-                    activeField={fieldFilter}
-                    activeValue={valueFilter}
-                    otherParams={[
-                        statusParam,
-                        paidParam,
-                        testParam,
-                    ]
-                        .filter(Boolean)
-                        .join("&")}
-                />
-            )}
+            </SubmissionsFilterBar>
             <SubmissionsTable
                 orders={orders}
                 displayFields={displayFields}

@@ -19,7 +19,6 @@ import {
     TextField,
     InputAdornment,
     TableSortLabel,
-    Checkbox,
 } from "@mui/material";
 import {
     toggleSubmissionPayment,
@@ -675,19 +674,24 @@ export function SubmissionsTable({
                                                         gap: 0.5,
                                                     }}
                                                 >
-                                                    <Tooltip title="Je přítomen">
-                                                        <Checkbox
-                                                            size="small"
-                                                            checked={
+                                                    {!readOnly && (
+                                                        <Button
+                                                            variant={
                                                                 order
                                                                     .people[0]
-                                                                    ?.isAttending ??
-                                                                false
+                                                                    ?.isAttending
+                                                                    ? "contained"
+                                                                    : "outlined"
                                                             }
-                                                            disabled={
-                                                                readOnly
+                                                            size="small"
+                                                            color={
+                                                                order
+                                                                    .people[0]
+                                                                    ?.isAttending
+                                                                    ? "success"
+                                                                    : "inherit"
                                                             }
-                                                            onChange={async () => {
+                                                            onClick={async () => {
                                                                 const p =
                                                                     order
                                                                         .people[0];
@@ -699,8 +703,14 @@ export function SubmissionsTable({
                                                                         !p.isAttending,
                                                                     );
                                                             }}
-                                                        />
-                                                    </Tooltip>
+                                                        >
+                                                            {order
+                                                                .people[0]
+                                                                ?.isAttending
+                                                                ? "Zde ✓"
+                                                                : "Účast"}
+                                                        </Button>
+                                                    )}
                                                     {!readOnly &&
                                                         !order.isPaid &&
                                                         order.legacySubmissionId && (
@@ -852,23 +862,31 @@ export function SubmissionsTable({
                                                                 e.stopPropagation()
                                                             }
                                                         >
-                                                            <Tooltip title="Je přítomen">
-                                                                <Checkbox
-                                                                    size="small"
-                                                                    checked={
+                                                            {!readOnly && (
+                                                                <Button
+                                                                    variant={
                                                                         person.isAttending
+                                                                            ? "contained"
+                                                                            : "outlined"
                                                                     }
-                                                                    disabled={
-                                                                        readOnly
+                                                                    size="small"
+                                                                    color={
+                                                                        person.isAttending
+                                                                            ? "success"
+                                                                            : "inherit"
                                                                     }
-                                                                    onChange={async () => {
+                                                                    onClick={async () => {
                                                                         await togglePersonIsAttending(
                                                                             person.id,
                                                                             !person.isAttending,
                                                                         );
                                                                     }}
-                                                                />
-                                                            </Tooltip>
+                                                                >
+                                                                    {person.isAttending
+                                                                        ? "Zde ✓"
+                                                                        : "Účast"}
+                                                                </Button>
+                                                            )}
                                                         </TableCell>
                                                     </TableRow>
                                                 );
