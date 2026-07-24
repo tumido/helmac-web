@@ -66,6 +66,7 @@ model EmailAccount {
   paymentYears      Year[]             @relation("PaymentEmail")
   conditionalEmails ConditionalEmail[] @relation("ConditionalEmailAccount")
   v2EmailTemplates  V2EmailTemplate[]
+  emailCampaigns    EmailCampaign[]    @relation("CampaignAccount")
 
   @@map("email_accounts")
 }
@@ -153,6 +154,7 @@ model Year {
   bankTransactions        BankTransaction[]
   conditionalEmails       ConditionalEmail[]
   homepageSteps           HomepageStep[]
+  emailCampaigns          EmailCampaign[]
 
   v2PriceTiers         V2PriceTier[]
   v2PricingDefinitions V2PricingDefinition[]
@@ -581,6 +583,77 @@ enum RegistrationStatus {
 }
 
 // ============================================
+// EMAIL CAMPAIGNS - Mass email sending queue
+// ============================================
+
+enum EmailCampaignStatus {
+  DRAFT
+  SENDING
+  PAUSED
+  COMPLETED
+}
+
+enum EmailQueueItemStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+model EmailCampaign {
+  id     String @id @default(cuid())
+  yearId String @map("year_id")
+  year   Year   @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  name    String
+  subject String
+  body    String  @db.Text
+  bcc     String?
+
+  accountId String?       @map("account_id")
+  account   EmailAccount? @relation("CampaignAccount", fields: [accountId], references: [id], onDelete: SetNull)
+
+  status          EmailCampaignStatus @default(DRAFT)
+  recipientFilter Json   @default("{}") @map("recipient_filter") // { statuses: string[], paid: "all"|"paid"|"unpaid" }
+  totalCount      Int    @default(0) @map("total_count")
+
+  lockedAt    DateTime? @map("locked_at")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  queueItems EmailQueueItem[]
+
+  @@map("email_campaigns")
+}
+
+model EmailQueueItem {
+  id         String        @id @default(cuid())
+  campaignId String        @map("campaign_id")
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  recipient    String
+  orderId      String?  @map("order_id")
+  order        V2Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  placeholders Json     @default("{}") // per-recipient placeholder map; rendered at send time
+
+  status    EmailQueueItemStatus @default(PENDING)
+  attempts  Int       @default(0)
+  permanent Boolean   @default(false) // hard failure (SMTP 5xx / bad address); bulk retry skips these
+  lastError String?   @map("last_error")
+  sentAt    DateTime? @map("sent_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([campaignId, status])
+  @@index([sentAt])
+  @@map("email_queue_items")
+}
+
+// ============================================
 // FORM PREVIEW - Shareable form preview links
 // ============================================
 
@@ -607,7 +680,7 @@ model FormPreview {
 // --- Catalog ---
 
 model V2PriceTier {
-  id        String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id        String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   formId    String           @map("form_id")
   form      RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
   yearId    String           @map("year_id")
@@ -624,7 +697,7 @@ model V2PriceTier {
 }
 
 model V2PricingDefinition {
-  id            String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id            String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   legacyId      String?          @map("legacy_id")
   formId        String           @map("form_id")
   form          RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
@@ -647,7 +720,7 @@ model V2PricingDefinition {
 }
 
 model V2PricingOption {
-  id           String              @id @default(dbgenerated("gen_random_uuid()::text"))
+  id           String              @id @default(dbgenerated("(gen_random_uuid())::text"))
   legacyId     String?             @map("legacy_id")
   definitionId String              @map("definition_id")
   definition   V2PricingDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
@@ -665,7 +738,7 @@ model V2PricingOption {
 }
 
 model V2PricingOptionPrice {
-  id        String          @id @default(dbgenerated("gen_random_uuid()::text"))
+  id        String          @id @default(dbgenerated("(gen_random_uuid())::text"))
   optionId  String          @map("option_id")
   option    V2PricingOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
   tierId    String          @map("tier_id")
@@ -678,7 +751,7 @@ model V2PricingOptionPrice {
 }
 
 model V2FormField {
-  id                         String               @id @default(dbgenerated("gen_random_uuid()::text"))
+  id                         String               @id @default(dbgenerated("(gen_random_uuid())::text"))
   legacyId                   String?              @map("legacy_id")
   formId                     String               @map("form_id")
   form                       RegistrationForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
@@ -707,7 +780,7 @@ model V2FormField {
 }
 
 model V2FormCondition {
-  id        String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id        String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   legacyId  String?          @map("legacy_id")
   formId    String           @map("form_id")
   form      RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
@@ -726,7 +799,7 @@ model V2FormCondition {
 }
 
 model V2FormConditionRule {
-  id          String          @id @default(dbgenerated("gen_random_uuid()::text"))
+  id          String          @id @default(dbgenerated("(gen_random_uuid())::text"))
   conditionId String          @map("condition_id")
   condition   V2FormCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
   fieldId     String?         @map("field_id")
@@ -741,7 +814,7 @@ model V2FormConditionRule {
 }
 
 model V2CapacityLimit {
-  id          String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id          String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   legacyId    String?          @map("legacy_id")
   formId      String           @map("form_id")
   form        RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
@@ -761,7 +834,7 @@ model V2CapacityLimit {
 // --- Orders ---
 
 model V2Order {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id                 String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   yearId             String           @map("year_id")
   year               Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
   formId             String           @map("form_id")
@@ -789,6 +862,7 @@ model V2Order {
   people           V2OrderPerson[]
   lineItems        V2OrderLineItem[]
   bankTransactions BankTransaction[]
+  emailQueueItems  EmailQueueItem[]
 
   @@index([yearId], map: "idx_v2_orders_year")
   @@index([parentOrderId], map: "idx_v2_orders_parent")
@@ -797,7 +871,7 @@ model V2Order {
 }
 
 model V2OrderPerson {
-  id          String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   orderId     String   @map("order_id")
   order       V2Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   personIndex Int      @default(0) @map("person_index")
@@ -810,7 +884,7 @@ model V2OrderPerson {
 }
 
 model V2OrderLineItem {
-  id                    String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id                    String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   personId              String           @map("person_id")
   person                V2OrderPerson    @relation(fields: [personId], references: [id], onDelete: Cascade)
   orderId               String           @map("order_id")
@@ -837,7 +911,7 @@ model V2OrderLineItem {
 // --- Emails ---
 
 model V2EmailTemplate {
-  id          String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id          String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   yearId      String           @map("year_id")
   year        Year             @relation(fields: [yearId], references: [id], onDelete: Cascade)
   type        String
@@ -861,7 +935,7 @@ model V2EmailTemplate {
 }
 
 model V2EmailSection {
-  id          String           @id @default(dbgenerated("gen_random_uuid()::text"))
+  id          String           @id @default(dbgenerated("(gen_random_uuid())::text"))
   templateId  String           @map("template_id")
   template    V2EmailTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
   conditionId String?          @map("condition_id")

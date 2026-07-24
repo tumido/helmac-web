@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { db } from "@/lib/db";
+import { kickEmailQueue } from "@/lib/utils/email-queue";
 import {
     getUnpaidOrders,
     computeCurrentTotal,
@@ -242,6 +243,15 @@ export async function GET(request: NextRequest) {
                 `${order.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
         }
+    }
+
+    // Safety net: restart a mass-email queue whose self-invocation chain died
+    // (Vercel Hobby has no spare cron slot for a dedicated queue drainer)
+    const sendingCampaigns = await db.emailCampaign.count({
+        where: { status: "SENDING" },
+    });
+    if (sendingCampaigns > 0) {
+        after(() => kickEmailQueue());
     }
 
     return NextResponse.json({

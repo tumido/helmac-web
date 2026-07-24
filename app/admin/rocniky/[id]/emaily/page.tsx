@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { LinkButton } from "@/components/ui/link-button";
-import { MarkEmailRead, Payment, PriceChange } from "@mui/icons-material";
+import { MarkEmailRead, Payment, PriceChange, Send } from "@mui/icons-material";
 import { EmailToggle } from "./email-toggle";
 import { togglePriceChangeEmail } from "@/lib/actions/years";
 import { togglePaymentEmail } from "@/lib/actions/bank-sync";
@@ -238,6 +238,27 @@ export default async function EmailyPage({ params }: EmailyPageProps) {
                             {hasPaymentTemplate ? "Zobrazit šablonu" : "Nastavit šablonu"}
                         </LinkButton>
                     </Box>
+                </CardContent>
+            </Card>
+
+            <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Hromadné emaily
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Jednorázové hromadné emaily odeslané vybraným
+                        registrovaným účastníkům.
+                    </Typography>
+
+                    <LinkButton
+                        href={`/admin/rocniky/${year.id}/emaily/hromadne`}
+                        variant="outlined"
+                        startIcon={<Send />}
+                    >
+                        Spravovat hromadné emaily
+                    </LinkButton>
                 </CardContent>
             </Card>
 

@@ -28,6 +28,7 @@ import {
     PriceChange,
     Payment,
     ForwardToInbox,
+    Send,
     Settings,
 } from "@mui/icons-material";
 import { ListItemLinkButton } from "@/components/ui/link-button";
@@ -138,6 +139,7 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
         icon: typeof Email;
         exact?: boolean;
         indented?: boolean;
+        roles?: string[];
     }[] = [
         { text: "Emaily", href: `${base}/emaily`, icon: Email, exact: true },
         {
@@ -158,13 +160,22 @@ export function YearSidebar({ yearData, onClose, userRole }: YearSidebarProps) {
             icon: Payment,
             indented: true,
         },
+        {
+            text: "Hromadné",
+            href: `${base}/emaily/hromadne`,
+            icon: Send,
+            indented: true,
+            roles: ["SUPER_ADMIN", "ADMIN"],
+        },
         ...yearData.conditionalEmails.map((ce) => ({
             text: ce.name,
             href: `${base}/emaily/podmineny/${ce.id}`,
             icon: ForwardToInbox,
             indented: true,
         })),
-    ];
+    ].filter(
+        (item) => !item.roles || (userRole && item.roles.includes(userRole))
+    );
 
     return (
         <Box>

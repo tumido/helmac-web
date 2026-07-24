@@ -109,6 +109,45 @@ export async function getTransporterForAccount(
 }
 
 /**
+ * Create an uncached transporter for a specific email account.
+ * With pool: true the transporter reuses a single SMTP connection for up to
+ * 100 messages (Seznam guideline), then reconnects. Caller must close() it.
+ */
+export async function createSmtpTransporterForAccount(
+    accountId?: string | null,
+    opts?: { pool?: boolean },
+): Promise<{ transporter: Transporter; from: string }> {
+    const account = accountId
+        ? await db.emailAccount.findUnique({ where: { id: accountId } })
+        : await db.emailAccount.findFirst({ where: { isMain: true } });
+
+    if (!account) {
+        throw new Error(
+            accountId
+                ? `Email account ${accountId} not found`
+                : "No main email account configured. Please add one in admin settings.",
+        );
+    }
+
+    const password = decrypt(account.encryptedPassword);
+
+    const transporter = nodemailer.createTransport({
+        host: "smtp.seznam.cz",
+        port: 465,
+        secure: true,
+        auth: {
+            user: account.email,
+            pass: password,
+        },
+        ...(opts?.pool
+            ? { pool: true, maxConnections: 1, maxMessages: 100 }
+            : {}),
+    });
+
+    return { transporter, from: account.email };
+}
+
+/**
  * Invalidate cached transporters (call after account updates).
  */
 export function invalidateTransporterCache() {
@@ -355,6 +394,56 @@ export async function sendPasswordResetEmail(opts: {
     }
 }
 
+// Strip HTML tags and decode entities for the text-only email fallback.
+function htmlToTextFallback(html: string): string {
+    return html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n\n")
+        .replace(/<\/li>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&quot;/g, "\"")
+        .replace(/&#39;/g, "'")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+/**
+ * Send a single campaign email through a caller-provided transporter.
+ * Unlike sendConfirmationEmail this THROWS on failure so the queue processor
+ * can inspect the SMTP error (responseCode) and decide retry vs. fail.
+ */
+export async function sendCampaignEmail(opts: {
+    transporter: Transporter;
+    from: string;
+    to: string;
+    subject: string;
+    body: string;
+    bcc?: string | null;
+}): Promise<void> {
+    const htmlBodyContent = normalizeEmailHtml(opts.body);
+
+    const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+${htmlBodyContent}
+</body>
+</html>`;
+
+    await opts.transporter.sendMail({
+        from: opts.from,
+        to: opts.to,
+        bcc: opts.bcc || undefined,
+        subject: opts.subject,
+        text: htmlToTextFallback(opts.body),
+        html: htmlBody,
+    });
+}
+
 /**
  * Send a confirmation email. Returns true on success, false on failure.
  * Uses the specified accountId, or falls back to the main account.
@@ -372,20 +461,9 @@ export async function sendConfirmationEmail(opts: {
         const { transporter, from } = await getTransporterForAccount(opts.accountId);
 
         // Plain text: strip HTML tags and decode entities for text-only fallback
-        const textBody = opts.body
-            .replace(/\{qrPlatba\}/g, "")
-            .replace(/<br\s*\/?>/gi, "\n")
-            .replace(/<\/p>/gi, "\n\n")
-            .replace(/<\/li>/gi, "\n")
-            .replace(/<[^>]*>/g, "")
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/&nbsp;/g, " ")
-            .replace(/&quot;/g, "\"")
-            .replace(/&#39;/g, "'")
-            .replace(/\n{3,}/g, "\n\n")
-            .trim();
+        const textBody = htmlToTextFallback(
+            opts.body.replace(/\{qrPlatba\}/g, ""),
+        );
 
         const shouldEmbedQR =
             !!opts.qrImageBuffer && opts.body.includes("{qrPlatba}");
