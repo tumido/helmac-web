@@ -1,4 +1,4 @@
-import { Container, Box, Alert, Button } from "@mui/material";
+import { Container, Box, Alert } from "@mui/material";
 import { Download } from "@mui/icons-material";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -12,6 +12,7 @@ import {
 import { FieldValueFilter } from "@/components/admin/field-value-filter";
 import { ValidatePaymentsButton } from "@/components/admin/validate-payments-button";
 import { LinkButton } from "@/components/ui/link-button";
+import { SubmissionsFilterBar } from "@/components/admin/submissions-filter-bar";
 import {
     getFormStructure,
     getOrdersForYear,
@@ -291,178 +292,16 @@ export default async function PrihlaskyPage({
                     </>
                 )}
             </Box>
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 1,
-                    mb: 2,
-                    flexWrap: "wrap",
-                }}
-            >
-                <LinkButton
-                    href={`${basePath}?${[paidParam, testParam].filter(Boolean).join("&") || ""}`}
-                    variant={
-                        !statusFilter
-                            ? "contained"
-                            : "outlined"
-                    }
-                    size="small"
-                >
-                    Vše
-                </LinkButton>
-                {(
-                    [
-                        "PENDING",
-                        "CONFIRMED",
-                        "WAITLIST",
-                        "CANCELLED",
-                        "REJECTED",
-                    ] as const
-                ).map((s) => {
-                    const p = [
-                        `status=${s}`,
-                        ...(paidParam ? [paidParam] : []),
-                        ...(testParam
-                            ? [testParam]
-                            : []),
-                    ].join("&");
-                    return (
-                        <LinkButton
-                            key={s}
-                            href={`${basePath}?${p}`}
-                            variant={
-                                statusFilter === s
-                                    ? "contained"
-                                    : "outlined"
-                            }
-                            size="small"
-                        >
-                            {
-                                {
-                                    PENDING: "Čeká",
-                                    CONFIRMED: "Potvrzeno",
-                                    WAITLIST:
-                                        "Čekací listina",
-                                    CANCELLED: "Zrušeno",
-                                    REJECTED: "Zamítnuto",
-                                }[s]
-                            }
-                        </LinkButton>
-                    );
-                })}
-            </Box>
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 1,
-                    mb: 2,
-                    flexWrap: "wrap",
-                }}
-            >
-                <LinkButton
-                    href={`${basePath}?${[statusParam, testParam].filter(Boolean).join("&") || ""}`}
-                    variant={
-                        paidFilter === null
-                            ? "contained"
-                            : "outlined"
-                    }
-                    size="small"
-                >
-                    Vše
-                </LinkButton>
-                <LinkButton
-                    href={`${basePath}?${[statusParam, "paid=true", testParam].filter(Boolean).join("&")}`}
-                    variant={
-                        paidFilter === true
-                            ? "contained"
-                            : "outlined"
-                    }
-                    size="small"
-                >
-                    Zaplaceno
-                </LinkButton>
-                <LinkButton
-                    href={`${basePath}?${[statusParam, "paid=false", testParam].filter(Boolean).join("&")}`}
-                    variant={
-                        paidFilter === false
-                            ? "contained"
-                            : "outlined"
-                    }
-                    size="small"
-                >
-                    Nezaplaceno
-                </LinkButton>
-            </Box>
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 1,
-                    mb: 2,
-                    flexWrap: "wrap",
-                }}
-            >
-                {isEditor ? (
-                    <>
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            disabled
-                        >
-                            Reálné
-                        </Button>
-                        <Button
-                            variant="contained"
-                            size="small"
-                            disabled
-                        >
-                            Testovací
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            disabled
-                        >
-                            Vše (vč. test)
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <LinkButton
-                            href={`${basePath}?${[statusParam, paidParam].filter(Boolean).join("&") || ""}`}
-                            variant={
-                                testFilter === "real"
-                                    ? "contained"
-                                    : "outlined"
-                            }
-                            size="small"
-                        >
-                            Reálné
-                        </LinkButton>
-                        <LinkButton
-                            href={`${basePath}?${[statusParam, paidParam, "test=test"].filter(Boolean).join("&")}`}
-                            variant={
-                                testFilter === "test"
-                                    ? "contained"
-                                    : "outlined"
-                            }
-                            size="small"
-                        >
-                            Testovací
-                        </LinkButton>
-                        <LinkButton
-                            href={`${basePath}?${[statusParam, paidParam, "test=all"].filter(Boolean).join("&")}`}
-                            variant={
-                                testFilter === "all"
-                                    ? "contained"
-                                    : "outlined"
-                            }
-                            size="small"
-                        >
-                            Vše (vč. test)
-                        </LinkButton>
-                    </>
-                )}
-            </Box>
+            <SubmissionsFilterBar
+                basePath={basePath}
+                statusFilter={statusFilter}
+                paidFilter={paidFilter}
+                testFilter={testFilter}
+                isEditor={isEditor}
+                statusParam={statusParam}
+                paidParam={paidParam}
+                testParam={testParam}
+            />
             {filterableFields.length > 0 && (
                 <FieldValueFilter
                     basePath={basePath}
