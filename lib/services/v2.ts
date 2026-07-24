@@ -394,6 +394,76 @@ export async function getOrdersForYear(
     }));
 }
 
+export interface UnpaidOrderOption {
+    id: string;
+    variableSymbol: string | null;
+    totalPrice: number | null;
+    legacySubmissionId: string | null;
+    label: string;
+    partiallyPaid: boolean;
+}
+
+export async function getUnpaidOrdersForYear(
+    yearId: string,
+): Promise<UnpaidOrderOption[]> {
+    const orders = await db.v2Order.findMany({
+        where: {
+            yearId,
+            isPaid: false,
+            isTest: false,
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            variableSymbol: true,
+            totalPrice: true,
+            legacySubmissionId: true,
+            _count: { select: { bankTransactions: true } },
+            people: {
+                where: { personIndex: 0 },
+                select: {
+                    lineItems: {
+                        select: {
+                            value: true,
+                            field: {
+                                select: {
+                                    type: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    const textTypes = new Set([
+        "text",
+        "shorttext",
+        "email",
+    ]);
+
+    return orders.map((o) => {
+        const textValues =
+            o.people[0]?.lineItems
+                .filter(
+                    (li) =>
+                        li.value &&
+                        textTypes.has(li.field.type),
+                )
+                .slice(0, 2)
+                .map((li) => li.value!) ?? [];
+        return {
+            id: o.id,
+            variableSymbol: o.variableSymbol,
+            totalPrice: o.totalPrice,
+            legacySubmissionId: o.legacySubmissionId,
+            label: textValues.join(" "),
+            partiallyPaid: o._count.bankTransactions > 0,
+        };
+    });
+}
+
 export async function getFilteredOrderSummary(
     yearId: string,
     statuses: string[] | null,
