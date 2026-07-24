@@ -315,7 +315,9 @@ export async function updateOrderTotalPrice(
 // ---- Order row shape for admin tables ----
 
 export interface OrderPersonRow {
+    id: string;
     personIndex: number;
+    isAttending: boolean;
     values: Record<string, string>;
 }
 
@@ -365,7 +367,9 @@ export async function getOrdersForYear(
             people: {
                 orderBy: { personIndex: "asc" },
                 select: {
+                    id: true,
                     personIndex: true,
+                    isAttending: true,
                     lineItems: {
                         select: {
                             value: true,
@@ -413,7 +417,12 @@ export async function getOrdersForYear(
                     values[name] = val;
                 }
             }
-            return { personIndex: p.personIndex, values };
+            return {
+                id: p.id,
+                personIndex: p.personIndex,
+                isAttending: p.isAttending,
+                values,
+            };
         }),
     }));
 }

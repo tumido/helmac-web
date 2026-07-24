@@ -18,8 +18,12 @@ import {
     TextField,
     InputAdornment,
     TableSortLabel,
+    Checkbox,
 } from "@mui/material";
-import { toggleSubmissionPayment } from "@/lib/actions/registration-submissions";
+import {
+    toggleSubmissionPayment,
+    togglePersonIsAttending,
+} from "@/lib/actions/registration-submissions";
 import {
     CheckCircle,
     Cancel,
@@ -237,6 +241,16 @@ export function SubmissionsTable({
                     (Number(!!a.adminNote) -
                         Number(!!b.adminNote))
                 );
+            case "isAttending":
+                return (
+                    dir *
+                    (Number(
+                        a.people[0]?.isAttending,
+                    ) -
+                        Number(
+                            b.people[0]?.isAttending,
+                        ))
+                );
             case "createdAt":
                 return (
                     dir *
@@ -359,6 +373,10 @@ export function SubmissionsTable({
                                         [
                                             "createdAt",
                                             "Datum",
+                                        ],
+                                        [
+                                            "isAttending",
+                                            "Je přítomen",
                                         ],
                                     ] as const
                                 ).map(([key, label]) => (
@@ -661,6 +679,38 @@ export function SubmissionsTable({
                                                     e.stopPropagation()
                                                 }
                                             >
+                                                <Checkbox
+                                                    size="small"
+                                                    checked={
+                                                        order
+                                                            .people[0]
+                                                            ?.isAttending ??
+                                                        false
+                                                    }
+                                                    disabled={
+                                                        readOnly
+                                                    }
+                                                    onChange={async () => {
+                                                        const p =
+                                                            order
+                                                                .people[0];
+                                                        if (
+                                                            p
+                                                        )
+                                                            await togglePersonIsAttending(
+                                                                p.id,
+                                                                !p.isAttending,
+                                                            );
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell
+                                                onClick={(
+                                                    e,
+                                                ) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
                                                 {!readOnly &&
                                                     !order.isPaid &&
                                                     order.legacySubmissionId && (
@@ -804,6 +854,29 @@ export function SubmissionsTable({
                                                         <TableCell />
                                                         <TableCell />
                                                         <TableCell />
+                                                        <TableCell
+                                                            onClick={(
+                                                                e,
+                                                            ) =>
+                                                                e.stopPropagation()
+                                                            }
+                                                        >
+                                                            <Checkbox
+                                                                size="small"
+                                                                checked={
+                                                                    person.isAttending
+                                                                }
+                                                                disabled={
+                                                                    readOnly
+                                                                }
+                                                                onChange={async () => {
+                                                                    await togglePersonIsAttending(
+                                                                        person.id,
+                                                                        !person.isAttending,
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </TableCell>
                                                         <TableCell />
                                                     </TableRow>
                                                 );
