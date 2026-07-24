@@ -63,6 +63,7 @@ export async function processTransactions(
     const bankAccount = await getGlobalBankAccount();
     const formCache = new Map<string, CachedForm>();
     const fieldIdMapCache = new Map<string, Map<string, string>>();
+    const templateCache = new Map<string, Awaited<ReturnType<typeof getEmailTemplate>>>();
 
     for (const tx of transactions) {
         try {
@@ -217,7 +218,10 @@ export async function processTransactions(
 
             // Send payment confirmation email
             try {
-                const template = await getEmailTemplate(order.yearId, "payment");
+                if (!templateCache.has(order.yearId)) {
+                    templateCache.set(order.yearId, await getEmailTemplate(order.yearId, "payment"));
+                }
+                const template = templateCache.get(order.yearId)!;
                 if (
                     template?.enabled &&
                     template.subject &&
