@@ -29,6 +29,8 @@ import {
     Cancel,
     Email,
     Search,
+    HowToReg,
+    PersonOutline,
 } from "@mui/icons-material";
 import { AdminNoteButton } from "@/components/admin/admin-note-button";
 import { isMinor } from "@/lib/utils/minor-detection";
@@ -691,6 +693,15 @@ export function SubmissionsTable({
                                                                     ? "success"
                                                                     : "inherit"
                                                             }
+                                                            startIcon={
+                                                                order
+                                                                    .people[0]
+                                                                    ?.isAttending ? (
+                                                                    <HowToReg fontSize="small" />
+                                                                ) : (
+                                                                    <PersonOutline fontSize="small" />
+                                                                )
+                                                            }
                                                             onClick={async () => {
                                                                 const p =
                                                                     order
@@ -707,8 +718,8 @@ export function SubmissionsTable({
                                                             {order
                                                                 .people[0]
                                                                 ?.isAttending
-                                                                ? "Zde ✓"
-                                                                : "Účast"}
+                                                                ? "Zapsán"
+                                                                : "Zapsat"}
                                                         </Button>
                                                     )}
                                                     {!readOnly &&
@@ -875,6 +886,13 @@ export function SubmissionsTable({
                                                                             ? "success"
                                                                             : "inherit"
                                                                     }
+                                                                    startIcon={
+                                                                        person.isAttending ? (
+                                                                            <HowToReg fontSize="small" />
+                                                                        ) : (
+                                                                            <PersonOutline fontSize="small" />
+                                                                        )
+                                                                    }
                                                                     onClick={async () => {
                                                                         await togglePersonIsAttending(
                                                                             person.id,
@@ -883,8 +901,8 @@ export function SubmissionsTable({
                                                                     }}
                                                                 >
                                                                     {person.isAttending
-                                                                        ? "Zde ✓"
-                                                                        : "Účast"}
+                                                                        ? "Zapsán"
+                                                                        : "Zapsat"}
                                                                 </Button>
                                                             )}
                                                         </TableCell>
