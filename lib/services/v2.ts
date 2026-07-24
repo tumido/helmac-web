@@ -630,6 +630,17 @@ export interface OrderDetailPerson {
     lineItems: OrderDetailLineItem[];
 }
 
+export interface OrderBankTransaction {
+    id: string;
+    date: Date;
+    amount: number;
+    currency: string;
+    variableSymbol: string | null;
+    counterpartAccount: string | null;
+    counterpartName: string | null;
+    matchStatus: string;
+}
+
 export interface OrderDetail {
     id: string;
     legacySubmissionId: string | null;
@@ -647,6 +658,7 @@ export interface OrderDetail {
     yearNumber: number;
     yearTitle: string;
     pricingSummary: unknown;
+    bankTransactions: OrderBankTransaction[];
     people: OrderDetailPerson[];
     pricingDefinitions: V2PricingDef[];
     priceTiers: V2PriceTier[];
@@ -686,6 +698,19 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
             yearId: true,
             year: {
                 select: { year: true, title: true },
+            },
+            bankTransactions: {
+                orderBy: { date: "desc" },
+                select: {
+                    id: true,
+                    date: true,
+                    amount: true,
+                    currency: true,
+                    variableSymbol: true,
+                    counterpartAccount: true,
+                    counterpartName: true,
+                    matchStatus: true,
+                },
             },
             people: {
                 orderBy: { personIndex: "asc" },
@@ -757,6 +782,7 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
         yearNumber: order.year.year,
         yearTitle: order.year.title,
         pricingSummary: legacySub?.pricingSummary ?? null,
+        bankTransactions: order.bankTransactions,
         people: order.people.map((p) => ({
             id: p.id,
             personIndex: p.personIndex,

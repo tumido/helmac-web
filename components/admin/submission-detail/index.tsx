@@ -27,7 +27,7 @@ import {
     DialogContentText,
     DialogActions,
 } from "@mui/material";
-import { Save, Delete, Person } from "@mui/icons-material";
+import { Save, Delete, Person, AccountBalance } from "@mui/icons-material";
 import type { RegistrationStatus } from "@prisma/client";
 import type { PricingSummaryData } from "@/lib/types/registration-form";
 import type {
@@ -118,8 +118,14 @@ export function SubmissionDetail({
     const isLoading = saving || actionLoading;
 
     const currentTierId = useMemo(
-        () => getCurrentTierId(order.priceTiers),
-        [order.priceTiers],
+        () =>
+            getCurrentTierId(
+                order.priceTiers,
+                order.paidAt
+                    ? new Date(order.paidAt)
+                    : undefined,
+            ),
+        [order.priceTiers, order.paidAt],
     );
     const apFields = fields.filter(
         (f) => f.includeForAP,
@@ -504,8 +510,7 @@ export function SubmissionDetail({
                         />
                     )}
 
-                    {personStates.length > 1 && (
-                        <Tabs
+                    <Tabs
                             value={activeTab}
                             onChange={(_, v: number) =>
                                 setActiveTab(v)
@@ -580,15 +585,12 @@ export function SubmissionDetail({
                                 ),
                             )}
                         </Tabs>
-                    )}
 
                     {personStates.map((state, idx) => (
                         <Paper
                             key={idx}
                             role="tabpanel"
                             hidden={
-                                personStates.length >
-                                    1 &&
                                 activeTab !== idx
                             }
                             sx={{ p: 3 }}
@@ -792,25 +794,102 @@ export function SubmissionDetail({
                             Platba
                         </Typography>
                         <Box sx={{ mb: 2 }}>
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent:
+                                        "space-between",
+                                    alignItems:
+                                        "baseline",
+                                }}
                             >
-                                Vytvořeno:{" "}
-                                {formatDateTime(
-                                    order.createdAt,
-                                )}
-                            </Typography>
-                            {order.paidAt && (
                                 <Typography
                                     variant="body2"
                                     color="text.secondary"
                                 >
-                                    Zaplaceno:{" "}
-                                    {formatDateTime(
-                                        order.paidAt,
-                                    )}
+                                    Cena při registraci
                                 </Typography>
+                                <Typography
+                                    variant="body2"
+                                >
+                                    {(
+                                        order.totalPrice ??
+                                        0
+                                    ).toLocaleString(
+                                        "cs-CZ",
+                                    )}{" "}
+                                    Kč
+                                </Typography>
+                            </Box>
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                            >
+                                {formatDateTime(
+                                    order.createdAt,
+                                )}
+                            </Typography>
+                            {computedPrice !==
+                                (order.totalPrice ??
+                                    0) && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent:
+                                            "space-between",
+                                        alignItems:
+                                            "baseline",
+                                        mt: 1,
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Aktuální cena
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        {computedPrice.toLocaleString(
+                                            "cs-CZ",
+                                        )}{" "}
+                                        Kč
+                                        <Typography
+                                            component="span"
+                                            variant="caption"
+                                            color={
+                                                computedPrice >
+                                                (order.totalPrice ??
+                                                    0)
+                                                    ? "warning.main"
+                                                    : "success.main"
+                                            }
+                                            sx={{
+                                                ml: 0.5,
+                                            }}
+                                        >
+                                            (
+                                            {computedPrice -
+                                                (order.totalPrice ??
+                                                    0) >
+                                            0
+                                                ? "+"
+                                                : ""}
+                                            {(
+                                                computedPrice -
+                                                (order.totalPrice ??
+                                                    0)
+                                            ).toLocaleString(
+                                                "cs-CZ",
+                                            )}
+                                            )
+                                        </Typography>
+                                    </Typography>
+                                </Box>
                             )}
                         </Box>
                         <SubmissionPricingSummary

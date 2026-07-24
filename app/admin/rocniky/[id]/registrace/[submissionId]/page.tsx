@@ -64,6 +64,13 @@ export default async function SubmissionDetailPage({
                     emailSentAt:
                         order.emailSentAt?.toISOString() ??
                         null,
+                    bankTransactions:
+                        order.bankTransactions.map(
+                            (tx) => ({
+                                ...tx,
+                                date: tx.date.toISOString(),
+                            }),
+                        ),
                 }}
                 yearId={yearId}
                 readOnly={isEditor}

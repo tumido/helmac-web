@@ -180,13 +180,14 @@ export function formatDateTime(iso: string) {
 
 export function getCurrentTierId(
     priceTiers: SerializedOrder["priceTiers"],
+    asOf?: Date,
 ): string | null {
     if (priceTiers.length === 0) return null;
-    const now = new Date();
+    const ref = asOf ?? new Date();
     for (const tier of priceTiers) {
         if (
             tier.deadline &&
-            now <= new Date(tier.deadline)
+            ref <= new Date(tier.deadline)
         ) {
             return tier.id;
         }

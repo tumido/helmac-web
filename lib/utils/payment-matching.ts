@@ -133,28 +133,60 @@ export async function processTransactions(
 
             const totalPrice = order.totalPrice ?? 0;
 
-            if (tx.amount < totalPrice) {
-                const dateStr = tx.date.toLocaleDateString("cs-CZ");
+            // Sum previously linked payments
+            const previousPayments =
+                await db.bankTransaction.aggregate({
+                    where: {
+                        orderId: order.id,
+                        matchStatus: {
+                            in: [
+                                BankTransactionMatchStatus.MATCHED,
+                                BankTransactionMatchStatus.PARTIAL_PAYMENT,
+                                BankTransactionMatchStatus.OVERPAYMENT,
+                            ],
+                        },
+                    },
+                    _sum: { amount: true },
+                });
+            const paidSoFar =
+                previousPayments._sum.amount ?? 0;
+            const cumulativeTotal =
+                paidSoFar + tx.amount;
+
+            if (cumulativeTotal < totalPrice) {
+                const dateStr =
+                    tx.date.toLocaleDateString("cs-CZ");
                 const note = `Částečná platba: ${tx.amount} Kč z ${totalPrice} Kč (${dateStr})`;
 
                 if (order.legacySubmissionId) {
                     const sub =
-                        await db.registrationSubmission.findUnique({
-                            where: { id: order.legacySubmissionId },
-                            select: { adminNote: true },
-                        });
-                    const existingNote = sub?.adminNote ?? "";
+                        await db.registrationSubmission.findUnique(
+                            {
+                                where: {
+                                    id: order.legacySubmissionId,
+                                },
+                                select: {
+                                    adminNote: true,
+                                },
+                            },
+                        );
+                    const existingNote =
+                        sub?.adminNote ?? "";
                     const updatedNote = existingNote
                         ? `${existingNote}\n${note}`
                         : note;
 
                     await db.$transaction(async (txn) => {
-                        await txn.registrationSubmission.update({
-                            where: {
-                                id: order.legacySubmissionId!,
+                        await txn.registrationSubmission.update(
+                            {
+                                where: {
+                                    id: order.legacySubmissionId!,
+                                },
+                                data: {
+                                    adminNote: updatedNote,
+                                },
                             },
-                            data: { adminNote: updatedNote },
-                        });
+                        );
                         await syncOrderScalarToV2(
                             txn,
                             order.legacySubmissionId!,
@@ -174,27 +206,32 @@ export async function processTransactions(
                 continue;
             }
 
-            // Full match or overpayment
+            // Cumulative total covers the price
             const matchStatus =
-                tx.amount > totalPrice
+                cumulativeTotal > totalPrice
                     ? BankTransactionMatchStatus.OVERPAYMENT
                     : BankTransactionMatchStatus.MATCHED;
 
             await db.$transaction(async (txn) => {
                 if (order.legacySubmissionId) {
-                    await txn.registrationSubmission.update({
-                        where: {
-                            id: order.legacySubmissionId,
+                    await txn.registrationSubmission.update(
+                        {
+                            where: {
+                                id: order.legacySubmissionId,
+                            },
+                            data: {
+                                isPaid: true,
+                                paidAt: tx.date,
+                            },
                         },
-                        data: {
-                            isPaid: true,
-                            paidAt: tx.date,
-                        },
-                    });
+                    );
                     await syncOrderScalarToV2(
                         txn,
                         order.legacySubmissionId,
-                        { isPaid: true, paidAt: tx.date },
+                        {
+                            isPaid: true,
+                            paidAt: tx.date,
+                        },
                     );
                 }
             });

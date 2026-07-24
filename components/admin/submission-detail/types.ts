@@ -1,6 +1,7 @@
 import type { RegistrationStatus } from "@prisma/client";
 import type {
     OrderDetailPerson,
+    OrderBankTransaction,
     V2PricingDef,
 } from "@/lib/services/v2";
 
@@ -59,6 +60,9 @@ export interface SerializedOrder {
     yearNumber: number;
     yearTitle: string;
     pricingSummary: unknown;
+    bankTransactions: (Omit<OrderBankTransaction, "date"> & {
+        date: string;
+    })[];
     people: OrderDetailPerson[];
     pricingDefinitions: V2PricingDef[];
     priceTiers: {
