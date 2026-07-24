@@ -18,7 +18,10 @@ export const emailCampaignSchema = z.object({
         .string()
         .min(1, "Předmět je povinný")
         .max(200, "Předmět je příliš dlouhý"),
-    body: z.string().min(1, "Text emailu je povinný"),
+    body: z
+        .string()
+        .min(1, "Text emailu je povinný")
+        .max(50000, "Text emailu je příliš dlouhý"),
     bcc: z
         .string()
         .email("Neplatný email pro BCC")
