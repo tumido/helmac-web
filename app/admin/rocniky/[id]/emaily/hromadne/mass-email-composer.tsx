@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -16,7 +16,7 @@ import {
 import { ForwardToInbox, Send } from "@mui/icons-material";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import type { RecipientFilter } from "@/lib/validators/email-campaign";
-import { MassEmailTestDialog } from "./mass-email-test-dialog";
+import { TestEmailDialog } from "@/components/admin/test-email-dialog";
 import { MassEmailSendConfirmDialog } from "./mass-email-send-confirm-dialog";
 
 interface EmailAccountOption {
@@ -29,6 +29,7 @@ interface EmailAccountOption {
 interface MassEmailComposerProps {
     yearId: string;
     emailAccounts: EmailAccountOption[];
+    availablePlaceholders: { key: string; label: string }[];
 }
 
 type RecipientGroup = "all" | "paid" | "unpaid";
@@ -42,6 +43,7 @@ const GROUP_OPTIONS: { value: RecipientGroup; label: string }[] = [
 export function MassEmailComposer({
     yearId,
     emailAccounts,
+    availablePlaceholders,
 }: MassEmailComposerProps) {
     const [group, setGroup] = useState<RecipientGroup>("all");
     const [subject, setSubject] = useState("");
@@ -51,6 +53,23 @@ export function MassEmailComposer({
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const canSend = subject.trim().length > 0 && body.trim().length > 0;
+
+    // Placeholders actually referenced in the subject/body, so the test dialog
+    // can offer a sample-value field for each one.
+    const usedPlaceholders = useMemo(() => {
+        const haystack = `${subject}\n${body}`;
+        const keys = new Set<string>();
+        for (const match of haystack.matchAll(/\{(\w+)\}/g)) {
+            keys.add(match[1]);
+        }
+        const labelByKey = new Map(
+            availablePlaceholders.map((ph) => [ph.key, ph.label]),
+        );
+        return Array.from(keys).map((k) => ({
+            key: k,
+            label: labelByKey.get(k) ?? k,
+        }));
+    }, [subject, body, availablePlaceholders]);
 
     const filter: RecipientFilter = {
         statuses: ["PENDING", "CONFIRMED", "WAITLIST"],
@@ -154,12 +173,14 @@ export function MassEmailComposer({
                 </Box>
             </CardContent>
 
-            <MassEmailTestDialog
+            <TestEmailDialog
                 open={testOpen}
                 onClose={() => setTestOpen(false)}
                 subject={subject}
                 body={body}
+                bcc={null}
                 emailAccountId={accountId || null}
+                usedPlaceholders={usedPlaceholders}
             />
             <MassEmailSendConfirmDialog
                 open={confirmOpen}
