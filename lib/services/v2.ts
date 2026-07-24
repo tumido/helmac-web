@@ -636,6 +636,7 @@ export interface OrderDetailLineItem {
 export interface OrderDetailPerson {
     id: string;
     personIndex: number;
+    isAttending: boolean;
     lineItems: OrderDetailLineItem[];
 }
 
@@ -726,6 +727,7 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
                 select: {
                     id: true,
                     personIndex: true,
+                    isAttending: true,
                     lineItems: {
                         orderBy: {
                             field: { sortOrder: "asc" },
@@ -795,6 +797,7 @@ export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
         people: order.people.map((p) => ({
             id: p.id,
             personIndex: p.personIndex,
+            isAttending: p.isAttending,
             lineItems: p.lineItems.map((li) => ({
                 fieldId: li.field.id,
                 fieldName: li.field.name,
