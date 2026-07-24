@@ -115,6 +115,8 @@ export function SubmissionDetail({
     const [actionLoading, setActionLoading] =
         useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [removePersonIdx, setRemovePersonIdx] =
+        useState<number | null>(null);
     const [emailSending, setEmailSending] =
         useState(false);
 
@@ -604,7 +606,7 @@ export function SubmissionDetail({
                                                                 e: React.MouseEvent,
                                                             ) => {
                                                                 e.stopPropagation();
-                                                                handleRemovePerson(
+                                                                setRemovePersonIdx(
                                                                     idx,
                                                                 );
                                                             }}
@@ -1353,6 +1355,50 @@ export function SubmissionDetail({
                         variant="contained"
                     >
                         Smazat
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={removePersonIdx !== null}
+                onClose={() =>
+                    setRemovePersonIdx(null)
+                }
+            >
+                <DialogTitle>
+                    Odebrat osobu?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Data osoby č.{" "}
+                        {(removePersonIdx ?? 0) + 1}{" "}
+                        budou ztracena. Změna se projeví
+                        až po uložení.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() =>
+                            setRemovePersonIdx(null)
+                        }
+                    >
+                        Zrušit
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            if (
+                                removePersonIdx !== null
+                            ) {
+                                handleRemovePerson(
+                                    removePersonIdx,
+                                );
+                            }
+                            setRemovePersonIdx(null);
+                        }}
+                        color="error"
+                        variant="contained"
+                    >
+                        Odebrat
                     </Button>
                 </DialogActions>
             </Dialog>
