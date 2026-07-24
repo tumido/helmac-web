@@ -133,7 +133,13 @@ export async function processTransactions(
 
             const totalPrice = order.totalPrice ?? 0;
 
-            // Sum previously linked payments
+            // Sum previously linked payments.
+            // Safe without a transaction: processTransactions runs
+            // sequentially within a single batch invocation, and the
+            // advisory lock in the queue processor prevents concurrent
+            // drains. Float equality at the boundary is acceptable
+            // because amounts come from Fio as integers (CZK haléře
+            // are not used).
             const previousPayments =
                 await db.bankTransaction.aggregate({
                     where: {

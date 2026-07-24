@@ -222,12 +222,14 @@ export function SubmissionDetail({
                 fields,
                 pricingDefById,
                 currentTierId,
+                visibleFieldNames,
             ),
         [
             initialStates,
             fields,
             pricingDefById,
             currentTierId,
+            visibleFieldNames,
         ],
     );
 
@@ -905,6 +907,219 @@ export function SubmissionDetail({
                                 originalPrice
                             }
                         />
+                        {order.bankTransactions.length >
+                            0 && (
+                            <Box
+                                sx={{
+                                    mt: 2,
+                                    pt: 2,
+                                    borderTop: 1,
+                                    borderColor:
+                                        "divider",
+                                }}
+                            >
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        mb: 1,
+                                        display: "flex",
+                                        alignItems:
+                                            "center",
+                                        gap: 0.5,
+                                    }}
+                                >
+                                    <AccountBalance
+                                        fontSize="small"
+                                    />
+                                    Bankovní transakce
+                                </Typography>
+                                {order.bankTransactions.map(
+                                    (tx) => (
+                                        <Box
+                                            key={tx.id}
+                                            sx={{
+                                                mb: 1,
+                                                p: 1.5,
+                                                borderRadius: 1,
+                                                backgroundColor:
+                                                    "action.hover",
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display:
+                                                        "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems:
+                                                        "center",
+                                                    mb: 0.5,
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color:
+                                                            tx.amount >
+                                                            0
+                                                                ? "success.main"
+                                                                : "text.primary",
+                                                    }}
+                                                >
+                                                    {tx.amount.toLocaleString(
+                                                        "cs-CZ",
+                                                    )}{" "}
+                                                    {
+                                                        tx.currency
+                                                    }
+                                                </Typography>
+                                                <Chip
+                                                    label={
+                                                        {
+                                                            MATCHED:
+                                                                "Spárováno",
+                                                            PARTIAL_PAYMENT:
+                                                                "Částečná platba",
+                                                            OVERPAYMENT:
+                                                                "Přeplatek",
+                                                            ALREADY_PAID:
+                                                                "Již zaplaceno",
+                                                        }[
+                                                            tx
+                                                                .matchStatus
+                                                        ] ??
+                                                        tx.matchStatus
+                                                    }
+                                                    color={
+                                                        (
+                                                            {
+                                                                MATCHED:
+                                                                    "success",
+                                                                PARTIAL_PAYMENT:
+                                                                    "warning",
+                                                                OVERPAYMENT:
+                                                                    "success",
+                                                                ALREADY_PAID:
+                                                                    "info",
+                                                            } as Record<
+                                                                string,
+                                                                | "success"
+                                                                | "warning"
+                                                                | "info"
+                                                            >
+                                                        )[
+                                                            tx
+                                                                .matchStatus
+                                                        ] ??
+                                                        "default"
+                                                    }
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            </Box>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                component="div"
+                                            >
+                                                {formatDateTime(
+                                                    tx.date,
+                                                )}
+                                                {tx.counterpartName &&
+                                                    ` · ${tx.counterpartName}`}
+                                                {tx.counterpartAccount &&
+                                                    !tx.counterpartName &&
+                                                    ` · ${tx.counterpartAccount}`}
+                                            </Typography>
+                                            {tx.variableSymbol && (
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        fontFamily:
+                                                            "monospace",
+                                                    }}
+                                                >
+                                                    VS{" "}
+                                                    {
+                                                        tx.variableSymbol
+                                                    }
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    ),
+                                )}
+                                {(() => {
+                                    const totalPaid =
+                                        order.bankTransactions.reduce(
+                                            (sum, t) =>
+                                                sum +
+                                                t.amount,
+                                            0,
+                                        );
+                                    const price =
+                                        order.totalPrice ??
+                                        0;
+                                    const diff =
+                                        totalPaid -
+                                        price;
+                                    const chipLabel =
+                                        diff > 0
+                                            ? `+${diff.toLocaleString("cs-CZ")} Kč`
+                                            : diff === 0
+                                              ? "Uhrazeno"
+                                              : `${diff.toLocaleString("cs-CZ")} Kč`;
+                                    return (
+                                        <Box
+                                            sx={{
+                                                mt: 1,
+                                                pt: 1,
+                                                borderTop: 1,
+                                                borderColor:
+                                                    "divider",
+                                                display:
+                                                    "flex",
+                                                justifyContent:
+                                                    "space-between",
+                                                alignItems:
+                                                    "center",
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Přijato:{" "}
+                                                {totalPaid.toLocaleString(
+                                                    "cs-CZ",
+                                                )}{" "}
+                                                /{" "}
+                                                {price.toLocaleString(
+                                                    "cs-CZ",
+                                                )}{" "}
+                                                Kč
+                                            </Typography>
+                                            <Chip
+                                                label={
+                                                    chipLabel
+                                                }
+                                                color={
+                                                    diff >=
+                                                    0
+                                                        ? "success"
+                                                        : "warning"
+                                                }
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        </Box>
+                                    );
+                                })()}
+                            </Box>
+                        )}
                         {!readOnly && (
                             <Box
                                 sx={{

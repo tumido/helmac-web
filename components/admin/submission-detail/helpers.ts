@@ -178,6 +178,9 @@ export function formatDateTime(iso: string) {
     });
 }
 
+// Assumes priceTiers are sorted by sortOrder (ascending deadlines,
+// fallback tier last with deadline: null). This matches the DB query
+// order in getFormStructure / getOrderByLegacyId.
 export function getCurrentTierId(
     priceTiers: SerializedOrder["priceTiers"],
     asOf?: Date,
