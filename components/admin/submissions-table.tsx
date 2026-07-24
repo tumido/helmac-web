@@ -25,17 +25,11 @@ import {
     togglePersonIsAttending,
 } from "@/lib/actions/registration-submissions";
 import {
-    CheckCircle,
-    Cancel,
-    Email,
     Search,
     HowToReg,
     PersonOutline,
 } from "@mui/icons-material";
-import { AdminNoteButton } from "@/components/admin/admin-note-button";
 import { isMinor } from "@/lib/utils/minor-detection";
-import { formatPrice } from "@/lib/utils/pricing";
-import { formatDate } from "@/lib/utils/date";
 import type { OrderRow } from "@/lib/services/v2";
 
 interface FieldInfo {
@@ -207,42 +201,6 @@ export function SubmissionsTable({
             return dir * aVal.localeCompare(bVal, "cs");
         }
         switch (sortKey) {
-            case "peopleCount":
-                return (
-                    dir *
-                    (a.people.length - b.people.length)
-                );
-            case "isPaid":
-                return (
-                    dir *
-                    (Number(a.isPaid) - Number(b.isPaid))
-                );
-            case "totalPrice":
-                return (
-                    dir *
-                    ((a.totalPrice ?? -Infinity) -
-                        (b.totalPrice ?? -Infinity))
-                );
-            case "variableSymbol":
-                return (
-                    dir *
-                    (a.variableSymbol ?? "").localeCompare(
-                        b.variableSymbol ?? "",
-                        "cs",
-                    )
-                );
-            case "emailSent":
-                return (
-                    dir *
-                    (Number(a.emailSent) -
-                        Number(b.emailSent))
-                );
-            case "adminNote":
-                return (
-                    dir *
-                    (Number(!!a.adminNote) -
-                        Number(!!b.adminNote))
-                );
             case "createdAt":
                 return (
                     dir *
@@ -336,67 +294,6 @@ export function SubmissionsTable({
                                         );
                                     },
                                 )}
-                                {(
-                                    [
-                                        [
-                                            "peopleCount",
-                                            "Osoby",
-                                        ],
-                                        [
-                                            "isPaid",
-                                            "Zaplaceno",
-                                        ],
-                                        [
-                                            "totalPrice",
-                                            "Cena",
-                                        ],
-                                        [
-                                            "variableSymbol",
-                                            "VS",
-                                        ],
-                                        [
-                                            "emailSent",
-                                            "Email",
-                                        ],
-                                        [
-                                            "adminNote",
-                                            "Poznámka",
-                                        ],
-                                        [
-                                            "createdAt",
-                                            "Datum",
-                                        ],
-                                    ] as const
-                                ).map(([key, label]) => (
-                                    <TableCell
-                                        key={key}
-                                        sortDirection={
-                                            sortKey === key
-                                                ? sortDir
-                                                : false
-                                        }
-                                    >
-                                        <TableSortLabel
-                                            active={
-                                                sortKey ===
-                                                key
-                                            }
-                                            direction={
-                                                sortKey ===
-                                                key
-                                                    ? sortDir
-                                                    : "asc"
-                                            }
-                                            onClick={() =>
-                                                handleSort(
-                                                    key,
-                                                )
-                                            }
-                                        >
-                                            {label}
-                                        </TableSortLabel>
-                                    </TableCell>
-                                ))}
                                 <TableCell></TableCell>
                             </TableRow>
                         </TableHead>
@@ -522,144 +419,6 @@ export function SubmissionsTable({
                                                     </TableCell>
                                                 ),
                                             )}
-                                            <TableCell>
-                                                <Typography variant="body2">
-                                                    {(() => {
-                                                        let minorCount = 0;
-                                                        for (const bf of birthDateFields) {
-                                                            if (
-                                                                values[
-                                                                    bf
-                                                                        .name
-                                                                ] &&
-                                                                isMinor(
-                                                                    values[
-                                                                        bf
-                                                                            .name
-                                                                    ],
-                                                                    refDate,
-                                                                )
-                                                            )
-                                                                minorCount++;
-                                                        }
-                                                        for (const p of ap) {
-                                                            for (const bf of apBirthDateFields) {
-                                                                if (
-                                                                    p
-                                                                        .values[
-                                                                        bf
-                                                                            .name
-                                                                    ] &&
-                                                                    isMinor(
-                                                                        p
-                                                                            .values[
-                                                                            bf
-                                                                                .name
-                                                                        ],
-                                                                        refDate,
-                                                                    )
-                                                                )
-                                                                    minorCount++;
-                                                            }
-                                                        }
-                                                        const base =
-                                                            ap.length >
-                                                            0
-                                                                ? `1 + ${ap.length}`
-                                                                : "1";
-                                                        return minorCount >
-                                                            0
-                                                            ? `${base} (${minorCount} nezl.)`
-                                                            : base;
-                                                    })()}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>
-                                                {order.isPaid ? (
-                                                    <CheckCircle
-                                                        fontSize="small"
-                                                        color="success"
-                                                    />
-                                                ) : (
-                                                    <Cancel
-                                                        fontSize="small"
-                                                        color="disabled"
-                                                    />
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    variant="body2"
-                                                    noWrap
-                                                >
-                                                    {order.totalPrice !=
-                                                    null
-                                                        ? formatPrice(
-                                                              order.totalPrice,
-                                                          )
-                                                        : "—"}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    variant="body2"
-                                                    noWrap
-                                                    sx={{
-                                                        fontFamily:
-                                                            "monospace",
-                                                    }}
-                                                >
-                                                    {order.variableSymbol ??
-                                                        "—"}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Tooltip
-                                                    title={
-                                                        order.emailSent
-                                                            ? "Email odeslán"
-                                                            : "Email neodeslán"
-                                                    }
-                                                >
-                                                    <Email
-                                                        fontSize="small"
-                                                        color={
-                                                            order.emailSent
-                                                                ? "success"
-                                                                : "disabled"
-                                                        }
-                                                    />
-                                                </Tooltip>
-                                            </TableCell>
-                                            <TableCell
-                                                onClick={(
-                                                    e,
-                                                ) =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-                                                {!readOnly &&
-                                                    order.legacySubmissionId && (
-                                                        <AdminNoteButton
-                                                            submissionId={
-                                                                order.legacySubmissionId
-                                                            }
-                                                            adminNote={
-                                                                order.adminNote
-                                                            }
-                                                        />
-                                                    )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    variant="body2"
-                                                    noWrap
-                                                >
-                                                    {formatDate(
-                                                        order.createdAt,
-                                                    )}
-                                                </Typography>
-                                            </TableCell>
                                             <TableCell
                                                 onClick={(
                                                     e,
@@ -718,8 +477,8 @@ export function SubmissionsTable({
                                                             {order
                                                                 .people[0]
                                                                 ?.isAttending
-                                                                ? "Zapsán"
-                                                                : "Zapsat"}
+                                                                ? "Označit: nepřijel"
+                                                                : "Označit: přijel"}
                                                         </Button>
                                                     )}
                                                     {!readOnly &&
@@ -859,13 +618,6 @@ export function SubmissionsTable({
                                                                 </TableCell>
                                                             ),
                                                         )}
-                                                        <TableCell />
-                                                        <TableCell />
-                                                        <TableCell />
-                                                        <TableCell />
-                                                        <TableCell />
-                                                        <TableCell />
-                                                        <TableCell />
                                                         <TableCell
                                                             onClick={(
                                                                 e,
@@ -901,8 +653,8 @@ export function SubmissionsTable({
                                                                     }}
                                                                 >
                                                                     {person.isAttending
-                                                                        ? "Zapsán"
-                                                                        : "Zapsat"}
+                                                                        ? "Označit: nepřijel"
+                                                                        : "Označit: přijel"}
                                                                 </Button>
                                                             )}
                                                         </TableCell>

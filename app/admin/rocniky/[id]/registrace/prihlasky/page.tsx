@@ -121,7 +121,8 @@ export default async function PrihlaskyPage({
     );
 
     const displayFields = formStructure.fields
-        .slice(0, 4)
+        .filter((f) => f.type !== "email")
+        .slice(0, 3)
         .map((f) => ({
             name: f.name,
             label: f.label,
