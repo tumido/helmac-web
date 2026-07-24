@@ -213,6 +213,13 @@ export async function processTransactions(
                     : BankTransactionMatchStatus.MATCHED;
 
             await db.$transaction(async (txn) => {
+                await txn.v2Order.update({
+                    where: { id: order.id },
+                    data: {
+                        isPaid: true,
+                        paidAt: tx.date,
+                    },
+                });
                 if (order.legacySubmissionId) {
                     await txn.registrationSubmission.update(
                         {
@@ -223,14 +230,6 @@ export async function processTransactions(
                                 isPaid: true,
                                 paidAt: tx.date,
                             },
-                        },
-                    );
-                    await syncOrderScalarToV2(
-                        txn,
-                        order.legacySubmissionId,
-                        {
-                            isPaid: true,
-                            paidAt: tx.date,
                         },
                     );
                 }
