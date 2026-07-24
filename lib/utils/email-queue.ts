@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
     createSmtpTransporterForAccount,
@@ -26,7 +27,18 @@ export const EMAIL_QUEUE_CONFIG = {
     timeBudgetMs: () => envInt("EMAIL_QUEUE_TIME_BUDGET_MS", 280_000),
     // A campaign lock older than this is considered a crashed invocation
     lockStaleMs: () => envInt("EMAIL_QUEUE_LOCK_STALE_MS", 360_000),
+    // Interactive-transaction timeout for the advisory-lock wrapper. Must be
+    // > timeBudgetMs (the drain finishes first) and < Vercel maxDuration (300s).
+    txLockTimeoutMs: () => envInt("EMAIL_QUEUE_TX_LOCK_TIMEOUT_MS", 295_000),
+    // A SENDING campaign whose lock has been idle this long with items still
+    // pending most likely lost its self-invocation chain (stall detection).
+    stalledAfterMs: () => envInt("EMAIL_QUEUE_STALLED_AFTER_MS", 600_000),
 } as const;
+
+// Stable key for the transaction-scoped advisory lock that serializes queue
+// draining across serverless invocations (so global caps can't be exceeded by
+// two invocations reading headroom independently).
+const EMAIL_QUEUE_ADVISORY_LOCK_KEY = 482300111;
 
 export interface ProcessResult {
     processed: number;
@@ -80,11 +92,47 @@ export async function getCapHeadroom(): Promise<number> {
 }
 
 /**
- * Process one batch of the email queue: claim the oldest SENDING campaign,
- * send up to batchSize emails throttled by delayMs, respecting global
- * hourly/daily caps. Returns counts; the caller decides whether to chain.
+ * Process one batch of the email queue. Serializes the whole drain behind a
+ * transaction-scoped Postgres advisory lock so only one invocation drains at a
+ * time globally — otherwise two concurrent invocations each read cap headroom
+ * independently and combined can overshoot the hourly/daily caps. A second
+ * invocation that can't grab the lock exits immediately; the holder self-chains.
  */
 export async function processEmailQueue(): Promise<ProcessResult> {
+    return db.$transaction(
+        async (tx) => {
+            const rows = await tx.$queryRaw<{ locked: boolean }[]>`
+                SELECT pg_try_advisory_xact_lock(${EMAIL_QUEUE_ADVISORY_LOCK_KEY}) AS locked`;
+            if (!rows[0]?.locked) {
+                // Another invocation is already draining the queue; skip so we
+                // don't double-count cap headroom. That invocation self-chains.
+                return {
+                    processed: 0,
+                    sent: 0,
+                    failed: 0,
+                    remaining: 0,
+                    capReached: false,
+                    campaignId: null,
+                };
+            }
+            return drainQueue(tx);
+        },
+        { timeout: EMAIL_QUEUE_CONFIG.txLockTimeoutMs(), maxWait: 5000 },
+    );
+}
+
+/**
+ * Drain one batch: claim the oldest SENDING campaign, send up to batchSize
+ * emails throttled by delayMs, respecting global hourly/daily caps. Returns
+ * counts; the caller decides whether to chain.
+ *
+ * Runs inside the advisory-lock transaction. All writes/counts use the
+ * module-level `db` client (they commit immediately, so the detail-page polling
+ * shows live progress). Only the per-item status re-check uses `tx` — that read
+ * doubles as a keepalive so the pinned lock connection isn't terminated for
+ * sitting idle-in-transaction during the ~3s-per-item send loop.
+ */
+async function drainQueue(tx: Prisma.TransactionClient): Promise<ProcessResult> {
     const start = Date.now();
     const maxAttempts = EMAIL_QUEUE_CONFIG.maxAttempts();
 
@@ -178,8 +226,10 @@ export async function processEmailQueue(): Promise<ProcessResult> {
 
                         // Stop mid-batch when an admin pauses (or otherwise
                         // un-SENDINGs) the campaign; one cheap query per item
-                        // at a ~3s cadence
-                        const current = await db.emailCampaign.findUnique({
+                        // at a ~3s cadence. Runs through `tx` so it doubles as
+                        // a keepalive on the advisory-lock connection; READ
+                        // COMMITTED still sees the admin's committed pause.
+                        const current = await tx.emailCampaign.findUnique({
                             where: { id: campaign.id },
                             select: { status: true },
                         });
@@ -318,9 +368,13 @@ export async function kickEmailQueue(): Promise<void> {
             },
             signal: controller.signal,
         });
-    } catch {
-        // AbortError after 5s is the expected path; real failures are
-        // recovered by the daily cron safety net
+    } catch (error) {
+        // AbortError after 5s is the expected path (we never wait for the
+        // response). Anything else is a genuinely-failed kick worth logging;
+        // the daily cron safety net still recovers the chain.
+        if ((error as Error)?.name !== "AbortError") {
+            console.error("Failed to kick email queue:", error);
+        }
     } finally {
         clearTimeout(timeout);
     }
@@ -339,7 +393,8 @@ export async function kickEmailQueue(): Promise<void> {
  */
 export async function waitForCapHeadroom(startedAt: number): Promise<boolean> {
     while (Date.now() - startedAt < EMAIL_QUEUE_CONFIG.timeBudgetMs()) {
-        await sleep(30_000);
+        // Jitter so multiple idling invocations don't re-check in lockstep
+        await sleep(30_000 + Math.floor(Math.random() * 5_000));
         if ((await getCapHeadroom()) > 0) {
             return true;
         }

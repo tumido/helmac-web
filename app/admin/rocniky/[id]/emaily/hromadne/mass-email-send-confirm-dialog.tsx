@@ -85,7 +85,6 @@ export function MassEmailSendConfirmDialog({
                     name: subject.slice(0, 200),
                     subject,
                     body,
-                    bcc: null,
                     accountId: accountId || null,
                     recipientFilter: filter,
                 });
@@ -140,9 +139,10 @@ export function MassEmailSendConfirmDialog({
                         </Box>
                     ) : count !== null ? (
                         <Typography>
-                            Bude odesláno <strong>{count}</strong> příjemcům
-                            (skupina: {groupLabel}). Odesílání probíhá na pozadí
-                            a kvůli limitům poskytovatele může trvat déle.
+                            Filtru aktuálně odpovídá <strong>{count}</strong>{" "}
+                            příjemců (skupina: {groupLabel}). Přesný počet se
+                            určí při odeslání. Odesílání probíhá na pozadí a kvůli
+                            limitům poskytovatele může trvat déle.
                         </Typography>
                     ) : null}
 
@@ -176,6 +176,9 @@ export function MassEmailSendConfirmDialog({
                                 maxHeight: 300,
                                 overflowY: "auto",
                             }}
+                            // Admin trust boundary: body is HTML authored by an
+                            // admin in the Tiptap editor and is exactly what
+                            // gets emailed — no untrusted input reaches here.
                             dangerouslySetInnerHTML={{ __html: body }}
                         />
                     </Box>

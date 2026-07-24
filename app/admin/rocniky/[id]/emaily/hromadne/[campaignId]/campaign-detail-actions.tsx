@@ -79,6 +79,10 @@ export function CampaignDetailActions({
         if (!recipientFilter) return;
         startTransition(async () => {
             const result = await previewRecipients(yearId, recipientFilter);
+            if (result.error) {
+                setError(result.error);
+                return;
+            }
             if (result.count !== undefined) {
                 setRecipientCount(result.count);
             }

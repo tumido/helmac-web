@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { recipientFilterSchema } from "@/lib/validators/email-campaign";
 import { CampaignForm } from "../campaign-form";
 import { buildCampaignPlaceholders } from "@/lib/services/email-campaign";
+import { EMAIL_QUEUE_CONFIG } from "@/lib/utils/email-queue";
 import { CAMPAIGN_STATUS_CONFIG } from "../campaign-status";
 import { CampaignDetailActions } from "./campaign-detail-actions";
 import { MassEmailRecipientList } from "./mass-email-recipient-list";
@@ -27,11 +28,13 @@ import { MassEmailRecipientList } from "./mass-email-recipient-list";
 export const dynamic = "force-dynamic";
 
 // A SENDING campaign whose lock is idle this long with items still pending
-// most likely lost its self-invocation chain
-const STALLED_AFTER_MS = 10 * 60 * 1000;
-
+// most likely lost its self-invocation chain. Centralized in EMAIL_QUEUE_CONFIG
+// alongside the queue's other timing constants to keep them from drifting.
 function isLockIdleTooLong(lockIdleSince: Date): boolean {
-    return Date.now() - lockIdleSince.getTime() > STALLED_AFTER_MS;
+    return (
+        Date.now() - lockIdleSince.getTime() >
+        EMAIL_QUEUE_CONFIG.stalledAfterMs()
+    );
 }
 
 interface KampanDetailPageProps {
@@ -240,6 +243,9 @@ export default async function KampanDetailPage({
                             maxHeight: 300,
                             overflowY: "auto",
                         }}
+                        // Admin trust boundary: body is admin-authored Tiptap
+                        // HTML and is exactly what gets emailed — no untrusted
+                        // input reaches here.
                         dangerouslySetInnerHTML={{ __html: campaign.body }}
                     />
                 </CardContent>

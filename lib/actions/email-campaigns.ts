@@ -285,6 +285,11 @@ export async function retryFailedItems(campaignId: string): Promise<ActionResult
         if (!campaign) {
             return { error: "Hromadný email nebyl nalezen" };
         }
+        // Guard against a direct call while sending (the UI hides the button):
+        // resetting failed rows mid-send would race the drain loop.
+        if (campaign.status === "SENDING") {
+            return { error: "Hromadný email se právě odesílá" };
+        }
 
         // Only retry soft failures. Permanently-failed items (SMTP 5xx / bad
         // address) never succeed on retry and re-hammering them hurts sender
