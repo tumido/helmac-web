@@ -28,6 +28,11 @@ import {
     Search,
     HowToReg,
     PersonOutline,
+    CheckCircle,
+    Cancel,
+    Email,
+    StickyNote2,
+    Group,
 } from "@mui/icons-material";
 import { isMinor } from "@/lib/utils/minor-detection";
 import type { OrderRow } from "@/lib/services/v2";
@@ -294,6 +299,7 @@ export function SubmissionsTable({
                                         );
                                     },
                                 )}
+                                <TableCell>Stav</TableCell>
                                 <TableCell></TableCell>
                             </TableRow>
                         </TableHead>
@@ -419,6 +425,99 @@ export function SubmissionsTable({
                                                     </TableCell>
                                                 ),
                                             )}
+                                            <TableCell>
+                                                <Box
+                                                    sx={{
+                                                        display:
+                                                            "flex",
+                                                        alignItems:
+                                                            "center",
+                                                        gap: 0.75,
+                                                    }}
+                                                >
+                                                    {ap.length >
+                                                        0 && (
+                                                        <Tooltip
+                                                            title={`${1 + ap.length} osob`}
+                                                        >
+                                                            <Box
+                                                                sx={{
+                                                                    display:
+                                                                        "inline-flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                    gap: 0.25,
+                                                                }}
+                                                            >
+                                                                <Group
+                                                                    sx={{
+                                                                        fontSize: 16,
+                                                                    }}
+                                                                    color="action"
+                                                                />
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="text.secondary"
+                                                                >
+                                                                    {1 +
+                                                                        ap.length}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Tooltip>
+                                                    )}
+                                                    <Tooltip
+                                                        title={
+                                                            order.isPaid
+                                                                ? "Zaplaceno"
+                                                                : "Nezaplaceno"
+                                                        }
+                                                    >
+                                                        {order.isPaid ? (
+                                                            <CheckCircle
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                                color="success"
+                                                            />
+                                                        ) : (
+                                                            <Cancel
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                                color="disabled"
+                                                            />
+                                                        )}
+                                                    </Tooltip>
+                                                    <Tooltip
+                                                        title={
+                                                            order.emailSent
+                                                                ? "Email odeslán"
+                                                                : "Email neodeslán"
+                                                        }
+                                                    >
+                                                        <Email
+                                                            sx={{
+                                                                fontSize: 16,
+                                                            }}
+                                                            color={
+                                                                order.emailSent
+                                                                    ? "success"
+                                                                    : "disabled"
+                                                            }
+                                                        />
+                                                    </Tooltip>
+                                                    {order.adminNote && (
+                                                        <Tooltip title="Má poznámku">
+                                                            <StickyNote2
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                                color="primary"
+                                                            />
+                                                        </Tooltip>
+                                                    )}
+                                                </Box>
+                                            </TableCell>
                                             <TableCell
                                                 onClick={(
                                                     e,
@@ -618,6 +717,7 @@ export function SubmissionsTable({
                                                                 </TableCell>
                                                             ),
                                                         )}
+                                                        <TableCell />
                                                         <TableCell
                                                             onClick={(
                                                                 e,
