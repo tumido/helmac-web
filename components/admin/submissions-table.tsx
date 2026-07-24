@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSubmissionsCount } from "@/components/admin/submissions-count-context";
 import {
+    Box,
     Table,
     TableBody,
     TableCell,
@@ -241,16 +242,6 @@ export function SubmissionsTable({
                     (Number(!!a.adminNote) -
                         Number(!!b.adminNote))
                 );
-            case "isAttending":
-                return (
-                    dir *
-                    (Number(
-                        a.people[0]?.isAttending,
-                    ) -
-                        Number(
-                            b.people[0]?.isAttending,
-                        ))
-                );
             case "createdAt":
                 return (
                     dir *
@@ -373,10 +364,6 @@ export function SubmissionsTable({
                                         [
                                             "createdAt",
                                             "Datum",
-                                        ],
-                                        [
-                                            "isAttending",
-                                            "Je přítomen",
                                         ],
                                     ] as const
                                 ).map(([key, label]) => (
@@ -679,54 +666,58 @@ export function SubmissionsTable({
                                                     e.stopPropagation()
                                                 }
                                             >
-                                                <Checkbox
-                                                    size="small"
-                                                    checked={
-                                                        order
-                                                            .people[0]
-                                                            ?.isAttending ??
-                                                        false
-                                                    }
-                                                    disabled={
-                                                        readOnly
-                                                    }
-                                                    onChange={async () => {
-                                                        const p =
-                                                            order
-                                                                .people[0];
-                                                        if (
-                                                            p
-                                                        )
-                                                            await togglePersonIsAttending(
-                                                                p.id,
-                                                                !p.isAttending,
-                                                            );
+                                                <Box
+                                                    sx={{
+                                                        display:
+                                                            "flex",
+                                                        alignItems:
+                                                            "center",
+                                                        gap: 0.5,
                                                     }}
-                                                />
-                                            </TableCell>
-                                            <TableCell
-                                                onClick={(
-                                                    e,
-                                                ) =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-                                                {!readOnly &&
-                                                    !order.isPaid &&
-                                                    order.legacySubmissionId && (
-                                                        <Button
-                                                            variant="outlined"
+                                                >
+                                                    <Tooltip title="Je přítomen">
+                                                        <Checkbox
                                                             size="small"
-                                                            onClick={async () => {
-                                                                await toggleSubmissionPayment(
-                                                                    order.legacySubmissionId!,
-                                                                    true,
-                                                                );
+                                                            checked={
+                                                                order
+                                                                    .people[0]
+                                                                    ?.isAttending ??
+                                                                false
+                                                            }
+                                                            disabled={
+                                                                readOnly
+                                                            }
+                                                            onChange={async () => {
+                                                                const p =
+                                                                    order
+                                                                        .people[0];
+                                                                if (
+                                                                    p
+                                                                )
+                                                                    await togglePersonIsAttending(
+                                                                        p.id,
+                                                                        !p.isAttending,
+                                                                    );
                                                             }}
-                                                        >
-                                                            Zaplatit
-                                                        </Button>
-                                                    )}
+                                                        />
+                                                    </Tooltip>
+                                                    {!readOnly &&
+                                                        !order.isPaid &&
+                                                        order.legacySubmissionId && (
+                                                            <Button
+                                                                variant="outlined"
+                                                                size="small"
+                                                                onClick={async () => {
+                                                                    await toggleSubmissionPayment(
+                                                                        order.legacySubmissionId!,
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Zaplatit
+                                                            </Button>
+                                                        )}
+                                                </Box>
                                             </TableCell>
                                         </TableRow>
                                         {ap.map(
@@ -861,23 +852,24 @@ export function SubmissionsTable({
                                                                 e.stopPropagation()
                                                             }
                                                         >
-                                                            <Checkbox
-                                                                size="small"
-                                                                checked={
-                                                                    person.isAttending
-                                                                }
-                                                                disabled={
-                                                                    readOnly
-                                                                }
-                                                                onChange={async () => {
-                                                                    await togglePersonIsAttending(
-                                                                        person.id,
-                                                                        !person.isAttending,
-                                                                    );
-                                                                }}
-                                                            />
+                                                            <Tooltip title="Je přítomen">
+                                                                <Checkbox
+                                                                    size="small"
+                                                                    checked={
+                                                                        person.isAttending
+                                                                    }
+                                                                    disabled={
+                                                                        readOnly
+                                                                    }
+                                                                    onChange={async () => {
+                                                                        await togglePersonIsAttending(
+                                                                            person.id,
+                                                                            !person.isAttending,
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
                                                         </TableCell>
-                                                        <TableCell />
                                                     </TableRow>
                                                 );
                                             },
