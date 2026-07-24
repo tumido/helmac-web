@@ -258,8 +258,11 @@ export async function resumeCampaign(campaignId: string): Promise<ActionResult> 
         }
 
         if (campaign.status === "PAUSED") {
-            await db.emailCampaign.update({
-                where: { id: campaignId },
+            // Atomic PAUSED→SENDING guard (mirrors start/pauseCampaign): if the
+            // processor completed the campaign between the read above and here,
+            // this updates 0 rows instead of resurrecting a COMPLETED campaign.
+            await db.emailCampaign.updateMany({
+                where: { id: campaignId, status: "PAUSED" },
                 data: { status: "SENDING" },
             });
         }
