@@ -1,9 +1,11 @@
 import { Container } from "@mui/material";
 import { notFound } from "next/navigation";
+import { BankTransactionMatchStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { BankTransactionsTable } from "@/components/admin/bank-transactions-table";
+import { getUnpaidOrdersForYear } from "@/lib/services/v2";
 
 interface TransakcePageProps {
     params: Promise<{ id: string }>;
@@ -18,7 +20,20 @@ async function getYearBasic(yearId: string) {
 
 async function getAllTransactions(yearId: string) {
     return db.bankTransaction.findMany({
-        where: { yearId },
+        where: {
+            OR: [
+                { yearId },
+                {
+                    yearId: null,
+                    matchStatus: {
+                        in: [
+                            BankTransactionMatchStatus.UNKNOWN_VS,
+                            BankTransactionMatchStatus.NO_VARIABLE_SYMBOL,
+                        ],
+                    },
+                },
+            ],
+        },
         orderBy: { date: "desc" },
         select: {
             id: true,
@@ -29,7 +44,10 @@ async function getAllTransactions(yearId: string) {
             counterpartAccount: true,
             counterpartName: true,
             matchStatus: true,
-            submissionId: true,
+            orderId: true,
+            order: {
+                select: { legacySubmissionId: true },
+            },
         },
     });
 }
@@ -37,18 +55,29 @@ async function getAllTransactions(yearId: string) {
 export default async function TransakcePage({ params }: TransakcePageProps) {
     await requireAdmin();
     const { id } = await params;
-    const [year, transactions] = await Promise.all([
-        getYearBasic(id),
-        getAllTransactions(id),
-    ]);
+    const [year, transactions, unpaidOrders] =
+        await Promise.all([
+            getYearBasic(id),
+            getAllTransactions(id),
+            getUnpaidOrdersForYear(id),
+        ]);
 
     if (!year) {
         notFound();
     }
 
     const transactionsForClient = transactions.map((tx) => ({
-        ...tx,
+        id: tx.id,
         date: tx.date.toISOString(),
+        amount: tx.amount,
+        currency: tx.currency,
+        variableSymbol: tx.variableSymbol,
+        counterpartAccount: tx.counterpartAccount,
+        counterpartName: tx.counterpartName,
+        matchStatus: tx.matchStatus,
+        orderId: tx.orderId,
+        legacySubmissionId:
+            tx.order?.legacySubmissionId ?? null,
     }));
 
     return (
@@ -66,6 +95,7 @@ export default async function TransakcePage({ params }: TransakcePageProps) {
             <BankTransactionsTable
                 transactions={transactionsForClient}
                 yearId={year.id}
+                unpaidOrders={unpaidOrders}
                 showFilter
             />
         </Container>

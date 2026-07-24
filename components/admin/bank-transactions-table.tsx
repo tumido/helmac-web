@@ -19,6 +19,8 @@ import { useState } from "react";
 import Link from "next/link";
 import type { BankTransactionMatchStatus } from "@prisma/client";
 import { formatDate } from "@/lib/utils/date";
+import { PairTransactionButton } from "@/components/admin/pair-transaction-button";
+import type { UnpaidOrderOption } from "@/lib/services/v2";
 
 interface TransactionRow {
     id: string;
@@ -29,12 +31,14 @@ interface TransactionRow {
     counterpartAccount: string | null;
     counterpartName: string | null;
     matchStatus: BankTransactionMatchStatus;
-    submissionId: string | null;
+    orderId: string | null;
+    legacySubmissionId: string | null;
 }
 
 interface BankTransactionsTableProps {
     transactions: TransactionRow[];
     yearId: string;
+    unpaidOrders?: UnpaidOrderOption[];
     showFilter?: boolean;
 }
 
@@ -49,9 +53,15 @@ const statusConfig: Record<BankTransactionMatchStatus, { label: string; color: "
     OUTGOING: { label: "Odchozí", color: "default" },
 };
 
+const PAIRABLE_STATUSES = new Set<BankTransactionMatchStatus>([
+    "UNKNOWN_VS",
+    "NO_VARIABLE_SYMBOL",
+]);
+
 export function BankTransactionsTable({
     transactions,
     yearId,
+    unpaidOrders,
     showFilter = false,
 }: BankTransactionsTableProps) {
     const [filter, setFilter] = useState<string>("ALL");
@@ -129,13 +139,18 @@ export function BankTransactionsTable({
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        {tx.submissionId ? (
+                                        {tx.orderId ? (
                                             <Link
-                                                href={`/admin/rocniky/${yearId}/registrace/prihlasky/${tx.submissionId}`}
+                                                href={`/admin/rocniky/${yearId}/registrace/${tx.legacySubmissionId ?? tx.orderId}`}
                                                 style={{ color: "inherit" }}
                                             >
                                                 Detail
                                             </Link>
+                                        ) : unpaidOrders && PAIRABLE_STATUSES.has(tx.matchStatus) ? (
+                                            <PairTransactionButton
+                                                transactionId={tx.id}
+                                                unpaidOrders={unpaidOrders}
+                                            />
                                         ) : (
                                             "—"
                                         )}
