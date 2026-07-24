@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getApplicablePriceFromSummary } from "@/lib/utils/pricing";
@@ -578,6 +579,200 @@ export function v2PricingDefsToPricingDefs(
         })),
     }));
 }
+
+// ============================================================
+// Order detail (single order by legacy submission ID)
+// ============================================================
+
+export interface OrderDetailLineItem {
+    fieldId: string;
+    fieldName: string;
+    fieldLabel: string;
+    fieldType: string;
+    fieldIsActive: boolean;
+    fieldSortOrder: number;
+    fieldOptions: string[];
+    fieldPricingDefinitionId: string | null;
+    fieldIncludeForAP: boolean;
+    value: string | null;
+    quantity: number;
+    pricingOptionId: string | null;
+    pricingOptionName: string | null;
+    unitPriceAtSubmission: number;
+}
+
+export interface OrderDetailPerson {
+    id: string;
+    personIndex: number;
+    lineItems: OrderDetailLineItem[];
+}
+
+export interface OrderDetail {
+    id: string;
+    legacySubmissionId: string | null;
+    status: string;
+    isPaid: boolean;
+    paidAt: Date | null;
+    totalPrice: number | null;
+    variableSymbol: string | null;
+    emailSent: boolean;
+    emailSentAt: Date | null;
+    adminNote: string | null;
+    isTest: boolean;
+    createdAt: Date;
+    yearId: string;
+    yearNumber: number;
+    yearTitle: string;
+    pricingSummary: unknown;
+    people: OrderDetailPerson[];
+    pricingDefinitions: V2PricingDef[];
+    allFields: {
+        id: string;
+        name: string;
+        label: string;
+        type: string;
+        isActive: boolean;
+        sortOrder: number;
+        options: string[];
+        pricingDefinitionId: string | null;
+        includeForAdditionalPeople: boolean;
+    }[];
+}
+
+export const getOrderByLegacyId = cache(async function getOrderByLegacyId(
+    legacySubmissionId: string,
+): Promise<OrderDetail | null> {
+    const order = await db.v2Order.findFirst({
+        where: { legacySubmissionId },
+        select: {
+            id: true,
+            legacySubmissionId: true,
+            status: true,
+            isPaid: true,
+            paidAt: true,
+            totalPrice: true,
+            variableSymbol: true,
+            emailSent: true,
+            emailSentAt: true,
+            adminNote: true,
+            isTest: true,
+            createdAt: true,
+            yearId: true,
+            year: {
+                select: { year: true, title: true },
+            },
+            people: {
+                orderBy: { personIndex: "asc" },
+                select: {
+                    id: true,
+                    personIndex: true,
+                    lineItems: {
+                        orderBy: {
+                            field: { sortOrder: "asc" },
+                        },
+                        select: {
+                            value: true,
+                            quantity: true,
+                            unitPriceAtSubmission: true,
+                            pricingOptionId: true,
+                            pricingOption: {
+                                select: {
+                                    name: true,
+                                },
+                            },
+                            field: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    label: true,
+                                    type: true,
+                                    isActive: true,
+                                    sortOrder: true,
+                                    options: true,
+                                    pricingDefinitionId:
+                                        true,
+                                    includeForAdditionalPeople:
+                                        true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!order) return null;
+
+    const [legacySub, formStructure] = await Promise.all([
+        db.registrationSubmission.findUnique({
+            where: { id: legacySubmissionId },
+            select: { pricingSummary: true },
+        }),
+        getFormStructure(order.yearId),
+    ]);
+    const pricingDefs =
+        formStructure?.pricingDefinitions ?? [];
+
+    return {
+        id: order.id,
+        legacySubmissionId: order.legacySubmissionId,
+        status: order.status,
+        isPaid: order.isPaid,
+        paidAt: order.paidAt,
+        totalPrice: order.totalPrice,
+        variableSymbol: order.variableSymbol,
+        emailSent: order.emailSent,
+        emailSentAt: order.emailSentAt ?? null,
+        adminNote: order.adminNote,
+        isTest: order.isTest,
+        createdAt: order.createdAt,
+        yearId: order.yearId,
+        yearNumber: order.year.year,
+        yearTitle: order.year.title,
+        pricingSummary: legacySub?.pricingSummary ?? null,
+        people: order.people.map((p) => ({
+            id: p.id,
+            personIndex: p.personIndex,
+            lineItems: p.lineItems.map((li) => ({
+                fieldId: li.field.id,
+                fieldName: li.field.name,
+                fieldLabel: li.field.label,
+                fieldType: li.field.type,
+                fieldIsActive: li.field.isActive,
+                fieldSortOrder: li.field.sortOrder,
+                fieldOptions: li.field.options,
+                fieldPricingDefinitionId:
+                    li.field.pricingDefinitionId,
+                fieldIncludeForAP:
+                    li.field.includeForAdditionalPeople,
+                value: li.value,
+                quantity: li.quantity,
+                pricingOptionId: li.pricingOptionId,
+                pricingOptionName:
+                    li.pricingOption?.name ?? null,
+                unitPriceAtSubmission:
+                    li.unitPriceAtSubmission,
+            })),
+        })),
+        pricingDefinitions: pricingDefs,
+        allFields: (formStructure?.fields ?? []).map(
+            (f) => ({
+                id: f.id,
+                name: f.name,
+                label: f.label,
+                type: f.type,
+                isActive: true,
+                sortOrder: f.sortOrder,
+                options: f.options,
+                pricingDefinitionId:
+                    f.pricingDefinitionId,
+                includeForAdditionalPeople:
+                    f.includeForAdditionalPeople,
+            }),
+        ),
+    };
+});
 
 // ============================================================
 // Email templates from v2
