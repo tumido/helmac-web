@@ -10,7 +10,12 @@ import type { FormField } from "@/lib/types/registration-form";
 const sendTestEmailSchema = z.object({
     subject: z.string().min(1, "Předmět je povinný"),
     body: z.string().min(1, "Text emailu je povinný"),
-    bcc: z.string().nullable().optional(),
+    bcc: z
+        .string()
+        .email("Neplatný email pro BCC")
+        .optional()
+        .nullable()
+        .transform((v) => v || null),
     emailAccountId: z.string().nullable().optional(),
     recipient: z.string().email("Neplatná emailová adresa"),
     placeholderValues: z.record(z.string(), z.string()),

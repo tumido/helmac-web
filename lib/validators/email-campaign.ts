@@ -19,7 +19,12 @@ export const emailCampaignSchema = z.object({
         .min(1, "Předmět je povinný")
         .max(200, "Předmět je příliš dlouhý"),
     body: z.string().min(1, "Text emailu je povinný"),
-    bcc: z.string().nullable().optional(),
+    bcc: z
+        .string()
+        .email("Neplatný email pro BCC")
+        .optional()
+        .nullable()
+        .transform((v) => v || null),
     accountId: z.string().nullable().optional(),
     recipientFilter: recipientFilterSchema,
 });
